@@ -1,0 +1,77 @@
+{
+  "name": "pau-skills",
+  "description": "Claude Code skills, hooks and scripts for disciplined agent work: session rituals, verification, subagent orchestration, guards and planning.",
+  "owner": {
+    "name": "Alvaro Reis",
+    "url": "https://github.com/paureis"
+  },
+  "plugins": [
+    {
+      "name": "session-discipline",
+      "source": "./plugins/session-discipline",
+      "description": "Start every session from the written roadmap and close it in a fixed order: retrospective gated by a rules audit, roadmap and log, handoff, commit.",
+      "version": "0.1.0",
+      "category": "development",
+      "keywords": [
+        "retrospective",
+        "handoff",
+        "session",
+        "roadmap",
+        "hooks"
+      ]
+    },
+    {
+      "name": "verification",
+      "source": "./plugins/verification",
+      "description": "Prove tests can fail: a mutation harness with its three assertions checked by script, a hostile evaluator in a forked context, and test-driven development.",
+      "version": "0.1.0",
+      "category": "development",
+      "keywords": [
+        "mutation-testing",
+        "evaluation",
+        "tdd",
+        "testing"
+      ]
+    },
+    {
+      "name": "agent-orchestration",
+      "source": "./plugins/agent-orchestration",
+      "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, and an evidence-only codebase oracle.",
+      "version": "0.1.0",
+      "category": "development",
+      "keywords": [
+        "subagents",
+        "hooks",
+        "methodology",
+        "research"
+      ]
+    },
+    {
+      "name": "guards",
+      "source": "./plugins/guards",
+      "description": "PreToolUse guards that mechanize rules that kept being broken: no backticks in inline interpreter payloads, no raw gh pr merge on stacked PRs; plus a safe merge script and a dependency security audit.",
+      "version": "0.1.0",
+      "category": "development",
+      "keywords": [
+        "hooks",
+        "git",
+        "github",
+        "security",
+        "npm"
+      ]
+    },
+    {
+      "name": "planning",
+      "source": "./plugins/planning",
+      "description": "Turn an idea into decided, sliced work: a relentless design interview, PRD synthesis, vertical-slice issues, and architecture deepening. Adapted from mattpocock/skills.",
+      "version": "0.1.0",
+      "category": "development",
+      "keywords": [
+        "planning",
+        "prd",
+        "issues",
+        "architecture"
+      ]
+    }
+  ]
+}

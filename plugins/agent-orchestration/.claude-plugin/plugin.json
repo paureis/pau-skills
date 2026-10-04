@@ -1,0 +1,17 @@
+{
+  "name": "agent-orchestration",
+  "version": "0.1.0",
+  "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, and an evidence-only codebase oracle.",
+  "author": {
+    "name": "Alvaro Reis",
+    "url": "https://github.com/paureis"
+  },
+  "repository": "https://github.com/paureis/pau-skills",
+  "license": "MIT",
+  "keywords": [
+    "subagents",
+    "hooks",
+    "methodology",
+    "research"
+  ]
+}

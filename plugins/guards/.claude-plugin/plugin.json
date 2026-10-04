@@ -1,0 +1,18 @@
+{
+  "name": "guards",
+  "version": "0.1.0",
+  "description": "PreToolUse guards that mechanize rules that kept being broken: no backticks in inline interpreter payloads, no raw gh pr merge on stacked PRs; plus a safe merge script and a dependency security audit.",
+  "author": {
+    "name": "Alvaro Reis",
+    "url": "https://github.com/paureis"
+  },
+  "repository": "https://github.com/paureis/pau-skills",
+  "license": "MIT",
+  "keywords": [
+    "hooks",
+    "git",
+    "github",
+    "security",
+    "npm"
+  ]
+}

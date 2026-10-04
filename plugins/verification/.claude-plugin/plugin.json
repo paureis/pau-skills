@@ -1,0 +1,17 @@
+{
+  "name": "verification",
+  "version": "0.1.0",
+  "description": "Prove tests can fail: a mutation harness with its three assertions checked by script, a hostile evaluator in a forked context, and test-driven development.",
+  "author": {
+    "name": "Alvaro Reis",
+    "url": "https://github.com/paureis"
+  },
+  "repository": "https://github.com/paureis/pau-skills",
+  "license": "MIT",
+  "keywords": [
+    "mutation-testing",
+    "evaluation",
+    "tdd",
+    "testing"
+  ]
+}

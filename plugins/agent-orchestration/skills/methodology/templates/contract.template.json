@@ -1,0 +1,51 @@
+{
+  "product": "[name]",
+  "scope": "[which milestone / slice this contract governs — a contract covers one build, not the whole roadmap]",
+  "version": "1.0",
+  "date": "[YYYY-MM-DD]",
+  "authoredBy": "[session/agent that wrote this — MUST NOT be the one that implements it]",
+  "sourceDocs": [
+    "[requirements doc the assertions were derived from — NOT the implementation]"
+  ],
+
+  "_comment_pinnedValues": "Decisions frozen so they cannot silently drift. SLOs, caps, vendors, budgets, chosen technologies. If an implementation wants to change one of these, that is an escalation, not a refactor.",
+  "pinnedValues": {
+    "[exampleSLO]": "<= 60 minutes from failure visible to alert dispatch",
+    "[exampleCap]": "<= 250 calls/burst (measured: 429 at ~300)",
+    "[exampleChoice]": "DuckDB, not SQLite — workload is analytical"
+  },
+
+  "_comment_gradingRule": "Copy verbatim from METHODOLOGY.md section 2. Do not soften it. The two negative clauses do most of the work.",
+  "gradingRule": "An independent EVALUATOR assumes the build is broken and must prove each MUST assertion PASS with concrete, reproducible evidence (a passing automated test, a captured trace with correlation IDs, or a live reproduction) — NOT 'code review' as standalone evidence, and NOT a recorded/replayed fixture where the assertion demands live behavior. Ship requires every MUST to PASS; SHOULDs are tracked; MUST-NOT assertions must be shown absent by an enumerable check (enum/registry membership, grep, or module-boundary gate).",
+
+  "_comment_nonGoals": "The scope fence. Prevents an evaluator filing findings against features never promised, and prevents a builder gold-plating. Be specific.",
+  "nonGoals_v1": [
+    "[thing deliberately not built in this slice]",
+    "[thing deferred to a later version, named]"
+  ],
+
+  "_comment_assertions": "Each MUST is a failing test you have not written yet. If you cannot name the evidence in `verify`, the assertion is too vague to build against — rewrite it. Weight the contract toward assertions where being wrong is EXPENSIVE and SILENT (isolation, authorization, data loss, money), not toward what is easiest to assert.",
+  "assertions": [
+    {
+      "id": "AREA-1",
+      "area": "[Isolation | Auth | Ingestion | Ops | Billing | ...]",
+      "priority": "MUST",
+      "assertion": "[A single falsifiable claim about system behavior. Present tense. One claim, not three.]",
+      "verify": "[The specific evidence that settles it. Which test, which trace, which live reproduction. Include the mutation check: 'remove X and assert this test goes red.']"
+    },
+    {
+      "id": "AREA-2",
+      "area": "[...]",
+      "priority": "MUST-NOT",
+      "assertion": "[Something that must never occur — a credential in a log, a cross-tenant read, a direct import across a module boundary.]",
+      "verify": "[An ENUMERABLE check. A grep, a module-graph gate, enum membership. 'I did not see one' is not enumerable and does not count.]"
+    },
+    {
+      "id": "AREA-3",
+      "area": "[...]",
+      "priority": "SHOULD",
+      "assertion": "[Tracked, not ship-blocking.]",
+      "verify": "[...]"
+    }
+  ]
+}

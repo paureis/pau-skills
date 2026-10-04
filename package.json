@@ -1,0 +1,12 @@
+{
+  "name": "pau-skills",
+  "private": true,
+  "type": "module",
+  "description": "Tests and checks for the pau-skills Claude Code plugin marketplace. No dependencies.",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "scrub": "node scripts/check-scrub.mjs",
+    "validate": "claude plugin validate . --strict"
+  },
+  "engines": { "node": ">=20" }
+}
