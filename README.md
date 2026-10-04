@@ -23,24 +23,75 @@ pattern, a harness that asserts the steps I kept getting wrong, a script that me
 old one restated. The rules that are still sentences are in [docs/RULES.md](docs/RULES.md), and each one that has a
 mechanism points to it.
 
-## Install
+## Installing
 
-Add the marketplace once, then install the plugins you want:
+Run these in your shell (outside a Claude Code session). Each command is from the
+[plugin commands reference](https://code.claude.com/docs/en/plugins/cli-reference).
+
+Add the marketplace (once per machine):
 
 ```bash
 claude plugin marketplace add paureis/pau-skills
-claude plugin install session-discipline@pau-skills
-claude plugin install verification@pau-skills
-claude plugin install agent-orchestration@pau-skills
-claude plugin install guards@pau-skills
-claude plugin install planning@pau-skills
 ```
 
-Inside a session, `/plugin marketplace add paureis/pau-skills` and `/plugin install <plugin>@pau-skills` do the same.
-Plugin skills are namespaced: `retrospective` from `session-discipline` runs as `/session-discipline:retrospective`.
+Install one plugin:
 
-The scripts need Node.js 20 or later and no packages. `mutate.sh` needs bash (Git Bash on Windows). The hooks are
-active as soon as their plugin is enabled; to turn one off, disable its plugin.
+```bash
+claude plugin install session-discipline@pau-skills
+```
+
+Install all five (bash, zsh or Git Bash):
+
+```bash
+for p in session-discipline verification agent-orchestration guards planning; do
+  claude plugin install "$p@pau-skills"
+done
+```
+
+The same in PowerShell:
+
+```powershell
+foreach ($p in 'session-discipline','verification','agent-orchestration','guards','planning') { claude plugin install "$p@pau-skills" }
+```
+
+Installs go to your user scope by default. Add `--scope project` to record a plugin in the repository's
+`.claude/settings.json` for everyone who clones it.
+
+See what is installed, and turn a plugin off or on without removing it:
+
+```bash
+claude plugin list
+claude plugin disable guards@pau-skills
+claude plugin enable guards@pau-skills
+```
+
+Uninstall one plugin, or remove the marketplace together with every plugin installed from it:
+
+```bash
+claude plugin uninstall guards@pau-skills
+claude plugin marketplace remove pau-skills
+```
+
+Inside a session, `/plugin marketplace add paureis/pau-skills` and `/plugin install <plugin>@pau-skills` do the same
+as the first two commands. A newly installed plugin loads in your next session, or after `/reload-plugins`.
+
+Plugin skills are namespaced: `retrospective` from `session-discipline` runs as `/session-discipline:retrospective`.
+The scripts need Node.js 20 or later and no packages. `mutate.sh` needs bash (Git Bash on Windows). Hooks are active
+as soon as their plugin is enabled; to turn one off, disable its plugin.
+
+## Updating
+
+Each plugin declares a version, and a change reaches you only when that version is bumped. Auto-update is off by
+default for marketplaces that are not Anthropic's, so either turn it on for `pau-skills` under `/plugin` >
+**Marketplaces**, or update by hand:
+
+```bash
+claude plugin marketplace update pau-skills
+claude plugin update session-discipline@pau-skills
+```
+
+Run the second command for each plugin you use. The new version loads in your next session, or after
+`/reload-plugins`.
 
 ## What is in it
 
@@ -123,6 +174,9 @@ npm test                  # node --test, no dependencies
 npm run scrub             # fails if a file carries a private name, an account id, a machine path or untranslated text
 claude plugin validate .  # the marketplace; add a plugin path to check one plugin
 ```
+
+To bring a new skill into the repository, start with `node scripts/new-skill.mjs <plugin> <skill-name>` and follow
+[docs/ADDING-A-SKILL.md](docs/ADDING-A-SKILL.md).
 
 ## Credits
 

@@ -29,6 +29,8 @@ const RULES = [
   ['email address', /\b[A-Za-z0-9._%+-]+@(?!example\.(com|org)\b)[A-Za-z0-9.-]+\.(com|net|org|io|app|dev|clinic|test)\b/],
   // Absolute paths from a personal machine.
   ['machine path', /[A-Za-z]:[\\/]+Users\b|\/c\/Users\/|\b[D-Z]:\\|\/Users\/[a-z]+\/|\/home\/[a-z]+\//i],
+  // A scaffold from scripts/new-skill.mjs that was never filled in.
+  ['unfilled scaffold placeholder', /TODO\(new-skill\)/, (f) => !/^(scripts\/new-skill\.mjs|tests\/new-skill\.test\.mjs|docs\/ADDING-A-SKILL\.md)$/.test(f)],
   // Untranslated Spanish: accented letters, inverted punctuation, and common words that never occur in English prose.
   ['non-English text', /[áéíóúñÁÉÍÓÚÑ¿¡]/],
   ['non-English text', /\b(hoja de ruta|bit[aá]cora|cierre|regla del|elemento|fusionar|guardia|reposo|mutaci[oó]n|pruebas|seguridad|consultorio|ci[oó]n|tambi[eé]n|seg[uú]n|est[aá] )\b/i],
