@@ -6,10 +6,7 @@
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
 The Claude Code skills, hooks and scripts I use every day, packaged as a plugin marketplace. I am Alvaro "Pau" Reis,
-an AI engineer. I build products with agents doing most of the implementation, and these tools are what keeps that
-work honest from one session to the next.
-
-They are for people who already use Claude Code on real projects and have noticed the same things I have: agents
+an AI engineer. They are for people who already use Claude Code on real projects and have noticed the same things I have: agents
 report success when a file came out wrong, rules written in `CLAUDE.md` get broken anyway, and a session that ends
 without a handoff costs the next one an hour.
 
