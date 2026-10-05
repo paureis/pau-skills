@@ -1,0 +1,124 @@
+# STARTING POINT, NOT A DROP-IN FILE. Adapt every line marked ADAPT, then delete these header lines.
+# The nightly full suite on the integration branch (NIGHTLY.md, pieces 3 and 4). Every job name is literal and none is
+# the production check's name: the tip of the integration branch is the head of the release PR (TRAPS.md, 8).
+# "No changes" skips the suite JOB, never its steps (TRAPS.md, 9). The decision fails closed: no output means run.
+name: Nightly
+
+on:
+  schedule:
+    - cron: "23 2 * * *" # ADAPT: an odd minute, chosen so a run that starts hours late still lands off-hours (TRAPS.md, 7)
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Run the suite even with no new code and inside the cap window"
+        type: boolean
+        default: false
+      test_alert:
+        description: "Do not run the suite; exercise the alert as if red (real issue and failure ping)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Fixed group, never cancel the run in progress. A second run waits; a third replaces the waiting one.
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  decide:
+    name: Nightly decide
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read # list runs and jobs
+      checks: read # read the tested-tree annotation
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+      mode: ${{ steps.decide.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the reference tree may be weeks old
+      - name: Decide
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_FORCE: ${{ inputs.force }}
+          INPUT_TEST_ALERT: ${{ inputs.test_alert }}
+        # ADAPT: implement templates/decide-nightly.md; it writes run=true|false, mode=... and reason=... to
+        # $GITHUB_OUTPUT and prints the reason. Keep the logic in a tested script, not inline YAML.
+        run: node scripts/ci/decide-nightly.mjs
+      - name: Heartbeat for "no changes"
+        if: steps.decide.outputs.mode == 'no-changes' # never in "cap-after-red"
+        env:
+          HEARTBEAT_URL: ${{ secrets.NIGHTLY_HEARTBEAT_URL }} # optional; without it, log and do not fail
+        run: node scripts/ci/nightly-alert.mjs no-changes # ADAPT: your alert script
+
+  suite:
+    name: Nightly full suite # ADAPT: literal, and different from the production check name
+    needs: decide
+    # Fails closed: runs unless the decision says exactly false. A manual cancel does not start it.
+    if: ${{ !cancelled() && needs.decide.outputs.run != 'false' && needs.decide.outputs.mode != 'test-alert' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30 # ADAPT: same as release-suite.yml
+    permissions:
+      contents: read
+      issues: write # only this job writes the alert issue
+    steps:
+      # --- BEGIN SUITE STEPS (keep identical to release-suite.yml) ---
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Full suite
+        run: npm run test:e2e
+      - name: Every test ran
+        run: node scripts/ci/check-total.mjs
+      # --- END SUITE STEPS ---
+      # Reached only when every step above passed. The decision job reads this marker; a green run without it is
+      # not a reference.
+      - name: Tested tree
+        run: echo "::notice title=tested-tree::$(git rev-parse 'HEAD^{tree}')"
+      - name: Test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 7
+      # Last step, so it sees the job's real status. A job that exceeds timeout-minutes ends as cancelled: count it as red.
+      - name: Alert
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEARTBEAT_URL: ${{ secrets.NIGHTLY_HEARTBEAT_URL }}
+          STATUS: ${{ job.status }}
+        run: |
+          case "$STATUS" in
+            success) RESULT=green ;;
+            *) RESULT=red ;;
+          esac
+          node scripts/ci/nightly-alert.mjs "$RESULT"
+
+  alert-test:
+    name: Nightly alert test
+    needs: decide
+    if: ${{ needs.decide.outputs.mode == 'test-alert' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          HEARTBEAT_URL: ${{ secrets.NIGHTLY_HEARTBEAT_URL }}
+        run: node scripts/ci/nightly-alert.mjs red --test

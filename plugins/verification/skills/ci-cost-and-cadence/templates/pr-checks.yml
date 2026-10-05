@@ -1,0 +1,32 @@
+# STARTING POINT, NOT A DROP-IN FILE. Adapt every line marked ADAPT, then delete these header lines.
+# Cheap checks on every PR push (NIGHTLY.md, piece 1). Its job name is a required check on the integration branch.
+# No `paths` or `paths-ignore` here: a workflow that does not run leaves a required check pending forever (TRAPS.md, 4).
+name: PR checks
+
+on:
+  pull_request:
+    branches: [integration, production] # ADAPT: your integration and production branch names
+  # No `push` trigger: the PR already ran these checks on its head, and the nightly run covers the merged result.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-checks-${{ github.ref }}
+  cancel-in-progress: true # a new push stops the old run; what already ran still bills
+
+jobs:
+  checks:
+    name: Types, lint and unit # ADAPT: literal name; this exact string goes into branch protection
+    runs-on: ubuntu-latest
+    timeout-minutes: 10 # ADAPT: a few minutes above the measured median; the default is hours
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4 # ADAPT: your toolchain
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck # ADAPT
+      - run: npm run lint # ADAPT
+      - run: npm test # ADAPT

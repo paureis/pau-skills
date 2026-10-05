@@ -1,0 +1,47 @@
+# STARTING POINT, NOT A DROP-IN FILE. Adapt every line marked ADAPT, then delete these header lines.
+# The full suite for the release PR (NIGHTLY.md, piece 2). This file is the ONLY owner of the required check name on
+# the production branch: one trigger, one job, a literal name, no job-level `if:`, no `needs:`, no `continue-on-error`
+# (TRAPS.md, 1 to 3 and 8). Its steps must stay identical to the suite job in nightly.yml; add a test that reads both
+# files and compares the step lists, and a test that the job name below appears exactly once across all workflow files.
+name: Release suite
+
+on:
+  pull_request:
+    branches: [production] # ADAPT: the production branch. Nothing else here: no schedule, no dispatch, no push.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-suite-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  suite:
+    name: Full suite # ADAPT: literal; the exact required check name on production. Never an expression.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30 # ADAPT: setup plus the suite's own global timeout, with margin
+    steps:
+      # --- BEGIN SUITE STEPS (keep identical to nightly.yml) ---
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4 # ADAPT: your toolchain, caches, services
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build # ADAPT: test the production build, not a dev server
+      - name: Full suite
+        run: npm run test:e2e # ADAPT
+      - name: Every test ran
+        # ADAPT: compare the executed tests with the runner's full list (for example `playwright test --list`), so a
+        # stray `.only` or a selection filter cannot pass with fewer tests.
+        run: node scripts/ci/check-total.mjs # ADAPT: your script
+      # --- END SUITE STEPS ---
+      - name: Test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: test-results # ADAPT
+          if-no-files-found: ignore
+          retention-days: 7

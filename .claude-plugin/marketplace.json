@@ -23,14 +23,15 @@
     {
       "name": "verification",
       "source": "./plugins/verification",
-      "description": "Prove tests can fail: a mutation harness with its three assertions checked by script, a hostile evaluator in a forked context, and test-driven development.",
-      "version": "0.1.0",
+      "description": "Prove tests can fail: a mutation harness with its three assertions checked by script, a hostile evaluator in a forked context, test-driven development, and a method for deciding how much CI to run and when.",
+      "version": "0.2.0",
       "category": "development",
       "keywords": [
         "mutation-testing",
         "evaluation",
         "tdd",
-        "testing"
+        "testing",
+        "ci"
       ]
     },
     {

@@ -1,7 +1,7 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 14](https://img.shields.io/badge/skills-14-informational)
+![Skills: 15](https://img.shields.io/badge/skills-15-informational)
 ![Hooks: 4](https://img.shields.io/badge/hooks-4-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
@@ -101,6 +101,7 @@ Run the second command for each plugin you use. The new version loads in your ne
 | verification | `mutation-test` | skill + script | `mutate.sh`: one hand mutation with its three assertions checked by script (applied by content, behaviour changed, restore verified); prints the diff on SURVIVED | Original |
 | verification | `evaluator` | skill (forked context) | A hostile evaluator that has not seen how the code was built grades each contract assertion with reproducible evidence | Original |
 | verification | `tdd` | skill | Red-green-refactor in vertical slices, with mocking and refactoring rules | Adapted |
+| verification | `ci-cost-and-cadence` | skill + script | Decides how much CI to run and when: asks, measures where the minutes go and what the suite has caught, compares five options with numbers, and builds the chosen one (in detail, a nightly run with safeguards) without a skipped check turning green; `measure-minutes.mjs` estimates billed minutes | Original |
 | agent-orchestration | no-idle | PreToolUse + SubagentStart hook | Appends "never end your turn waiting" to every agent launch | Original |
 | agent-orchestration | `methodology` | skill + documents | An operating method in which no agent certifies its own work: contracts, evidence standard, evaluator, convergence, two-file state, with templates | Original |
 | agent-orchestration | `codebase-oracle` | skill | Answers questions about a codebase from evidence in it only; never guesses | Original |
