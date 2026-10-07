@@ -20,6 +20,7 @@
 
 import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { loadConfig, hookEnabled, projectDir } from './config.mjs';
 
 const INLINE = /(^|[\n;&|(){}]|&&|\|\||\$\()\s*(node|nodejs|python|python3|py|perl|ruby|php|deno)\s+(-e|--eval|-c|-r|eval)\s/;
 
@@ -84,6 +85,7 @@ if (isMain) {
     let payload;
     try { payload = JSON.parse(input || '{}'); } catch { process.exit(0); } // never block on our own parse failure
     const tool = payload.tool_name || payload.toolName || '';
+    if (!hookEnabled('inline-backtick-guard', loadConfig({ project: projectDir(payload) }))) process.exit(0);
     if (tool !== 'Bash') process.exit(0);
     const raw = (payload.tool_input && payload.tool_input.command) || '';
     const detected = typeof raw === 'string' ? findBacktickPayload(raw) : null;

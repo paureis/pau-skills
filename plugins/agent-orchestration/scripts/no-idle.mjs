@@ -22,6 +22,7 @@
 
 import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { loadConfig, hookEnabled, projectDir } from './config.mjs';
 
 export const DEFAULT_RULE =
   '[no-idle] Rule: an agent that ends its turn waiting is not resumed by anything. You may start background ' +
@@ -77,7 +78,8 @@ if (isMain) {
     let input = await readStdin();
     if (input.charCodeAt(0) === 0xfeff) input = input.slice(1);
     const rule = process.env.NO_IDLE_RULE && process.env.NO_IDLE_RULE.trim() ? process.env.NO_IDLE_RULE.trim() : DEFAULT_RULE;
-    const out = decide(JSON.parse(input), rule);
+    const json = JSON.parse(input);
+    const out = hookEnabled('no-idle', loadConfig({ project: projectDir(json) })) ? decide(json, rule) : null;
     if (out !== null) process.stdout.write(toAscii(out) + '\n');
   } catch {
     // Input we do not understand: stay silent.

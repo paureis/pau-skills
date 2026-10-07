@@ -18,6 +18,7 @@
 import { realpathSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { loadConfig, hookEnabled, projectDir } from './config.mjs';
 
 // Flags with a value allowed between `pr` and the subcommand (gh pr -R owner/repo merge).
 const between = String.raw`(?:-\S+\s+(?:[^-\s]\S*\s+)?)*`;
@@ -66,7 +67,7 @@ if (isMain) {
   } catch {
     command = null;
   }
-  if (command !== null && denies(command)) {
+  if (command !== null && denies(command) && hookEnabled('merge-guard', loadConfig({ project: projectDir(JSON.parse(input)) }))) {
     process.stderr.write(reason(join(dirname(fileURLToPath(import.meta.url)), 'safe-merge.mjs').replace(/\\/g, '/')) + '\n');
     process.exit(2);
   }
