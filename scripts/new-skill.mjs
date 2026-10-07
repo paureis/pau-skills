@@ -4,7 +4,7 @@
 //   node scripts/new-skill.mjs <plugin> <skill-name> [--root <repo dir>]
 //
 // Creates plugins/<plugin>/skills/<skill-name>/SKILL.md with frontmatter, adds a stub section for it at the end of
-// the plugin's group in docs/ORIGINS.md, and adds a row for it after the plugin's last row in the README table. Every
+// the plugin's group in docs/ORIGINS.md, and adds a bullet for it to the plugin's list in the README reference. Every
 // placeholder is marked TODO(new-skill); the scrub check fails while any is left, so a half-filled scaffold cannot be
 // committed by accident. Refuses an unknown plugin, a name that is not kebab-case, a name that already exists in any
 // plugin, and a repository whose anchors are missing or ambiguous. It changes nothing unless every check passes.
@@ -31,7 +31,7 @@ export function plan(root, pluginName, skill) {
   const origins = readFileSync(originsPath, 'utf8');
   const readme = readFileSync(readmePath, 'utf8');
   if (new RegExp('^### ' + skill + ' \\(', 'm').test(origins)) throw new Error(`docs/ORIGINS.md already has a section for ${skill}`);
-  if (readme.includes('| `' + skill + '` |')) throw new Error(`README.md already has a row for ${skill}`);
+  if (readme.includes('- **' + skill + '**')) throw new Error(`README.md already lists ${skill}`);
 
   // ORIGINS: insert before the "---" that closes the plugin's group. The group heading must occur exactly once.
   const heading = '\n## ' + pluginName + '\n';
@@ -53,12 +53,21 @@ export function plan(root, pluginName, skill) {
   ].join('\n');
   const newOrigins = origins.slice(0, close) + '\n' + stub + origins.slice(close);
 
-  // README: insert after the plugin's last row in the table.
+  // README: insert a bullet at the end of the plugin's skill list in its "### <plugin>" reference section, before the
+  // "- Hook" line when there is one.
   const lines = readme.split('\n');
-  let last = -1;
-  lines.forEach((l, i) => { if (l.startsWith('| ' + pluginName + ' |')) last = i; });
-  if (last < 0) throw new Error(`README.md has no table row for plugin ${pluginName}`);
-  lines.splice(last + 1, 0, `| ${pluginName} | \`${skill}\` | skill | ${MARK}: one line on what it does | ${MARK}: Original or Adapted |`);
+  const head = lines.findIndex((l) => l === '### ' + pluginName);
+  if (head < 0 || lines.indexOf('### ' + pluginName, head + 1) >= 0) throw new Error(`README.md must have exactly one "### ${pluginName}" heading`);
+  let first = head + 1;
+  while (first < lines.length && lines[first] === '') first++;
+  let insert = -1;
+  for (let k = first; k < lines.length && !lines[k].startsWith('#'); k++) {
+    if (/^- Hooks?:/.test(lines[k])) { insert = k; break; }
+    if (lines[k].startsWith('- **') || lines[k].startsWith('  ')) insert = k + 1;
+    else if (lines[k] === '' && insert >= 0) break;
+  }
+  if (insert < 0) throw new Error(`README.md: no skill list under "### ${pluginName}"`);
+  lines.splice(insert, 0, `- **${skill}**: ${MARK}: one line on what it does (add " (adapted)" after the name if it is).`);
 
   const skillMd = [
     '---',

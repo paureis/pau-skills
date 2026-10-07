@@ -1,7 +1,10 @@
 # Origins
 
 Where each piece came from, the problem that led to it, and, for the adapted ones, exactly what changed relative to
-upstream. I wrote these for my own projects first; the stories below are from those projects with the names removed.
+upstream. Most of these I wrote for my own projects first, and their stories are from those projects with the names
+removed. Pieces whose "Changes for this release" says "written for this release" are new: they address failure modes
+that are common in agent work, and their problem statements describe the failure in general terms rather than a
+specific incident.
 
 ## How provenance was decided
 
