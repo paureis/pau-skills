@@ -78,6 +78,16 @@ reads paths, table headers, the status column name, status words and the "answer
 `summarize()` function is exported for tests.
 
 
+### claude-md-audit and `scan.mjs` (Original)
+
+**Problem.** Instruction files such as CLAUDE.md and AGENTS.md grow by accretion: rules are restated in new words,
+paths and commands go stale after refactors, and different files or tools end up contradicting each other. Every
+always-loaded line costs tokens in every session, and vague or contradictory rules get ignored, which pushes people to
+add louder rules instead of fewer, better ones. Nothing measured the whole set or checked it against the repository
+as it is now.
+
+**Changes for this release.** None; written for this release.
+
 ### which-skill (Original)
 
 **Problem.** With more than twenty skills spread over five plugins, nobody remembers which one fits a situation, and a
