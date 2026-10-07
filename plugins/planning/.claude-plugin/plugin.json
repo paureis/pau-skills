@@ -1,6 +1,6 @@
 {
   "name": "planning",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Turn an idea into decided, sliced work: a relentless design interview, PRD synthesis, vertical-slice issues, and architecture deepening. Adapted from mattpocock/skills.",
   "author": {
     "name": "Alvaro Reis",

@@ -36,7 +36,7 @@ test('creates the skill, the ORIGINS stub in its group and the README bullet in 
   const lines = readFileSync(join(dir, 'README.md'), 'utf8').split('\n');
   const i = lines.findIndex((l) => l.startsWith('- **port-lock**'));
   assert.ok(i > lines.indexOf('### guards') && i < lines.indexOf('### planning'), 'the bullet sits in the guards section');
-  assert.ok(lines[i - 1].startsWith('- **') && /^- Hooks?:/.test(lines[i + 1]), 'after the last skill, before the hooks line');
+  assert.ok(/^(- \*\*|  \S)/.test(lines[i - 1]) && /^- Hooks?:/.test(lines[i + 1]), 'after the last skill (or its continuation line), before the hooks line');
 });
 
 test('refuses an existing name in any plugin, an unknown plugin and a bad name, changing nothing', () => {

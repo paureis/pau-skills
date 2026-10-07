@@ -45,8 +45,8 @@ Keep the answer short. A list of every skill is not an answer.
 |---|---|---|
 | "This test fails sometimes", an intermittent CI failure | `flaky-test-hunt` (verification) | `tdd` for the regression test |
 | A database migration about to run | `migration-review` (verification) | fix, then review again |
-| Outdated dependencies, a framework major version to adopt | `dependency-upgrade` (guards) | `dependency-security-audit` for npm risk |
-| A CVE announcement, "are we vulnerable" (JavaScript projects) | `dependency-security-audit` (guards) | `dependency-upgrade` to apply fixes |
+| Outdated dependencies, a framework major version to adopt | `dependency-upgrade` (guards) | `dependency-security-audit` for known risk |
+| A CVE announcement, "are we vulnerable", "is this package safe" | `dependency-security-audit` (guards) | `dependency-upgrade` to apply fixes |
 | CI is slow or expensive, "how much CI should we run" | `ci-cost-and-cadence` (verification) | |
 | A question about how the codebase works | `codebase-oracle` (agent-orchestration) | `grill-me` if it leads to a change |
 | "The code is getting messy", hard-to-test modules | `improve-codebase-architecture` (planning) | `grill-me` on the candidate picked |

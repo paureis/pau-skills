@@ -103,7 +103,8 @@ context was compacted.
 ### 7. The careful work nobody wants to do
 
 - `dependency-upgrade` plans and applies upgrades in any ecosystem, one major version at a time, on a green baseline.
-- `dependency-security-audit` gives a ranked, actionable npm vulnerability and supply-chain report.
+- `dependency-security-audit` gives a ranked vulnerability, reachability and supply-chain report for any ecosystem
+  and for container images.
 - `migration-review` checks a database migration for locks, downtime, data loss and a way back before it runs.
 - `flaky-test-hunt` measures how often a test fails, finds the actual cause, and proves the fix.
 - `ci-cost-and-cadence` decides how much CI to run and when, from measurements.
@@ -152,7 +153,8 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills); everythi
 - **rule-to-hook**: Turns a rule that keeps being broken into a tested hook, with templates in JavaScript and Python.
 - **safe-merge**: Merges a PR pinned to its head commit and deletes the branch only if no open PR is based on it.
 - **dependency-upgrade**: Plans and applies dependency and toolchain upgrades in any ecosystem, step by step.
-- **dependency-security-audit**: A ranked npm vulnerability and supply-chain audit, not an `npm audit` dump.
+- **dependency-security-audit**: A ranked vulnerability, reachability and supply-chain audit for any ecosystem and
+  container image, built on native audit tools and OSV-based scanners, not a raw scanner dump.
 - Hooks: **secret-guard**, **destructive-guard**, **no-verify-guard**, **merge-guard**, **inline-backtick-guard**.
 
 ### planning
