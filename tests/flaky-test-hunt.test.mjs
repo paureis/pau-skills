@@ -5,10 +5,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { plugin, runNode, tempDir } from './helpers.mjs';
-import { parseArgs, wilson, runsNeeded, normalizeSignature, signatureId, summarize, repeat } from '../plugins/verification/skills/flaky-test-hunt/repeat.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
+import { parseArgs, wilson, runsNeeded, normalizeSignature, signatureId, summarize, repeat } from '../skills/verification/flaky-test-hunt/repeat.mjs';
 
-const SCRIPT = plugin('verification', 'skills', 'flaky-test-hunt', 'repeat.mjs');
+const SCRIPT = repo('skills', 'verification', 'flaky-test-hunt', 'repeat.mjs');
 const near = (a, b, eps = 1e-3) => assert.ok(Math.abs(a - b) < eps, `${a} is not within ${eps} of ${b}`);
 
 test('parseArgs: defaults, options, and the command after --', () => {

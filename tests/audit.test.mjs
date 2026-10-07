@@ -4,10 +4,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { plugin, runNode, tempDir } from './helpers.mjs';
-import { shingles, containment, verdict, unitsOf, findStale, projectSlug } from '../plugins/session-discipline/skills/retrospective/audit.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
+import { shingles, containment, verdict, unitsOf, findStale, projectSlug } from '../skills/session-discipline/retrospective/audit.mjs';
 
-const AUDIT = plugin('session-discipline', 'skills', 'retrospective', 'audit.mjs');
+const AUDIT = repo('skills', 'session-discipline', 'retrospective', 'audit.mjs');
 const LONG_RULE = '- Verify the artifact, never the exit code. After any scripted edit, read the seam back: grep the changed line, check git diff stat, check the last commit. A multi-line replace silently does nothing on CRLF files, and conflict resolution by deleting lines by number corrupts files while reporting success. ' +
   'Every ad-hoc check needs a control and ordered anchors, because a check with no control is a check that cannot fail and a byte offset check once matched the navigation first.';
 

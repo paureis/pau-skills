@@ -3,12 +3,12 @@
 // blocks, and stays silent on input it does not understand.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { plugin, runNode } from './helpers.mjs';
-import { decide, DEFAULT_RULE, blocks } from '../plugins/agent-orchestration/scripts/no-idle.mjs';
+import { repo, runNode } from './helpers.mjs';
+import { decide, DEFAULT_RULE, blocks } from '../hooks/agent-orchestration/no-idle.mjs';
 
 const BOM = String.fromCharCode(0xfeff);
 const E_ACUTE = String.fromCharCode(0xe9); // non-ASCII on purpose, kept out of the source
-const HOOK = plugin('agent-orchestration', 'scripts', 'no-idle.mjs');
+const HOOK = repo('hooks', 'agent-orchestration', 'no-idle.mjs');
 const launch = (extra = {}) => ({
   hook_event_name: 'PreToolUse', tool_name: 'Agent',
   tool_input: { description: 'Build it', prompt: 'Do the work.', subagent_type: 'general-purpose', name: 'builder', some_future_field: { x: 1 }, ...extra },

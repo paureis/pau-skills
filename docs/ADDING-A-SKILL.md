@@ -5,20 +5,24 @@ order; the scrub check and the validator at the end catch most of what gets forg
 
 1. **Pick the plugin group** by purpose: `session-discipline` (starting and closing sessions), `verification`
    (proving work is correct), `agent-orchestration` (working with subagents), `guards` (hooks that block mistakes,
-   and safety checks), `planning` (from idea to sliced work). If none fits, a new group needs its own
-   `.claude-plugin/plugin.json` and an entry in `.claude-plugin/marketplace.json`.
+   and safety checks), `planning` (from idea to sliced work). The skill goes in `skills/<plugin>/<skill-name>/` and
+   a hook script in `hooks/<plugin>/`. If none fits, a new group needs a `skills/<group>/` folder and an entry
+   (name, description, version, keywords) in `.claude-plugin/marketplace.json`; `scripts/build-marketplace.mjs` fills
+   in the rest.
 
 2. **Scaffold it**: `node scripts/new-skill.mjs <plugin> <skill-name>`. This creates the `SKILL.md` and adds a stub
-   to `docs/ORIGINS.md` and a bullet to the plugin's list in the README reference. Every placeholder is marked `TODO(new-skill)`, and the scrub
-   check fails until none is left. The script refuses a name that already exists in any plugin.
+   to `docs/ORIGINS.md` and a bullet to the plugin's list in the README reference. Every placeholder is marked
+   `TODO(new-skill)`, and the scrub check fails until none is left. The script refuses a name that already exists in any plugin.
 
 3. **Copy the skill in and generalise it.** Bring its `SKILL.md` body and any bundled files across from the project.
    Then:
    - Translate everything into English.
    - Remove product, client and people names, account and project IDs, URLs and machine paths. Replace a project
      specific with configuration (an environment variable or an optional file under `.claude/`), documented in the
-     plugin's `README.md`. Do not replace it with a different hard-coded stand-in.
-   - Reference bundled files as `${CLAUDE_PLUGIN_ROOT}/...`, never `~/.claude/...` or an absolute path.
+     plugin's `skills/<plugin>/README.md`. Do not replace it with a different hard-coded stand-in.
+   - Reference bundled files as `${CLAUDE_PLUGIN_ROOT}/skills/<plugin>/<skill>/<file>`, never `~/.claude/...` or an
+     absolute path. Every plugin is rooted at the repository, so `${CLAUDE_PLUGIN_ROOT}` is the repository root and
+     any file in it can be reached; a test checks that every such path exists.
    - Keep scripts dependency-free and cross-platform (Node standard library; bash only where bash is the point).
    - A hook script exits 0 on input it does not understand, unless failing closed is the point of the hook.
 
@@ -34,14 +38,14 @@ order; the scrub check and the validator at the end catch most of what gets forg
 
 5. **Fill in the README bullet**: one line on what it does, with " (adapted)" after the name if it is adapted. Add
    it to the right section under "Problems this fixes" too, and to the `which-skill` router
-   (`plugins/session-discipline/skills/which-skill/SKILL.md`). Update the skill and hook count badges if they changed.
-   For a hook: read the shared `config.mjs` in the plugin's `scripts/` folder, call `hookEnabled(<name>, config)`
-   before acting, add a row and an options section to `docs/HOOKS.md`, and register it in the plugin's
-   `hooks/hooks.json`.
+   (`skills/session-discipline/which-skill/SKILL.md`). Update the skill and hook count badges if they changed.
+   For a hook: import `../lib/config.mjs`, call `hookEnabled(<name>, config)` before acting, add a row and an
+   options section to `hooks/README.md`, and register it in `hooks/<plugin>/hooks.json` as
+   `node "${CLAUDE_PLUGIN_ROOT}/hooks/<plugin>/<script>.mjs"`.
 
 6. **Add or extend tests** for any script with logic, in `tests/*.test.mjs` (`node:test`, no dependencies). Then
    prove the tests can fail: run one mutation through the harness (commit first; the harness refuses a dirty tree):
-   `bash plugins/verification/scripts/mutate.sh <script> node --test tests/<file>.test.mjs < mutation.sed`.
+   `bash skills/verification/mutation-test/mutate.sh <script> node --test tests/<file>.test.mjs < mutation.sed`.
 
 7. **Run the checks** as separate commands, so a failure is not hidden behind the next one:
    ```bash
@@ -49,15 +53,15 @@ order; the scrub check and the validator at the end catch most of what gets forg
    npm run scrub
    ```
 
-8. **Rebuild the bundle** if any `hooks.json` changed: `node scripts/build-bundle.mjs` (the tests fail while the
-   bundle entry in `marketplace.json` is out of date). Then **bump the plugin's version** in `plugins/<plugin>/.claude-plugin/plugin.json` and in its entry in
-   `.claude-plugin/marketplace.json`; the two must agree. Users only receive a change when this version changes.
-   Use a minor bump for a new skill and a patch bump for a fix.
+8. **Rebuild the marketplace** if a `hooks.json` or a plugin folder changed: `node scripts/build-marketplace.mjs`
+   (the tests fail while `marketplace.json` is out of date). Then **bump the plugin's version** in its entry in
+   `.claude-plugin/marketplace.json`, and the `pau-skills` bundle's version too, since it ships the same files.
+   Users only receive a change when the version changes. Use a minor bump for a new skill and a patch bump for a fix.
+   Add a line to `CHANGELOG.md`.
 
 9. **Validate**:
    ```bash
    claude plugin validate . --strict
-   claude plugin validate ./plugins/<plugin> --strict
    ```
 
 10. **Commit** with the message from a file (`git commit -F <file>`), then push.

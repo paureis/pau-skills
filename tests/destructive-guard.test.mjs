@@ -5,11 +5,11 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { plugin, runNode, tempDir } from './helpers.mjs';
-import { check, context, dangerousRmTarget } from '../plugins/guards/scripts/destructive-guard.mjs';
-import { commands, splitCommands } from '../plugins/guards/scripts/shell.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
+import { check, context, dangerousRmTarget } from '../hooks/guards/destructive-guard.mjs';
+import { commands, splitCommands } from '../hooks/lib/shell.mjs';
 
-const GUARD = plugin('guards', 'scripts', 'destructive-guard.mjs');
+const GUARD = repo('hooks', 'guards', 'destructive-guard.mjs');
 const ROOT = '/work/project';
 
 function fakeGit({ branch = 'feature/x', dirty = false } = {}) {

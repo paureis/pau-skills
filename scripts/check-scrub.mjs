@@ -21,7 +21,7 @@ const RULES = [
   // People other than the author.
   ['person', /\bmanuel\b/i],
   // The author's name is allowed only where authorship is stated.
-  ['author name outside credits', /\bpau\b(?!-skills|reis)|\balvaro\b/i, (f) => !/^(README\.md|LICENSE|NOTICE|\.claude-plugin\/marketplace\.json|plugins\/[^/]+\/\.claude-plugin\/plugin\.json)$/.test(f)],
+  ['author name outside credits', /\bpau\b(?!-skills|reis)|\balvaro\b/i, (f) => !/^(README\.md|LICENSE|NOTICE|\.claude-plugin\/marketplace\.json)$/.test(f)],
   // Account and project identifiers.
   ['supabase project ref', /\b[a-z]{20}\.supabase\.(co|in)\b|\bref\b[^\n]{0,24}\b[a-z]{20}\b|project-ref[^\n]{0,24}\b[a-z]{20}\b/i],
   ['vercel host', /\b[a-z0-9-]+\.vercel\.app\b/i],

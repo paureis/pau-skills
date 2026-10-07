@@ -4,12 +4,12 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { plugin, runNode } from './helpers.mjs';
-import { check, decide, splitCommands } from '../plugins/guards/skills/rule-to-hook/templates/pretooluse-guard.mjs';
+import { repo, runNode } from './helpers.mjs';
+import { check, decide, splitCommands } from '../skills/guards/rule-to-hook/templates/pretooluse-guard.mjs';
 
-const DIR = plugin('guards', 'skills', 'rule-to-hook', 'templates');
-const GUARD = plugin('guards', 'skills', 'rule-to-hook', 'templates', 'pretooluse-guard.mjs');
-const PY = plugin('guards', 'skills', 'rule-to-hook', 'templates', 'pretooluse-guard.py');
+const DIR = repo('skills', 'guards', 'rule-to-hook', 'templates');
+const GUARD = repo('skills', 'guards', 'rule-to-hook', 'templates', 'pretooluse-guard.mjs');
+const PY = repo('skills', 'guards', 'rule-to-hook', 'templates', 'pretooluse-guard.py');
 
 const hook = (command, tool = 'Bash') => JSON.stringify({ hook_event_name: 'PreToolUse', tool_name: tool, tool_input: { command }, cwd: DIR });
 
@@ -60,7 +60,7 @@ test('the bundled guard.test.mjs template passes against the bundled guard', () 
 });
 
 test('settings snippet is valid JSON with a Bash PreToolUse command hook', () => {
-  const s = JSON.parse(readFileSync(plugin('guards', 'skills', 'rule-to-hook', 'templates', 'settings-snippet.json'), 'utf8'));
+  const s = JSON.parse(readFileSync(repo('skills', 'guards', 'rule-to-hook', 'templates', 'settings-snippet.json'), 'utf8'));
   const entry = s.hooks.PreToolUse[0];
   assert.equal(entry.matcher, 'Bash');
   assert.equal(entry.hooks[0].type, 'command');

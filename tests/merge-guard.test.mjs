@@ -5,11 +5,11 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { plugin, runNode, tempDir } from './helpers.mjs';
-import { safeMerge, optionsFromEnv } from '../plugins/guards/scripts/safe-merge.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
+import { safeMerge, optionsFromEnv } from '../skills/guards/safe-merge/safe-merge.mjs';
 
-const GUARD = plugin('guards', 'scripts', 'merge-guard.mjs');
-const SAFE = plugin('guards', 'scripts', 'safe-merge.mjs');
+const GUARD = repo('hooks', 'guards', 'merge-guard.mjs');
+const SAFE = repo('skills', 'guards', 'safe-merge', 'safe-merge.mjs');
 const BT = String.fromCharCode(96);
 
 const hookInput = (command, tool = 'Bash') => JSON.stringify({
@@ -63,7 +63,7 @@ const PASS = [
   ['view a PR', 'gh pr view 5'],
   ['view help', 'gh pr view --help'],
   ['list by base', 'gh pr list --base main'],
-  ['the safe merge script', 'node plugins/guards/scripts/safe-merge.mjs 5 --dry-run'],
+  ['the safe merge script', 'node skills/guards/safe-merge/safe-merge.mjs 5 --dry-run'],
   ['delete a local branch with git', 'git branch -d x'],
   ['delete a remote branch with git, outside the rule', 'git push origin --delete x'],
   ['unrelated command', 'npm run lint'],

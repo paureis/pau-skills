@@ -8,9 +8,15 @@
   "plugins": [
     {
       "name": "pau-skills",
-      "source": "./",
       "description": "Everything in this marketplace as one plugin: every skill and every hook from session-discipline, verification, agent-orchestration, guards and planning. Install this or the individual plugins, not both.",
-      "version": "0.3.0",
+      "version": "0.4.0",
+      "author": {
+        "name": "Alvaro Reis",
+        "url": "https://github.com/paureis"
+      },
+      "homepage": "https://github.com/paureis/pau-skills",
+      "repository": "https://github.com/paureis/pau-skills",
+      "license": "MIT",
       "category": "development",
       "keywords": [
         "skills",
@@ -20,13 +26,14 @@
         "planning",
         "sessions"
       ],
+      "source": "./",
       "strict": false,
       "skills": [
-        "./plugins/session-discipline/skills/",
-        "./plugins/verification/skills/",
-        "./plugins/agent-orchestration/skills/",
-        "./plugins/guards/skills/",
-        "./plugins/planning/skills/"
+        "./skills/session-discipline/",
+        "./skills/verification/",
+        "./skills/agent-orchestration/",
+        "./skills/guards/",
+        "./skills/planning/"
       ],
       "hooks": {
         "SessionStart": [
@@ -34,12 +41,12 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/session-discipline/scripts/roadmap.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/roadmap.mjs\"",
                 "timeout": 15
               },
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/session-discipline/scripts/branch-context.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/branch-context.mjs\"",
                 "timeout": 15
               }
             ]
@@ -49,7 +56,7 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/session-discipline/scripts/compact-snapshot.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/compact-snapshot.mjs\"",
                 "timeout": 10
               }
             ]
@@ -60,7 +67,7 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/session-discipline/scripts/compact-snapshot.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/compact-snapshot.mjs\"",
                 "timeout": 15
               }
             ]
@@ -72,7 +79,7 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/verification/scripts/test-tamper-guard.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verification/test-tamper-guard.mjs\"",
                 "timeout": 5
               }
             ]
@@ -82,7 +89,7 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/agent-orchestration/scripts/no-idle.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/no-idle.mjs\"",
                 "timeout": 5
               }
             ]
@@ -92,7 +99,7 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/guards/scripts/block-inline-backtick-payload.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/block-inline-backtick-payload.mjs\"",
                 "timeout": 5
               }
             ]
@@ -102,17 +109,17 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/guards/scripts/merge-guard.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/merge-guard.mjs\"",
                 "timeout": 5
               },
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/guards/scripts/destructive-guard.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/destructive-guard.mjs\"",
                 "timeout": 10
               },
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/guards/scripts/no-verify-guard.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/no-verify-guard.mjs\"",
                 "timeout": 5
               }
             ]
@@ -122,7 +129,7 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/guards/scripts/secret-guard.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/secret-guard.mjs\"",
                 "timeout": 5
               }
             ]
@@ -133,7 +140,7 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/verification/scripts/verify-before-done.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verification/verify-before-done.mjs\"",
                 "timeout": 10
               }
             ]
@@ -144,7 +151,7 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/agent-orchestration/scripts/no-idle.mjs\"",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/no-idle.mjs\"",
                 "timeout": 5
               }
             ]
@@ -154,9 +161,15 @@
     },
     {
       "name": "session-discipline",
-      "source": "./plugins/session-discipline",
       "description": "Start every session from the written roadmap and the git state, keep the facts a compaction loses, and close in a fixed order: retrospective, roadmap and log, handoff, commit. Plus an instruction-file audit and a router over every skill.",
-      "version": "0.2.0",
+      "version": "0.3.0",
+      "author": {
+        "name": "Alvaro Reis",
+        "url": "https://github.com/paureis"
+      },
+      "homepage": "https://github.com/paureis/pau-skills",
+      "repository": "https://github.com/paureis/pau-skills",
+      "license": "MIT",
       "category": "development",
       "keywords": [
         "retrospective",
@@ -165,13 +178,63 @@
         "roadmap",
         "hooks",
         "claude-md"
-      ]
+      ],
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/session-discipline/"
+      ],
+      "hooks": {
+        "SessionStart": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/roadmap.mjs\"",
+                "timeout": 15
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/branch-context.mjs\"",
+                "timeout": 15
+              }
+            ]
+          },
+          {
+            "matcher": "compact",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/compact-snapshot.mjs\"",
+                "timeout": 10
+              }
+            ]
+          }
+        ],
+        "PreCompact": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/compact-snapshot.mjs\"",
+                "timeout": 15
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "name": "verification",
-      "source": "./plugins/verification",
       "description": "Prove work is correct: a mutation harness, a hostile evaluator, test-driven development, flaky-test diagnosis, database migration review, a CI cost method, and hooks that stop tests being weakened and \"done\" being claimed without a check.",
-      "version": "0.3.0",
+      "version": "0.4.0",
+      "author": {
+        "name": "Alvaro Reis",
+        "url": "https://github.com/paureis"
+      },
+      "homepage": "https://github.com/paureis/pau-skills",
+      "repository": "https://github.com/paureis/pau-skills",
+      "license": "MIT",
       "category": "development",
       "keywords": [
         "mutation-testing",
@@ -182,13 +245,49 @@
         "flaky-tests",
         "migrations",
         "hooks"
-      ]
+      ],
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/verification/"
+      ],
+      "hooks": {
+        "PreToolUse": [
+          {
+            "matcher": "Write|Edit|MultiEdit",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verification/test-tamper-guard.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "Stop": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verification/verify-before-done.mjs\"",
+                "timeout": 10
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "name": "agent-orchestration",
-      "source": "./plugins/agent-orchestration",
       "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, an evidence-only codebase oracle, and parallel work in separate git worktrees.",
-      "version": "0.2.0",
+      "version": "0.3.0",
+      "author": {
+        "name": "Alvaro Reis",
+        "url": "https://github.com/paureis"
+      },
+      "homepage": "https://github.com/paureis/pau-skills",
+      "repository": "https://github.com/paureis/pau-skills",
+      "license": "MIT",
       "category": "development",
       "keywords": [
         "subagents",
@@ -196,13 +295,49 @@
         "methodology",
         "research",
         "worktrees"
-      ]
+      ],
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/agent-orchestration/"
+      ],
+      "hooks": {
+        "PreToolUse": [
+          {
+            "matcher": "Agent|Task",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/no-idle.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "SubagentStart": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/no-idle.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "name": "guards",
-      "source": "./plugins/guards",
       "description": "Hooks that block what cannot be undone: credentials written into files, destructive commands, skipped git hooks, raw merges of stacked PRs and backticks in inline payloads. Plus a skill to turn your own rules into hooks, safe merging, dependency upgrades and a dependency security audit for any ecosystem.",
-      "version": "0.2.0",
+      "version": "0.3.0",
+      "author": {
+        "name": "Alvaro Reis",
+        "url": "https://github.com/paureis"
+      },
+      "homepage": "https://github.com/paureis/pau-skills",
+      "repository": "https://github.com/paureis/pau-skills",
+      "license": "MIT",
       "category": "development",
       "keywords": [
         "hooks",
@@ -210,19 +345,79 @@
         "github",
         "security",
         "dependencies"
-      ]
+      ],
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/guards/"
+      ],
+      "hooks": {
+        "PreToolUse": [
+          {
+            "matcher": "Bash",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/block-inline-backtick-payload.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
+            "matcher": "Bash|PowerShell",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/merge-guard.mjs\"",
+                "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/destructive-guard.mjs\"",
+                "timeout": 10
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/no-verify-guard.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
+            "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/secret-guard.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "name": "planning",
-      "source": "./plugins/planning",
       "description": "Turn an idea into decided, sliced work: a relentless design interview, PRD synthesis, vertical-slice issues, and architecture deepening. Adapted from mattpocock/skills.",
-      "version": "0.1.1",
+      "version": "0.2.0",
+      "author": {
+        "name": "Alvaro Reis",
+        "url": "https://github.com/paureis"
+      },
+      "homepage": "https://github.com/paureis/pau-skills",
+      "repository": "https://github.com/paureis/pau-skills",
+      "license": "MIT",
       "category": "development",
       "keywords": [
         "planning",
         "prd",
         "issues",
         "architecture"
+      ],
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/planning/"
       ]
     }
   ]

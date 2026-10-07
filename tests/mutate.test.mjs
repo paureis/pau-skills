@@ -6,9 +6,9 @@ import assert from 'node:assert/strict';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { plugin, tempDir, findBash } from './helpers.mjs';
+import { repo as repoPath, tempDir, findBash } from './helpers.mjs';
 
-const HARNESS = plugin('verification', 'scripts', 'mutate.sh').replace(/\\/g, '/');
+const HARNESS = repoPath('skills', 'verification', 'mutation-test', 'mutate.sh').replace(/\\/g, '/');
 const BASH = findBash();
 let repo;
 

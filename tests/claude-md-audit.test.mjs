@@ -5,14 +5,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { plugin, runNode, tempDir } from './helpers.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
 import {
   estimateTokens, fileStats, splitUnits, bigrams, overlap, findDuplicates, extractImports, extractReferences,
   pathCandidate, checkReferences, parseTargets, findSecrets, mask, findVague, findEmphasis, discoverFiles, scan,
   isPathScoped, sectionsOf, parseArgs, formatText,
-} from '../plugins/session-discipline/skills/claude-md-audit/scan.mjs';
+} from '../skills/session-discipline/claude-md-audit/scan.mjs';
 
-const SCAN = plugin('session-discipline', 'skills', 'claude-md-audit', 'scan.mjs');
+const SCAN = repo('skills', 'session-discipline', 'claude-md-audit', 'scan.mjs');
 const put = (root, rel, text = 'x\n') => { const p = join(root, rel); mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, text); return p; };
 
 test('size: tokens are about four characters each; lines ignore the final newline', () => {

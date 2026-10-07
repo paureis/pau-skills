@@ -3,10 +3,10 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { plugin, runNode, tempDir } from './helpers.mjs';
-import { isTestFile, findings, decide } from '../plugins/verification/scripts/test-tamper-guard.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
+import { isTestFile, findings, decide } from '../hooks/verification/test-tamper-guard.mjs';
 
-const GUARD = plugin('verification', 'scripts', 'test-tamper-guard.mjs');
+const GUARD = repo('hooks', 'verification', 'test-tamper-guard.mjs');
 
 describe('test-tamper guard: which files are tests', () => {
   for (const p of ['src/a.test.ts', 'src/a.spec.js', 'tests/test_api.py', 'pkg/api_test.go', 'src/test/java/FooTest.java',

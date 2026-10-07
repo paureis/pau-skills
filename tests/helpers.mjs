@@ -6,7 +6,7 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export const plugin = (...p) => join(ROOT, 'plugins', ...p);
+export const repo = (...p) => join(ROOT, ...p);
 export const tempDir = (prefix = 'pau-skills-') => mkdtempSync(join(tmpdir(), prefix));
 
 /** Run a node script with stdin input; returns { code, stdout, stderr }. */

@@ -5,12 +5,12 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, writeFileSync, utimesSync } from 'node:fs';
 import { join } from 'node:path';
-import { plugin, runNode, tempDir } from './helpers.mjs';
-import { summarize, gather } from '../plugins/session-discipline/scripts/branch-context.mjs';
-import { extract, render, writeSnapshot, latestSnapshot } from '../plugins/session-discipline/scripts/compact-snapshot.mjs';
+import { repo as repoPath, runNode, tempDir } from './helpers.mjs';
+import { summarize, gather } from '../hooks/session-discipline/branch-context.mjs';
+import { extract, render, writeSnapshot, latestSnapshot } from '../hooks/session-discipline/compact-snapshot.mjs';
 
-const BRANCH = plugin('session-discipline', 'scripts', 'branch-context.mjs');
-const SNAP = plugin('session-discipline', 'scripts', 'compact-snapshot.mjs');
+const BRANCH = repoPath('hooks', 'session-discipline', 'branch-context.mjs');
+const SNAP = repoPath('hooks', 'session-discipline', 'compact-snapshot.mjs');
 const env = () => ({ PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: '' });
 
 function repo() {
