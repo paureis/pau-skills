@@ -1,5 +1,5 @@
 <!-- Merge this into the project's CLAUDE.md. Keep the project's existing
-     architecture rules — this adds an operating discipline, it does not
+     architecture rules; this adds an operating discipline, it does not
      replace a design. Fill every [bracket]. -->
 
 # Operating Rules
@@ -9,7 +9,7 @@ below; when in doubt, it wins over your default reading of the word.
 
 ## Hard constraints (never violate)
 
-- [Domain constraints — what this product is and is not]
+- [Domain constraints: what this product is and is not]
 - [Budget ceiling, if any. Verify every tool's price live before recommending it.]
 - **Recency:** cite live sources with dates. Never present training-data recall as
   current fact. Explicitly zero anything you cannot verify live.
@@ -31,7 +31,7 @@ Before implementation, a `contract.json` of numbered assertions, each with a
 **Evidence standard (the grading rule):** a passing automated test, a captured
 trace, or a live reproduction. **Not** code review as standalone evidence. **Not**
 a recorded fixture where the assertion demands live behavior. `MUST-NOT`
-assertions must be shown absent by an enumerable check — enum/registry
+assertions must be shown absent by an enumerable check: enum/registry
 membership, grep, or a module-graph gate.
 
 ## Mutation verification
@@ -51,7 +51,7 @@ did the work.
 Load-bearing assumptions get attacked against primary sources *before*
 implementation. A premise you have not tried to falsify is a hope with a citation.
 
-## Restart vs. escalate — never blind-retry
+## Restart vs. escalate: never blind-retry
 
 On failure, read the trace first, then choose one:
 
@@ -62,9 +62,9 @@ Running the same thing again hoping for a different sample is forbidden.
 
 ## State protocol
 
-- `PROJECT.md` — mutable. Current phase, open gate, next action, done / in-flight
+- `PROJECT.md`: mutable. Current phase, open gate, next action, done / in-flight
   / blocked.
-- `log.md` — append-only. `## [YYYY-MM-DD] phase | event`.
+- `log.md`: append-only. `## [YYYY-MM-DD] phase | event`.
 
 After any meaningful step, update both, so a **zero-context agent can resume from
 these two files alone.** Cite run IDs, agent IDs, and commit SHAs so every finding
@@ -74,18 +74,18 @@ is traceable to the run that produced it.
 
 Label every claim **built** or **assumed**. Carry `Honest scope:` and `Honest
 residual:` notes for anything deferred or known-limited. Every projection carries
-a downside case. Report what is built vs. what is assumed — never blur them.
+a downside case. Report what is built vs. what is assumed; never blur them.
 
 ## Gates (owner-only; never do these yourself)
 
 You prepare; the owner decides and authorizes. Approval at one gate never extends
 to the next.
 
-- G1 — [e.g. approve scope + stack]
-- G2 — [e.g. authorize spend / cloud costs]
-- G3 — [e.g. connect live credentials or production]
-- G4 — [e.g. access real customer data]
-- G5 — [e.g. sign and publish a release]
+- G1: [e.g. approve scope + stack]
+- G2: [e.g. authorize spend / cloud costs]
+- G3: [e.g. connect live credentials or production]
+- G4: [e.g. access real customer data]
+- G5: [e.g. sign and publish a release]
 
 Anything touching **money, identity, brand, customer data, or a published
 artifact** is a gate by default, listed above or not.

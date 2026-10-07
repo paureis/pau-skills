@@ -47,3 +47,16 @@ test('plugin versions agree between plugin.json and the marketplace', () => {
     assert.equal(manifest.version, p.version, `${p.name}: plugin.json ${manifest.version} vs marketplace ${p.version}`);
   }
 });
+
+test('every skill description is valid YAML: an unquoted one has no ": " or " #" in it', () => {
+  for (const p of market.plugins.filter((x) => x.name !== BUNDLE)) {
+    const dir = join(ROOT, p.source, 'skills');
+    if (!existsSync(dir)) continue;
+    for (const s of readdirSync(dir)) {
+      const line = readFileSync(join(dir, s, 'SKILL.md'), 'utf8').split(/\r?\n/).find((l) => l.startsWith('description: '));
+      const value = line.slice('description: '.length);
+      if (/^["']/.test(value)) continue;
+      assert.ok(!/: | #/.test(value), `${p.name}/${s}: quote the description, it contains ": " or " #" which YAML reads as structure`);
+    }
+  }
+});
