@@ -43,7 +43,7 @@ If your mock needs logic, the seam is in the wrong place.
 ## Test Doubles Hierarchy
 
 Prefer in this order:
-1. **Real implementation** — always first choice if feasible
-2. **Fake** — simplified but working implementation (e.g., in-memory database)
-3. **Stub** — returns canned responses, no logic
-4. **Mock** — verifies interactions (use sparingly, only when the interaction IS the behavior)
+1. **Real implementation**: always first choice if feasible
+2. **Fake**: simplified but working implementation (e.g., in-memory database)
+3. **Stub**: returns canned responses, no logic
+4. **Mock**: verifies interactions (use sparingly, only when the interaction IS the behavior)
