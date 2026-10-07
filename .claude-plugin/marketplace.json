@@ -1,6 +1,6 @@
 {
   "name": "pau-skills",
-  "description": "Claude Code skills, hooks and scripts for disciplined agent work: session rituals, verification, subagent orchestration, guards and planning.",
+  "description": "Claude Code skills and hooks for disciplined agent work in any language: session rituals, verification, subagent orchestration, guards and planning.",
   "owner": {
     "name": "Alvaro Reis",
     "url": "https://github.com/paureis"
@@ -155,56 +155,61 @@
     {
       "name": "session-discipline",
       "source": "./plugins/session-discipline",
-      "description": "Start every session from the written roadmap and close it in a fixed order: retrospective gated by a rules audit, roadmap and log, handoff, commit.",
-      "version": "0.1.0",
+      "description": "Start every session from the written roadmap and the git state, keep the facts a compaction loses, and close in a fixed order: retrospective, roadmap and log, handoff, commit. Plus an instruction-file audit and a router over every skill.",
+      "version": "0.2.0",
       "category": "development",
       "keywords": [
         "retrospective",
         "handoff",
         "session",
         "roadmap",
-        "hooks"
+        "hooks",
+        "claude-md"
       ]
     },
     {
       "name": "verification",
       "source": "./plugins/verification",
-      "description": "Prove tests can fail: a mutation harness with its three assertions checked by script, a hostile evaluator in a forked context, test-driven development, and a method for deciding how much CI to run and when.",
-      "version": "0.2.0",
+      "description": "Prove work is correct: a mutation harness, a hostile evaluator, test-driven development, flaky-test diagnosis, database migration review, a CI cost method, and hooks that stop tests being weakened and \"done\" being claimed without a check.",
+      "version": "0.3.0",
       "category": "development",
       "keywords": [
         "mutation-testing",
         "evaluation",
         "tdd",
         "testing",
-        "ci"
+        "ci",
+        "flaky-tests",
+        "migrations",
+        "hooks"
       ]
     },
     {
       "name": "agent-orchestration",
       "source": "./plugins/agent-orchestration",
-      "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, and an evidence-only codebase oracle.",
-      "version": "0.1.0",
+      "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, an evidence-only codebase oracle, and parallel work in separate git worktrees.",
+      "version": "0.2.0",
       "category": "development",
       "keywords": [
         "subagents",
         "hooks",
         "methodology",
-        "research"
+        "research",
+        "worktrees"
       ]
     },
     {
       "name": "guards",
       "source": "./plugins/guards",
-      "description": "PreToolUse guards that mechanize rules that kept being broken: no backticks in inline interpreter payloads, no raw gh pr merge on stacked PRs; plus a safe merge script and a dependency security audit.",
-      "version": "0.1.0",
+      "description": "Hooks that block what cannot be undone: credentials written into files, destructive commands, skipped git hooks, raw merges of stacked PRs and backticks in inline payloads. Plus a skill to turn your own rules into hooks, safe merging, dependency upgrades and an npm security audit.",
+      "version": "0.2.0",
       "category": "development",
       "keywords": [
         "hooks",
         "git",
         "github",
         "security",
-        "npm"
+        "dependencies"
       ]
     },
     {

@@ -1,7 +1,7 @@
 {
   "name": "session-discipline",
-  "version": "0.1.0",
-  "description": "Start every session from the written roadmap and close it in a fixed order: retrospective gated by a rules audit, roadmap and log, handoff, commit.",
+  "version": "0.2.0",
+  "description": "Start every session from the written roadmap and the git state, keep the facts a compaction loses, and close in a fixed order: retrospective, roadmap and log, handoff, commit. Plus an instruction-file audit and a router over every skill.",
   "author": {
     "name": "Alvaro Reis",
     "url": "https://github.com/paureis"
@@ -13,6 +13,7 @@
     "handoff",
     "session",
     "roadmap",
-    "hooks"
+    "hooks",
+    "claude-md"
   ]
 }
