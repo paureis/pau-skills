@@ -1,6 +1,8 @@
 # agent-orchestration
 
-Skills: `methodology` (the method document, two adoption prompts and templates), `codebase-oracle`. Hook: no-idle.
+Skills: `methodology` (the method document, two adoption prompts and templates), `codebase-oracle`,
+`parallel-worktrees` (with `worktrees.mjs`). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
+[docs/HOOKS.md](../../docs/HOOKS.md)).
 
 ## No-idle hook
 

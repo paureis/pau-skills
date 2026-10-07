@@ -1,7 +1,10 @@
 # Origins
 
 Where each piece came from, the problem that led to it, and, for the adapted ones, exactly what changed relative to
-upstream. I wrote these for my own projects first; the stories below are from those projects with the names removed.
+upstream. Most of these I wrote for my own projects first, and their stories are from those projects with the names
+removed. Pieces whose "Changes for this release" says "written for this release" are new: they address failure modes
+that are common in agent work, and their problem statements describe the failure in general terms rather than a
+specific incident.
 
 ## How provenance was decided
 
@@ -15,6 +18,10 @@ file. The change lists below come from `git diff --no-index` between my file and
 - **Adapted**: shared structure or text, plus substantive changes of mine.
 - **Abridged copy**: upstream text shortened, with no substantive additions. Treated like an unchanged copy: not
   published here, linked in the README instead.
+
+After that comparison, every skill (adapted ones included) went through a punctuation pass that replaced em and en
+dashes with commas, colons, periods or parentheses. It changed no instructions, so the classifications and change
+lists below still hold.
 
 ---
 
@@ -73,6 +80,41 @@ questions at session start, so the order is in context before the first message.
 reads paths, table headers, the status column name, status words and the "answered" pattern from
 `.claude/roadmap.json`, finds columns by header name, and prints nothing when the project has no roadmap. The pure
 `summarize()` function is exported for tests.
+
+
+### claude-md-audit and `scan.mjs` (Original)
+
+**Problem.** Instruction files such as CLAUDE.md and AGENTS.md grow by accretion: rules are restated in new words,
+paths and commands go stale after refactors, and different files or tools end up contradicting each other. Every
+always-loaded line costs tokens in every session, and vague or contradictory rules get ignored, which pushes people to
+add louder rules instead of fewer, better ones. Nothing measured the whole set or checked it against the repository
+as it is now.
+
+**Changes for this release.** None; written for this release.
+
+### which-skill (Original)
+
+**Problem.** With more than twenty skills spread over five plugins, nobody remembers which one fits a situation, and a
+skill that is never invoked does not help. The router maps situations to a starting skill and the next one or two,
+and lists what the hooks already do without being asked.
+
+**Changes for this release.** None; written for this release.
+
+### Branch-context hook, `scripts/branch-context.mjs` (Original)
+
+**Problem.** Agents assume a clean tree on a feature branch. They commit onto the default branch, build on a branch
+that is far behind its upstream, or start new work in the middle of an unfinished rebase. All of it is visible with
+a few read-only git commands that nobody runs first, so the hook runs them at session start.
+
+**Changes for this release.** None; written for this release.
+
+### Compact-snapshot hook, `scripts/compact-snapshot.mjs` (Original)
+
+**Problem.** Compaction keeps the gist and drops the specifics: the user's exact words, the files already changed,
+the open todo items. The agent resumes confident and slightly wrong. The hook writes those facts to a git-ignored
+file before compaction and prints them when the compacted session starts, which is the moment they are needed.
+
+**Changes for this release.** None; written for this release.
 
 ---
 
@@ -153,6 +195,43 @@ generalised from the project's measurement script (repository and grouping are a
 **The savings are projected, not observed**: when this was written the first scheduled nightly run and the one-week
 before/after measurement had not happened yet, so the figures in the worked examples are estimates.
 
+
+### flaky-test-hunt and `repeat.mjs` (Original)
+
+**Problem.** Agents and people label an intermittently failing test "flaky" and then add a retry, raise a timeout,
+add a sleep or quarantine the test. The signal goes quiet but the cause stays, and sometimes the cause is a real race
+or date bug in the product. Claims that a fix worked usually rest on one or two green runs, which says almost nothing
+about a failure that happens one run in twenty.
+
+**Changes for this release.** None; written for this release.
+
+### migration-review (Original)
+
+**Problem.** Migrations are usually reviewed only for whether the SQL is valid. What goes wrong in production is what
+a valid statement does to a large table on a given engine version while the old code is still running: a lock that
+queues behind one long transaction and blocks every query, a column rename that breaks the running release, a
+single-statement backfill that floods the replicas, or a down migration that restores the columns but not the data.
+Agents tend to approve these because they pass on an empty local database. The PostgreSQL rewrite and lock claims
+were checked against a throwaway PostgreSQL 16 cluster; the MySQL and SQL Server notes come from documentation.
+
+**Changes for this release.** None; written for this release.
+
+### Test-tamper guard, `scripts/test-tamper-guard.mjs` (Original)
+
+**Problem.** When the goal is a green suite, the cheapest edit is to the test: skip it, mark it as an expected
+failure, or delete the assertion that fails. The suite goes green and the bug ships. Skipping is sometimes right, so
+the hook asks the user instead of refusing, and it compares before and after so only what the edit adds is flagged.
+
+**Changes for this release.** None; written for this release.
+
+### Verify-before-done hook, `scripts/verify-before-done.mjs` (Original)
+
+**Problem.** A report of "done" after edits that were never run is the most common false claim an agent makes, and a
+rule that says "run the tests first" is skipped exactly when the agent feels sure. The hook reads the transcript, not
+the summary: edits since the user's last message with no check after the last one send the agent back, once.
+
+**Changes for this release.** None; written for this release.
+
 ---
 
 ## agent-orchestration
@@ -196,6 +275,17 @@ evidence in the repository, says where it looked when the answer is not there, a
 
 **Changes for this release.** None.
 
+
+### parallel-worktrees and `worktrees.mjs` (Original)
+
+**Problem.** When several agents work on one repository at once, they often share a single checkout: one agent's
+`git add -A` commits another's half-finished edit, and a branch switch or formatter run rewrites files mid-task. Even
+with separate checkouts, pieces that quietly touch the same files, lockfiles or migration numbers leave conflicts that
+someone resolves later with less context. Merging every branch and testing once at the end then hides which pair of
+changes broke the build.
+
+**Changes for this release.** None; written for this release.
+
 ---
 
 ## guards
@@ -230,13 +320,68 @@ prints the script's real path.
 
 ### dependency-security-audit (Original)
 
-0 of 1504 word 6-grams appear in any upstream version.
+0 of 1504 word 6-grams of the original npm-only version appeared in any upstream version; the rewrite below was
+written from that version, not from upstream.
 
 **Problem.** Written during a coordinated security release of a major framework, when `npm audit` printed a long dump
 with no order and no actions. The skill sorts findings into three tiers by what to do (patch now, plan a patch window, hygiene), checks for
 fresh advisories that may not be in npm's feed yet, and pairs with the scanner-plus-`overrides` rule in `RULES.md`.
 
-**Changes for this release.** None.
+**Changes for this release.** Generalized from npm only to every common ecosystem: JavaScript (npm, pnpm, Yarn,
+Bun), Python (pip, uv, Poetry, Pipenv), Go, Rust, Java and Kotlin, Ruby, PHP, .NET, Elixir, Swift, plus container
+images and OS packages in Dockerfiles. The three questions and the three tiers are unchanged. Added a reachability
+step, so an advisory in code the project never calls ranks lower (govulncheck, or grepping for call sites). Added
+cross-ecosystem scanners (osv-scanner, Trivy, Grype), Dependabot alerts and direct OSV and GitHub advisory queries
+for the fresh-risk check, and a rule never to install a scanner globally without asking. Per-ecosystem commands moved
+to `ECOSYSTEMS.md` and per-registry supply-chain red flags to `SUPPLY-CHAIN.md`. Applying upgrades is handed to
+`dependency-upgrade`.
+
+
+### rule-to-hook (Original)
+
+**Problem.** Rules written in CLAUDE.md, AGENTS.md or a style guide get broken again and again while they are still
+written down, and rewriting the sentence does not help. When someone finally turns a rule into a hook, they often
+guess at the hook contract, block harmless near-misses until the guard gets switched off, crash closed on unexpected
+input, or ship a test that has never been seen to fail. The skill makes the conversion a repeatable process: real
+examples first, a deliberate choice of mechanism, a pure decision function with a DENY/PASS test table, a proof that
+the test can fail, a live check, and a pointer from the rule to what now enforces it.
+
+**Changes for this release.** None; written for this release.
+
+### dependency-upgrade (Original)
+
+**Problem.** Agents asked to "update dependencies" tend to bump many majors at once, regenerate the lockfile wholesale
+and fix whatever breaks. The result is one large commit that cannot be bisected or partly reverted, with transitive
+upgrades nobody reviewed. Upgrades started on a failing baseline cannot be judged at all, and version numbers recalled
+from memory are sometimes wrong or not yet released. The skill makes the safe order explicit: baseline first, research
+from primary sources, toolchain before frameworks, one major per commit, and a report of what was skipped or blocked.
+
+**Changes for this release.** None; written for this release.
+
+### Secret guard, `scripts/secret-guard.mjs` (Original)
+
+**Problem.** An agent handed a key to get something working pastes it where it is used. From there it reaches a
+commit, and a pushed key has to be rotated even after the commit is reverted. The guard checks the text being written,
+by known token formats and by random-looking literals assigned to secret names, and leaves `.env` files alone.
+
+**Changes for this release.** None; written for this release.
+
+### Destructive guard, `scripts/destructive-guard.mjs` and `scripts/shell.mjs` (Original)
+
+**Problem.** Each command it blocks has a well-known story: `rm -rf "$DIR/"` with an empty variable, a force push
+over shared history, `git reset --hard` over hours of uncommitted work, `git clean` on files git never stored. The
+guard checks git state only when it matters, so ordinary cleanup on a clean tree still passes. `shell.mjs` splits a
+command line into simple commands, including `sh -c` payloads, so guards can tell which program a flag belongs to.
+
+**Changes for this release.** None; written for this release.
+
+### No-verify guard, `scripts/no-verify-guard.mjs` (Original)
+
+**Problem.** When a pre-commit hook fails, the shortest path to a commit is `--no-verify`, and the failed hook was
+the useful signal. The guard covers the flag, its short form inside option groups, and the environment variables and
+config overrides that do the same thing, while understanding quoted commit messages.
+
+**Changes for this release.** None; written for this release.
 
 ---
 

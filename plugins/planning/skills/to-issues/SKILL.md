@@ -18,25 +18,25 @@ Work from whatever is already in the conversation context. If the user passes an
 
 ### 2. Break into vertical slices
 
-Each issue is a **thin vertical slice** that cuts through ALL integration layers end-to-end — NOT a horizontal slice of one layer.
+Each issue is a **thin vertical slice** that cuts through ALL integration layers end-to-end, NOT a horizontal slice of one layer.
 
-**Vertical slice (correct):** "Add an order history page with its API endpoint, data query, and a basic list UI" — crosses DB, API, and frontend.
+**Vertical slice (correct):** "Add an order history page with its API endpoint, data query, and a basic list UI": crosses DB, API, and frontend.
 
-**Horizontal slice (wrong):** "Create database schema for order history" then "Build API endpoint" then "Build frontend page" — each layer isolated, no end-to-end feedback until all three are done.
+**Horizontal slice (wrong):** "Create database schema for order history" then "Build API endpoint" then "Build frontend page": each layer isolated, no end-to-end feedback until all three are done.
 
 Slices may be:
-- **AFK** — can be implemented and merged without human interaction. These are self-contained enough for an AI agent to pick up.
-- **HITL** — requires human interaction: an architectural decision, design review, or manual verification step.
+- **AFK**: can be implemented and merged without human interaction. These are self-contained enough for an AI agent to pick up.
+- **HITL**: requires human interaction: an architectural decision, design review, or manual verification step.
 
 Mark each slice clearly as AFK or HITL.
 
 ### 3. Present for approval
 
 Present the slices as a numbered list with:
-- **Title** — concise, action-oriented
-- **Type** — AFK or HITL
-- **Dependencies** — which slices block this one (by number)
-- **Scope** — one-sentence description of the end-to-end behavior
+- **Title**: concise, action-oriented
+- **Type**: AFK or HITL
+- **Dependencies**: which slices block this one (by number)
+- **Scope**: one-sentence description of the end-to-end behavior
 
 Ask: "Do these slices look right? Want to add, remove, or reorder any?"
 
@@ -50,7 +50,7 @@ Once approved, create each issue (as a file, a GitHub issue, or a ticket in what
 ## Description
 A concise description of this vertical slice. Describe the end-to-end
 behavior, not layer-by-layer implementation. Avoid specific file paths
-or code snippets — they go stale fast.
+or code snippets. They go stale fast.
 
 Exception: if a prototype produced a snippet that encodes a decision
 more precisely than prose (state machine, reducer, schema, type shape),
@@ -68,7 +68,7 @@ Blocked by: [issue references, if any]
 AFK / HITL
 
 ## Notes
-Any context the implementer needs — domain vocabulary, relevant ADRs,
+Any context the implementer needs: domain vocabulary, relevant ADRs,
 or links to the parent PRD.
 ```
 
@@ -82,6 +82,6 @@ Don't close, modify, or update the parent PRD or issue. The slices reference it;
 
 - **Vertical, not horizontal.** Every slice crosses all relevant layers. No "database-only" or "frontend-only" slices unless the change genuinely is one layer.
 - **Use the project's domain vocabulary.** If CONTEXT.md defines "Evaluation," don't call it "Assessment" in the issue title.
-- **Small enough to be independently testable.** If a slice can't be verified on its own, it's not a real slice — it's half of one.
+- **Small enough to be independently testable.** If a slice can't be verified on its own, it's not a real slice: it's half of one.
 - **Order by dependencies.** Present and create in dependency order so each issue can reference its blockers.
 - **Don't over-slice.** 3-8 slices for a typical feature. If you're past 12, you're probably slicing too thin or the feature needs to be split into separate PRDs.

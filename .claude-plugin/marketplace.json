@@ -1,71 +1,222 @@
 {
   "name": "pau-skills",
-  "description": "Claude Code skills, hooks and scripts for disciplined agent work: session rituals, verification, subagent orchestration, guards and planning.",
+  "description": "Claude Code skills and hooks for disciplined agent work in any language: session rituals, verification, subagent orchestration, guards and planning.",
   "owner": {
     "name": "Alvaro Reis",
     "url": "https://github.com/paureis"
   },
   "plugins": [
     {
+      "name": "pau-skills",
+      "source": "./",
+      "description": "Everything in this marketplace as one plugin: every skill and every hook from session-discipline, verification, agent-orchestration, guards and planning. Install this or the individual plugins, not both.",
+      "version": "0.3.0",
+      "category": "development",
+      "keywords": [
+        "skills",
+        "hooks",
+        "guards",
+        "verification",
+        "planning",
+        "sessions"
+      ],
+      "strict": false,
+      "skills": [
+        "./plugins/session-discipline/skills/",
+        "./plugins/verification/skills/",
+        "./plugins/agent-orchestration/skills/",
+        "./plugins/guards/skills/",
+        "./plugins/planning/skills/"
+      ],
+      "hooks": {
+        "SessionStart": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/session-discipline/scripts/roadmap.mjs\"",
+                "timeout": 15
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/session-discipline/scripts/branch-context.mjs\"",
+                "timeout": 15
+              }
+            ]
+          },
+          {
+            "matcher": "compact",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/session-discipline/scripts/compact-snapshot.mjs\"",
+                "timeout": 10
+              }
+            ]
+          }
+        ],
+        "PreCompact": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/session-discipline/scripts/compact-snapshot.mjs\"",
+                "timeout": 15
+              }
+            ]
+          }
+        ],
+        "PreToolUse": [
+          {
+            "matcher": "Write|Edit|MultiEdit",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/verification/scripts/test-tamper-guard.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
+            "matcher": "Agent|Task",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/agent-orchestration/scripts/no-idle.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
+            "matcher": "Bash",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/guards/scripts/block-inline-backtick-payload.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
+            "matcher": "Bash|PowerShell",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/guards/scripts/merge-guard.mjs\"",
+                "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/guards/scripts/destructive-guard.mjs\"",
+                "timeout": 10
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/guards/scripts/no-verify-guard.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
+            "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/guards/scripts/secret-guard.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "Stop": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/verification/scripts/verify-before-done.mjs\"",
+                "timeout": 10
+              }
+            ]
+          }
+        ],
+        "SubagentStart": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/plugins/agent-orchestration/scripts/no-idle.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "name": "session-discipline",
       "source": "./plugins/session-discipline",
-      "description": "Start every session from the written roadmap and close it in a fixed order: retrospective gated by a rules audit, roadmap and log, handoff, commit.",
-      "version": "0.1.0",
+      "description": "Start every session from the written roadmap and the git state, keep the facts a compaction loses, and close in a fixed order: retrospective, roadmap and log, handoff, commit. Plus an instruction-file audit and a router over every skill.",
+      "version": "0.2.0",
       "category": "development",
       "keywords": [
         "retrospective",
         "handoff",
         "session",
         "roadmap",
-        "hooks"
+        "hooks",
+        "claude-md"
       ]
     },
     {
       "name": "verification",
       "source": "./plugins/verification",
-      "description": "Prove tests can fail: a mutation harness with its three assertions checked by script, a hostile evaluator in a forked context, test-driven development, and a method for deciding how much CI to run and when.",
-      "version": "0.2.0",
+      "description": "Prove work is correct: a mutation harness, a hostile evaluator, test-driven development, flaky-test diagnosis, database migration review, a CI cost method, and hooks that stop tests being weakened and \"done\" being claimed without a check.",
+      "version": "0.3.0",
       "category": "development",
       "keywords": [
         "mutation-testing",
         "evaluation",
         "tdd",
         "testing",
-        "ci"
+        "ci",
+        "flaky-tests",
+        "migrations",
+        "hooks"
       ]
     },
     {
       "name": "agent-orchestration",
       "source": "./plugins/agent-orchestration",
-      "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, and an evidence-only codebase oracle.",
-      "version": "0.1.0",
+      "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, an evidence-only codebase oracle, and parallel work in separate git worktrees.",
+      "version": "0.2.0",
       "category": "development",
       "keywords": [
         "subagents",
         "hooks",
         "methodology",
-        "research"
+        "research",
+        "worktrees"
       ]
     },
     {
       "name": "guards",
       "source": "./plugins/guards",
-      "description": "PreToolUse guards that mechanize rules that kept being broken: no backticks in inline interpreter payloads, no raw gh pr merge on stacked PRs; plus a safe merge script and a dependency security audit.",
-      "version": "0.1.0",
+      "description": "Hooks that block what cannot be undone: credentials written into files, destructive commands, skipped git hooks, raw merges of stacked PRs and backticks in inline payloads. Plus a skill to turn your own rules into hooks, safe merging, dependency upgrades and a dependency security audit for any ecosystem.",
+      "version": "0.2.0",
       "category": "development",
       "keywords": [
         "hooks",
         "git",
         "github",
         "security",
-        "npm"
+        "dependencies"
       ]
     },
     {
       "name": "planning",
       "source": "./plugins/planning",
       "description": "Turn an idea into decided, sliced work: a relentless design interview, PRD synthesis, vertical-slice issues, and architecture deepening. Adapted from mattpocock/skills.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "development",
       "keywords": [
         "planning",

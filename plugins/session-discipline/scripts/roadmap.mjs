@@ -15,6 +15,7 @@
 import { readFileSync, existsSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { loadConfig as loadSharedConfig, hookEnabled } from './config.mjs';
 
 export const DEFAULTS = {
   roadmap: 'docs/ROADMAP.md',
@@ -97,6 +98,7 @@ export function loadConfig(root) {
 
 function main(argv) {
   const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  if (!hookEnabled('roadmap', loadSharedConfig({ project: root }))) return 0;
   const config = loadConfig(root);
   const c = { ...DEFAULTS, ...config };
   const roadmapPath = join(root, c.roadmap);

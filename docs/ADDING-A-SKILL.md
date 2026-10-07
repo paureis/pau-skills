@@ -9,7 +9,7 @@ order; the scrub check and the validator at the end catch most of what gets forg
    `.claude-plugin/plugin.json` and an entry in `.claude-plugin/marketplace.json`.
 
 2. **Scaffold it**: `node scripts/new-skill.mjs <plugin> <skill-name>`. This creates the `SKILL.md` and adds a stub
-   to `docs/ORIGINS.md` and a row to the README table. Every placeholder is marked `TODO(new-skill)`, and the scrub
+   to `docs/ORIGINS.md` and a bullet to the plugin's list in the README reference. Every placeholder is marked `TODO(new-skill)`, and the scrub
    check fails until none is left. The script refuses a name that already exists in any plugin.
 
 3. **Copy the skill in and generalise it.** Bring its `SKILL.md` body and any bundled files across from the project.
@@ -32,8 +32,12 @@ order; the scrub check and the validator at the end catch most of what gets forg
    - A skill that differs from upstream only by being shorter is not published here. List it in the README under
      "I also use, unmodified".
 
-5. **Fill in the README row**: one line on what it does, its kind (skill, hook, script) and Original or Adapted.
-   Update the skill and hook count badges if they changed.
+5. **Fill in the README bullet**: one line on what it does, with " (adapted)" after the name if it is adapted. Add
+   it to the right section under "Problems this fixes" too, and to the `which-skill` router
+   (`plugins/session-discipline/skills/which-skill/SKILL.md`). Update the skill and hook count badges if they changed.
+   For a hook: read the shared `config.mjs` in the plugin's `scripts/` folder, call `hookEnabled(<name>, config)`
+   before acting, add a row and an options section to `docs/HOOKS.md`, and register it in the plugin's
+   `hooks/hooks.json`.
 
 6. **Add or extend tests** for any script with logic, in `tests/*.test.mjs` (`node:test`, no dependencies). Then
    prove the tests can fail: run one mutation through the harness (commit first; the harness refuses a dirty tree):
@@ -45,7 +49,8 @@ order; the scrub check and the validator at the end catch most of what gets forg
    npm run scrub
    ```
 
-8. **Bump the plugin's version** in `plugins/<plugin>/.claude-plugin/plugin.json` and in its entry in
+8. **Rebuild the bundle** if any `hooks.json` changed: `node scripts/build-bundle.mjs` (the tests fail while the
+   bundle entry in `marketplace.json` is out of date). Then **bump the plugin's version** in `plugins/<plugin>/.claude-plugin/plugin.json` and in its entry in
    `.claude-plugin/marketplace.json`; the two must agree. Users only receive a change when this version changes.
    Use a minor bump for a new skill and a patch bump for a fix.
 

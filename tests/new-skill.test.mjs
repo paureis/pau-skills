@@ -1,5 +1,5 @@
-// The scaffold creates the skill, the ORIGINS stub inside the right plugin group and the README row after the
-// plugin's last row; it refuses duplicates and bad input without changing anything.
+// The scaffold creates the skill, the ORIGINS stub inside the right plugin group and the README bullet at the
+// end of the plugin's skill list; it refuses duplicates and bad input without changing anything.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { cpSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
@@ -19,7 +19,7 @@ function fixture() {
 }
 const snapshot = (dir) => readFileSync(join(dir, 'README.md'), 'utf8') + readFileSync(join(dir, 'docs', 'ORIGINS.md'), 'utf8');
 
-test('creates the skill, the ORIGINS stub in its group and the README row after the group', () => {
+test('creates the skill, the ORIGINS stub in its group and the README bullet in its section', () => {
   const dir = fixture();
   const r = runNode(SCRIPT, { args: ['guards', 'port-lock', '--root', dir] });
   assert.equal(r.code, 0, r.stderr);
@@ -33,9 +33,10 @@ test('creates the skill, the ORIGINS stub in its group and the README row after 
   const planning = origins.indexOf('\n## planning\n');
   assert.ok(guards < stub && stub < planning, 'the stub sits inside the guards group, before planning');
 
-  const rows = readFileSync(join(dir, 'README.md'), 'utf8').split('\n').filter((l) => l.startsWith('| '));
-  const i = rows.findIndex((l) => l.includes('`port-lock`'));
-  assert.ok(rows[i - 1].startsWith('| guards |') && rows[i + 1].startsWith('| planning |'), 'the row follows the last guards row');
+  const lines = readFileSync(join(dir, 'README.md'), 'utf8').split('\n');
+  const i = lines.findIndex((l) => l.startsWith('- **port-lock**'));
+  assert.ok(i > lines.indexOf('### guards') && i < lines.indexOf('### planning'), 'the bullet sits in the guards section');
+  assert.ok(/^(- \*\*|  \S)/.test(lines[i - 1]) && /^- Hooks?:/.test(lines[i + 1]), 'after the last skill (or its continuation line), before the hooks line');
 });
 
 test('refuses an existing name in any plugin, an unknown plugin and a bad name, changing nothing', () => {
