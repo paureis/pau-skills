@@ -19,6 +19,10 @@ file. The change lists below come from `git diff --no-index` between my file and
 - **Abridged copy**: upstream text shortened, with no substantive additions. Treated like an unchanged copy: not
   published here, linked in the README instead.
 
+After that comparison, every skill (adapted ones included) went through a punctuation pass that replaced em and en
+dashes with commas, colons, periods or parentheses. It changed no instructions, so the classifications and change
+lists below still hold.
+
 ---
 
 ## session-discipline
