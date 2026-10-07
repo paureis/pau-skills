@@ -7,9 +7,9 @@
 // SINGLE quotes are literal.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { plugin, runNode } from './helpers.mjs';
+import { repo, runNode } from './helpers.mjs';
 
-const HOOK = plugin('guards', 'scripts', 'block-inline-backtick-payload.mjs');
+const HOOK = repo('hooks', 'guards', 'block-inline-backtick-payload.mjs');
 const BT = String.fromCharCode(96); // keep literal backticks out of this file's source
 
 const cases = [

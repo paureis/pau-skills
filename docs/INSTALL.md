@@ -71,7 +71,7 @@ claude plugin disable guards@pau-skills
 claude plugin enable guards@pau-skills
 ```
 
-To turn off a single hook instead of a whole plugin, see [HOOKS.md](HOOKS.md).
+To turn off a single hook instead of a whole plugin, see [hooks/README.md](../hooks/README.md).
 
 ## Updating
 

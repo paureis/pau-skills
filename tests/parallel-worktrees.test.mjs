@@ -5,13 +5,13 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { writeFileSync, mkdirSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
-import { plugin, runNode, tempDir } from './helpers.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
 import {
   parseWorktreeList, parseAheadBehind, countDirty, globToRegExp, matcher, validatePlan, findOverlaps,
   formatPlanCheck, parseArgs, collectStatus, formatStatus,
-} from '../plugins/agent-orchestration/skills/parallel-worktrees/worktrees.mjs';
+} from '../skills/agent-orchestration/parallel-worktrees/worktrees.mjs';
 
-const SCRIPT = plugin('agent-orchestration', 'skills', 'parallel-worktrees', 'worktrees.mjs');
+const SCRIPT = repo('skills', 'agent-orchestration', 'parallel-worktrees', 'worktrees.mjs');
 
 describe('glob matching', () => {
   const cases = [

@@ -14,7 +14,7 @@ function fixture() {
   cpSync(join(ROOT, 'README.md'), join(dir, 'README.md'));
   mkdirSync(join(dir, 'docs'));
   cpSync(join(ROOT, 'docs', 'ORIGINS.md'), join(dir, 'docs', 'ORIGINS.md'));
-  cpSync(join(ROOT, 'plugins'), join(dir, 'plugins'), { recursive: true });
+  cpSync(join(ROOT, 'skills'), join(dir, 'skills'), { recursive: true });
   return dir;
 }
 const snapshot = (dir) => readFileSync(join(dir, 'README.md'), 'utf8') + readFileSync(join(dir, 'docs', 'ORIGINS.md'), 'utf8');
@@ -24,7 +24,7 @@ test('creates the skill, the ORIGINS stub in its group and the README bullet in 
   const r = runNode(SCRIPT, { args: ['guards', 'port-lock', '--root', dir] });
   assert.equal(r.code, 0, r.stderr);
 
-  const skill = readFileSync(join(dir, 'plugins', 'guards', 'skills', 'port-lock', 'SKILL.md'), 'utf8');
+  const skill = readFileSync(join(dir, 'skills', 'guards', 'port-lock', 'SKILL.md'), 'utf8');
   assert.match(skill, /^---\nname: port-lock\ndescription: TODO\(new-skill\)/);
 
   const origins = readFileSync(join(dir, 'docs', 'ORIGINS.md'), 'utf8');
@@ -34,7 +34,7 @@ test('creates the skill, the ORIGINS stub in its group and the README bullet in 
   assert.ok(guards < stub && stub < planning, 'the stub sits inside the guards group, before planning');
 
   const lines = readFileSync(join(dir, 'README.md'), 'utf8').split('\n');
-  const i = lines.findIndex((l) => l.startsWith('- **port-lock**'));
+  const i = lines.findIndex((l) => l.startsWith('- **[port-lock](skills/guards/port-lock/SKILL.md)**'));
   assert.ok(i > lines.indexOf('### guards') && i < lines.indexOf('### planning'), 'the bullet sits in the guards section');
   assert.ok(/^(- \*\*|  \S)/.test(lines[i - 1]) && /^- Hooks?:/.test(lines[i + 1]), 'after the last skill (or its continuation line), before the hooks line');
 });
@@ -47,7 +47,7 @@ test('refuses an existing name in any plugin, an unknown plugin and a bad name, 
     assert.equal(r.code, 2, `should refuse ${args.join(' ')}`);
   }
   assert.equal(snapshot(dir), before);
-  assert.equal(existsSync(join(dir, 'plugins', 'guards', 'skills', 'x-y')), false);
+  assert.equal(existsSync(join(dir, 'skills', 'guards', 'x-y')), false);
 });
 
 test('running it twice refuses the second time', () => {
@@ -68,5 +68,5 @@ test('the scrub check fails while a scaffold placeholder is left, and passes on 
   assert.equal(runNode(SCRIPT, { args: ['guards', 'port-lock', '--root', dir] }).code, 0);
   const r = runNode(join(dir, 'scripts', 'check-scrub.mjs'));
   assert.equal(r.code, 1);
-  assert.match(r.stdout, /plugins\/guards\/skills\/port-lock\/SKILL\.md:3: unfilled scaffold placeholder/);
+  assert.match(r.stdout, /skills\/guards\/port-lock\/SKILL\.md:3: unfilled scaffold placeholder/);
 });

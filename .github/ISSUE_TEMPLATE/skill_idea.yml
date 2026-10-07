@@ -1,0 +1,16 @@
+name: Skill or hook idea
+description: Suggest a new skill or hook, or a change to an existing one.
+labels: [idea]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What keeps going wrong?
+      description: The failure you see in agent work. Pieces here start from a real problem, not from a feature.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would fix it?
+      description: A skill, a hook, or a change to an existing one. Rough is fine.

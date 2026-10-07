@@ -27,7 +27,19 @@ install with `npx skills@latest add paureis/pau-skills`.
 Not sure where to start? Run `/pau-skills:which-skill` and describe what you are doing.
 
 [docs/INSTALL.md](docs/INSTALL.md) has every install, update and removal command.
-[docs/HOOKS.md](docs/HOOKS.md) explains how to turn any hook off.
+[hooks/README.md](hooks/README.md) explains every hook and how to turn any of them off.
+
+## What is where
+
+```
+skills/        every skill, one folder each, grouped by plugin
+  session-discipline/   verification/   agent-orchestration/   guards/   planning/
+hooks/         every hook script, grouped the same way, with the shared code in lib/
+docs/          install guide, origins of each piece, the rules that are still sentences, how to add a skill
+tests/         node:test suites for every script and hook (npm test)
+scripts/       repository tooling: the marketplace builder, the skill scaffolder, the scrub check
+.claude-plugin/marketplace.json   the plugin definitions Claude Code reads
+```
 
 ## The idea
 
@@ -111,58 +123,60 @@ context was compacted.
 
 ## Reference
 
-Every skill runs as `/<plugin>:<skill>`, or `/pau-skills:<skill>` from the bundle. "Adapted" marks the skills
+Every skill is a folder in [`skills/`](skills), grouped by plugin, and every hook is a script in [`hooks/`](hooks).
+Each name below links to the file itself. A skill runs as `/<plugin>:<skill>`, or `/pau-skills:<skill>` from the
+bundle. "Adapted" marks the skills
 derived from [mattpocock/skills](https://github.com/mattpocock/skills); everything else is original.
 
 ### session-discipline
 
-- **which-skill**: Recommends the skill or sequence of skills that fits your situation.
-- **retrospective**: Turns a session's corrections into rule, memory or skill edits, gated by `audit.mjs`; `--stale`
+- **[which-skill](skills/session-discipline/which-skill/SKILL.md)**: Recommends the skill or sequence of skills that fits your situation.
+- **[retrospective](skills/session-discipline/retrospective/SKILL.md)**: Turns a session's corrections into rule, memory or skill edits, gated by `audit.mjs`; `--stale`
   finds rules that cite files that are gone.
-- **session-close**: Closes a session in a fixed order: clean tree, retrospective, roadmap and log, handoff, commit
+- **[session-close](skills/session-discipline/session-close/SKILL.md)**: Closes a session in a fixed order: clean tree, retrospective, roadmap and log, handoff, commit
   and push.
-- **handoff**: Writes a handoff the next session can resume from, after a retrospective gate.
-- **claude-md-audit**: Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
+- **[handoff](skills/session-discipline/handoff/SKILL.md)**: Writes a handoff the next session can resume from, after a retrospective gate.
+- **[claude-md-audit](skills/session-discipline/claude-md-audit/SKILL.md)**: Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
   references and secrets, and proposes edits for approval.
-- Hooks: **roadmap**, **branch-context**, **compact-snapshot**.
+- Hooks: [`roadmap`](hooks/session-discipline/roadmap.mjs), [`branch-context`](hooks/session-discipline/branch-context.mjs), [`compact-snapshot`](hooks/session-discipline/compact-snapshot.mjs).
 
 ### verification
 
-- **tdd** (adapted): Red-green-refactor in vertical slices, with mocking and refactoring rules.
-- **mutation-test**: `mutate.sh` applies one mutation and checks by script that it applied, changed behaviour, and
+- **[tdd](skills/verification/tdd/SKILL.md)** (adapted): Red-green-refactor in vertical slices, with mocking and refactoring rules.
+- **[mutation-test](skills/verification/mutation-test/SKILL.md)**: `mutate.sh` applies one mutation and checks by script that it applied, changed behaviour, and
   was restored.
-- **evaluator**: A hostile evaluator in a forked context grades each contract assertion with reproducible evidence.
-- **flaky-test-hunt**: Reproduces an intermittent failure with `repeat.mjs`, classifies the cause, and proves the
+- **[evaluator](skills/verification/evaluator/SKILL.md)**: A hostile evaluator in a forked context grades each contract assertion with reproducible evidence.
+- **[flaky-test-hunt](skills/verification/flaky-test-hunt/SKILL.md)**: Reproduces an intermittent failure with `repeat.mjs`, classifies the cause, and proves the
   fix with a measured failure rate.
-- **migration-review**: Reviews a schema or data migration for locks, compatibility with running code, data safety
+- **[migration-review](skills/verification/migration-review/SKILL.md)**: Reviews a schema or data migration for locks, compatibility with running code, data safety
   and reversibility, for any migration tool.
-- **ci-cost-and-cadence**: Measures where CI minutes go, compares five options with numbers, and builds the chosen
+- **[ci-cost-and-cadence](skills/verification/ci-cost-and-cadence/SKILL.md)**: Measures where CI minutes go, compares five options with numbers, and builds the chosen
   one.
-- Hooks: **test-tamper-guard**, **verify-before-done**.
+- Hooks: [`test-tamper-guard`](hooks/verification/test-tamper-guard.mjs), [`verify-before-done`](hooks/verification/verify-before-done.mjs).
 
 ### agent-orchestration
 
-- **methodology**: Contracts, an evidence standard, an evaluator, convergence and two-file state, with templates.
-- **codebase-oracle**: Answers questions about a codebase from evidence in it only; never guesses.
-- **parallel-worktrees**: Runs independent pieces of work in separate git worktrees, with `worktrees.mjs` to check a
+- **[methodology](skills/agent-orchestration/methodology/SKILL.md)**: Contracts, an evidence standard, an evaluator, convergence and two-file state, with templates.
+- **[codebase-oracle](skills/agent-orchestration/codebase-oracle/SKILL.md)**: Answers questions about a codebase from evidence in it only; never guesses.
+- **[parallel-worktrees](skills/agent-orchestration/parallel-worktrees/SKILL.md)**: Runs independent pieces of work in separate git worktrees, with `worktrees.mjs` to check a
   plan for overlapping files and report every worktree's state.
-- Hook: **no-idle**.
+- Hook: [`no-idle`](hooks/agent-orchestration/no-idle.mjs).
 
 ### guards
 
-- **rule-to-hook**: Turns a rule that keeps being broken into a tested hook, with templates in JavaScript and Python.
-- **safe-merge**: Merges a PR pinned to its head commit and deletes the branch only if no open PR is based on it.
-- **dependency-upgrade**: Plans and applies dependency and toolchain upgrades in any ecosystem, step by step.
-- **dependency-security-audit**: A ranked vulnerability, reachability and supply-chain audit for any ecosystem and
+- **[rule-to-hook](skills/guards/rule-to-hook/SKILL.md)**: Turns a rule that keeps being broken into a tested hook, with templates in JavaScript and Python.
+- **[safe-merge](skills/guards/safe-merge/SKILL.md)**: Merges a PR pinned to its head commit and deletes the branch only if no open PR is based on it.
+- **[dependency-upgrade](skills/guards/dependency-upgrade/SKILL.md)**: Plans and applies dependency and toolchain upgrades in any ecosystem, step by step.
+- **[dependency-security-audit](skills/guards/dependency-security-audit/SKILL.md)**: A ranked vulnerability, reachability and supply-chain audit for any ecosystem and
   container image, built on native audit tools and OSV-based scanners, not a raw scanner dump.
-- Hooks: **secret-guard**, **destructive-guard**, **no-verify-guard**, **merge-guard**, **inline-backtick-guard**.
+- Hooks: [`secret-guard`](hooks/guards/secret-guard.mjs), [`destructive-guard`](hooks/guards/destructive-guard.mjs), [`no-verify-guard`](hooks/guards/no-verify-guard.mjs), [`merge-guard`](hooks/guards/merge-guard.mjs), [`inline-backtick-guard`](hooks/guards/block-inline-backtick-payload.mjs).
 
 ### planning
 
-- **grill-me** (adapted): Interviews you one question at a time until every branch of a plan is decided.
-- **to-prd** (adapted): Synthesizes the conversation into a PRD without re-interviewing.
-- **to-issues** (adapted): Splits a plan into vertical-slice issues for any tracker.
-- **improve-codebase-architecture** (adapted): Finds refactors that turn shallow modules into deep ones.
+- **[grill-me](skills/planning/grill-me/SKILL.md)** (adapted): Interviews you one question at a time until every branch of a plan is decided.
+- **[to-prd](skills/planning/to-prd/SKILL.md)** (adapted): Synthesizes the conversation into a PRD without re-interviewing.
+- **[to-issues](skills/planning/to-issues/SKILL.md)** (adapted): Splits a plan into vertical-slice issues for any tracker.
+- **[improve-codebase-architecture](skills/planning/improve-codebase-architecture/SKILL.md)** (adapted): Finds refactors that turn shallow modules into deep ones.
 
 [docs/ORIGINS.md](docs/ORIGINS.md) records, for every piece, the problem that led to it and, for each adapted skill,
 the upstream version it was compared against and what this version changes, taken from a diff.
@@ -216,7 +230,7 @@ and the log, writes the handoff, and commits.
 ```bash
 npm test                          # node --test, no dependencies
 npm run scrub                     # fails on private names, account ids, machine paths or untranslated text
-node scripts/build-bundle.mjs     # regenerate the pau-skills bundle entry after changing any hooks.json
+node scripts/build-marketplace.mjs  # regenerate marketplace.json after changing a hooks.json or a plugin folder
 claude plugin validate . --strict # the marketplace; add a plugin path to check one plugin
 ```
 

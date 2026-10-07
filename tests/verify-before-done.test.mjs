@@ -4,10 +4,10 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { plugin, runNode, tempDir } from './helpers.mjs';
-import { decide, assess, toolCallsSinceLastPrompt, parseTranscript, VERIFY } from '../plugins/verification/scripts/verify-before-done.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
+import { decide, assess, toolCallsSinceLastPrompt, parseTranscript, VERIFY } from '../hooks/verification/verify-before-done.mjs';
 
-const HOOK = plugin('verification', 'scripts', 'verify-before-done.mjs');
+const HOOK = repo('hooks', 'verification', 'verify-before-done.mjs');
 
 const user = (text) => ({ type: 'user', message: { role: 'user', content: text } });
 const result = () => ({ type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 't', content: 'ok' }] } });

@@ -1,10 +1,10 @@
-// The shared hook config: user file, then project file, PAU_SKILLS_DISABLE, and identical copies in every plugin.
+// The shared hook config: user file, then project file, PAU_SKILLS_DISABLE, and one copy in hooks/lib for every hook.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { ROOT, plugin, tempDir, runNode } from './helpers.mjs';
-import { loadConfig, hookEnabled, hookOptions, projectDir } from '../plugins/guards/scripts/config.mjs';
+import { ROOT, repo, tempDir, runNode } from './helpers.mjs';
+import { loadConfig, hookEnabled, hookOptions, projectDir } from '../hooks/lib/config.mjs';
 
 function dirs() {
   const home = tempDir(); const project = tempDir();
@@ -48,17 +48,16 @@ test('projectDir prefers CLAUDE_PROJECT_DIR, then the input cwd', () => {
   assert.equal(projectDir({ cwd: '/x' }, {}), '/x');
 });
 
-test('every plugin carries an identical copy of config.mjs', () => {
-  const source = readFileSync(plugin('guards', 'scripts', 'config.mjs'), 'utf8');
-  const copies = readdirSync(join(ROOT, 'plugins')).map((p) => plugin(p, 'scripts', 'config.mjs')).filter(existsSync);
-  assert.ok(copies.length >= 4);
-  for (const c of copies) assert.equal(readFileSync(c, 'utf8'), source, `${c} differs from the guards copy`);
-});
-
-test('every plugin with hooks imports config.mjs from its own folder', () => {
-  for (const p of readdirSync(join(ROOT, 'plugins'))) {
-    if (!existsSync(plugin(p, 'hooks', 'hooks.json'))) continue;
-    assert.ok(existsSync(plugin(p, 'scripts', 'config.mjs')), `${p} has hooks but no scripts/config.mjs`);
+test('every hook script that reads config imports the one shared copy in hooks/lib', () => {
+  const dirs = readdirSync(join(ROOT, 'hooks')).filter((d) => d !== 'lib' && existsSync(join(ROOT, 'hooks', d, 'hooks.json')));
+  assert.ok(dirs.length >= 4);
+  for (const d of dirs) {
+    for (const f of readdirSync(join(ROOT, 'hooks', d)).filter((x) => x.endsWith('.mjs'))) {
+      const text = readFileSync(join(ROOT, 'hooks', d, f), 'utf8');
+      if (!text.includes('config.mjs')) continue;
+      assert.match(text, /from '\.\.\/lib\/config\.mjs'/, `${d}/${f} must import ../lib/config.mjs`);
+    }
+    assert.equal(existsSync(join(ROOT, 'hooks', d, 'config.mjs')), false, `hooks/${d} has its own config.mjs copy`);
   }
 });
 
@@ -67,9 +66,9 @@ test('the existing hooks honour the switch: a disabled merge guard lets the comm
   writeFileSync(join(project, '.claude', 'pau-skills.json'), JSON.stringify({ hooks: { 'merge-guard': false } }));
   const input = JSON.stringify({ tool_name: 'Bash', cwd: project, tool_input: { command: 'gh pr merge 5 -d' } });
   const env = { PAU_SKILLS_HOME: home, CLAUDE_PROJECT_DIR: '' };
-  assert.equal(runNode(plugin('guards', 'scripts', 'merge-guard.mjs'), { input, env }).code, 0);
+  assert.equal(runNode(repo('hooks', 'guards', 'merge-guard.mjs'), { input, env }).code, 0);
   writeFileSync(join(project, '.claude', 'pau-skills.json'), '{}');
-  assert.equal(runNode(plugin('guards', 'scripts', 'merge-guard.mjs'), { input, env }).code, 2);
+  assert.equal(runNode(repo('hooks', 'guards', 'merge-guard.mjs'), { input, env }).code, 2);
 });
 
 test('the existing hooks honour the switch: no-idle and the backtick guard', () => {
@@ -77,7 +76,7 @@ test('the existing hooks honour the switch: no-idle and the backtick guard', () 
   writeFileSync(join(project, '.claude', 'pau-skills.json'), JSON.stringify({ hooks: { 'no-idle': false, 'inline-backtick-guard': false } }));
   const env = { PAU_SKILLS_HOME: home, CLAUDE_PROJECT_DIR: '' };
   const agent = JSON.stringify({ hook_event_name: 'SubagentStart', cwd: project });
-  assert.equal(runNode(plugin('agent-orchestration', 'scripts', 'no-idle.mjs'), { input: agent, env }).stdout, '');
+  assert.equal(runNode(repo('hooks', 'agent-orchestration', 'no-idle.mjs'), { input: agent, env }).stdout, '');
   const bt = JSON.stringify({ tool_name: 'Bash', cwd: project, tool_input: { command: 'node -e "console.log(`x`)"' } });
-  assert.equal(runNode(plugin('guards', 'scripts', 'block-inline-backtick-payload.mjs'), { input: bt, env }).code, 0);
+  assert.equal(runNode(repo('hooks', 'guards', 'block-inline-backtick-payload.mjs'), { input: bt, env }).code, 0);
 });

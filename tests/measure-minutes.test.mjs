@@ -2,10 +2,10 @@
 // multipliers apply, grouping counts each run once per group, and minutes of cancelled or failed runs are reported.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { plugin, runNode } from './helpers.mjs';
-import { billedMinutes, multiplierFor, group, keyOf, parseArgs } from '../plugins/verification/skills/ci-cost-and-cadence/measure-minutes.mjs';
+import { repo, runNode } from './helpers.mjs';
+import { billedMinutes, multiplierFor, group, keyOf, parseArgs } from '../skills/verification/ci-cost-and-cadence/measure-minutes.mjs';
 
-const SCRIPT = plugin('verification', 'skills', 'ci-cost-and-cadence', 'measure-minutes.mjs');
+const SCRIPT = repo('skills', 'verification', 'ci-cost-and-cadence', 'measure-minutes.mjs');
 const at = (s) => new Date(Date.UTC(2026, 0, 1, 0, 0, s)).toISOString();
 const job = (name, seconds, extra = {}) => ({ name, conclusion: 'success', started_at: at(0), completed_at: at(seconds), labels: ['ubuntu-latest'], ...extra });
 

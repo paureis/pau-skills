@@ -5,10 +5,10 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { plugin, runNode, tempDir } from './helpers.mjs';
-import { findSecret, decide, allowedPath, entropy } from '../plugins/guards/scripts/secret-guard.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
+import { findSecret, decide, allowedPath, entropy } from '../hooks/guards/secret-guard.mjs';
 
-const GUARD = plugin('guards', 'scripts', 'secret-guard.mjs');
+const GUARD = repo('hooks', 'guards', 'secret-guard.mjs');
 const j = (...p) => p.join('');
 
 const SECRETS = [

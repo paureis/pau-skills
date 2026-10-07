@@ -3,7 +3,7 @@
 //
 //   node scripts/new-skill.mjs <plugin> <skill-name> [--root <repo dir>]
 //
-// Creates plugins/<plugin>/skills/<skill-name>/SKILL.md with frontmatter, adds a stub section for it at the end of
+// Creates skills/<plugin>/<skill-name>/SKILL.md with frontmatter, adds a stub section for it at the end of
 // the plugin's group in docs/ORIGINS.md, and adds a bullet for it to the plugin's list in the README reference. Every
 // placeholder is marked TODO(new-skill); the scrub check fails while any is left, so a half-filled scaffold cannot be
 // committed by accident. Refuses an unknown plugin, a name that is not kebab-case, a name that already exists in any
@@ -19,11 +19,11 @@ export const MARK = 'TODO(new-skill)';
 export function plan(root, pluginName, skill) {
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(skill || '')) throw new Error(`the skill name must be kebab-case (a-z, 0-9, single dashes): ${skill}`);
   if (skill.startsWith('claude-') || skill.startsWith('anthropic-')) throw new Error(`names starting with claude- or anthropic- are reserved: ${skill}`);
-  const pluginsDir = join(root, 'plugins');
-  const plugins = existsSync(pluginsDir) ? readdirSync(pluginsDir).filter((p) => existsSync(join(pluginsDir, p, '.claude-plugin', 'plugin.json'))) : [];
+  const pluginsDir = join(root, 'skills');
+  const plugins = existsSync(pluginsDir) ? readdirSync(pluginsDir).filter((p) => !p.includes('.')) : [];
   if (!plugins.includes(pluginName)) throw new Error(`unknown plugin "${pluginName}"; plugins: ${plugins.join(', ') || 'none'}`);
   for (const p of plugins) {
-    if (existsSync(join(pluginsDir, p, 'skills', skill))) throw new Error(`a skill named "${skill}" already exists in plugin ${p}`);
+    if (existsSync(join(pluginsDir, p, skill))) throw new Error(`a skill named "${skill}" already exists in plugin ${p}`);
   }
 
   const originsPath = join(root, 'docs', 'ORIGINS.md');
@@ -31,7 +31,7 @@ export function plan(root, pluginName, skill) {
   const origins = readFileSync(originsPath, 'utf8');
   const readme = readFileSync(readmePath, 'utf8');
   if (new RegExp('^### ' + skill + ' \\(', 'm').test(origins)) throw new Error(`docs/ORIGINS.md already has a section for ${skill}`);
-  if (readme.includes('- **' + skill + '**')) throw new Error(`README.md already lists ${skill}`);
+  if (readme.includes('- **' + skill + '**') || readme.includes('- **[' + skill + '](')) throw new Error(`README.md already lists ${skill}`);
 
   // ORIGINS: insert before the "---" that closes the plugin's group. The group heading must occur exactly once.
   const heading = '\n## ' + pluginName + '\n';
@@ -67,7 +67,7 @@ export function plan(root, pluginName, skill) {
     else if (lines[k] === '' && insert >= 0) break;
   }
   if (insert < 0) throw new Error(`README.md: no skill list under "### ${pluginName}"`);
-  lines.splice(insert, 0, `- **${skill}**: ${MARK}: one line on what it does (add " (adapted)" after the name if it is).`);
+  lines.splice(insert, 0, `- **[${skill}](skills/${pluginName}/${skill}/SKILL.md)**: ${MARK}: one line on what it does (add " (adapted)" after the name if it is).`);
 
   const skillMd = [
     '---',
@@ -77,13 +77,13 @@ export function plan(root, pluginName, skill) {
     '',
     `# ${skill}`,
     '',
-    `${MARK}: the instructions. Reference bundled files as \${CLAUDE_PLUGIN_ROOT}/skills/${skill}/<file>.`,
+    `${MARK}: the instructions. Reference bundled files as \${CLAUDE_PLUGIN_ROOT}/skills/${pluginName}/${skill}/<file>.`,
     '',
   ].join('\n');
 
   return {
     files: [
-      { path: join(pluginsDir, pluginName, 'skills', skill, 'SKILL.md'), text: skillMd, create: true },
+      { path: join(pluginsDir, pluginName, skill, 'SKILL.md'), text: skillMd, create: true },
       { path: originsPath, text: newOrigins },
       { path: readmePath, text: lines.join('\n') },
     ],

@@ -4,10 +4,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { plugin, runNode, tempDir } from './helpers.mjs';
-import { summarize, tables } from '../plugins/session-discipline/scripts/roadmap.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
+import { summarize, tables } from '../hooks/session-discipline/roadmap.mjs';
 
-const HOOK = plugin('session-discipline', 'scripts', 'roadmap.mjs');
+const HOOK = repo('hooks', 'session-discipline', 'roadmap.mjs');
 
 const ROADMAP = [
   '# Roadmap',

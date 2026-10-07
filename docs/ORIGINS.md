@@ -69,7 +69,7 @@ rule required it. The approval gate lets the resumed session read and run read-o
 
 **Changes for this release.** It names the plugin-qualified retrospective skill. Nothing else.
 
-### Roadmap hook, `scripts/roadmap.mjs` (Original)
+### Roadmap hook, `hooks/session-discipline/roadmap.mjs` (Original)
 
 **Problem.** The roadmap is the only order of work: one item at a time, the next one starts only when the previous one
 meets its definition of done, and blocked items are marked and skipped. Sessions that started from memory of the last
@@ -100,7 +100,7 @@ and lists what the hooks already do without being asked.
 
 **Changes for this release.** None; written for this release.
 
-### Branch-context hook, `scripts/branch-context.mjs` (Original)
+### Branch-context hook, `hooks/session-discipline/branch-context.mjs` (Original)
 
 **Problem.** Agents assume a clean tree on a feature branch. They commit onto the default branch, build on a branch
 that is far behind its upstream, or start new work in the middle of an unfinished rebase. All of it is visible with
@@ -108,7 +108,7 @@ a few read-only git commands that nobody runs first, so the hook runs them at se
 
 **Changes for this release.** None; written for this release.
 
-### Compact-snapshot hook, `scripts/compact-snapshot.mjs` (Original)
+### Compact-snapshot hook, `hooks/session-discipline/compact-snapshot.mjs` (Original)
 
 **Problem.** Compaction keeps the gist and drops the specifics: the user's exact words, the files already changed,
 the open todo items. The agent resumes confident and slightly wrong. The hook writes those facts to a git-ignored
@@ -120,7 +120,7 @@ file before compaction and prints them when the compacted session starts, which 
 
 ## verification
 
-### mutation-test and `scripts/mutate.sh` (Original)
+### mutation-test and `skills/verification/mutation-test/mutate.sh` (Original)
 
 Merged from two harnesses I wrote in two projects.
 
@@ -216,7 +216,7 @@ were checked against a throwaway PostgreSQL 16 cluster; the MySQL and SQL Server
 
 **Changes for this release.** None; written for this release.
 
-### Test-tamper guard, `scripts/test-tamper-guard.mjs` (Original)
+### Test-tamper guard, `hooks/verification/test-tamper-guard.mjs` (Original)
 
 **Problem.** When the goal is a green suite, the cheapest edit is to the test: skip it, mark it as an expected
 failure, or delete the assertion that fails. The suite goes green and the bug ships. Skipping is sometimes right, so
@@ -224,7 +224,7 @@ the hook asks the user instead of refusing, and it compares before and after so 
 
 **Changes for this release.** None; written for this release.
 
-### Verify-before-done hook, `scripts/verify-before-done.mjs` (Original)
+### Verify-before-done hook, `hooks/verification/verify-before-done.mjs` (Original)
 
 **Problem.** A report of "done" after edits that were never run is the most common false claim an agent makes, and a
 rule that says "run the tests first" is skipped exactly when the agent feels sure. The hook reads the transcript, not
@@ -236,7 +236,7 @@ the summary: edits since the user's last message with no check after the last on
 
 ## agent-orchestration
 
-### No-idle hook, `scripts/no-idle.mjs` (Original)
+### No-idle hook, `hooks/agent-orchestration/no-idle.mjs` (Original)
 
 **Problem.** A subagent that ends its turn waiting for a monitor, a background task or a message is not resumed by
 anything. The rule "never end your turn waiting; use a bounded foreground loop" was in every brief, until one brief
@@ -290,7 +290,7 @@ changes broke the build.
 
 ## guards
 
-### Inline-backtick guard, `scripts/block-inline-backtick-payload.mjs` (Original)
+### Inline-backtick guard, `hooks/guards/block-inline-backtick-payload.mjs` (Original)
 
 **Problem.** Backticks inside a double-quoted bash string are command substitution: `` node -e "...`x`..." `` runs `x`
 and splices its empty output into the script. The rule against it was written down with five recorded instances and
@@ -306,7 +306,7 @@ quotes nested inside a double-quoted payload protect nothing.
 an absolute one; test labels no longer carry dates or private words. The 16 original cases are all kept, plus one for
 other tools and malformed input.
 
-### Merge guard and safe merge, `scripts/merge-guard.mjs`, `scripts/safe-merge.mjs` (Original)
+### Merge guard and safe merge, `hooks/guards/merge-guard.mjs`, `skills/guards/safe-merge/safe-merge.mjs` (Original)
 
 **Problem.** With stacked pull requests, deleting the branch of a merged PR makes GitHub close every PR based on it.
 `gh pr merge -d` closed two stacked PRs that way. The guard denies every raw `gh pr merge` (it denies too much on
@@ -358,7 +358,7 @@ from primary sources, toolchain before frameworks, one major per commit, and a r
 
 **Changes for this release.** None; written for this release.
 
-### Secret guard, `scripts/secret-guard.mjs` (Original)
+### Secret guard, `hooks/guards/secret-guard.mjs` (Original)
 
 **Problem.** An agent handed a key to get something working pastes it where it is used. From there it reaches a
 commit, and a pushed key has to be rotated even after the commit is reverted. The guard checks the text being written,
@@ -366,7 +366,7 @@ by known token formats and by random-looking literals assigned to secret names, 
 
 **Changes for this release.** None; written for this release.
 
-### Destructive guard, `scripts/destructive-guard.mjs` and `scripts/shell.mjs` (Original)
+### Destructive guard, `hooks/guards/destructive-guard.mjs` and `hooks/lib/shell.mjs` (Original)
 
 **Problem.** Each command it blocks has a well-known story: `rm -rf "$DIR/"` with an empty variable, a force push
 over shared history, `git reset --hard` over hours of uncommitted work, `git clean` on files git never stored. The
@@ -375,7 +375,7 @@ command line into simple commands, including `sh -c` payloads, so guards can tel
 
 **Changes for this release.** None; written for this release.
 
-### No-verify guard, `scripts/no-verify-guard.mjs` (Original)
+### No-verify guard, `hooks/guards/no-verify-guard.mjs` (Original)
 
 **Problem.** When a pre-commit hook fails, the shortest path to a commit is `--no-verify`, and the failed hook was
 the useful signal. The guard covers the flag, its short form inside option groups, and the environment variables and

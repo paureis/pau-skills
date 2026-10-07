@@ -1,10 +1,10 @@
 // The no-verify guard denies skipping git hooks and commit signing, and understands quotes and short option groups.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { plugin, runNode, tempDir } from './helpers.mjs';
-import { check } from '../plugins/guards/scripts/no-verify-guard.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
+import { check } from '../hooks/guards/no-verify-guard.mjs';
 
-const GUARD = plugin('guards', 'scripts', 'no-verify-guard.mjs');
+const GUARD = repo('hooks', 'guards', 'no-verify-guard.mjs');
 
 const DENY = ['git commit --no-verify -m "x"', 'git commit -n -m x', 'git commit -nm x', 'git commit -anm x', 'git commit -an',
   'git push --no-verify', 'git merge --no-verify feature', 'git rebase --no-verify main', 'git -c core.hooksPath=/dev/null commit -m x',
