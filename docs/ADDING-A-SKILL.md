@@ -27,6 +27,9 @@ order; the scrub check and the validator at the end catch most of what gets forg
      `${CLAUDE_PLUGIN_ROOT}` is set only for plugins. A skill that reads its bundled files outside the project should
      also allow those reads in its frontmatter, `allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)` (the leading `/` makes
      the path absolute), so the user does not see a permission prompt for them.
+   - Make it stand alone: it must work when it is the only skill installed. If it mentions another skill, say "if
+     it is installed" and what to do without it. If it needs another skill's script, copy the script into its folder
+     and add the pair to `COPIES` in `tests/standalone.test.mjs`.
    - Keep scripts dependency-free and cross-platform (Node standard library; bash only where bash is the point).
    - A hook script exits 0 on input it does not understand, unless failing closed is the point of the hook.
 

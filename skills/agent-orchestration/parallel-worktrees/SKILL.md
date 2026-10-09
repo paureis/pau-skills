@@ -12,9 +12,9 @@ its own branch and its own working folder (a git worktree), and the branches com
 The work to split: $ARGUMENTS
 
 Bundled files, open them when you reach their phase:
-- `${CLAUDE_PLUGIN_ROOT}/skills/agent-orchestration/parallel-worktrees/BRIEF-TEMPLATE.md`: the brief each piece's agent receives
-- `${CLAUDE_PLUGIN_ROOT}/skills/agent-orchestration/parallel-worktrees/TROUBLESHOOTING.md`: errors and environment problems, with fixes
-- `${CLAUDE_PLUGIN_ROOT}/skills/agent-orchestration/parallel-worktrees/worktrees.mjs`: `plan-check` finds files claimed by two pieces;
+- `${CLAUDE_SKILL_DIR}/BRIEF-TEMPLATE.md`: the brief each piece's agent receives
+- `${CLAUDE_SKILL_DIR}/TROUBLESHOOTING.md`: errors and environment problems, with fixes
+- `${CLAUDE_SKILL_DIR}/worktrees.mjs`: `plan-check` finds files claimed by two pieces;
   `status` shows every worktree's branch, ahead/behind, uncommitted files and last commit (Node 20+, no dependencies)
 
 Why worktrees and not one checkout: two agents in one folder share one index and one set of files. One agent's
@@ -50,7 +50,7 @@ Then write the plan as JSON and check it mechanically:
 ```
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/agent-orchestration/parallel-worktrees/worktrees.mjs" plan-check plan.json
+node "${CLAUDE_SKILL_DIR}/worktrees.mjs" plan-check plan.json
 ```
 
 It expands every glob against the repository's files and lists each file claimed by more than one piece, plus new
@@ -141,7 +141,7 @@ is not).
 - Each agent edits, runs its checks and commits **only inside its own worktree**, on its own branch. It does not
   push to the base branch, does not rebase other branches, and does not run `git worktree` commands.
 - The orchestrator (you) does not edit files in any worktree while agents run. Watch with
-  `node "${CLAUDE_PLUGIN_ROOT}/skills/agent-orchestration/parallel-worktrees/worktrees.mjs" status --base main` and read the reports.
+  `node "${CLAUDE_SKILL_DIR}/worktrees.mjs" status --base main` and read the reports.
 - If an agent reports it needs a file outside its scope, stop that piece and decide: give it the file (and check no
   other piece owns it), or queue the change for integration. Do not let it "just make the small edit".
 

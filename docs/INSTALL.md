@@ -60,8 +60,15 @@ npx skills@latest add paureis/pau-skills
 ```
 
 It lets you choose which skills to take and which agents to install them for. Hooks are a Claude Code feature and
-are not installed this way; a few skills that run a bundled script refer to `${CLAUDE_PLUGIN_ROOT}`, which you
-replace with the folder the skill was copied to.
+are not installed this way. Skills find their bundled files through `${CLAUDE_SKILL_DIR}`, which Claude Code fills
+in; in an agent that does not, it means the folder the skill was copied to.
+
+## One skill on its own
+
+Every skill works without the plugin and without any other skill. To use one in Claude Code, copy its folder (for
+example `skills/session-discipline/project-setup/`) to `~/.claude/skills/project-setup/` for every project, or to
+`.claude/skills/project-setup/` in one repository. It then runs as `/project-setup`. When a skill mentions another
+skill, it is an optional extra, and the skill says what to do without it.
 
 ## Turning things off
 

@@ -72,7 +72,7 @@ Any further notes about the feature.
 
 ## Rules
 
-- **No interviewing.** This skill synthesizes: it doesn't interrogate. If you need to align first, use the grill-me or grill-with-docs skill before invoking this one.
+- **No interviewing.** This skill synthesizes: it doesn't interrogate. If the plan is not decided yet, settle the open decisions with the user first (the `grill-me` skill does this, if installed), then run this one.
 - **Module depth matters.** When sketching modules, flag shallow modules (interface nearly as complex as implementation) and suggest deepening them.
 - **No file paths or code snippets in the PRD.** These go stale immediately. Describe modules by what they do, not where they live.
 - **User stories should be exhaustive.** If you can think of 10, write 20. Cover happy paths, error states, edge cases, and accessibility.

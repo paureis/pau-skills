@@ -47,8 +47,11 @@ Before you accept any test as evidence:
    assertion leaned on it to UNVERIFIED.
 4. Revert via git. Never by hand.
 
-If the `verification` plugin's harness is available, use it: `bash "${CLAUDE_PLUGIN_ROOT}/skills/verification/mutation-test/mutate.sh" <file> <command...>`
-with the mutation on stdin. It refuses a dirty tree, runs a control, checks the mutation applied and checks the restore.
+The four steps above are enough on their own. If the `mutation-test` skill is also installed, its `mutate.sh` does
+them with each step checked by the script: `bash <path>/mutate.sh <file> <command...>` with the mutation on stdin. It
+refuses a dirty tree, runs a control, checks the mutation applied and checks the restore. With the pau-skills plugin
+the path is `${CLAUDE_PLUGIN_ROOT}/skills/verification/mutation-test/mutate.sh`; with the skill installed on its own,
+it is in that skill's folder.
 
 Look specifically for these, all of which have been found in real builds by evaluators doing exactly this:
 

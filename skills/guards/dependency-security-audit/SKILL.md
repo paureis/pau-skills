@@ -9,9 +9,9 @@ Find the dependency risk that needs action in this project, in whatever language
 what the user should do. The output is a short action plan, not a re-print of a scanner's output.
 
 Reference files, open them when you reach their phase:
-- `${CLAUDE_PLUGIN_ROOT}/skills/guards/dependency-security-audit/ECOSYSTEMS.md`: per-ecosystem audit commands, how to tell
+- `${CLAUDE_SKILL_DIR}/ECOSYSTEMS.md`: per-ecosystem audit commands, how to tell
   direct from transitive, how to pin a transitive fix, cross-ecosystem scanners, and registry queries.
-- `${CLAUDE_PLUGIN_ROOT}/skills/guards/dependency-security-audit/SUPPLY-CHAIN.md`: supply-chain red flags per registry and
+- `${CLAUDE_SKILL_DIR}/SUPPLY-CHAIN.md`: supply-chain red flags per registry and
   how to check each one.
 
 ## Core principle
@@ -36,9 +36,9 @@ calling it one buries the findings that are.
 - An install, a bot or CI flagged something and the user wants a second opinion.
 - The user asks whether a specific package is safe to add.
 
-Not for: routine version bumps without a security reason (use the `guards` plugin's `dependency-upgrade` skill),
-vulnerabilities in the project's own code, infrastructure configuration, or "were we hacked?" questions, which are
-incident response.
+Not for: routine version bumps without a security reason (that is a planned upgrade; the `dependency-upgrade` skill
+covers it, if installed), vulnerabilities in the project's own code, infrastructure configuration, or "were we
+hacked?" questions, which are incident response.
 
 ## Rules
 
@@ -151,8 +151,10 @@ and confirm that version exists and is at or above the advisory's fixed version.
 upgrading the direct parent; pin the transitive version (override, constraint, resolution) only when no parent release
 fixes it, and only to a semver-compatible version. ECOSYSTEMS.md lists the pin mechanism per ecosystem.
 
-Anything that crosses a major version, touches a runtime or toolchain, or bundles several upgrades goes through the
-`guards` plugin's `dependency-upgrade` skill, which plans, commits and verifies one step at a time.
+Anything that crosses a major version, touches a runtime or toolchain, or bundles several upgrades is a planned
+upgrade, not a patch: one major version at a time, on a green baseline, with a commit and a full test run after each
+step. The `dependency-upgrade` skill runs exactly that, if it is installed; otherwise put the steps in the report as
+the plan.
 
 If the user asks you to apply the patch-level fixes now: apply them through a supply-chain scanner if the project
 uses one, re-run the same audit commands from phase 2, confirm the finding is gone and nothing new appeared, then run
@@ -170,7 +172,7 @@ PATCH NOW
    Reachability: <reachable | not reachable (how checked) | unknown>. Command: <exact command>
 
 PLAN A PATCH WINDOW
-- <package>: <advisory ID>, <why it cannot be patched today>, <mitigation if any>, next step: dependency-upgrade
+- <package>: <advisory ID>, <why it cannot be patched today>, <mitigation if any>, next step: planned upgrade
 
 SUPPLY-CHAIN FLAGS
 - <package or file>: <flag> (<evidence>)

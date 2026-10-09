@@ -14,9 +14,9 @@ follows is the goal.
 Scope from the user: $ARGUMENTS
 
 Bundled files:
-- `${CLAUDE_PLUGIN_ROOT}/skills/session-discipline/claude-md-audit/scan.mjs`: finds the files, measures them, and runs the mechanical
+- `${CLAUDE_SKILL_DIR}/scan.mjs`: finds the files, measures them, and runs the mechanical
   checks (duplicates, unresolved references, secrets, vague wording, emphasis). Node 20+, no dependencies.
-- `${CLAUDE_PLUGIN_ROOT}/skills/session-discipline/claude-md-audit/CHECKS.md`: the judgment checklist, which files each tool reads, and
+- `${CLAUDE_SKILL_DIR}/CHECKS.md`: the judgment checklist, which files each tool reads, and
   the report template ([CHECKS.md](CHECKS.md)). Open it at Phase 2.
 
 ## Rules for the whole run
@@ -37,8 +37,8 @@ Bundled files:
 From the project root (or the path in the arguments):
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/session-discipline/claude-md-audit/scan.mjs" <root>
-node "${CLAUDE_PLUGIN_ROOT}/skills/session-discipline/claude-md-audit/scan.mjs" <root> --json > <scratch>/scan.json
+node "${CLAUDE_SKILL_DIR}/scan.mjs" <root>
+node "${CLAUDE_SKILL_DIR}/scan.mjs" <root> --json > <scratch>/scan.json
 ```
 
 Useful options: `--threshold 0.5` to see looser near-duplicates (default 0.6), `--global-refs` to also check paths
@@ -78,8 +78,8 @@ Open `CHECKS.md` and work through its checklist for every file. The scan cannot 
 - [ ] **Obvious rules**: rules that restate what the code, the linter config or the formatter already enforces, or
       what any competent agent does by default.
 - [ ] **Rules that keep being broken**: check `git log -p` on the instruction files for rules that were reworded or
-      repeated, and ask the user which rules the agent ignores. Each becomes a hook candidate; point to the `guards`
-      plugin's `rule-to-hook` skill to build it.
+      repeated, and ask the user which rules the agent ignores. Each becomes a hook candidate: name the event, what it
+      matches and what it blocks. If the `rule-to-hook` skill is installed, point to it to build the hook.
 - [ ] **Missing essentials**: how to install, build, test (all and a single test), lint and format; where the main
       code, tests and config live; anything an agent must never touch. Check that each answer is true now.
 - [ ] **Imports and layering**: an imported file that is huge or mostly irrelevant; a local file
@@ -127,7 +127,7 @@ Files: <n> (<every-session tokens> tokens every session, <other> conditional or 
 Findings: <critical> critical, <high> high, <medium> medium, <low> low
 Applied: <ids>   Declined or pending: <ids>
 Always-loaded tokens: <before> -> <after>
-Hook candidates handed to rule-to-hook: <ids or none>
+Hook candidates: <ids or none>
 Follow-ups for the user: <rotate a secret, decide a contradiction, ...>
 ```
 
@@ -135,5 +135,6 @@ Follow-ups for the user: <rotate a secret, decide a contradiction, ...>
 
 - The user wants a new CLAUDE.md for a project that has none: write it from the essentials list, then run this
   skill on the result later, once there is history to judge it against.
-- The user wants to record a lesson from the current session: that is the `retrospective` skill, which has its own
-  redundancy gate. This skill audits the whole store; the retrospective guards each new entry.
+- The user wants to record a lesson from the current session: this skill audits the whole store, not one new entry.
+  The `retrospective` skill guards each new entry with its own redundancy gate, if it is installed; otherwise check
+  the new line against the near-duplicate pairs this scan reports before adding it.

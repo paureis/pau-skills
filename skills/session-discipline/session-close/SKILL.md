@@ -38,11 +38,18 @@ The project's definition of done (which suites must pass before something counts
 - Scratch files hold no secrets. If the project records a "linked environment" invariant (which cloud project or
   account this checkout must point at), check it now.
 
-## 2. Retrospective (skill `retrospective`)
+## 2. Retrospective
 
-- Run it in full, with its redundancy gate (`audit.mjs --check` for each learning) and also
-  `node "${CLAUDE_PLUGIN_ROOT}/skills/session-discipline/retrospective/audit.mjs" --stale` from the project root: every path, command or
-  script cited in `CLAUDE.md` and memory that no longer exists is fixed or deleted in the same session.
+This skill carries its own copy of the rules audit, `${CLAUDE_SKILL_DIR}/audit.mjs`. It is the same script the
+`retrospective` skill uses, so this step works whether or not that skill is installed. Run it with `node` from the
+project root.
+
+- If the `retrospective` skill is installed, run it in full. If not, run the short version here: list the
+  corrections the user made and the work that was redone; write each lesson that will happen again as a proposed
+  line in a scratch file; score it with `node "${CLAUDE_SKILL_DIR}/audit.mjs" --check <file>`; and apply only the
+  lines that are not already there and that the user approves.
+- Either way, run `node "${CLAUDE_SKILL_DIR}/audit.mjs" --stale` from the project root: every path, command or script
+  cited in `CLAUDE.md` and memory that no longer exists is fixed or deleted in the same session.
 - Bar for adding anything: it will happen again, it names the failure it prevents, and it fits in 8 lines. If a rule
   already existed and was broken anyway, the answer is to mechanize it, not to rewrite it. Net growth of the rule
   stores is zero or negative per session (before/after bytes in the final message).
@@ -59,9 +66,15 @@ The project's definition of done (which suites must pass before something counts
   the next day for 22:40, and the next session believed a day had passed.
 - Design and security documents only if the session made decisions in those areas.
 
-## 4. Handoff (skill `handoff`, park mode)
+## 4. Handoff
 
-On top of the skill's template, the handoff always carries:
+If the `handoff` skill is installed, use it in park mode. If not, write the handoff file yourself with these
+sections: what the work is (two or three sentences), what was done, key learnings, the current state, the next
+steps (the user's priority first), and reference material (paths and decisions, not copies). Start the file with
+an instruction to the next session: say what you understand was done and your proposed next steps, then wait for
+approval before changing anything.
+
+Either way, the handoff always carries:
 
 - **The exact state of the item in progress**: which parts are done, what is missing, which tests fail, what is in
   WIP and why.

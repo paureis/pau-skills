@@ -21,6 +21,9 @@ This is a Claude Code plugin marketplace. Read this before changing anything.
   `${CLAUDE_PLUGIN_ROOT}/hooks/<plugin>/<file>`. A file in the skill's own folder can instead be
   `${CLAUDE_SKILL_DIR}/<file>`, which also works when the skill is installed on its own, without the plugin. A test
   fails on any such path that does not exist.
+- Every skill works when installed on its own, without the plugin or any other skill. A mention of another skill is
+  an optional extra that says what to do if it is not installed. A script a skill needs from another skill is copied
+  into its folder. `tests/standalone.test.mjs` checks all three.
 - Scripts and hooks use the Node.js standard library only (Node 20+). A hook exits 0 on input it does not
   understand, unless failing closed is its purpose, and checks `hookEnabled()` from `hooks/lib/config.mjs`.
 - Skills are language-neutral: never assume JavaScript; cover the common ecosystems or detect the project's tooling.

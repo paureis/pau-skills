@@ -21,7 +21,8 @@ claude plugin install pau-skills@pau-skills
 ```
 
 That installs everything. To take only part of it, install individual plugins instead (`session-discipline`,
-`verification`, `agent-orchestration`, `guards`, `planning`). For Codex, Cursor and other agents, the skills alone
+`verification`, `agent-orchestration`, `guards`, `planning`), or copy a single skill's folder: every skill works on its
+own, without the plugin or any other skill. For Codex, Cursor and other agents, the skills alone
 install with `npx skills@latest add paureis/pau-skills`.
 
 Not sure where to start? Run `/pau-skills:which-skill` and describe what you are doing.

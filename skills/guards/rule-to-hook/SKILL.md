@@ -13,15 +13,17 @@ a test that has been seen to fail.
 The rule, or where to find it: $ARGUMENTS
 
 Bundled files, open them when you reach their step:
-- `${CLAUDE_PLUGIN_ROOT}/skills/guards/rule-to-hook/HOOK-EVENTS.md`: every hook event, its input, and how it blocks or informs
-- `${CLAUDE_PLUGIN_ROOT}/skills/guards/rule-to-hook/templates/pretooluse-guard.mjs`: Bash-command guard skeleton (Node.js)
-- `${CLAUDE_PLUGIN_ROOT}/skills/guards/rule-to-hook/templates/pretooluse-guard.py`: the same skeleton in Python
-- `${CLAUDE_PLUGIN_ROOT}/skills/guards/rule-to-hook/templates/guard.test.mjs`: test skeleton with DENY and PASS tables
-- `${CLAUDE_PLUGIN_ROOT}/skills/guards/rule-to-hook/templates/settings-snippet.json`: the registration block
+- `${CLAUDE_SKILL_DIR}/HOOK-EVENTS.md`: every hook event, its input, and how it blocks or informs
+- `${CLAUDE_SKILL_DIR}/templates/pretooluse-guard.mjs`: Bash-command guard skeleton (Node.js)
+- `${CLAUDE_SKILL_DIR}/templates/pretooluse-guard.py`: the same skeleton in Python
+- `${CLAUDE_SKILL_DIR}/templates/guard.test.mjs`: test skeleton with DENY and PASS tables
+- `${CLAUDE_SKILL_DIR}/templates/settings-snippet.json`: the registration block
 
-Worked examples to read before writing your own: the guards in `${CLAUDE_PLUGIN_ROOT}/hooks/guards/*.mjs` (no-verify,
-merge, destructive, secret and inline-backtick guards), with their tests in the `tests/` folder of the pau-skills
-repository. Each has a pure decision function, a fail-open main block, and a table of commands to deny and to pass.
+The templates above are enough to build a guard. For worked examples, read the guards in `hooks/guards/` of the
+pau-skills repository (no-verify, merge, destructive, secret and inline-backtick guards), with their tests in its
+`tests/` folder. With the pau-skills plugin installed they are at `${CLAUDE_PLUGIN_ROOT}/hooks/guards/`; otherwise
+they are at https://github.com/paureis/pau-skills/tree/main/hooks/guards. Each has a pure decision function, a
+fail-open main block, and a table of commands to deny and to pass.
 
 ## 1. Pin the rule down
 
@@ -108,9 +110,10 @@ A test you have never seen fail proves nothing. Break the decision function on p
 4. **Restore and assert clean**: `git checkout -- <guard>` (or copy the scratch file back), then
    `git diff --exit-code -- <guard>` must print nothing, and the tests must be green again.
 
-`${CLAUDE_PLUGIN_ROOT}/skills/verification/mutation-test/mutate.sh` automates these steps (every plugin in this
-marketplace ships the whole repository, so the path works whichever plugin you installed). Its usage is at the top
-of the file.
+These steps work by hand. If the `mutation-test` skill is also installed, its `mutate.sh` automates them, with each
+step checked by the script; its usage is at the top of the file. With any pau-skills plugin the path is
+`${CLAUDE_PLUGIN_ROOT}/skills/verification/mutation-test/mutate.sh` (every plugin ships the whole repository); with
+the skill installed on its own, it is in that skill's folder.
 
 Done when you have seen the suite fail on the mutation and pass again after the restore.
 

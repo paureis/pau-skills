@@ -55,8 +55,9 @@ the project and write a CLAUDE.md. The judge scores are 1 to 5.
 
 Without the skill, every run wrote CLAUDE.md before it showed any draft, and neither persona who wanted personal
 preferences saved got them saved. (The beginner baseline still passes the approval check, because its opening message
-asks for a CLAUDE.md by name, which the grader counts as a request.) The skipped check is the write to `~/.claude/CLAUDE.md`: Claude Code asks a person before that edit
-even when an allow rule matches, and `-p` mode cannot answer, so it is tested by hand.
+asks for a CLAUDE.md by name, which the grader counts as a request.) The skipped check is the write to
+`~/.claude/CLAUDE.md`: Claude Code asks a person before that edit even when an allow rule matches, and `-p` mode
+cannot answer, so it is tested by hand.
 
 ## Scenarios
 

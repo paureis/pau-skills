@@ -55,7 +55,7 @@ gh api "repos/<owner>/<repo>/actions/artifacts?per_page=100" -q '.total_count'
 Or run the bundled script, which does the above and groups the result (Node 20+, `gh` logged in, no packages):
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/verification/ci-cost-and-cadence/measure-minutes.mjs" --repo <owner>/<repo> --since 2026-01-01 [--until 2026-01-08] [--by workflow|event|job|branch]
+node "<skill folder>/measure-minutes.mjs" --repo <owner>/<repo> --since 2026-01-01 [--until 2026-01-08] [--by workflow|event|job|branch]
 ```
 
 It prints estimated billed minutes per group, the number of runs and jobs, and how much of the total came from
