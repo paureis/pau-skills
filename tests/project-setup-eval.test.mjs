@@ -2,7 +2,7 @@
 // tests pin the grader so a change to it cannot quietly pass a bad run.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sentences, styleMetrics, questionCount, resolveOption, isApproval, unapprovedWrites, readsSecrets, grade } from '../evals/project-setup/grade.mjs';
+import { sentences, styleMetrics, questionCount, resolveOption, isApproval, unapprovedWrites, readsSecrets, sensitiveBlocks, grade } from '../evals/project-setup/grade.mjs';
 
 test('sentences ignore code, tables and headings, and count list items as sentences', () => {
   const text = '# Title\n\nRun the tests. Then read the error.\n\n```bash\nnpm test. npm run lint.\n```\n\n| a | b |\n\n- One item\n- Two `x.y` items';
@@ -40,6 +40,7 @@ test('isApproval needs a shown draft and a yes', () => {
   assert.equal(isApproval(where, '3'), false);
   assert.equal(isApproval('Do you approve the plan?', 'Yes. Please update the open question in CLAUDE.md.'), true);
   assert.equal(isApproval('Do you approve the plan?', 'What is CLAUDE.md?'), false);
+  assert.equal(isApproval('The write was blocked.\n1. **Try again.** I send the same write.\n2. Do not save.', '1'), true);
 });
 
 test('resolveOption maps a bare number to the last numbered list in the message', () => {
@@ -121,4 +122,18 @@ test('grade passes a clean run and fails the checks a bad run breaks', () => {
     'the skill loaded and read its bundled files',
   ]);
   assert.equal(grade({ ...bad, baseline: true }).some((c) => c.id === 'the skill loaded and read its bundled files'), false);
+});
+
+test('a personal-file write that Claude Code blocked as sensitive is skipped, not passed or failed', () => {
+  const log = [{ type: 'user', message: { content: [{ type: 'tool_result', is_error: true, content: 'Claude requested permissions to edit /h/.claude/CLAUDE.md which is a sensitive file.' }] } }];
+  assert.deepEqual(sensitiveBlocks(log), ['/h/.claude/CLAUDE.md']);
+  const run = {
+    scenario: { expect: { personal: 'global' } },
+    transcript: [{ role: 'user', text: 'hi' }, { role: 'assistant', text: 'Hello.' }],
+    tools: [],
+    files: { project: {}, home: {}, homeBefore: {} },
+  };
+  const check = (r) => grade(r).find((c) => c.id === 'personal preferences saved for all projects');
+  assert.equal(check(run).pass, false);
+  assert.equal(check({ ...run, blocked: sensitiveBlocks(log) }).pass, null);
 });

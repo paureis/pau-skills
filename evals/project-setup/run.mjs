@@ -16,7 +16,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statS
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
-import { grade } from './grade.mjs';
+import { grade, sensitiveBlocks } from './grade.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..');
@@ -198,7 +198,9 @@ function runScenario(scenario, opts) {
   }
 
   const files = { project: snapshot(project), home: homeFiles(home), homeBefore };
-  const run = { scenario, transcript, tools, files, baseline: !!opts.baseline };
+  const logFile = findSessionLog(home, id);
+  if (logFile) cpSync(logFile, join(dir, 'session.jsonl'));
+  const run = { scenario, transcript, tools, files, baseline: !!opts.baseline, blocked: sensitiveBlocks(readLog(logFile)) };
   const checks = grade(run);
   const result = { name, turns: transcript.length / 2, costUsd: +cost.toFixed(2), checks };
   if (opts.judge) result.judge = judge(run, { ...opts, cwd: side, home: side });
@@ -215,9 +217,9 @@ const results = [];
 for (const s of scenarios) {
   const r = runScenario(s, opts);
   results.push(r);
-  const passed = r.checks.filter((c) => c.pass).length;
-  console.log(`\n${r.name}: ${passed}/${r.checks.length} checks, ${r.turns} turns, $${r.costUsd}`);
-  for (const c of r.checks) console.log(`  ${c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.pass || !c.detail ? '' : `  (${c.detail})`}`);
+  const scored = r.checks.filter((c) => c.pass !== null);
+  console.log(`\n${r.name}: ${scored.filter((c) => c.pass).length}/${scored.length} checks, ${r.turns} turns, $${r.costUsd}`);
+  for (const c of r.checks) console.log(`  ${c.pass === null ? 'SKIP' : c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.pass === true || !c.detail ? '' : `  (${c.detail})`}`);
   if (r.judge) console.log(`  judge: ${JSON.stringify(r.judge.scores || r.judge)}`);
 }
 writeFileSync(join(opts.out, `summary${opts.baseline ? '-baseline' : ''}.json`), JSON.stringify(results, null, 2));

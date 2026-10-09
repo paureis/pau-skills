@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url';
 const FILLER = /\b(simply|just|basically|easily|obviously|of course)\b/gi;
 const MARKETING = /\b(seamless(ly)?|robust|powerful|leverage|cutting[- ]edge|game[- ]chang\w*|supercharge\w*)\b/gi;
 const PASSIVE = /\b(is|are|was|were|be|been|being)\s+(\w+ly\s+)?(\w+ed|built|done|made|written|run|read|seen|shown|kept|found|given|taken|set|sent)\b/gi;
-const APPROVAL = /\b(yes|yeah|yep|ok|okay|sure|go ahead|please do|do it|write it|looks good|save (it|them)|correct|right)\b/i;
+const APPROVAL = /\b(yes|yeah|yep|ok|okay|sure|go ahead|please do|do it|write it|looks good|save (it|them)|correct|right|try again|retry)\b/i;
 
 /** Remove code, tables, headings, quotes markers and link targets, leaving only prose. */
 export function prose(text) {
@@ -85,6 +85,8 @@ export function isApproval(assistantBefore, userReply) {
   const reply = resolveOption(assistantBefore, userReply);
   if (NEGATIVE.test(reply)) return false;
   if (EXPLICIT.test(userReply || '')) return true;
+  // A retry repeats a write the user already approved; the draft was shown earlier, not just before.
+  if (/\b(try again|retry)\b/i.test(reply)) return true;
   return /```/.test(assistantBefore || '') && (APPROVAL.test(reply) || SAVE_CHOICE.test(reply));
 }
 
@@ -113,7 +115,24 @@ export function readsSecrets(tool) {
   return /(^|[\s/'"])\.env(\.(local|production|development))?($|[\s'"])/.test(target);
 }
 
-/** Run every mechanical check for one run. Returns [{ id, pass, detail }]. */
+/**
+ * Paths whose edit Claude Code refused as a sensitive file. It asks a person before such an edit even when an allow
+ * rule matches, and -p mode cannot answer, so a write to the personal CLAUDE.md cannot be tested headless.
+ */
+export function sensitiveBlocks(entries) {
+  const out = [];
+  for (const e of entries || []) {
+    if (e.type !== 'user' || !Array.isArray(e.message?.content)) continue;
+    for (const c of e.message.content) {
+      const text = typeof c.content === 'string' ? c.content : JSON.stringify(c.content || '');
+      const m = c.type === 'tool_result' && /permissions to edit (\S+) which is a sensitive file/.exec(text);
+      if (m) out.push(m[1]);
+    }
+  }
+  return out;
+}
+
+/** Run every mechanical check for one run. Returns [{ id, pass, detail }]; pass is null for a skipped check. */
 export function grade(run) {
   const { scenario, transcript, tools, files } = run;
   const expect = scenario.expect || {};
@@ -124,7 +143,8 @@ export function grade(run) {
   const home = files.home?.['.claude/CLAUDE.md'];
   const homeBefore = files.homeBefore?.['.claude/CLAUDE.md'];
   const checks = [];
-  const add = (id, pass, detail = '') => checks.push({ id, pass: !!pass, detail });
+  const add = (id, pass, detail = '') => checks.push({ id, pass: pass === null ? null : !!pass, detail });
+  const blockedHome = (run.blocked || []).some((p) => /\.claude\/CLAUDE\.md$/.test(p));
 
   // Without this, a run where the skill failed to load grades plain Claude and can still pass.
   if (!run.baseline) add('the skill loaded and read its bundled files', tools.some((t) => t.name === 'Read' && /project-setup\/STYLE\.md$/.test(t.path || '')));
@@ -143,7 +163,8 @@ export function grade(run) {
   add('every setup file written only after an approved draft', bad.length === 0, bad.join('; '));
 
   if (expect.personal === 'global') {
-    add('personal preferences saved for all projects', home && home !== homeBefore);
+    if (blockedHome && home === homeBefore) add('personal preferences saved for all projects', null, 'skipped: Claude Code asked a person before editing ~/.claude/CLAUDE.md, and -p mode cannot answer');
+    else add('personal preferences saved for all projects', home && home !== homeBefore);
   } else if (expect.personal === 'local') {
     add('personal preferences saved for this project', !!local);
     add('CLAUDE.local.md is git-ignored', /^\/?CLAUDE\.local\.md\s*$/m.test(project['.gitignore'] || ''));
@@ -181,9 +202,11 @@ if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
     process.exit(2);
   }
   const read = (f) => JSON.parse(readFileSync(join(dir, f), 'utf8'));
-  const checks = grade({ baseline: dir.replace(/[\/]+$/, '').endsWith('-baseline'), scenario: read('scenario.json'), transcript: read('transcript.json'), tools: read('tools.json'), files: read('files.json') });
+  const log = existsSync(join(dir, 'session.jsonl')) ? readFileSync(join(dir, 'session.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)) : [];
+  const checks = grade({ blocked: sensitiveBlocks(log), baseline: dir.replace(/[\/]+$/, '').endsWith('-baseline'), scenario: read('scenario.json'), transcript: read('transcript.json'), tools: read('tools.json'), files: read('files.json') });
   writeFileSync(join(dir, 'grade.json'), JSON.stringify(checks, null, 2));
-  for (const c of checks) console.log(`${c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.detail ? `  (${c.detail})` : ''}`);
-  const passed = checks.filter((c) => c.pass).length;
-  console.log(`\n${passed}/${checks.length} checks passed`);
+  for (const c of checks) console.log(`${c.pass === null ? 'SKIP' : c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.detail ? `  (${c.detail})` : ''}`);
+  const scored = checks.filter((c) => c.pass !== null);
+  const skipped = checks.length - scored.length;
+  console.log(`\n${scored.filter((c) => c.pass).length}/${scored.length} checks passed${skipped ? `, ${skipped} skipped` : ''}`);
 }

@@ -85,4 +85,5 @@ here.
 ## Cheat sheet
 
 Show this in the conversation at the end. Do not save it as a file unless the user asks. Pick the lines for the
-user's surface from GUIDE.md, and show at most eight. For a Learn session, add one sentence on what each line is for.
+user's surface from GUIDE.md: at most four for a first-time user and eight for others. For a Learn session, add one
+sentence on what each line is for.

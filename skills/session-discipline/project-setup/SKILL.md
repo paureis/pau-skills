@@ -48,7 +48,8 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
   affects, and how to change it later.
 - **Stand alone.** This skill needs nothing else to be installed. Do not send the user to other skills or plugins.
 - **Keep these instructions out of the conversation.** Do not mention phases, the question bank, question ids such
-  as "Q7", or notes to yourself. The user sees only questions, findings, drafts and results.
+  as "Q7", or notes to yourself, and do not announce that you are reading this skill's files. The user sees only
+  questions, findings, drafts and results.
 - **State only what you checked.** Do not give a line count, a version or a file name you did not check. If you
   find a mistake in something you said, correct it in your next message.
 - **Use the user's language.** If the user writes in another language, use that language and the same rules.
@@ -104,7 +105,8 @@ During a Learn session, teach while you ask:
 - Teach at most one new idea per question. Use an example from this project.
 - Every four or five questions, say how many are left.
 
-During a Build session, keep each message to a few lines: the question, the options and one line of reason.
+During a Build session, keep each message to a few lines: the question, the options and one line of reason. Show
+the findings in at most three lines.
 
 ## Phase 3: Confirm the decisions
 
@@ -126,7 +128,8 @@ Read `${CLAUDE_SKILL_DIR}/TEMPLATES.md`. Draft the project CLAUDE.md from the de
   "Instruction files").
 
 Before you ask, check the draft yourself: every command was found or confirmed, no secret or key is in it, no
-personal preference is in it, and every sentence follows STYLE.md. Then ask: "Do you want me to write this file?"
+personal preference is in it, no open question was already answered in the interview, and every sentence follows
+STYLE.md. If the commit answer means you will commit the file after writing it, say so in the same message. Then ask: "Do you want me to write this file?"
 with the options yes, change something, and no. Write it only after a yes.
 
 After you write it, say in one sentence that the file is shared with everyone who uses the project. Then follow the
@@ -159,8 +162,8 @@ it.
 
 ## Phase 6: Cheat sheet and first task
 
-1. Show the cheat sheet for the user's surface: at most eight lines from GUIDE.md, chosen for this user. For a Learn
-   session, add one habit from "Habits worth teaching".
+1. Show the cheat sheet for the user's surface: lines from GUIDE.md chosen for this user, at most four for a
+   first-time user and at most eight for others. For a Learn session, add one habit from "Habits worth teaching".
 2. Recommend one first task that fits the project and the session style, and name up to two others. Make the
    recommended one small and safe. For a Learn session, start with a task that only reads, such as "explain how
    this project is organized". For a Build session, start with the most useful small change that the interview
