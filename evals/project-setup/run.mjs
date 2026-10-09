@@ -180,7 +180,9 @@ function runScenario(scenario, opts) {
       '--permission-mode', 'acceptEdits', '--add-dir', home,
       // No person can answer a multiple-choice prompt in -p mode, so the skill must use its plain-text fallback.
       '--disallowedTools', 'AskUserQuestion',
-      '--allowedTools', 'Bash(git *)', 'Bash(ls *)', 'Bash(cat *)', 'Bash(echo *)', 'Bash(printenv *)', 'Bash(find *)', 'Bash(claude --version)'];
+      // Loading a skill that declares allowed-tools asks for permission when the model loads it; a person would click
+      // allow. A typed /project-setup does not ask.
+      '--allowedTools', 'Skill(project-setup)', 'Bash(git *)', 'Bash(ls *)', 'Bash(cat *)', 'Bash(echo *)', 'Bash(printenv *)', 'Bash(find *)', 'Bash(claude --version)'];
     if (opts.model) argv.push('--model', opts.model);
     const out = claude(argv, { cwd: project, home, input: '' });
     cost += out.total_cost_usd || 0;
@@ -195,7 +197,7 @@ function runScenario(scenario, opts) {
   }
 
   const files = { project: snapshot(project), home: homeFiles(home), homeBefore };
-  const run = { scenario, transcript, tools, files };
+  const run = { scenario, transcript, tools, files, baseline: !!opts.baseline };
   const checks = grade(run);
   const result = { name, turns: transcript.length / 2, costUsd: +cost.toFixed(2), checks };
   if (opts.judge) result.judge = judge(run, { ...opts, cwd: side, home: side });

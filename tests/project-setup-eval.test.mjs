@@ -78,6 +78,7 @@ test('grade passes a clean run and fails the checks a bad run breaks', () => {
       { role: 'assistant', text: 'Saved.' },
     ],
     tools: [
+      { turn: 0, name: 'Read', path: '/h/.claude/skills/project-setup/STYLE.md' },
       { turn: 1, name: 'Write', path: '/p/CLAUDE.md' },
       { turn: 2, name: 'Write', path: '/p/CLAUDE.local.md' },
       { turn: 2, name: 'Edit', path: '/p/.gitignore' },
@@ -92,6 +93,7 @@ test('grade passes a clean run and fails the checks a bad run breaks', () => {
   assert.deepEqual(failed(clean), []);
 
   const bad = structuredClone(clean);
+  bad.tools.shift();
   bad.tools[0].turn = 0;
   bad.files.project['CLAUDE.md'] = md.replace('@AGENTS.md', '') + '\nSession style: Learn.\n';
   bad.files.home['.claude/CLAUDE.md'] = '# Replaced\n';
@@ -103,5 +105,7 @@ test('grade passes a clean run and fails the checks a bad run breaks', () => {
     'never opened a secrets file',
     'no personal preference in project CLAUDE.md',
     'personal CLAUDE.md unchanged',
+    'the skill loaded and read its bundled files',
   ]);
+  assert.equal(grade({ ...bad, baseline: true }).some((c) => c.id === 'the skill loaded and read its bundled files'), false);
 });

@@ -117,6 +117,9 @@ export function grade(run) {
   const checks = [];
   const add = (id, pass, detail = '') => checks.push({ id, pass: !!pass, detail });
 
+  // Without this, a run where the skill failed to load grades plain Claude and can still pass.
+  if (!run.baseline) add('the skill loaded and read its bundled files', tools.some((t) => t.name === 'Read' && /project-setup\/STYLE\.md$/.test(t.path || '')));
+
   add('project CLAUDE.md written', claudeMd, claudeMd ? `${claudeMd.split('\n').length} lines` : 'missing');
   if (claudeMd) {
     const n = claudeMd.split('\n').length;
@@ -167,7 +170,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
     process.exit(2);
   }
   const read = (f) => JSON.parse(readFileSync(join(dir, f), 'utf8'));
-  const checks = grade({ scenario: read('scenario.json'), transcript: read('transcript.json'), tools: read('tools.json'), files: read('files.json') });
+  const checks = grade({ baseline: dir.endsWith('-baseline'), scenario: read('scenario.json'), transcript: read('transcript.json'), tools: read('tools.json'), files: read('files.json') });
   writeFileSync(join(dir, 'grade.json'), JSON.stringify(checks, null, 2));
   for (const c of checks) console.log(`${c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.detail ? `  (${c.detail})` : ''}`);
   const passed = checks.filter((c) => c.pass).length;
