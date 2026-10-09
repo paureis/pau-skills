@@ -35,7 +35,7 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
   AskUserQuestion) when one is available, with one question per call. If not, show numbered options. Free text is
   always allowed.
 - **Recommend an answer** for each question, with a one-sentence reason, unless the question asks for a fact about
-  the user.
+  the user. Give one recommendation, not "1 if this, 2 if that".
 - **Never ask what the project already shows.** Say what you found and ask the user to confirm it.
 - **Silence is not an answer.** If a question closes or times out without an answer, ask it again in plain text.
 - **Do not write or change code during the setup.** The setup is done when its files are written and the user picks

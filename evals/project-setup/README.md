@@ -42,6 +42,22 @@ with the default model in October 2026). Each run needs the `claude` CLI, logged
 
 `tests/project-setup-eval.test.mjs` tests the grader itself, without a model.
 
+## Results, October 2026
+
+Last full round, with the default model. "Without" is `--baseline`: the same persona asks plain Claude Code to set up
+the project and write a CLAUDE.md. The judge scores are 1 to 5.
+
+| Scenario | Checks with | Checks without | Transparency with / without | Lowest judge score with |
+|---|---|---|---|---|
+| `nervous-beginner` | 11/11 (1 skipped) | 9/11 | 4 / 1 | 4 |
+| `hobbyist-empty-folder` | 11/11 | 9/10 | 4 / 1 | 3 |
+| `experienced-dev` | 15/15 | 11/14 | 3 / 2 | 3 |
+
+Without the skill, every run wrote CLAUDE.md before it showed any draft, and neither persona who wanted personal
+preferences saved got them saved. (The beginner baseline still passes the approval check, because its opening message
+asks for a CLAUDE.md by name, which the grader counts as a request.) The skipped check is the write to `~/.claude/CLAUDE.md`: Claude Code asks a person before that edit
+even when an allow rule matches, and `-p` mode cannot answer, so it is tested by hand.
+
 ## Scenarios
 
 | Scenario | Fixture | Persona |
