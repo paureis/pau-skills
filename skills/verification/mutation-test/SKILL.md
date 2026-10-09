@@ -9,7 +9,7 @@ argument-hint: "<file> <test command>"
 A green test proves nothing until you have watched it go red for the defect it claims to catch. An unmutated guard is
 decoration. Use the harness for every hand mutation; do not mutate by hand with `sed` and `git checkout`.
 
-Harness: `bash "${CLAUDE_PLUGIN_ROOT}/skills/verification/mutation-test/mutate.sh"`. On Windows run it from Git Bash.
+Harness: `bash "${CLAUDE_SKILL_DIR}/mutate.sh"`. On Windows run it from Git Bash.
 
 ## Steps
 
@@ -21,10 +21,10 @@ Harness: `bash "${CLAUDE_PLUGIN_ROOT}/skills/verification/mutation-test/mutate.s
 4. **Run it** with the narrowest command that should catch it:
 
    ```bash
-   bash "${CLAUDE_PLUGIN_ROOT}/skills/verification/mutation-test/mutate.sh" --label no-tenant-filter \
+   bash "${CLAUDE_SKILL_DIR}/mutate.sh" --label no-tenant-filter \
      --sed 's/r.tenantId === page.tenantId/true/' src/server/status.ts npx vitest run tests/status.test.ts
    # or, with a unified diff you wrote to a scratch file:
-   bash "${CLAUDE_PLUGIN_ROOT}/skills/verification/mutation-test/mutate.sh" src/server/status.ts npm test < /tmp/m.patch
+   bash "${CLAUDE_SKILL_DIR}/mutate.sh" src/server/status.ts npm test < /tmp/m.patch
    ```
 
 5. **Read the result.**

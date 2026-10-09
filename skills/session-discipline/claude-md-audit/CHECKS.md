@@ -90,9 +90,9 @@ delete it. Examples of rewrites:
 ### Rules that keep being broken
 Signals: the scan's emphasised rules (capitals, "again", "NEVER"); the same rule reworded several times in
 `git log -p -- CLAUDE.md`; the user saying "it keeps doing X". A rule that has been broken more than twice while
-written down should become a mechanism: a PreToolUse hook, a pre-commit check, a CI step or a test. Point the user to
-the `guards` plugin's `rule-to-hook` skill, and propose shortening the rule to one line that names the hook once it
-exists.
+written down should become a mechanism: a PreToolUse hook, a pre-commit check, a CI step or a test. Describe the
+hook (its event, what it matches, what it blocks), point the user to the `rule-to-hook` skill if it is installed, and
+propose shortening the rule to one line that names the hook once it exists.
 
 ### Missing essentials
 An agent should be able to find, from the always-loaded files or one pointer away:
@@ -147,7 +147,7 @@ Why: <one or two sentences>
 ### L1. ...   [low]
 
 ## Hook candidates
-<rule, how often broken, suggested mechanism; hand to the guards plugin's rule-to-hook skill>
+<rule, how often broken, suggested mechanism: event, what it matches, what it blocks>
 
 ## Decisions needed from you
 <contradictions where either side could win; content whose relevance only the user can judge>

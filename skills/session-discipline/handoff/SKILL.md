@@ -21,8 +21,10 @@ off, even when a written rule requires it. Before Step 1, state one of these to 
 
 - **"Retrospective already ran this session"**, and say what it produced (including "nothing
   worth adding", which is a legitimate result).
-- **"Running the retrospective now"**: invoke the `retrospective` skill (`/session-discipline:retrospective`), finish it, then
-  come back and write the handoff.
+- **"Running the retrospective now"**: if the `retrospective` skill is installed, invoke it, finish it, then come back
+  and write the handoff. If it is not, run this short version: list the corrections the user made and the work that
+  was redone; for each one that will happen again, propose one line for `CLAUDE.md` or memory, after checking that
+  no existing line already says it; show the exact lines and apply only the ones the user approves.
 - **"Skipping the retrospective because <reason>"**, only for a genuinely trivial session
   (a one-line fix, a pure question). If corrections were made, work was redone, or a phase
   closed, it is not trivial.

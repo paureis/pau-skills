@@ -12,10 +12,10 @@ ecosystem; only the commands change, and those are in the reference files.
 Request from the user: $ARGUMENTS
 
 Reference files, read when you reach their phase:
-- `${CLAUDE_PLUGIN_ROOT}/skills/guards/dependency-upgrade/ECOSYSTEMS.md`: per-ecosystem commands (list outdated, upgrade one
+- `${CLAUDE_SKILL_DIR}/ECOSYSTEMS.md`: per-ecosystem commands (list outdated, upgrade one
   package, move to a new major, regenerate the lockfile, audit, explain why a package is present, where changelogs
   live), plus runtimes, toolchains and Docker images.
-- `${CLAUDE_PLUGIN_ROOT}/skills/guards/dependency-upgrade/RESEARCH.md`: the checklist for researching one major bump.
+- `${CLAUDE_SKILL_DIR}/RESEARCH.md`: the checklist for researching one major bump.
 
 ## Pick the mode
 
@@ -43,7 +43,7 @@ and ask which mode before changing anything.
   released, and a typo can resolve to a different package.
 - **Flag supply-chain risk, do not wave it through.** A package that changed owner or maintainers, a sudden major
   after long dormancy, a new install script, or a name one letter off from a popular one: stop and tell the user before
-  installing it. For a deeper JavaScript audit, use the `guards` plugin's `dependency-security-audit` skill.
+  installing it. For a deeper audit, the `dependency-security-audit` skill covers every common ecosystem, if installed.
 - **Do not suppress warnings or skip tests to get green.** A test you disable to finish the upgrade is a breaking
   change you shipped without reading.
 - **Respect what the project already uses**: its package manager (the lockfile says which), its update bot config
@@ -183,7 +183,8 @@ something prevents it: name the blocker (peer requirement, runtime, an unfixed u
 
 ## When not to use this
 
-- The task is a security response to a specific CVE: use `dependency-security-audit` first, then come back here for
-  the upgrade itself if it is a major.
+- The task is a security response to a specific CVE: first find out whether the vulnerable code is reachable and which
+  version fixes it (the `dependency-security-audit` skill does this, if installed), then come back here for the
+  upgrade itself if it is a major.
 - There is no test suite or build at all: say so. Without a baseline the upgrade cannot be judged, and the honest
   first step is a smoke test the user agrees covers the main paths.

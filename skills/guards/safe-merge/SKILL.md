@@ -9,8 +9,8 @@ argument-hint: "<pr number> [--dry-run]"
 `gh pr merge` is denied by this plugin's merge guard. Merge with the script instead:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/guards/safe-merge/safe-merge.mjs" <number> --dry-run   # reads only: prints what it would do
-node "${CLAUDE_PLUGIN_ROOT}/skills/guards/safe-merge/safe-merge.mjs" <number>
+node "${CLAUDE_SKILL_DIR}/safe-merge.mjs" <number> --dry-run   # reads only: prints what it would do
+node "${CLAUDE_SKILL_DIR}/safe-merge.mjs" <number>
 ```
 
 Always run the dry run first and show its output to the user. Merging is an outward-facing action: get the user's go

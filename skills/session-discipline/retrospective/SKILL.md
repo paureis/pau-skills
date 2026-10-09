@@ -9,7 +9,7 @@ Analyze the current conversation, extract learnings that should improve future w
 
 This improves *process and skills*, which is different from documenting a deliverable (that's a summary). Where narrower tools fit, delegate to them rather than duplicating: the `claude-md-management:revise-claude-md` skill for CLAUDE.md edits if it is installed, and the built-in memory system for feedback and preferences.
 
-The audit script used below is `${CLAUDE_PLUGIN_ROOT}/skills/session-discipline/retrospective/audit.mjs`. Run it with `node` from the project root.
+The audit script used below is `${CLAUDE_SKILL_DIR}/audit.mjs`. Run it with `node` from the project root.
 
 ## When to Use
 
@@ -32,7 +32,7 @@ show the result. The failure this prevents: a rule store that keeps growing by r
 reads it. Growth is the cost; a learning has to buy its place.
 
 1. **Search before you write.** Put the proposed learning in a scratch file and run
-   `node "${CLAUDE_PLUGIN_ROOT}/skills/session-discipline/retrospective/audit.mjs" --check <file>` from the project root (it scores the
+   `node "${CLAUDE_SKILL_DIR}/audit.mjs" --check <file>` from the project root (it scores the
    text against every unit of both CLAUDE.md files, every memory and every skill). Classify against the closest unit:
    - **DUPLICATE** (already stated): drop it. If it happened anyway, the existing rule failed as a rule, so the
      retrospective item becomes "make that rule enforceable" (a gate, a script, a test), never a restatement.
@@ -43,12 +43,12 @@ reads it. Growth is the cost; a learning has to buy its place.
 2. **Pay for growth.** A session's net change to the rule stores should be zero or negative. Pair each NEW
    unit with a consolidation taken from the audit's "most overlapping pairs" list; if none is worth doing,
    say so in the table and let the user decide.
-3. **Measure and report.** Run `node "${CLAUDE_PLUGIN_ROOT}/skills/session-discipline/retrospective/audit.mjs"` before and after
+3. **Measure and report.** Run `node "${CLAUDE_SKILL_DIR}/audit.mjs"` before and after
    applying and put each store's before/after bytes in the final message. If MEMORY.md exceeds about 60 lines or a
    single memory exceeds about 4 KB, propose the trim in the same retrospective.
 4. **Prune on a cadence.** When the audit lists more than ten pairs above its floor, the first row of the
    table is a consolidation pass, not a new learning.
-5. **Stale references.** Run `node "${CLAUDE_PLUGIN_ROOT}/skills/session-discipline/retrospective/audit.mjs" --stale` from the project
+5. **Stale references.** Run `node "${CLAUDE_SKILL_DIR}/audit.mjs" --stale` from the project
    root: it lists every backticked path or `npm run` script cited in the project CLAUDE.md, memory and project
    skills that no longer exists (exit 2). Each hit is fixed or deleted in the same retrospective; a rule that points
    at something that is gone is stale by definition.

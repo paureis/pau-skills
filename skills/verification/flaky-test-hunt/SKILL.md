@@ -13,9 +13,9 @@ numbers rather than with one green run.
 Context from the user: $ARGUMENTS
 
 Reference files, read when you reach their phase:
-- `${CLAUDE_PLUGIN_ROOT}/skills/verification/flaky-test-hunt/COMMANDS.md`: per-ecosystem commands to isolate, repeat, shuffle and parallelize
-- `${CLAUDE_PLUGIN_ROOT}/skills/verification/flaky-test-hunt/TAXONOMY.md`: the causes, each with symptoms, how to confirm, right and wrong fix
-- `${CLAUDE_PLUGIN_ROOT}/skills/verification/flaky-test-hunt/repeat.mjs`: runs any command N times and reports the failure rate,
+- `${CLAUDE_SKILL_DIR}/COMMANDS.md`: per-ecosystem commands to isolate, repeat, shuffle and parallelize
+- `${CLAUDE_SKILL_DIR}/TAXONOMY.md`: the causes, each with symptoms, how to confirm, right and wrong fix
+- `${CLAUDE_SKILL_DIR}/repeat.mjs`: runs any command N times and reports the failure rate,
   a 95% interval and the distinct failure signatures
 
 ## Rules that apply throughout
@@ -61,7 +61,7 @@ build files, the CI workflow) and use the commands in `COMMANDS.md` for it. Then
 not tallied by hand:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/verification/flaky-test-hunt/repeat.mjs" --runs 50 --timeout 120 --json flake-isolated.json -- pytest "tests/test_x.py::test_y" -p no:randomly
+node "${CLAUDE_SKILL_DIR}/repeat.mjs" --runs 50 --timeout 120 --json flake-isolated.json -- pytest "tests/test_x.py::test_y" -p no:randomly
 ```
 
 It sets `REPEAT_RUN` in each run's environment, groups failures by a normalized signature of their last lines, and

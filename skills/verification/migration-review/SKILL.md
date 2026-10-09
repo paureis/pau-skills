@@ -13,11 +13,11 @@ still serving traffic, and what is lost if it has to be undone.
 Scope, from the arguments: $ARGUMENTS
 
 Reference files, read when you reach their step:
-- `${CLAUDE_PLUGIN_ROOT}/skills/verification/migration-review/LOCKS.md`: statement-by-statement risk table per engine (lock taken,
+- `${CLAUDE_SKILL_DIR}/LOCKS.md`: statement-by-statement risk table per engine (lock taken,
   rewrite or scan, safe alternative), plus how migration tools wrap statements in transactions
-- `${CLAUDE_PLUGIN_ROOT}/skills/verification/migration-review/PATTERNS.md`: expand/contract recipes (rename a column, change a type,
+- `${CLAUDE_SKILL_DIR}/PATTERNS.md`: expand/contract recipes (rename a column, change a type,
   add NOT NULL, split a table, add a foreign key, add a unique constraint, drop a column) and batched backfills
-- `${CLAUDE_PLUGIN_ROOT}/skills/verification/migration-review/SIZING.md`: queries for row counts, table sizes, write rates and long
+- `${CLAUDE_SKILL_DIR}/SIZING.md`: queries for row counts, table sizes, write rates and long
   transactions on PostgreSQL, MySQL, SQL Server and SQLite; run-time estimates; what to watch during the run
 
 ## Do not

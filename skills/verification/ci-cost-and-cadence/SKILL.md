@@ -13,12 +13,12 @@ option, and then build it so that no shortcut can turn a skipped check into a gr
 Context from the user: $ARGUMENTS
 
 Reference files, read when you reach their step:
-- `${CLAUDE_PLUGIN_ROOT}/skills/verification/ci-cost-and-cadence/MEASURE.md`: where the minutes go, and what the suite has caught
-- `${CLAUDE_PLUGIN_ROOT}/skills/verification/ci-cost-and-cadence/OPTIONS.md`: the five options and the comparison table
-- `${CLAUDE_PLUGIN_ROOT}/skills/verification/ci-cost-and-cadence/NIGHTLY.md`: the nightly-with-safeguards design in detail
-- `${CLAUDE_PLUGIN_ROOT}/skills/verification/ci-cost-and-cadence/TRAPS.md`: platform traps, each with what to do
-- `${CLAUDE_PLUGIN_ROOT}/skills/verification/ci-cost-and-cadence/templates/`: workflow skeletons and pseudocode, starting points only
-- `${CLAUDE_PLUGIN_ROOT}/skills/verification/ci-cost-and-cadence/measure-minutes.mjs`: estimates billed minutes by workflow and job
+- `${CLAUDE_SKILL_DIR}/MEASURE.md`: where the minutes go, and what the suite has caught
+- `${CLAUDE_SKILL_DIR}/OPTIONS.md`: the five options and the comparison table
+- `${CLAUDE_SKILL_DIR}/NIGHTLY.md`: the nightly-with-safeguards design in detail
+- `${CLAUDE_SKILL_DIR}/TRAPS.md`: platform traps, each with what to do
+- `${CLAUDE_SKILL_DIR}/templates/`: workflow skeletons and pseudocode, starting points only
+- `${CLAUDE_SKILL_DIR}/measure-minutes.mjs`: estimates billed minutes by workflow and job
 
 ## 1. Ask first, but read before asking
 

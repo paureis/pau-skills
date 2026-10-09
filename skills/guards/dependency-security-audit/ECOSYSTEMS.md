@@ -139,7 +139,7 @@ Pin a transitive: a constraints file (`pip install -c constraints.txt`), `constr
 - Scan the image that is deployed (pull it by the tag or digest from the deploy config), not only a local rebuild,
   which may pick up newer base layers.
 - Fixes: a newer base image digest, a slimmer base (fewer OS packages, fewer CVEs), or an explicit package upgrade in
-  the Dockerfile. Base image changes go through `dependency-upgrade`.
+  the Dockerfile. A base image change is a planned upgrade (the `dependency-upgrade` skill covers it, if installed).
 
 ## Cross-ecosystem scanners
 

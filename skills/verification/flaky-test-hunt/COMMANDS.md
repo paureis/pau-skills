@@ -8,7 +8,7 @@ Wherever a runner has no repeat option, or its repeat option runs inside one pro
 leaks between processes, or only appears within one), wrap the command with `repeat.mjs`:
 
 ```bash
-R="${CLAUDE_PLUGIN_ROOT}/skills/verification/flaky-test-hunt/repeat.mjs"
+R="<skill folder>/repeat.mjs"   # <skill folder>: the folder of this skill's SKILL.md
 node "$R" --runs 100 --timeout 60 -- <single-test command>
 node "$R" --runs 20 --parallel 4 -- <file command>        # copies of the same test at once: shared ports, files, DBs
 node "$R" --runs 300 --until-fail -- <single-test command> # stop at the first failure and keep its output
