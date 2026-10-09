@@ -9,7 +9,7 @@
     {
       "name": "pau-skills",
       "description": "Everything in this marketplace as one plugin: every skill and every hook from session-discipline, verification, agent-orchestration, guards and planning. Install this or the individual plugins, not both.",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -161,8 +161,8 @@
     },
     {
       "name": "session-discipline",
-      "description": "Start every session from the written roadmap and the git state, keep the facts a compaction loses, and close in a fixed order: retrospective, roadmap and log, handoff, commit. Plus an instruction-file audit and a router over every skill.",
-      "version": "0.3.0",
+      "description": "Start every session from the written roadmap and the git state, keep the facts a compaction loses, and close in a fixed order: retrospective, roadmap and log, handoff, commit. Plus an instruction-file audit, a guided project setup for new users, and a router over every skill.",
+      "version": "0.4.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"

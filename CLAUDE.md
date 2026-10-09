@@ -18,7 +18,9 @@ This is a Claude Code plugin marketplace. Read this before changing anything.
 - After changing a `hooks.json` or adding a plugin folder, run `node scripts/build-marketplace.mjs`. Never edit the
   `skills` or `hooks` fields in `marketplace.json` by hand.
 - Bundled files are referenced as `${CLAUDE_PLUGIN_ROOT}/skills/<plugin>/<skill>/<file>` or
-  `${CLAUDE_PLUGIN_ROOT}/hooks/<plugin>/<file>`. A test fails on any such path that does not exist.
+  `${CLAUDE_PLUGIN_ROOT}/hooks/<plugin>/<file>`. A file in the skill's own folder can instead be
+  `${CLAUDE_SKILL_DIR}/<file>`, which also works when the skill is installed on its own, without the plugin. A test
+  fails on any such path that does not exist.
 - Scripts and hooks use the Node.js standard library only (Node 20+). A hook exits 0 on input it does not
   understand, unless failing closed is its purpose, and checks `hookEnabled()` from `hooks/lib/config.mjs`.
 - Skills are language-neutral: never assume JavaScript; cover the common ecosystems or detect the project's tooling.

@@ -1,7 +1,7 @@
 # session-discipline
 
 Skills: `which-skill`, `retrospective` (with `audit.mjs`), `session-close`, `handoff`, `claude-md-audit` (with
-`scan.mjs`). Hooks: the roadmap summary and `branch-context` at SessionStart, and `compact-snapshot` around
+`scan.mjs`), `project-setup`. Hooks: the roadmap summary and `branch-context` at SessionStart, and `compact-snapshot` around
 compaction. The two newer hooks and their options are in [hooks/README.md](../../hooks/README.md).
 
 ## Roadmap hook

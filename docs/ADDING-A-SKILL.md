@@ -22,7 +22,11 @@ order; the scrub check and the validator at the end catch most of what gets forg
      plugin's `skills/<plugin>/README.md`. Do not replace it with a different hard-coded stand-in.
    - Reference bundled files as `${CLAUDE_PLUGIN_ROOT}/skills/<plugin>/<skill>/<file>`, never `~/.claude/...` or an
      absolute path. Every plugin is rooted at the repository, so `${CLAUDE_PLUGIN_ROOT}` is the repository root and
-     any file in it can be reached; a test checks that every such path exists.
+     any file in it can be reached; a test checks that every such path exists. For a file in the skill's own folder,
+     `${CLAUDE_SKILL_DIR}/<file>` is better: Claude Code sets it for plugin and standalone installs alike, while
+     `${CLAUDE_PLUGIN_ROOT}` is set only for plugins. A skill that reads its bundled files outside the project should
+     also allow those reads in its frontmatter, `allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)` (the leading `/` makes
+     the path absolute), so the user does not see a permission prompt for them.
    - Keep scripts dependency-free and cross-platform (Node standard library; bash only where bash is the point).
    - A hook script exits 0 on input it does not understand, unless failing closed is the point of the hook.
 

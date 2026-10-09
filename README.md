@@ -1,7 +1,7 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 22](https://img.shields.io/badge/skills-22-informational)
+![Skills: 23](https://img.shields.io/badge/skills-23-informational)
 ![Hooks: 11](https://img.shields.io/badge/hooks-11-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
@@ -121,6 +121,16 @@ context was compacted.
 - `flaky-test-hunt` measures how often a test fails, finds the actual cause, and proves the fix.
 - `ci-cost-and-cadence` decides how much CI to run and when, from measurements.
 
+### 8. Starting with Claude Code for the first time
+
+Someone who knows Claude from the browser opens Claude Code in their project and does not know what to ask, what it
+will change, or how to make it remember how they like to work.
+
+- `project-setup` reads the project, asks about ten short questions one at a time (Learn, Build or Mix; how much
+  freedom Claude gets; what "done" means), shows the CLAUDE.md it wants to write, and writes nothing without a yes.
+  It ends with a cheat sheet for the desktop app, terminal or editor, and a first small task. It works on its own,
+  without the rest of this marketplace.
+
 ## Reference
 
 Every skill is a folder in [`skills/`](skills), grouped by plugin, and every hook is a script in [`hooks/`](hooks).
@@ -138,6 +148,8 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills); everythi
 - **[handoff](skills/session-discipline/handoff/SKILL.md)**: Writes a handoff the next session can resume from, after a retrospective gate.
 - **[claude-md-audit](skills/session-discipline/claude-md-audit/SKILL.md)**: Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
   references and secrets, and proposes edits for approval.
+- **[project-setup](skills/session-discipline/project-setup/SKILL.md)**: Interviews you about how you want to work, then writes the project CLAUDE.md and,
+  with a separate yes, your personal preferences. Written for people new to Claude Code.
 - Hooks: [`roadmap`](hooks/session-discipline/roadmap.mjs), [`branch-context`](hooks/session-discipline/branch-context.mjs), [`compact-snapshot`](hooks/session-discipline/compact-snapshot.mjs).
 
 ### verification

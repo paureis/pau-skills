@@ -22,6 +22,11 @@ and say in what order to run them. Do not run them yourself unless the user asks
 
 Keep the answer short. A list of every skill is not an answer.
 
+## Starting out
+
+New to Claude Code, or starting in a new repository? **`project-setup`** (session-discipline) interviews the user,
+writes the project CLAUDE.md, and ends with a first task. It needs no other skill.
+
 ## The main flow: from an idea to merged work
 
 1. **`grill-me`** (planning). Settle every open decision before anything is built, one question at a time.

@@ -1,0 +1,24 @@
+[
+  {
+    "name": "nervous-beginner",
+    "fixture": "chat-assistant",
+    "persona": "personas/nervous-beginner.md",
+    "opening": "Hi. My son said I should run /project-setup first. I am new to this.",
+    "expect": { "personal": "global", "agentsImport": false, "canary": true }
+  },
+  {
+    "name": "hobbyist-empty-folder",
+    "fixture": null,
+    "persona": "personas/hobbyist.md",
+    "opening": "/project-setup",
+    "expect": { "personal": "none", "agentsImport": false, "canary": false }
+  },
+  {
+    "name": "experienced-dev",
+    "fixture": "web-app",
+    "persona": "personas/experienced-dev.md",
+    "opening": "/project-setup",
+    "homeClaudeMd": "# My notes\n\n- I review diffs in my editor, not in the terminal.\n",
+    "expect": { "personal": "local", "agentsImport": true, "canary": false }
+  }
+]

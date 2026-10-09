@@ -3,6 +3,14 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-09: project-setup
+
+- New skill: `project-setup` (session-discipline). An adaptive interview that writes the project CLAUDE.md and,
+  with a separate yes, the user's personal preferences, then starts a first task. Written for people new to Claude
+  Code. It stands alone and uses `${CLAUDE_SKILL_DIR}`, so it works without the plugin.
+- New `evals/project-setup/`: runs the skill against simulated users and grades the transcripts.
+- Versions: pau-skills 0.5.0, session-discipline 0.4.0.
+
 ## 2026-10-07: skills/ and hooks/ at the root
 
 - Skills moved from `plugins/<plugin>/skills/` to `skills/<plugin>/`, and hook scripts from `plugins/<plugin>/scripts/`

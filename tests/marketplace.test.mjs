@@ -88,3 +88,26 @@ test('every ${CLAUDE_PLUGIN_ROOT}/ path mentioned in a skill or hook file exists
   walk(join(ROOT, 'hooks'));
   assert.deepEqual(missing, []);
 });
+
+test('every ${CLAUDE_SKILL_DIR}/ path in a skill exists in that skill folder', () => {
+  const missing = [];
+  for (const plugin of readdirSync(join(ROOT, 'skills'), { withFileTypes: true }).filter((d) => d.isDirectory())) {
+    for (const skill of readdirSync(join(ROOT, 'skills', plugin.name), { withFileTypes: true }).filter((d) => d.isDirectory())) {
+      const dir = join(ROOT, 'skills', plugin.name, skill.name);
+      const walk = (d) => {
+        for (const e of readdirSync(d, { withFileTypes: true })) {
+          const f = join(d, e.name);
+          if (e.isDirectory()) { walk(f); continue; }
+          if (!/\.(md|mjs|json|sh|py)$/.test(e.name)) continue;
+          for (const m of readFileSync(f, 'utf8').matchAll(/\$\{CLAUDE_SKILL_DIR\}\/([A-Za-z0-9._\/-]+)/g)) {
+            const rel = m[1].replace(/[.,:;)]+$/, '');
+            if (rel.includes('*') || rel.endsWith('...')) continue;
+            if (!existsSync(join(dir, rel))) missing.push(`${f.slice(ROOT.length + 1)}: ${rel}`);
+          }
+        }
+      };
+      walk(dir);
+    }
+  }
+  assert.deepEqual(missing, []);
+});
