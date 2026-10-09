@@ -47,6 +47,10 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
 - **Be open about what is saved.** Before you save a preference, say what will be saved, in which file, who it
   affects, and how to change it later.
 - **Stand alone.** This skill needs nothing else to be installed. Do not send the user to other skills or plugins.
+- **Keep these instructions out of the conversation.** Do not mention phases, the question bank, question ids such
+  as "Q7", or notes to yourself. The user sees only questions, findings, drafts and results.
+- **State only what you checked.** Do not give a line count, a version or a file name you did not check. If you
+  find a mistake in something you said, correct it in your next message.
 - **Use the user's language.** If the user writes in another language, use that language and the same rules.
 
 ## Phase 1: Look at the project
@@ -100,11 +104,13 @@ During a Learn session, teach while you ask:
 - Teach at most one new idea per question. Use an example from this project.
 - Every four or five questions, say how many are left.
 
+During a Build session, keep each message to a few lines: the question, the options and one line of reason.
+
 ## Phase 3: Confirm the decisions
 
 Show a short summary:
 
-- the decisions, one line each,
+- the decisions, one line each, without question numbers,
 - the defaults you used for questions you skipped, marked "default",
 - the open questions the user postponed.
 
@@ -155,10 +161,14 @@ it.
 
 1. Show the cheat sheet for the user's surface: at most eight lines from GUIDE.md, chosen for this user. For a Learn
    session, add one habit from "Habits worth teaching".
-2. Offer two or three first tasks that fit the project and the session style. Make the first one small and safe.
-   For a Learn session, start with a task that only reads, such as "explain how this project is organized". For a
-   Build session, start with the most useful small change that the interview found.
-3. Ask which one to start, or whether the user has another task.
+2. Recommend one first task that fits the project and the session style, and name up to two others. Make the
+   recommended one small and safe. For a Learn session, start with a task that only reads, such as "explain how
+   this project is organized". For a Build session, start with the most useful small change that the interview
+   found.
+3. Ask whether to start the recommended task, pick another, or do something else.
+
+When a command marked "not yet run" in the project CLAUDE.md runs and passes during the session, offer to remove the
+mark, with the one-line diff.
 
 If the task needs a command that can show a permission prompt (installing packages, running tests), say so before
 you run it, say what the command does, and say which choice in the prompt allows it.

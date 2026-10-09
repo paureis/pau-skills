@@ -182,7 +182,8 @@ function runScenario(scenario, opts) {
       '--disallowedTools', 'AskUserQuestion',
       // Loading a skill that declares allowed-tools asks for permission when the model loads it; a person would click
       // allow. A typed /project-setup does not ask.
-      '--allowedTools', 'Skill(project-setup)', 'Bash(git *)', 'Bash(ls *)', 'Bash(cat *)', 'Bash(echo *)', 'Bash(printenv *)', 'Bash(find *)', 'Bash(claude --version)'];
+      // Claude Code always asks before it edits ~/.claude/CLAUDE.md (here the sandboxed one); a person would allow it.
+      '--allowedTools', 'Skill(project-setup)', 'Edit(~/.claude/CLAUDE.md)', 'Write(~/.claude/CLAUDE.md)', 'Bash(git *)', 'Bash(ls *)', 'Bash(cat *)', 'Bash(echo *)', 'Bash(printenv *)', 'Bash(find *)', 'Bash(claude --version)'];
     if (opts.model) argv.push('--model', opts.model);
     const out = claude(argv, { cwd: project, home, input: '' });
     cost += out.total_cost_usd || 0;

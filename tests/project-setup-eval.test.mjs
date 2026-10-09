@@ -34,6 +34,12 @@ test('isApproval needs a shown draft and a yes', () => {
   const menu = 'Draft:\n```markdown\n# X\n```\nWrite it?\n\n1. Yes\n2. Change something\n3. No';
   assert.equal(isApproval(menu, '1'), true);
   assert.equal(isApproval(menu, '3'), false);
+  const where = 'Section:\n```markdown\n<!-- project-setup:start -->\n```\n1. **All projects**: personal file\n2. **Only this project**: CLAUDE.local.md\n3. **Do not save**: nothing';
+  assert.equal(isApproval(where, '2, this project only.'), true);
+  assert.equal(isApproval(where, '1'), true);
+  assert.equal(isApproval(where, '3'), false);
+  assert.equal(isApproval('Do you approve the plan?', 'Yes. Please update the open question in CLAUDE.md.'), true);
+  assert.equal(isApproval('Do you approve the plan?', 'What is CLAUDE.md?'), false);
 });
 
 test('resolveOption maps a bare number to the last numbered list in the message', () => {

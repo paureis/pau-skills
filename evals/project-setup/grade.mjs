@@ -73,10 +73,19 @@ export function resolveOption(assistantText, reply) {
   return hit ? hit[2].replace(/\*/g, '') : reply;
 }
 
-/** True when a user reply approves something the assistant showed in a fenced block just before. */
+const NEGATIVE = /^\W*(no|not now|don'?t|do not|wait|stop|change)\b/i;
+const SAVE_CHOICE = /\b(all projects|this project|save)\b/i;
+const EXPLICIT = /\b(update|write|save|edit|add)\b[^.?!]*\b(CLAUDE(\.local)?\.md|\.gitignore|preferences)\b/i;
+
+/**
+ * True when a user reply approves a write: either a yes (or a save choice) to a draft the assistant showed in a fenced
+ * block just before, or a direct request that names the file ("please update the open question in CLAUDE.md").
+ */
 export function isApproval(assistantBefore, userReply) {
   const reply = resolveOption(assistantBefore, userReply);
-  return /```/.test(assistantBefore || '') && APPROVAL.test(reply) && !/^\s*no\b/i.test(reply);
+  if (NEGATIVE.test(reply)) return false;
+  if (EXPLICIT.test(userReply || '')) return true;
+  return /```/.test(assistantBefore || '') && (APPROVAL.test(reply) || SAVE_CHOICE.test(reply));
 }
 
 const SETUP_FILE = /(^|\/)(CLAUDE\.md|CLAUDE\.local\.md|\.gitignore)$/;
