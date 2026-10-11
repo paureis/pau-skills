@@ -66,6 +66,7 @@ cannot answer, so it is tested by hand.
 | `nervous-beginner` | `chat-assistant`: a Python chat service that calls a private model endpoint | First Claude Code session, desktop app, wants to learn, full setup |
 | `hobbyist-empty-folder` | none (empty folder) | Codes a little, terminal, Mix session, quick setup, no git, saves nothing |
 | `experienced-dev` | `web-app`: TypeScript with an `AGENTS.md` and CI | Daily user, terminal, Build session, quick setup, preferences for this project only |
+| `spanish-beginner` | `chat-assistant` | The nervous beginner, writing in Spanish: starts with `/project-setup full` plus "in Spanish", wants the project files in Spanish, saves preferences for this project only (the personal CLAUDE.md cannot be written in `-p` mode) |
 
 Fixture files that would affect this repository are stored under other names and renamed when copied:
 `gitignore`, `env.example`, `env.canary` (becomes `.env`) and `github-workflows`.

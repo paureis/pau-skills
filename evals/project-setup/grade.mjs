@@ -10,7 +10,8 @@ import { pathToFileURL } from 'node:url';
 const FILLER = /\b(simply|just|basically|easily|obviously|of course)\b/gi;
 const MARKETING = /\b(seamless(ly)?|robust|powerful|leverage|cutting[- ]edge|game[- ]chang\w*|supercharge\w*)\b/gi;
 const PASSIVE = /\b(is|are|was|were|be|been|being)\s+(\w+ly\s+)?(\w+ed|built|done|made|written|run|read|seen|shown|kept|found|given|taken|set|sent)\b/gi;
-const APPROVAL = /\b(yes|yeah|yep|ok|okay|sure|go ahead|please do|do it|write it|looks good|save (it|them)|correct|right|try again|retry)\b/i;
+// English and Spanish (\u00ed is the accented i in "s\u00ed").
+const APPROVAL = /(?<![\p{L}])(yes|yeah|yep|ok|okay|sure|go ahead|please do|do it|write it|looks good|save (it|them)|correct|right|try again|retry|s[i\u00ed]|claro|adelante|dale|de acuerdo|vale|perfecto|escr[i\u00ed]belo|gu[a\u00e1]rdalo|hazlo|intenta de nuevo|otra vez)(?![\p{L}])/iu;
 
 /** Remove code, tables, headings, quotes markers and link targets, leaving only prose. */
 export function prose(text) {
@@ -28,17 +29,39 @@ export function prose(text) {
 export function sentences(text) {
   const out = [];
   for (const line of prose(text).split(/\n+/)) {
-    for (const s of line.split(/(?<=[.!?])\s+(?=[A-Z0-9"'(])/)) {
+    // Any capital letter, digit, quote or opening Spanish mark (\u00bf, \u00a1) can start the next sentence.
+    for (const s of line.split(/(?<=[.!?])\s+(?=[\p{Lu}0-9"'(\u00bf\u00a1])/u)) {
       const t = s.trim();
-      if (t && /[A-Za-z]/.test(t)) out.push(t);
+      if (t && /\p{L}/u.test(t)) out.push(t);
     }
   }
   return out;
 }
 
 export function words(sentence) {
-  return sentence.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w));
+  return sentence.split(/\s+/).filter((w) => /[\p{L}0-9]/u.test(w));
 }
+
+// Common short words that tell Spanish prose from English prose. Code and paths are removed first (see prose()).
+const ES_WORDS = new Set(['que', 'los', 'las', 'del', 'para', 'una', 'pero', 'como', 'porque', 'tiene', 'puede', 'usted',
+  'proyecto', 'archivo', 'archivos', 'cuando', 'donde', 'esto', 'eso', 'muy', 'sus', 'hay', 'se', 'lo', 'al', 'con',
+  'por', 'sin', 'sobre', 'todo', 'ahora', 'primero', 'pregunta', 'respuesta', 'quiere', 'si', 'cada', 'paso']);
+const EN_WORDS = new Set(['the', 'and', 'is', 'are', 'you', 'your', 'this', 'that', 'with', 'for', 'what', 'will', 'can',
+  'file', 'files', 'project', 'question', 'want', 'if', 'each', 'step', 'it', 'of', 'to']);
+
+/** 'es' or 'en' by counting common words in the prose; null when there is too little prose to tell. */
+export function detectLanguage(text) {
+  let es = 0;
+  let en = 0;
+  for (const w of prose(text).toLowerCase().split(/[^\p{L}]+/u)) {
+    if (ES_WORDS.has(w)) es++;
+    if (EN_WORDS.has(w)) en++;
+  }
+  if (es + en < 4) return null;
+  return es > en ? 'es' : 'en';
+}
+
+const LIMITS = { en: { doc: 15, chat: 18 }, es: { doc: 18, chat: 22 } };
 
 /** Readability numbers for one text. */
 export function styleMetrics(text) {
@@ -73,9 +96,9 @@ export function resolveOption(assistantText, reply) {
   return hit ? hit[2].replace(/\*/g, '') : reply;
 }
 
-const NEGATIVE = /^\W*(no|not now|don'?t|do not|wait|stop|change)\b/i;
-const SAVE_CHOICE = /\b(all projects|this project|save)\b/i;
-const EXPLICIT = /\b(update|write|save|edit|add)\b[^.?!]*\b(CLAUDE(\.local)?\.md|\.gitignore|preferences)\b/i;
+const NEGATIVE = /^[^\p{L}]*(no|not now|don'?t|do not|wait|stop|change|todav[i\u00ed]a no|espera|cambia)(?![\p{L}])/iu;
+const SAVE_CHOICE = /(?<![\p{L}])(all projects|this project|save|todos los proyectos|este proyecto|guardar)(?![\p{L}])/iu;
+const EXPLICIT = /(?<![\p{L}])(update|write|save|edit|add|actualiza|escribe|guarda|edita|agrega)(?![\p{L}])[^.?!]*(CLAUDE(\.local)?\.md|\.gitignore|preferences|preferencias)/iu;
 
 /**
  * True when a user reply approves a write: either a yes (or a save choice) to a draft the assistant showed in a fenced
@@ -86,7 +109,7 @@ export function isApproval(assistantBefore, userReply) {
   if (NEGATIVE.test(reply)) return false;
   if (EXPLICIT.test(userReply || '')) return true;
   // A retry repeats a write the user already approved; the draft was shown earlier, not just before.
-  if (/\b(try again|retry)\b/i.test(reply)) return true;
+  if (/(?<![\p{L}])(try again|retry|intenta de nuevo|otra vez)(?![\p{L}])/iu.test(reply)) return true;
   return /```/.test(assistantBefore || '') && (APPROVAL.test(reply) || SAVE_CHOICE.test(reply));
 }
 
@@ -144,6 +167,8 @@ export function grade(run) {
   const homeBefore = files.homeBefore?.['.claude/CLAUDE.md'];
   const checks = [];
   const add = (id, pass, detail = '') => checks.push({ id, pass: pass === null ? null : !!pass, detail });
+  const lang = expect.language || 'en';
+  const limits = LIMITS[lang] || LIMITS.en;
   const blockedHome = (run.blocked || []).some((p) => /\.claude\/CLAUDE\.md$/.test(p));
 
   // Without this, a run where the skill failed to load grades plain Claude and can still pass.
@@ -155,7 +180,8 @@ export function grade(run) {
     add('project CLAUDE.md is short (80 lines or fewer)', n <= 80, `${n} lines`);
     add('no personal preference in project CLAUDE.md', !/session style|learn session|build session|mix session|my coding experience|desktop app/i.test(claudeMd));
     const m = styleMetrics(claudeMd);
-    add('project CLAUDE.md is plain (mean 15 words or fewer, no dashes)', m.meanWords <= 15 && m.dashes === 0, JSON.stringify(m));
+    add(`project CLAUDE.md is plain (mean ${limits.doc} words or fewer, no dashes)`, m.meanWords <= limits.doc && m.dashes === 0, JSON.stringify(m));
+    if (expect.filesLanguage) add(`project CLAUDE.md is written in ${expect.filesLanguage}`, detectLanguage(claudeMd) === expect.filesLanguage, `detected ${detectLanguage(claudeMd)}`);
     if (expect.agentsImport) add('imports @AGENTS.md', /^@AGENTS\.md\s*$/m.test(claudeMd));
   }
 
@@ -190,7 +216,19 @@ export function grade(run) {
   add('one question per message (at most 20% of messages ask more)', assistant.length && multi / assistant.length <= 0.2, `per message: ${counts.join(',')}`);
 
   const chat = styleMetrics(assistant.map((m) => m.text).join('\n\n'));
-  add('chat is plain (mean 18 words or fewer, no dashes)', chat.meanWords <= 18 && chat.dashes === 0, JSON.stringify(chat));
+  add(`chat is plain (mean ${limits.chat} words or fewer, no dashes)`, chat.meanWords <= limits.chat && chat.dashes === 0, JSON.stringify(chat));
+
+  if (lang !== 'en') {
+    const langs = assistant.map((m) => detectLanguage(m.text));
+    add(`first reply is in ${lang}`, langs[0] === lang, `detected ${langs[0]}`);
+    const judged = langs.filter(Boolean);
+    const share = judged.length ? judged.filter((l) => l === lang).length / judged.length : 0;
+    add(`replies stay in ${lang} (90% or more)`, share >= 0.9, `per message: ${langs.join(',')}`);
+    const saved = (local || '') + (home !== homeBefore ? home || '' : '');
+    if (expect.personal === 'local' || expect.personal === 'global') {
+      add('preferred language saved with the personal preferences', /spanish|espa(n|\u00f1)ol/i.test(saved));
+    }
+  }
 
   return checks;
 }

@@ -4,14 +4,22 @@
     "fixture": "chat-assistant",
     "persona": "personas/nervous-beginner.md",
     "opening": "Hi. My son said I should run /project-setup first. I am new to this.",
-    "expect": { "personal": "global", "agentsImport": false, "canary": true }
+    "expect": {
+      "personal": "global",
+      "agentsImport": false,
+      "canary": true
+    }
   },
   {
     "name": "hobbyist-empty-folder",
     "fixture": null,
     "persona": "personas/hobbyist.md",
     "opening": "/project-setup",
-    "expect": { "personal": "none", "agentsImport": false, "canary": false }
+    "expect": {
+      "personal": "none",
+      "agentsImport": false,
+      "canary": false
+    }
   },
   {
     "name": "experienced-dev",
@@ -19,6 +27,23 @@
     "persona": "personas/experienced-dev.md",
     "opening": "/project-setup",
     "homeClaudeMd": "# My notes\n\n- I review diffs in my editor, not in the terminal.\n",
-    "expect": { "personal": "local", "agentsImport": true, "canary": false }
+    "expect": {
+      "personal": "local",
+      "agentsImport": true,
+      "canary": false
+    }
+  },
+  {
+    "name": "spanish-beginner",
+    "fixture": "chat-assistant",
+    "persona": "personas/spanish-beginner.md",
+    "opening": "/project-setup full en espa\u00f1ol",
+    "expect": {
+      "personal": "local",
+      "agentsImport": false,
+      "canary": true,
+      "language": "es",
+      "filesLanguage": "es"
+    }
   }
 ]

@@ -75,9 +75,12 @@ replaces.
   - Learn: "Explain what you are about to do and why, before you do it. Teach me one new idea at a time."
   - Build: "Focus on the work. Explain only when I ask or when something is risky."
   - Mix: "Do the work. Explain the important decisions in a sentence or two."
+- Preferred language: <language>. Talk to me in <language>, even when the code and commands are in English.
 - Write explanations in short, plain sentences. Say when you are not sure.
 <!-- project-setup:end -->
 ```
+
+Leave out the "Preferred language" line when the run was in English. Write the section in the user's language.
 
 This file applies to every project on this computer. Keep the section to the lines above. Project details never go
 here.

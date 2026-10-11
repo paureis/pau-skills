@@ -56,3 +56,19 @@ The goal is text that a tired or nervous reader understands on the first read, w
 | commit | A saved snapshot of the project in git | save point, checkpoint |
 | checkpoint | Claude Code's own undo point for its edits, separate from git | commit |
 | diff | The view of exactly what lines changed in a file | patch, changes view |
+
+## Other languages
+
+When the user speaks another language, write in that language and keep the same principles. Do not translate word
+for word from English: write the way a careful technical writer in that language would.
+
+- Sentence length: allow about 20 percent more words than the English limits. Some languages need more words for
+  the same meaning. One instruction per sentence still applies.
+- Voice: prefer the active voice and the imperative, as in English. Use the form of address that fits a respectful,
+  friendly conversation in that language, and keep it the same for the whole run.
+- Fixed terms: choose one word in that language for each term in the table above, and keep it. The first time,
+  give the English word in parentheses when the user will see the English word on screen.
+- Keep in English, exactly as written: commands (`/clear`), file names (`CLAUDE.md`), code, error messages, and the
+  labels Claude Code shows on screen. Explain them in the user's language.
+- Filler and marketing words: avoid the equivalents in that language.
+- Uncertainty: keep the three levels (known, likely, unknown) and say them plainly in that language.

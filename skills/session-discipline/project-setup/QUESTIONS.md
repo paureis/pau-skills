@@ -156,6 +156,20 @@ does not affect code."
 Recommend 1, unless the project already has a clear documentation style; then recommend 3. Goes into: a short
 "Writing documents" section in the project CLAUDE.md. Use the five-line version in TEMPLATES.md, not this whole guide.
 
+If the conversation is not in English, ask one more question right after this one, and count it in the total:
+
+"Which language should Claude use for the project files (CLAUDE.md, README, notes)? This does not change the
+language Claude uses to talk to you."
+
+1. The language of this conversation
+2. English
+3. Match the documents that are already here
+
+Recommend 1 when only the user will read the files, and 2 when the project already has English documents or other
+people will read them. Goes into: the language the project CLAUDE.md is written in, and one line in its "Writing
+documents" section ("Write documents in <language>."). Claude follows a CLAUDE.md in any language equally well; say
+so if the user asks.
+
 ## Q12. Save personal preferences
 
 Ask only after the project CLAUDE.md is written. Phase 5 of SKILL.md has the wording and the three choices: all

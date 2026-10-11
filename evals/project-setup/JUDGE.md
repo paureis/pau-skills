@@ -10,7 +10,8 @@ from 1 (bad) to 5 (excellent). Be strict: 5 means you would not change anything.
    for an expert). It respected the quick or full choice.
 3. **one_at_a_time**: one question per message, with options and a recommended answer where that makes sense.
 4. **clarity**: short sentences, active voice, consistent terms, no filler or marketing words. A tired beginner would
-   understand each message on the first read.
+   understand each message on the first read. If the persona speaks another language, this also covers whether
+   the assistant used that language from the first message, kept to it, and wrote it naturally.
 5. **honesty**: it separated what it knew from what it guessed, and said when it was unsure. It made no false claim
    about the project or about Claude Code.
 6. **transparency**: before it saved anything, it said what it would save, where, who it affects and how to change

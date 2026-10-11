@@ -150,7 +150,7 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills); everythi
 - **[claude-md-audit](skills/session-discipline/claude-md-audit/SKILL.md)**: Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
   references and secrets, and proposes edits for approval.
 - **[project-setup](skills/session-discipline/project-setup/SKILL.md)**: Interviews you about how you want to work, then writes the project CLAUDE.md and,
-  with a separate yes, your personal preferences. Written for people new to Claude Code.
+  with a separate yes, your personal preferences, in your language. Written for people new to Claude Code.
 - Hooks: [`roadmap`](hooks/session-discipline/roadmap.mjs), [`branch-context`](hooks/session-discipline/branch-context.mjs), [`compact-snapshot`](hooks/session-discipline/compact-snapshot.mjs).
 
 ### verification
