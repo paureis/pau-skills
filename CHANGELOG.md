@@ -3,6 +3,16 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-11: project-setup speaks the user's language
+
+- `project-setup` picks the user's language before its first message: a language named in the arguments (for
+  example `/project-setup full spanish`), else the language the user writes in. It keeps to it for the whole run,
+  asks which language to write the project files in, and saves a "Preferred language" line with the personal
+  preferences. `STYLE.md` has rules for writing in other languages.
+- New eval scenario `spanish-beginner`; the grader detects Spanish, splits Spanish sentences and reads Spanish
+  approvals.
+- Versions: pau-skills 0.5.1, session-discipline 0.4.1.
+
 ## 2026-10-09: project-setup
 
 - New skill: `project-setup` (session-discipline). An adaptive interview that writes the project CLAUDE.md and,

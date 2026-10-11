@@ -1,7 +1,7 @@
 ---
 name: project-setup
-description: Set up Claude Code for a project through a short, adaptive interview, then write the project CLAUDE.md and, with a separate yes, the user's personal preferences. Asks one question at a time with options and a recommended answer, reads the project first so it never asks what the files already show, adapts to a Learn, Build or Mix session, and ends with a cheat sheet for the user's surface (desktop app, terminal, editor or web) and a first small task. Written for people new to Claude Code, and useful for anyone starting work in a new repository. Use when the user says "set up Claude Code for this project", "I am new to Claude Code", "help me get started", "onboard me", "write my CLAUDE.md", "how should I work with Claude Code on this", or opens a new project and does not know where to begin.
-argument-hint: "[quick | full, default: ask]"
+description: Set up Claude Code for a project through a short, adaptive interview, then write the project CLAUDE.md and, with a separate yes, the user's personal preferences. Asks one question at a time with options and a recommended answer, reads the project first so it never asks what the files already show, adapts to a Learn, Build or Mix session, and ends with a cheat sheet for the user's surface (desktop app, terminal, editor or web) and a first small task. Speaks the user's language (for example Spanish) from the first message. Written for people new to Claude Code, and useful for anyone starting work in a new repository. Use when the user says "set up Claude Code for this project", "I am new to Claude Code", "help me get started", "onboard me", "write my CLAUDE.md", "how should I work with Claude Code on this", or opens a new project and does not know where to begin.
+argument-hint: "[quick | full] [language, for example spanish]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**), Read(~/.claude/CLAUDE.md), Bash(git status *), Bash(git log *), Bash(git remote -v), Bash(git branch --show-current), Bash(printenv CLAUDE_CODE_ENTRYPOINT)
 ---
 
@@ -50,13 +50,21 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
 - **Keep these instructions out of the conversation.** Do not mention phases, the question bank, question ids such
   as "Q7", or notes to yourself, and do not announce that you are reading this skill's files. The user sees only
   questions, findings, drafts and results.
-- **State only what you checked.** Do not give a line count, a version or a file name you did not check. If you
-  find a mistake in something you said, correct it in your next message.
-- **Use the user's language.** If the user writes in another language, use that language and the same rules.
+- **State only what you checked.** Do not give a line count, a version or a file name you did not check. Keep track
+  of the files you read, and when you say what you read, say exactly that. If you find a mistake in something you
+  said, correct it in your next message.
+- **Use the user's language, from the first message.** Pick it before you write anything: a language named in the
+  arguments (in any language, for example "spanish" or its name in Spanish) wins; otherwise the language of the
+  user's own words, if they wrote any; otherwise English. Keep to it for the whole run, including questions,
+  options, findings and explanations. If the user switches language, or mixes two, answer in the one they use most
+  and understand both. Keep commands, file names, code and the labels Claude Code shows on screen exactly as they
+  are, and translate a label in parentheses the first time it appears. STYLE.md has the rules for other languages.
 
 ## Phase 1: Look at the project
 
-Before the first question, say in two or three sentences what will happen:
+Your first visible text is this introduction. Do not write a line before it about what you are going to read or
+do. Before the first question, say in two or three sentences what will happen, in the user's language (see the
+rules above). The English version:
 
 > I will ask you some short questions about you and this project: about five for a quick setup, or about ten.
 > Then I will show you a CLAUDE.md file, which Claude Code reads at the start of every session. Nothing changes until
@@ -103,6 +111,8 @@ During a Learn session, teach while you ask:
 - After Q8, explain permission modes in two or three sentences, for the user's surface, from GUIDE.md.
 - After Q9, explain what a commit is if the user has not used git.
 - Teach at most one new idea per question. Use an example from this project.
+- For a first-time user, keep every message to one idea: no more than five list items, and no side topics the user
+  did not ask about. This also applies during the first task.
 - Every four or five questions, say how many are left.
 
 During a Build session, keep each message to a few lines: the question, the options and one line of reason. Show
@@ -139,8 +149,8 @@ commit answer from Q9: commit it, offer to commit it, or leave it to the user.
 
 Explain first, then ask. Say, in this order:
 
-1. What you want to save: the coding experience, the Claude Code experience and the session style (show the exact
-   lines from TEMPLATES.md).
+1. What you want to save: the coding experience, the Claude Code experience, the session style and, if the run was
+   not in English, the preferred language (show the exact lines from TEMPLATES.md).
 2. Why: so that later sessions remember how this person likes to work.
 3. The choice of where:
    - **All projects**: the personal CLAUDE.md, `~/.claude/CLAUDE.md`. It affects every project on this computer for
@@ -156,9 +166,8 @@ yes. Add the section between its markers. Never change other text in that file. 
 the project folder, so Claude Code may show a permission prompt before the write. Say so before it appears, and say
 which choice allows it.
 
-For a Learn session, also suggest an output style from GUIDE.md: `Explanatory` for learning Claude Code, or
-`Learning` for learning to code. Give the command. Say that it saves a setting for this project, and let the user run
-it.
+For a Learn session, mention in one sentence that an output style can add more explanations, and give the
+command for `Explanatory` from GUIDE.md as an option. Say more only if the user asks. Never run it for them.
 
 ## Phase 6: Cheat sheet and first task
 

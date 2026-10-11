@@ -2,7 +2,7 @@
 // tests pin the grader so a change to it cannot quietly pass a bad run.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sentences, styleMetrics, questionCount, resolveOption, isApproval, unapprovedWrites, readsSecrets, sensitiveBlocks, grade } from '../evals/project-setup/grade.mjs';
+import { sentences, detectLanguage, styleMetrics, questionCount, resolveOption, isApproval, unapprovedWrites, readsSecrets, sensitiveBlocks, grade } from '../evals/project-setup/grade.mjs';
 
 test('sentences ignore code, tables and headings, and count list items as sentences', () => {
   const text = '# Title\n\nRun the tests. Then read the error.\n\n```bash\nnpm test. npm run lint.\n```\n\n| a | b |\n\n- One item\n- Two `x.y` items';
@@ -10,7 +10,7 @@ test('sentences ignore code, tables and headings, and count list items as senten
 });
 
 test('styleMetrics measures length, dashes, filler, marketing words and passive voice', () => {
-  const m = styleMetrics('This is a seamless and robust setup — just run it. The file was written by Claude.');
+  const m = styleMetrics('This is a seamless and robust setup \u2014 just run it. The file was written by Claude.');
   assert.equal(m.sentences, 2);
   assert.equal(m.dashes, 1);
   assert.equal(m.filler, 1);
@@ -40,6 +40,12 @@ test('isApproval needs a shown draft and a yes', () => {
   assert.equal(isApproval(where, '3'), false);
   assert.equal(isApproval('Do you approve the plan?', 'Yes. Please update the open question in CLAUDE.md.'), true);
   assert.equal(isApproval('Do you approve the plan?', 'What is CLAUDE.md?'), false);
+  const borrador = 'Borrador:\n```markdown\n# X\n```\n1. S\u00ed, escr\u00edbelo\n2. Cambiar algo\n3. No';
+  assert.equal(isApproval(borrador, 's\u00ed, por favor'), true);
+  assert.equal(isApproval(borrador, 'si'), true);
+  assert.equal(isApproval(borrador, '1'), true);
+  assert.equal(isApproval(borrador, 'no, cambia el titulo'), false);
+  assert.equal(isApproval(borrador, 'todav\u00eda no'), false);
   assert.equal(isApproval('The write was blocked.\n1. **Try again.** I send the same write.\n2. Do not save.', '1'), true);
 });
 
@@ -137,3 +143,51 @@ test('a personal-file write that Claude Code blocked as sensitive is skipped, no
   assert.equal(check(run).pass, false);
   assert.equal(check({ ...run, blocked: sensitiveBlocks(log) }).pass, null);
 });
+
+test('sentences split Spanish prose, including inverted question marks and accented capitals', () => {
+  assert.deepEqual(sentences('Hola. \u00bfQu\u00e9 quiere hacer? \u00c9l lo dijo.'), ['Hola.', '\u00bfQu\u00e9 quiere hacer?', '\u00c9l lo dijo.']);
+});
+
+test('detectLanguage tells Spanish from English and ignores code', () => {
+  assert.equal(detectLanguage('Primero voy a leer los archivos del proyecto. Luego le hago una pregunta cada vez.'), 'es');
+  assert.equal(detectLanguage('First I will read the files in this project. Then I ask one question at a time.'), 'en');
+  assert.equal(detectLanguage('Run `the files and the project for you`.'), null);
+  assert.equal(detectLanguage('```\nthe and is are you\n```\nOk.'), null);
+});
+
+test('a Spanish run is checked for its language, its files and its saved preference', () => {
+  const md = '# Asistente\n\n## Que es este proyecto\n\nUn chat interno. Responde preguntas sobre los procesos.\n\n## Como trabajamos\n\n- Explique el plan antes de cada cambio. Espere un si.\n- Escriba los documentos con frases cortas.\n';
+  const es = 'Primero voy a leer los archivos del proyecto. Le hago una pregunta cada vez.';
+  const run = {
+    scenario: { expect: { personal: 'local', language: 'es', filesLanguage: 'es' } },
+    transcript: [
+      { role: 'user', text: '/project-setup full' },
+      { role: 'assistant', text: es + '\n```markdown\n' + md + '```\n\u00bfLo escribo?' },
+      { role: 'user', text: 'si, por favor' },
+      { role: 'assistant', text: 'Listo. Ahora sus preferencias, para este proyecto o para todos.\n```markdown\n<!-- project-setup:start -->\n```' },
+      { role: 'user', text: 'yes' },
+      { role: 'assistant', text: 'Guardado. Puede cambiarlo cuando quiera con /memory.' },
+    ],
+    tools: [
+      { turn: 0, name: 'Read', path: '/h/.claude/skills/project-setup/STYLE.md' },
+      { turn: 1, name: 'Write', path: '/p/CLAUDE.md' },
+      { turn: 2, name: 'Write', path: '/p/CLAUDE.local.md' },
+      { turn: 2, name: 'Edit', path: '/p/.gitignore' },
+    ],
+    files: {
+      project: { 'CLAUDE.md': md, 'CLAUDE.local.md': '<!-- project-setup:start -->\n- Preferred language: Spanish.\n', '.gitignore': 'CLAUDE.local.md\n' },
+      home: {},
+      homeBefore: {},
+    },
+  };
+  const failed = (r) => grade(r).filter((c) => c.pass === false).map((c) => c.id);
+  assert.deepEqual(failed(run), []);
+  const ids = grade(run).map((c) => c.id);
+  assert.ok(ids.includes('first reply is in es') && ids.includes('replies stay in es (90% or more)'));
+
+  const english = structuredClone(run);
+  english.transcript[1].text = 'First I will read the files in this project. I ask one question at a time.\n```markdown\n' + md + '```\nShall I write it?';
+  english.files.project['CLAUDE.local.md'] = '<!-- project-setup:start -->\n';
+  assert.deepEqual(failed(english).sort(), ['first reply is in es', 'preferred language saved with the personal preferences', 'replies stay in es (90% or more)']);
+});
+

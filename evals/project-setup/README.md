@@ -52,12 +52,14 @@ the project and write a CLAUDE.md. The judge scores are 1 to 5.
 | `nervous-beginner` | 11/11 (1 skipped) | 9/11 | 4 / 1 | 4 |
 | `hobbyist-empty-folder` | 11/11 | 9/10 | 4 / 1 | 3 |
 | `experienced-dev` | 15/15 | 11/14 | 3 / 2 | 3 |
+| `spanish-beginner` | 18/18 | not run | 5 / not run | 4 |
 
 Without the skill, every run wrote CLAUDE.md before it showed any draft, and neither persona who wanted personal
 preferences saved got them saved. (The beginner baseline still passes the approval check, because its opening message
 asks for a CLAUDE.md by name, which the grader counts as a request.) The skipped check is the write to
 `~/.claude/CLAUDE.md`: Claude Code asks a person before that edit even when an allow rule matches, and `-p` mode
-cannot answer, so it is tested by hand.
+cannot answer, so it is tested by hand. The `spanish-beginner` row is from October 11, after the language changes: every reply and the project
+CLAUDE.md were in Spanish, and the saved preferences named Spanish as the preferred language.
 
 ## Scenarios
 
@@ -66,6 +68,7 @@ cannot answer, so it is tested by hand.
 | `nervous-beginner` | `chat-assistant`: a Python chat service that calls a private model endpoint | First Claude Code session, desktop app, wants to learn, full setup |
 | `hobbyist-empty-folder` | none (empty folder) | Codes a little, terminal, Mix session, quick setup, no git, saves nothing |
 | `experienced-dev` | `web-app`: TypeScript with an `AGENTS.md` and CI | Daily user, terminal, Build session, quick setup, preferences for this project only |
+| `spanish-beginner` | `chat-assistant` | The nervous beginner, writing in Spanish: starts with `/project-setup full` plus "in Spanish", wants the project files in Spanish, saves preferences for this project only (the personal CLAUDE.md cannot be written in `-p` mode) |
 
 Fixture files that would affect this repository are stored under other names and renamed when copied:
 `gitignore`, `env.example`, `env.canary` (becomes `.env`) and `github-workflows`.
