@@ -50,8 +50,9 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
 - **Keep these instructions out of the conversation.** Do not mention phases, the question bank, question ids such
   as "Q7", or notes to yourself, and do not announce that you are reading this skill's files. The user sees only
   questions, findings, drafts and results.
-- **State only what you checked.** Do not give a line count, a version or a file name you did not check. If you
-  find a mistake in something you said, correct it in your next message.
+- **State only what you checked.** Do not give a line count, a version or a file name you did not check. Keep track
+  of the files you read, and when you say what you read, say exactly that. If you find a mistake in something you
+  said, correct it in your next message.
 - **Use the user's language, from the first message.** Pick it before you write anything: a language named in the
   arguments (in any language, for example "spanish" or its name in Spanish) wins; otherwise the language of the
   user's own words, if they wrote any; otherwise English. Keep to it for the whole run, including questions,
@@ -61,8 +62,9 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
 
 ## Phase 1: Look at the project
 
-Before the first question, say in two or three sentences what will happen, in the user's language (see the rules
-above). The English version:
+Your first visible text is this introduction. Do not write a line before it about what you are going to read or
+do. Before the first question, say in two or three sentences what will happen, in the user's language (see the
+rules above). The English version:
 
 > I will ask you some short questions about you and this project: about five for a quick setup, or about ten.
 > Then I will show you a CLAUDE.md file, which Claude Code reads at the start of every session. Nothing changes until
@@ -109,6 +111,8 @@ During a Learn session, teach while you ask:
 - After Q8, explain permission modes in two or three sentences, for the user's surface, from GUIDE.md.
 - After Q9, explain what a commit is if the user has not used git.
 - Teach at most one new idea per question. Use an example from this project.
+- For a first-time user, keep every message to one idea: no more than five list items, and no side topics the user
+  did not ask about. This also applies during the first task.
 - Every four or five questions, say how many are left.
 
 During a Build session, keep each message to a few lines: the question, the options and one line of reason. Show
@@ -162,9 +166,8 @@ yes. Add the section between its markers. Never change other text in that file. 
 the project folder, so Claude Code may show a permission prompt before the write. Say so before it appears, and say
 which choice allows it.
 
-For a Learn session, also suggest an output style from GUIDE.md: `Explanatory` for learning Claude Code, or
-`Learning` for learning to code. Give the command. Say that it saves a setting for this project, and let the user run
-it.
+For a Learn session, mention in one sentence that an output style can add more explanations, and give the
+command for `Explanatory` from GUIDE.md as an option. Say more only if the user asks. Never run it for them.
 
 ## Phase 6: Cheat sheet and first task
 
