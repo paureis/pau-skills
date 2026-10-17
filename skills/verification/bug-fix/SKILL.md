@@ -23,6 +23,9 @@ commit a failing test in each ecosystem).
 
 - **Every shipped line traces to runtime evidence.** A change that "might help" is a hypothesis, not a fix, and it
   does not ship. When evidence refutes a hypothesis, revert everything that hypothesis motivated.
+- **Work on a branch.** Before the first commit, if you are on the default branch, create a branch for the fix.
+  Never check out another version over the user's uncommitted changes; use a separate worktree
+  (`git worktree add <dir> <rev>`) or a clean clone.
 - **One hypothesis, one change, one observation at a time.** Two changes between observations cannot be told apart.
 - **No baseline, no claim.** If the bug did not reproduce twice before the fix, nothing after the fix can show that
   the fix worked.
@@ -39,6 +42,11 @@ Write down, from the report, the repository and the user (ask only what they can
 - what was expected and what happened instead, with the real error text or output;
 - the **discriminating observation**: one thing you can look at that differs between broken and fixed (a value in
   the response, an exit code, a line in the log, an element on the page). Every later check looks at this.
+
+Then look for a fix that already exists: open pull requests that touch the code or mention the symptom
+(`gh pr list --search "<words from the error>"` on GitHub, or the forge's equivalent), and recent commits on the
+default branch and other branches (`git log --all --since=<date> --grep=<word>`, `git log --all -- <file>`). If one
+plausibly fixes it, go to "When a fix already exists" below instead of writing a second fix.
 
 ## Step 2. Reproduce it twice on the real surface
 
@@ -72,8 +80,8 @@ hypothesis by reading code.
 
 Keep a log, in the conversation or a scratch file outside the repository:
 
-| # | Hypothesis | Prediction if true | Evidence (command and output) | Verdict |
-|---|---|---|---|---|
+| # | Hypothesis | Prediction if true | Prediction if false | Evidence (command and output) | Verdict |
+|---|---|---|---|---|---|
 
 A verdict is `confirmed`, `refuted` or `open`. A row is `confirmed` or `refuted` only with pasted output in the
 evidence column. Note every edit a hypothesis made (instrumentation, a trial change) so step 7 can remove it.
@@ -99,10 +107,10 @@ Two more checks:
 - Search for the same fault elsewhere (the same call, the same pattern, the same copied block). Fix every instance or
   list the ones you leave.
 
-## Step 5. After two failed fixes, attack the premise
+## Step 5. After two failed fixes on one premise, attack the premise
 
-This step starts when a fix fails step 8 for the second time. When two fixes that rest on the same belief have both
-failed the same check, suspect the belief, not the fixes.
+This step starts when two fixes that rest on the same premise have both failed step 8. Suspect the premise, not the
+fixes.
 
 1. Write the premise down: the one sentence every failed fix assumed ("the config is loaded before the handler
    runs", "this function only receives sorted input").
@@ -130,14 +138,22 @@ writing the test, if it is installed; without it, match the project's test layou
 public interface.
 
 If the project does not accept a red commit, mark the test as expected to fail in the runner's own way and remove the
-marker in the fix commit (`EVIDENCE.md`). If an automated test would be expensive or unclear (a visual glitch, a
-device-only bug), commit the repro script or the written steps instead and say so in the report.
+marker in the fix commit (`EVIDENCE.md`). A marker accepts any failure, including a typo or a setup error, so read the
+unmarked failure output first, confirm it shows the bug, and pin the expected error or message where the runner
+allows it (pytest `raises=`, Rust `should_panic(expected = ...)`).
+
+If an automated test would be expensive or unclear (a visual glitch, a device-only bug), commit the repro script or
+the written steps instead and say so in the report.
 
 ## Step 7. Make the smallest fix the evidence justifies
 
 Change the first wrong decision from step 4, and nothing else. Then read the whole diff and remove every hunk that
 does not trace to a confirmed row in the hypothesis log: instrumentation, trial changes from refuted hypotheses,
 "while I was here" edits, defensive checks no evidence asked for.
+
+Run the test from step 6 and watch it pass. Then commit the fix on its own, on top of the test commit, removing the
+expected-failure marker in the same commit if step 6 added one. Commit before step 8: the report names this commit,
+and `mutation-test` (if it is installed) refuses a dirty tree.
 
 ## Step 8. Prove it, and prove what it cannot break
 
@@ -161,8 +177,11 @@ does not trace to a confirmed row in the hypothesis log: instrumentation, trial 
    reads, another language reading the same bytes, a feature flag, a caller three hops away. Note what the change
    leaves as it was (other bad inputs that behaved wrongly before and still do) under "Not done".
 
-If the fix fails 1, 2 or 3, revert it (it was a refuted hypothesis) and go back to step 3. If this is the second
-failed fix on the same belief, go to step 5 first.
+If the fix fails 1, 2 or 3, revert the fix commit (`git revert`; it was a refuted hypothesis) and go back to step 3,
+or to step 5 when it is the second failed fix that rests on the same premise. If the blast radius check in 4 shows
+the change is not safe (a caller relies on the old behaviour, stored data has the old shape), revert the fix commit
+and go back to step 4 with that fact: the fix point or the fix has to change. If no safe fix is within reach, stop
+with the verdict **reproduced, not fixed** and report the fact.
 
 For an independent check, `evaluator` attacks the fix from a fresh context, if it is installed. Without it, ask a
 fresh subagent (Agent tool) that has not seen your work to break the fix, given only the bug report, the repro and
@@ -173,7 +192,7 @@ the diff.
 ```
 ## Bug fix: <one line>
 
-Verdict:      fixed | not reproduced | inconclusive | not fixed (an existing fix, see below)
+Verdict:      fixed | not reproduced | reproduced, not fixed | inconclusive
 Symptom:      <discriminating observation, expected vs actual>
 Repro:        <surface, command or steps>; reproduced <2/2> before the fix
 Root cause:   <file:line, the first wrong decision, and why the state was or was not legitimate>
@@ -188,20 +207,29 @@ Not done:     <other instances left, related risks, anything for the user>
 ```
 
 Paste the failing and then passing output verbatim under the report. **Inconclusive is not a pass**: say which half
-(before or after) could not be measured and why. Not reproduced means no fix was made.
+(before or after) could not be measured and why. Not reproduced means no fix was made. **Reproduced, not fixed**
+means the bug showed twice but no fix passed step 8: give the root cause if you found it, the hypotheses ruled out,
+and the state of the branch.
+
+If you stop after step 6, the branch has a commit with a failing test. Either keep the test marked as an expected
+failure (`EVIDENCE.md`), so the branch is green and the test turns red when someone fixes the bug, or leave it red and
+tell the user in the report that the branch has a failing commit, with its sha. Never delete the test to get green.
 
 ## When a fix already exists
 
-If an open pull request or a commit claims to fix the bug, verify it instead of writing a competing fix. Run the repro
-twice on the version without it (the pull request's base, or the commit before the fix) and twice on the version with
-it, in the same environment and data, on the real surface.
+If an open pull request or a commit claims to fix the bug, verify it instead of writing a competing fix. Check out the
+version without it (the pull request's base, or the commit before the fix) and the version with it each in its own
+worktree (`git worktree add <dir> <rev>`) or clean clone, never over the user's working tree, and remove them after.
+Run the repro twice on each, in the same environment and data, on the real surface.
 - Reproduces twice before and is gone twice after: **fixed**.
-- Shows on both versions: **not fixed**; say so and link the change.
+- Shows on both versions: **reproduced, not fixed**; say so and link the change.
 - The baseline does not reproduce, the patched version cannot run, or the observation cannot be seen: **inconclusive**.
 
 ## When to stop and ask
 
 - It does not reproduce after the attempts in step 2.
+- No fix passes step 8 after the premise is tested: report **reproduced, not fixed**, and handle the committed test
+  as step 9 says.
 - The only fix you can find hides the state (a guard, retry or fallback) and you could not find what produces it.
 - The fix changes behaviour other code or users may rely on, or the root cause is in a dependency or service you
   cannot change.
