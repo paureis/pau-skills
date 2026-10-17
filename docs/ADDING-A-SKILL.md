@@ -68,7 +68,8 @@ order; the scrub check and the validator at the end catch most of what gets forg
 
 8. **Rebuild the marketplace** if a `hooks.json` or a plugin folder changed: `node scripts/build-marketplace.mjs`
    (the tests fail while `marketplace.json` is out of date). Then **bump the plugin's version** in its entry in
-   `.claude-plugin/marketplace.json`, and the `pau-skills` bundle's version too, since it ships the same files.
+   `.claude-plugin/marketplace.json`, and the `pau-skills` bundle's version too, since it ships the same files. A
+   change to a hook also bumps `pau-skills-hooks`, which ships every hook and no skills.
    Users only receive a change when the version changes. Use a minor bump for a new skill and a patch bump for a fix.
    Add a line to `CHANGELOG.md`.
 
@@ -78,3 +79,10 @@ order; the scrub check and the validator at the end catch most of what gets forg
    ```
 
 10. **Commit** with the message from a file (`git commit -F <file>`), then push.
+
+11. **After the merge, ship it to claude.ai.** Skills can also be uploaded to a claude.ai account, which syncs them to
+    the terminal, the desktop app and the web. Zip the skill's folder with the folder at the zip root (`<name>/` and
+    everything in it) and upload it under Customize, Skills. claude.ai refuses a description with an XML-like tag
+    (`<word>`) and a name containing "claude" or "anthropic"; `tests/context-budget.test.mjs` and
+    `tests/marketplace.test.mjs` catch both before you get that far. Uploaded skills appear as
+    `/anthropic-skills:<name>` in a session started after the upload.
