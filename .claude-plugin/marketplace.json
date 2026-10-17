@@ -9,7 +9,7 @@
     {
       "name": "pau-skills",
       "description": "Everything in this marketplace as one plugin: every skill and every hook from session-discipline, verification, agent-orchestration, guards and planning. Install this or the individual plugins, not both.",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -227,7 +227,7 @@
     {
       "name": "verification",
       "description": "Prove work is correct: a mutation harness, a hostile evaluator, test-driven development, flaky-test diagnosis, database migration review, a CI cost method, review triage that decides which findings are worth fixing, bug fixing from runtime evidence, a generated skill that proves changes in the running app, and hooks that stop tests being weakened and \"done\" being claimed without a check.",
-      "version": "0.6.0",
+      "version": "0.6.1",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"

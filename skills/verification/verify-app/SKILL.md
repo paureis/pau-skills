@@ -1,6 +1,6 @@
 ---
 name: verify-app
-description: "Generate, or maintain, a project skill (.claude/skills/verify-<app>) that launches the real app, drives it like a user (web, CLI, TUI, HTTP, mobile), keeps evidence and cleans up. Use when the user says \"verify it in the app\", \"make a verification skill\", \"how can an agent test this app\", \"prove it works end to end\", \"maintain the verify skill\", or when a project has no scripted way to drive it."
+description: "Generate, or maintain, a project skill (.claude/skills/verify-*) that launches the real app, drives it like a user (web, CLI, TUI, HTTP, mobile), keeps evidence and cleans up. Use when the user says \"verify it in the app\", \"make a verification skill\", \"how can an agent test this app\", \"prove it works end to end\", \"maintain the verify skill\", or when a project has no scripted way to drive it."
 argument-hint: "[maintain] [the app or surface to cover, when the repository has several]"
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
