@@ -170,19 +170,24 @@ will change, or how to make it remember how they like to work.
 
 ## What loads on its own
 
-Claude Code puts the description of every skill the model may start into the context of every session. To keep that
-cost small, only the skills an agent should reach for without being asked load on their own. The rest cost nothing
-until you type them. The agent cannot start them or see their descriptions; `which-skill` knows both groups and
-tells you which one to type.
-`tests/context-budget.test.mjs` holds the first group to 12 skills and 4,500 characters of descriptions.
+Every skill loads on its own: the agent can start it when your words fit its description ("let's brainstorm options
+for this", "wrap up this session", "is this test any good"), and you can still type any of them as
+`/pau-skills:<skill>` or `/<plugin>:<skill>`. Claude Code puts every description into the context of every session,
+so each one is a short list of the phrases that should start it. `tests/context-budget.test.mjs` holds each
+description to 400 characters and all of them to 12,000 together.
 
-- **Load on their own**: `which-skill`, `tdd`, `bug-fix`, `verify-app`, `review-triage`, `evaluator`,
-  `mutation-test`, `codebase-oracle`, `migration-review`, `flaky-test-hunt`, `dependency-security-audit`,
-  `safe-merge`.
-- **You type them** (`/pau-skills:<skill>` or `/<plugin>:<skill>`): `project-setup`, `session-close`, `handoff`,
-  `retrospective`, `instructions-audit`, `lean-subagent-dev`, `methodology`, `parallel-worktrees`, `grill-me`, `to-prd`,
-  `to-issues`, `improve-codebase-architecture`, `ci-cost-and-cadence`, `dependency-upgrade`, `rule-to-hook`, `arena`,
-  `architect`, `brainstorm`, `sharpen`, `agent-friendly-audit`, `hillclimb`, `skill-eval`.
+Some skills cost something when they run: they launch subagents or headless runs, take over the session, or write
+outside the conversation. When the agent starts one of these on its own, without you asking for it, it first says in
+one or two lines what it will do and what it will cost, and waits for your yes:
+
+- `arena`, `codebase-oracle` (big questions only), `parallel-worktrees`, `agent-friendly-audit`, `hillclimb`,
+  `skill-eval`, `verify-app`;
+- `lean-subagent-dev`, `methodology`, `brainstorm`, `grill-me`;
+- `dependency-upgrade`, `rule-to-hook`, `architect`, `improve-codebase-architecture`, `to-issues` (before filing),
+  `to-prd`, `handoff`, `instructions-audit` (before editing), `project-setup`, `retrospective`, `session-close`,
+  `ci-cost-and-cadence` (before building).
+
+`tests/confirm-step.test.mjs` keeps this list and the skills in step.
 
 ## Reference
 

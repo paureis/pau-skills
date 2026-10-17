@@ -13,12 +13,24 @@ order; the scrub check and the validator at the end catch most of what gets forg
 2. **Scaffold it**: `node scripts/new-skill.mjs <plugin> <skill-name>`. This creates the `SKILL.md` and adds a stub
    to `docs/ORIGINS.md` and a bullet to the plugin's list in the README reference. Every placeholder is marked
    `TODO(new-skill)`, and the scrub check fails until none is left. The script refuses a name that already exists in any plugin.
-   The scaffold sets `disable-model-invocation: true`: the skill is in the **typed tier**, so its description stays out
-   of every session's context and it runs only when the user types it. Remove that line only for a skill the agent
-   must start on its own, because the user would not think to type it at that moment (an auto-tier skill). The auto
-   tier holds at most 12 skills, each description at most 400 characters and 4,500 in total;
-   `tests/context-budget.test.mjs` enforces this. A typed skill cannot be started by another skill, so a mention of
-   one says "suggest the user run `/<name>`".
+   Every skill loads on its own: never add `disable-model-invocation: true` (`tests/context-budget.test.mjs` fails on
+   it). Claude Code puts every description into every session's context, so write it as a short trigger list: one
+   sentence on what the skill does, then "Use when" with the phrases a person would actually say, and, where another
+   skill could be picked for the same words, what makes this one different. At most 400 characters, all descriptions
+   together at most 12,000, no XML-like tag such as `<word>`, and no other skill's name in backticks. Leave out what
+   the body already says.
+   If the skill launches subagents or headless runs, takes over the session, or writes outside the conversation, add
+   it to `CONFIRM_LIST` in `tests/confirm-step.test.mjs` and to the lists in the README ("What loads on its own") and
+   `which-skill`, and paste this paragraph into its `SKILL.md`, word for word, near the top (or at the start of the
+   step that costs, when only one step does):
+
+   ```
+   If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+   lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
+   ```
+
+   Any skill can start another, so a mention of another skill says "use `<name>` if it is installed" for a step
+   inside the work the user asked for, and "offer to run `<name>` if it is installed" for a next step after this one.
 
 3. **Copy the skill in and generalise it.** Bring its `SKILL.md` body and any bundled files across from the project.
    Then:

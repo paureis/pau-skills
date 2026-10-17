@@ -101,6 +101,26 @@ test('every name on the confirm list is a skill', () => {
   assert.deepEqual(checks.unknown(SKILLS, CONFIRM_LIST), []);
 });
 
+// The README and the which-skill router each list the skills that ask first. Both lists name exactly the skills above.
+function namedSkills(text, start, end) {
+  const from = text.indexOf(start);
+  const to = text.indexOf(end, from + start.length);
+  assert.ok(from >= 0 && to > from, `section from ${JSON.stringify(start)} to ${JSON.stringify(end)} not found`);
+  const known = new Set(SKILLS.map((s) => s.id.split('/')[1]));
+  return [...new Set([...text.slice(from, to).matchAll(/`([a-z0-9-]+)`/g)].map((m) => m[1]).filter((n) => known.has(n)))].sort();
+}
+const listed = () => CONFIRM_LIST.map((id) => id.split('/')[1]).sort();
+
+test('the README names exactly the skills on the confirm list', () => {
+  const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
+  assert.deepEqual(namedSkills(readme, 'Some skills cost something', 'keeps this list'), listed());
+});
+
+test('which-skill names exactly the skills on the confirm list', () => {
+  const router = readFileSync(join(ROOT, 'skills', 'session-discipline', 'which-skill', 'SKILL.md'), 'utf8');
+  assert.deepEqual(namedSkills(router, '## Which skills ask first', '\n## '), listed());
+});
+
 test('the paragraph has no dash and no XML-like tag', () => {
   assert.doesNotMatch(CONFIRM_PARAGRAPH, /[–—]|<[A-Za-z/]/);
 });
