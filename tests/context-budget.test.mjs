@@ -1,17 +1,18 @@
 // The context budget for skill descriptions. Claude Code loads the description of every skill the model may start
-// into every session, so those descriptions cost context all the time. A skill with `disable-model-invocation: true`
-// costs nothing until the user types `/name`. This test keeps the auto tier (skills the model may start on its own)
-// small and short. See "Context budget" in docs/BACKLOG.md for the policy.
+// into every session, and since P0.5 (docs/BACKLOG.md, decision 7) every skill may be started by the model, so every
+// description costs context all the time. The skill listing gets about 1% of the context window (about 40,000
+// characters on the owner's 1M window) and is shared with every other plugin installed; over budget, Claude Code drops
+// the descriptions of the least used skills. This test keeps each description a short trigger list and the total small.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT } from './helpers.mjs';
 
-const MAX_AUTO_SKILLS = 12;
-const MAX_AUTO_DESCRIPTION = 400;
-const MAX_AUTO_TOTAL = 4500;
-const MAX_ANY_DESCRIPTION = 1536; // Claude Code cuts any description longer than this, typed or not.
+const MAX_DESCRIPTION = 400;
+const MAX_TOTAL = 12000;
+const MAX_ANY_DESCRIPTION = 1536; // Claude Code cuts any description longer than this.
+const MAX_UPLOAD_DESCRIPTION = 1024; // claude.ai refuses to upload a skill with a longer description.
 
 // The frontmatter is the block between the first two `---` lines. Like tests/marketplace.test.mjs, the description is
 // the `description:` key; its value is read the way YAML reads it, so its length is the length Claude Code sees: a
@@ -145,6 +146,10 @@ function parseDescription(front) {
   }
 }
 
+// The frontmatter line that hides a skill from the model, with any value: `false` changes nothing but still says the
+// skill might be hidden, so it goes too.
+const hasFlag = (front) => front.some((l) => /^disable-model-invocation\s*:/.test(l));
+
 function readSkills() {
   const out = [];
   for (const plugin of readdirSync(join(ROOT, 'skills')).filter((d) => !d.includes('.'))) {
@@ -153,27 +158,25 @@ function readSkills() {
       const end = lines.indexOf('---', 1);
       const front = lines[0] === '---' && end > 0 ? lines.slice(1, end) : [];
       const { value: description = '', error } = parseDescription(front);
-      const typed = front.some((l) => /^disable-model-invocation:\s*true\s*$/.test(l));
-      out.push({ id: `${plugin}/${name}`, description, typed, error });
+      out.push({ id: `${plugin}/${name}`, description, flag: hasFlag(front), error });
     }
   }
   return out;
 }
 
 // Each check returns what is wrong, so the same checks run on the repository and on the fixtures below.
-const auto = (skills) => skills.filter((s) => !s.typed);
 const checks = {
   empty: (skills) => skills.filter((s) => !s.description.trim()).map((s) => s.id),
-  count: (skills) => {
-    const ids = auto(skills).map((s) => s.id);
-    return ids.length > MAX_AUTO_SKILLS ? [`${ids.length} auto-tier skills: ${ids.join(', ')}`] : [];
-  },
-  each: (skills) => auto(skills).filter((s) => s.description.length > MAX_AUTO_DESCRIPTION).map((s) => `${s.id}: ${s.description.length}`),
+  each: (skills) => skills.filter((s) => s.description.length > MAX_DESCRIPTION).map((s) => `${s.id}: ${s.description.length}`),
   total: (skills) => {
-    const total = auto(skills).reduce((n, s) => n + s.description.length, 0);
-    return total > MAX_AUTO_TOTAL ? [`auto-tier descriptions total ${total} characters`] : [];
+    const total = skills.reduce((n, s) => n + s.description.length, 0);
+    return total > MAX_TOTAL ? [`descriptions total ${total} characters`] : [];
   },
   any: (skills) => skills.filter((s) => s.description.length > MAX_ANY_DESCRIPTION).map((s) => `${s.id}: ${s.description.length}`),
+  upload: (skills) => skills.filter((s) => s.description.length > MAX_UPLOAD_DESCRIPTION).map((s) => `${s.id}: ${s.description.length}`),
+  // Every skill loads on its own (decision 7). A ratchet at zero: the flag hides the description and stops the model,
+  // and other skills, from starting the skill.
+  flag: (skills) => skills.filter((s) => s.flag).map((s) => s.id),
   // claude.ai refuses to upload a skill whose description contains anything shaped like an XML tag, such as `<app>`.
   tags: (skills) => skills.filter((s) => /<[A-Za-z/!?]/.test(s.description)).map((s) => `${s.id}: ${s.description.match(/<[^>]*>?/)[0]}`),
 };
@@ -213,52 +216,59 @@ test('descriptions are read the way YAML reads them, and a bad one is an error, 
 
 test('the skills were found and parsed', () => {
   assert.ok(SKILLS.length >= 20, `expected at least 20 skills, got ${SKILLS.length}`);
-  assert.ok(auto(SKILLS).length >= 1, 'no auto-tier skill found');
-  assert.ok(SKILLS.some((s) => s.typed), 'no typed-tier skill found');
 });
 
 test('no description contains an XML-like tag (claude.ai rejects the upload)', () => {
   assert.deepEqual(checks.tags(SKILLS), []);
-  const fake = (description) => ({ id: 'x', typed: true, description });
+  const fake = (description) => ({ id: 'x', description });
   assert.deepEqual(checks.tags([fake('a project skill, .claude/skills/verify-<app>/')]), ['x: <app>']);
   assert.deepEqual(checks.tags([fake('closing </b> tag')]).length, 1);
   assert.deepEqual(checks.tags([fake('use it when a < b, or for 2<3')]), []);
 });
 
-test('every skill has a non-empty description (the / menu shows it)', () => {
+test('every skill has a non-empty description (the / menu and the model both read it)', () => {
   assert.deepEqual(checks.empty(SKILLS), []);
 });
 
-test(`at most ${MAX_AUTO_SKILLS} skills are in the auto tier`, () => {
-  assert.deepEqual(checks.count(SKILLS), []);
+test('no skill sets disable-model-invocation: every skill loads on its own', () => {
+  assert.deepEqual(checks.flag(SKILLS), []);
 });
 
-test(`each auto-tier description is at most ${MAX_AUTO_DESCRIPTION} characters`, () => {
+test(`each description is at most ${MAX_DESCRIPTION} characters`, () => {
   assert.deepEqual(checks.each(SKILLS), []);
 });
 
-test(`auto-tier descriptions total at most ${MAX_AUTO_TOTAL} characters`, () => {
+test(`all descriptions together are at most ${MAX_TOTAL} characters`, () => {
   assert.deepEqual(checks.total(SKILLS), []);
 });
 
-test(`every description is at most ${MAX_ANY_DESCRIPTION} characters`, () => {
+test(`every description is at most ${MAX_UPLOAD_DESCRIPTION} characters (claude.ai upload) and ${MAX_ANY_DESCRIPTION} (Claude Code cut)`, () => {
+  assert.deepEqual(checks.upload(SKILLS), []);
   assert.deepEqual(checks.any(SKILLS), []);
 });
 
 test('each check flags one character or one skill over its limit, and nothing at the limit', () => {
-  const skill = (id, length, typed = false) => ({ id, description: 'x'.repeat(length), typed });
-  // At every limit at once: the most auto-tier skills, sharing the whole total, and a typed skill at the hard cap.
-  const share = Math.floor(MAX_AUTO_TOTAL / MAX_AUTO_SKILLS);
-  const sizes = Array.from({ length: MAX_AUTO_SKILLS }, (_, i) => (i === 0 ? MAX_AUTO_TOTAL - share * (MAX_AUTO_SKILLS - 1) : share));
-  const atLimit = [...sizes.map((n, i) => skill(`a${i}`, n)), skill('t', MAX_ANY_DESCRIPTION, true)];
-  assert.ok(sizes.every((n) => n <= MAX_AUTO_DESCRIPTION), 'fixture: the shares must fit the per-description limit');
+  const skill = (id, length, flag = false) => ({ id, description: 'x'.repeat(length), flag });
+  // At every limit at once: as many skills at the per-description limit as the total allows, plus one that takes the
+  // rest of the total (more than nothing, at most one description).
+  const full = Math.ceil(MAX_TOTAL / MAX_DESCRIPTION) - 1;
+  const atLimit = [...Array.from({ length: full }, (_, i) => skill(`s${i}`, MAX_DESCRIPTION)), skill('rest', MAX_TOTAL - full * MAX_DESCRIPTION)];
+  assert.equal(atLimit.reduce((n, s) => n + s.description.length, 0), MAX_TOTAL, 'fixture: the skills must add up to the total');
   for (const [name, check] of Object.entries(checks)) assert.deepEqual(check(atLimit), [], name);
 
-  assert.equal(checks.count([...atLimit, skill('extra', 0, false)]).length, 1);
-  assert.deepEqual(checks.each([skill('long', MAX_AUTO_DESCRIPTION + 1)]), [`long: ${MAX_AUTO_DESCRIPTION + 1}`]);
-  assert.deepEqual(checks.each([skill('typed', MAX_AUTO_DESCRIPTION + 1, true)]), []);
-  const overTotal = atLimit.map((s) => (s.id === 'a1' ? skill('a1', share + 1) : s));
-  assert.deepEqual(checks.total(overTotal), [`auto-tier descriptions total ${MAX_AUTO_TOTAL + 1} characters`]);
-  assert.deepEqual(checks.any([skill('huge', MAX_ANY_DESCRIPTION + 1, true)]), [`huge: ${MAX_ANY_DESCRIPTION + 1}`]);
-  assert.deepEqual(checks.empty([{ id: 'blank', description: ' ', typed: true }]), ['blank']);
+  assert.deepEqual(checks.each([skill('long', MAX_DESCRIPTION + 1)]), [`long: ${MAX_DESCRIPTION + 1}`]);
+  const overTotal = atLimit.map((s) => (s.id === 'rest' ? skill('rest', s.description.length + 1) : s));
+  assert.deepEqual(checks.total(overTotal), [`descriptions total ${MAX_TOTAL + 1} characters`]);
+  assert.deepEqual(checks.upload([skill('big', MAX_UPLOAD_DESCRIPTION + 1)]), [`big: ${MAX_UPLOAD_DESCRIPTION + 1}`]);
+  assert.deepEqual(checks.upload([skill('ok', MAX_UPLOAD_DESCRIPTION)]), []);
+  assert.deepEqual(checks.any([skill('huge', MAX_ANY_DESCRIPTION + 1)]), [`huge: ${MAX_ANY_DESCRIPTION + 1}`]);
+  assert.deepEqual(checks.empty([{ id: 'blank', description: ' ' }]), ['blank']);
+  assert.deepEqual(checks.flag([skill('hidden', 10, true), skill('shown', 10)]), ['hidden']);
+});
+
+test('the flag is found in any form a frontmatter line can take', () => {
+  for (const line of ['disable-model-invocation: true', 'disable-model-invocation:true', 'disable-model-invocation : "true"', 'disable-model-invocation: false']) {
+    assert.ok(hasFlag(['name: x', line]), line);
+  }
+  assert.ok(!hasFlag(['description: "mentions disable-model-invocation: true in the text"', '  disable-model-invocation: true']));
 });
