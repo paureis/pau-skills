@@ -110,7 +110,7 @@ describe('append', () => {
     assert.deepEqual(HEADER, ['time', 'attempt', 'hypothesis', 'change', 'measurement', 'delta', 'tests', 'decision', 'note']);
     const [row] = rows(log);
     assert.equal(row.length, HEADER.length);
-    assert.match(row[col('time')], /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d/);
+    assert.match(row[col('time')], /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}/);
     assert.equal(row[col('attempt')], '0');
     assert.equal(row[col('delta')], 'reference (lower is better)');
     assert.equal(row[col('decision')], 'baseline');
