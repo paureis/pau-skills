@@ -4,6 +4,14 @@ Copy this for each task, fill every bracket, and delete the guidance lines in pa
 this conversation, so anything it needs must be written here. Keep it to one screen; a longer brief usually means the
 task should be split.
 
+Before launching, check the filled brief: no bracket placeholder and no guidance line in parentheses is left anywhere
+above the report-format block. The report block keeps its brackets on purpose; they show the subagent the shape to
+fill. An optional field you do not need is deleted or says "none", never left in brackets. If you cannot fill a field,
+the task is not scoped yet: do not launch it.
+
+A task of one command may get a single paragraph instead of this template, as long as the paragraph names the goal,
+the files, the command that must pass and the report format, and the standing orders follow it unchanged.
+
 ---
 
 ## Task: [name]
@@ -52,12 +60,16 @@ All of these pass, and you ran them yourself after your last change:
 - a check fails for a reason outside this task
 - [anything specific to this task]
 
-### Rules for this task
+### Standing orders
+
+(The same block, word for word, in every brief and every fix-round message of the session. When you catch yourself
+repeating an instruction to a subagent, add it here.)
 
 - Commit your work in small, described commits. Leave nothing uncommitted.
 - **Commit, never push.** Do not push, open or merge a pull request, tag, or release.
 - Write the test before the code for any new behaviour, and watch it fail first.
 - Do not skip, disable or weaken a test or a check to make it pass.
+- [the project's rules for every task, such as its style rules, quoted; or delete this line]
 
 ### Report back in exactly this format
 

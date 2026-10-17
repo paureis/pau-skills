@@ -1,9 +1,12 @@
 ---
 name: lean-subagent-dev
-description: "A way of working for a whole session. The main session plans, talks to the owner and does every push, pull request, merge and tag; code and test work goes to one subagent at a time with a written brief; the main session checks the result itself (reads the diff, reruns the checks, runs a control) and triages the review with one review round and one fix round. Adjusts to the usage budget (tight, normal or generous): how much to delegate, which model the subagent uses, and how much review to buy. Use at the start of a session, or when the user says \"lean subagent\", \"work lean\", \"delegate this to a subagent\", \"one subagent per task\", \"brief a subagent\", \"how much should I delegate\", \"I am low on usage\", or asks how to split work between the main session and subagents."
+description: "A way of working for a whole session. The main session plans, talks to the owner and does every push, pull request, merge and tag; code and test work goes to one subagent at a time with a written brief; the main session checks the result itself (reads the diff, reruns the checks, runs a control) and triages the review with one review round and one fix round. Adjusts to the usage budget (tight, normal or generous): how much to delegate, the subagent's model and effort, and how much review to buy. Use at the start of a session, or when the user says \"lean subagent\", \"work lean\", \"delegate this to a subagent\", \"one subagent per task\", \"brief a subagent\", \"how much should I delegate\", \"I am low on usage\", or asks how to split work between the main session and subagents."
 disable-model-invocation: true
 argument-hint: "[the work for this session, or a path to a plan]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
+license: MIT (adapted from cursor/plugins pstack; see NOTICE)
+metadata:
+  upstream: https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode
 ---
 
 # Lean subagent development
@@ -61,13 +64,24 @@ less and spends less on review, and a generous budget delegates more and buys mo
 | | Tight | Normal | Generous |
 |---|---|---|---|
 | Delegate | Changes of 5 or more files; make smaller changes yourself | Any change in behaviour or tests, and any change of 3 or more files | Any change in behaviour or tests, and any change of 2 or more files |
-| Subagent model | A smaller model for mechanical work (renames, version bumps, docs, boilerplate); the same model for anything in a risky path | The same model | The same model |
+| Subagent model | The session's model; for mechanical work (renames, version bumps, docs, boilerplate), offer the user a smaller model once and use it only on a yes | The session's model | The session's model |
+| Subagent effort | Builder `medium` | Builder and plan checker `high` | Builder `high`; plan checker and reviewer `xhigh` |
 | Plan check before building | You, against the code, in a few minutes | A read-only subagent, for new behaviour | A read-only subagent, always |
 | Review round | Your verification is the review | Your verification, plus your own read of every risky file | Plus a separate reviewer subagent on risky files |
 | Fix round | Inline when small | Back to the same subagent | Back to the same subagent |
 
-The model is set with the `model` field of the Agent tool; leave it out to use the session's model. Check which
-model names your Claude Code version accepts. Never use a smaller model for work in a risky path, whatever the budget.
+**Model.** Leave the Agent tool's `model` field out, so the subagent runs on the session's model. Set it only when
+the user said yes to a model, and never name a model that has not been confirmed available in this session: the names
+the field accepts change between Claude Code versions. Never use a smaller model for work in a risky path, whatever
+the budget.
+
+**Effort.** Set it from the table with the Agent tool's `effort` field: `low`, `medium`, `high`, `xhigh` or `max` (the
+`claude` command line takes the same values as `--effort`). Left out, the subagent runs at its usual effort. Not every
+model supports every level, and a forked subagent ignores the field, so when you are not sure the level is supported,
+or the subagent runs on a smaller model, leave it out. The table never uses `low` or `max`. The split by role is this
+skill's choice, not a rule from elsewhere: the builder's work goes through your four checks in step 5, so what it
+misses is caught, while the plan checker and the reviewer are the check, and what they miss nobody catches. At a
+tight budget there is no checker or reviewer subagent; the plan check and the review are yours.
 
 ## 3. Before building new behaviour
 
@@ -83,10 +97,30 @@ Copy `${CLAUDE_SKILL_DIR}/BRIEF-TEMPLATE.md` and fill every bracket. The briefs 
 - the project rules that apply, quoted
 - what done means, as commands that must pass
 - when to stop and report instead of carrying on
-- "commit, never push"
+- the standing orders, which include "commit, never push"
 - the fixed report format, including "anything I was unsure about". That line is where the real findings come from.
 
+**Standing orders** are the rules every task of the session shares: commit, never push; no skipped or weakened tests;
+test first for new behaviour; the project's style rules. Write the block once, at the start of the session, and paste
+it unchanged into every brief and every fix-round message. A subagent does not see your earlier briefs, so an order
+left out is an order it never got. When you catch yourself repeating an instruction, add it to the block before you
+send the next brief.
+
+**Do not launch a subagent while a field of its brief is empty.** Before launching, read the brief once more: no
+bracket placeholder and no guidance line in parentheses may be left outside the report-format block (that block keeps
+its brackets on purpose: they show the subagent the shape to fill). An optional field you do not need is deleted or
+filled with "none", never left in brackets. A field you cannot fill means the task is not scoped yet: plan it, or ask
+the owner. A task of one command (a version bump, a rename) may get the brief as one paragraph instead, as long as it
+still names the goal, the files, the command that must pass and the report format, and carries the standing orders.
+
 Write down the commit the subagent starts from.
+
+**While it runs, judge it by its side effects.** A background subagent tells you when it finishes. Until then, look
+at what it leaves behind: commits in its worktree or branch (`git log <start commit>..`), the files it changed, the
+test output it wrote. Where your Claude Code version has `ListAgents`, it shows whether a subagent is busy or idle
+without waking it. Never send a running or finished subagent a message only to ask how it is going: a message resumes
+it from its transcript and spends usage on a status report. A message is for a fix round or a real question. One fix
+round goes by message (step 6); a new task gets a fresh subagent with its own brief, never a resumed one.
 
 ## 5. Check the work yourself
 
@@ -111,6 +145,7 @@ need to load it as well.
 - Must fix and fix if cheap go back to the subagent in one fix round, test first, or are fixed inline when the budget
   says so. If your Claude Code version can continue a finished subagent (for example by sending it a message), do
   that, so it keeps its context; otherwise brief a new one with the findings, the failing behaviour and the diff.
+  Either way, paste the standing orders into the message.
 - Then run `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" fix --since <reviewed commit> --base <start commit>`, answer
   every flag, and give the fix its second look: the fix only, not the whole change.
 - One review round and one fix round. What the second look finds goes to the owner (a must-fix) or to an issue
@@ -123,7 +158,7 @@ Then do the GitHub writes yourself, the way the project lands work.
 If the config output shows a delegation log, append one line per task to it, with today's date from the machine:
 
 ```
-- YYYY-MM-DD | <task> | files <n> | <inline | subagent, model> | check found: <nothing | finding> | review rounds 1, fix rounds <0 or 1> | brief missed: <what the subagent asked, got wrong, or was unsure about, or "nothing">
+- YYYY-MM-DD | <task> | files <n> | <inline | subagent, model, effort> | check found: <nothing | finding> | review rounds 1, fix rounds <0 or 1> | brief missed: <what the subagent asked, got wrong, or was unsure about, or "nothing">
 ```
 
 After a week or so the log answers whether this way of working pays off: how much went to a subagent, whether the
@@ -163,7 +198,7 @@ and documentation. An unknown key is an error, so a typo cannot switch a rule of
 ## Report to the owner after each task
 
 ```
-Task: <name>   Route: <inline | subagent, model>   Budget: <tight | normal | generous>
+Task: <name>   Route: <inline | subagent, model, effort>   Budget: <tight | normal | generous>
 Changed: <files, one line>   Commits: <range>
 Checks I ran: <command: PASS | FAIL>   Control: <what, result | not needed because ...>
 Review: <findings by bucket>   Fix round: <none | commits>   Second look: <clean | what, and where it went>
@@ -175,5 +210,7 @@ Needs you: <questions or decisions, or "nothing">
 - Do not let a subagent push, open or merge a pull request, tag or release.
 - Do not run two subagents in the same checkout.
 - Do not accept a subagent's report without rereading the diff and rerunning the checks.
+- Do not launch a subagent while its brief has an empty field, and do not message one only to check on it.
+- Do not name a model that has not been confirmed available in this session.
 - Do not start a third round. Hand it to the owner or to an issue.
 - Do not delegate a task you cannot write a "done when" for. Plan it first.
