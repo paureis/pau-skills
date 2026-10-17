@@ -38,6 +38,9 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 
 ## The main flow: from an idea to merged work
 
+0. **`brainstorm`** (planning, typed: `/brainstorm`). With a goal but only one idea or none ("brainstorm this", "give
+   me ideas", "what are my options"), widen the options first: lenses, keep, kill or combine, a shortlist with a
+   premortem each. Then run `grill-me` on the chosen direction.
 1. **`grill-me`** (planning). Settle every open decision before anything is built, one question at a time.
    Start here whenever the user has an idea that is not fully decided.
 2. **`to-prd`** (planning). Turn the decided conversation into a written spec, without interviewing again.
@@ -77,6 +80,9 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | "Verify it in the app", "how can an agent test this app", no scripted way to drive the app | `verify-app` (verification) | `evaluator` cites its drives as evidence |
 | A question about how the codebase works | `codebase-oracle` (agent-orchestration) | `grill-me` if it leads to a change |
 | "The code is getting messy", hard-to-test modules | `improve-codebase-architecture` (planning) | `grill-me` on the candidate picked |
+| A task about to start, "make sure you understand this", "restate this first", a vague or over-constrained request | `sharpen` (planning, typed: `/sharpen`) | the skill that fits the task |
+| "Make it faster", "make it smaller", improve a number (run time, bundle size, memory, a score) over many attempts with proof for each step | `hillclimb` (verification, typed: `/hillclimb`) | `bug-fix` if a step uncovers a bug |
+| "Did this skill or prompt change help?", "A/B this prompt", does a new version of a skill behave differently | `skill-eval` (verification, typed: `/skill-eval`) | `arena` to pick between attempts at one task |
 
 ## Improving the agent's environment
 
@@ -89,6 +95,9 @@ These change how future sessions go, not the product code.
 - **`rule-to-hook`** (guards): a rule that keeps being broken becomes a hook with tests, instead of another sentence.
   The natural next step when `retrospective` or `instructions-audit` finds a rule that is already written down and
   still ignored.
+- **`agent-friendly-audit`** (planning, typed: `/agent-friendly-audit`): mine the whole history (review comments, fix
+  commits, transcripts, instruction files) for mistakes agents repeat, and get a plan that fixes each at the highest
+  layer, proven on a past instance. `retrospective` covers one session; `rule-to-hook` builds one chosen rule.
 
 ## What runs without asking
 
@@ -109,6 +118,12 @@ Hooks act on every session where their plugin is installed. Each can be turned o
 
 ## Picking between close options
 
+- **`brainstorm` or `grill-me`?** `brainstorm` widens: it generates and compares options when nothing is chosen yet.
+  `grill-me` narrows: it settles the open decisions of a chosen plan. With only a goal, brainstorm first.
+- **`skill-eval` or `arena`?** `arena` runs several attempts at one task and builds on the best. `skill-eval` runs the
+  same task with two versions of a skill or prompt and checks whether the change alters what the agent does.
+- **`hillclimb` or `bug-fix`?** `bug-fix` makes a wrong result right. `hillclimb` makes a correct result better on a
+  number, one measured change at a time.
 - **`grill-me` or `codebase-oracle`?** `grill-me` settles decisions that need the user's judgment.
   `codebase-oracle` answers questions the code can answer. When a plan has both kinds, run the oracle first so the
   interview only asks what the code cannot tell.

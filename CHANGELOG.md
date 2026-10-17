@@ -10,8 +10,49 @@ the plugin they installed is bumped.
   `instructions-audit`, where the mark hid a rules file's `paths:` frontmatter and a `package.json`'s scripts, and to
   the plan file of `parallel-worktrees`, and to the `package.json` read by `audit.mjs --stale` in `retrospective` and
   `session-close`, which reported every `npm run` script as missing.
-- Versions: pau-skills 0.8.1, pau-skills-hooks 0.1.1, session-discipline 0.6.1, verification 0.6.2,
-  agent-orchestration 0.5.1, guards 0.4.1.
+- Versions: pau-skills 0.9.2, pau-skills-hooks 0.1.1, session-discipline 0.7.2, verification 0.7.1,
+  agent-orchestration 0.5.2, guards 0.4.1.
+
+## 2026-10-17: code fences close the CommonMark way in arena and instructions-audit
+
+- `arena.mjs` and the `instructions-audit` scanner toggled a code fence on any fence line, so a shorter fence inside a
+  longer one, or a fence of the other character, ended the block early. A rubric that showed a nested fence could then
+  count the wrong number of criteria, and the scanner could read code as headings, rules, imports or references. Both
+  now close a fence only on a bare fence of the same character, at least as long, as `tests/style.test.mjs` and
+  `verify-app` already did. The scanner's `splitUnits` had the same toggle and is fixed with them.
+- Versions: agent-orchestration 0.5.1, session-discipline 0.7.1, pau-skills 0.9.1.
+
+## 2026-10-17: tests clean up their temp folders
+
+- `tempDir()` in `tests/helpers.mjs` now deletes every folder it made when the test process exits, and
+  `removeAtExit()` does the same for a folder a script under test makes on its own (the arena `blind` test without
+  `--out`). A full `npm test` used to leave about 150 folders in the system temp folder per run, which filled the disk
+  of long cloud sessions; it now leaves none. Test-only change, no version bump.
+
+## 2026-10-17: five more skills, and one command to zip skills for claude.ai
+
+- New typed skills. All five start only when you type them, so they add nothing to every session's context.
+  - `hillclimb` (verification, adapted from pstack): improves one metric (time, size, memory, a score) on a frozen
+    harness proven sensitive by a deliberate regression, with a stop predicate that has a minimum number of attempts,
+    one change per attempt, a commit per win, and an append-only decision log kept by `decisions.mjs` (`append`,
+    `measure`, `summary`), plus a checklist run before any number is reported.
+  - `skill-eval` (verification, adapted from pstack): checks whether a change to a skill or prompt changes what an
+    agent does. Headless `claude -p` runs each see one variant in a neutral folder; a blind copy of what each run did
+    goes to a reviewer with no tools and to your own blind read. `skill-eval.mjs` sets up, runs, blinds and unblinds.
+  - `agent-friendly-audit` (planning, adapted from pstack): mines review comments, fix and revert commits, this
+    project's transcripts and instruction files for the mistakes agents repeat, and proposes a fix for each at the
+    highest layer it can live in, proven on a past instance. It writes nothing without a yes. `mine.mjs` does the
+    read-only mining, with redaction, and reads only this project's transcript folders.
+  - `sharpen` (planning, adapted from pstack): restates a task with the problem behind it and one outside check, and
+    confirms in six lines before working.
+  - `brainstorm` (planning, original): widens the options before `grill-me` narrows them, through named lenses,
+    keep, kill or combine rounds, ratings never added into a score, and a premortem per finalist. `grill-me` now
+    suggests it when there is only a goal.
+- `scripts/pack-skills.mjs` (`npm run pack-skills`): one zip per skill for upload to claude.ai, by name, `--since <ref>`
+  (it says which are new, changed or removed) or `--all`, built from the committed files and checked against the
+  upload rules first. `dist/` is ignored.
+- `which-skill` routes to the new skills.
+- Versions: pau-skills 0.9.0, verification 0.7.0, planning 0.4.0, session-discipline 0.7.0.
 
 ## 2026-10-17: pau-skills-hooks, the hooks without the skills
 

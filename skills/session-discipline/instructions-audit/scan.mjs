@@ -41,10 +41,9 @@ export function fileStats(text) {
 export function sectionsOf(text) {
   const out = [];
   let cur = { heading: '(before first heading)', line: 1, chars: 0 };
-  let inFence = false;
-  text.split(/\r?\n/).forEach((line, i) => {
-    if (/^\s*(```|~~~)/.test(line)) inFence = !inFence;
-    const h = !inFence && /^#{1,6}\s+(.*)/.exec(line);
+  const lines = text.split(/\r?\n/); const fenced = fencedLines(lines);
+  lines.forEach((line, i) => {
+    const h = !fenced.has(i + 1) && /^#{1,6}\s+(.*)/.exec(line);
     if (h) { if (cur.chars) out.push(cur); cur = { heading: h[1].trim(), line: i + 1, chars: 0 }; }
     cur.chars += line.length + 1;
   });
@@ -78,7 +77,14 @@ export function overlap(a, b) {
   return inter / small.size;
 }
 
-const FENCE = /^\s*(```|~~~)/;
+// Code fences as CommonMark defines them: three or more backticks or tildes open a fence, and a backtick fence's info
+// string has no backtick in it. Only a bare fence of the same character, at least as long, closes it. Any indentation
+// is accepted, because fences inside list items are indented.
+const FENCE_OPEN = /^\s*(`{3,}(?=[^`]*$)|~{3,})/;
+const closesFence = (line, fence) => {
+  const m = /^\s*(`{3,}|~{3,})\s*$/.exec(line);
+  return !!m && m[1][0] === fence[0] && m[1].length >= fence.length;
+};
 const HEADING = /^#{1,6}\s+(.*)/;
 const BULLET = /^(\s*)(?:[-*+]|\d+[.)])\s+(.*)/;
 
@@ -94,11 +100,10 @@ export function splitUnits(text) {
   const units = [];
   let heading = '';
   let cur = null; // { line, heading, text, indent, kind }
-  let inFence = false;
   const flush = () => { if (cur) { cur.text = cur.text.trim(); if (cur.text) units.push({ line: cur.line, heading: cur.heading, kind: cur.kind, text: cur.text }); } cur = null; };
-  stripFrontmatter(text).split(/\r?\n/).forEach((line, i) => {
-    if (FENCE.test(line)) { flush(); inFence = !inFence; return; }
-    if (inFence) return;
+  const lines = stripFrontmatter(text).split(/\r?\n/); const fenced = fencedLines(lines);
+  lines.forEach((line, i) => {
+    if (fenced.has(i + 1)) { flush(); return; }
     const h = HEADING.exec(line);
     if (h) { flush(); heading = h[1].trim(); return; }
     if (!line.trim()) { flush(); return; }
@@ -145,10 +150,14 @@ const KNOWN_EXT = new Set(('md mdx mdc txt rst adoc json jsonc json5 yaml yml to
   'sh bash zsh fish ps1 psm1 bat cmd sql prisma graphql gql proto tf tfvars hcl nix dockerfile tmpl').split(' '));
 const KNOWN_NAMES = new Set(['Dockerfile', 'Makefile', 'GNUmakefile', 'Justfile', 'justfile', 'Gemfile', 'Rakefile', 'Procfile', 'Containerfile', 'Vagrantfile', 'Brewfile', 'Pipfile']);
 
-/** Lines inside code fences, as a Set of 1-based line numbers. */
+/** Lines inside code fences, fence lines included, as a Set of 1-based line numbers. */
 function fencedLines(lines) {
-  const s = new Set(); let inFence = false;
-  lines.forEach((l, i) => { if (FENCE.test(l)) { inFence = !inFence; s.add(i + 1); return; } if (inFence) s.add(i + 1); });
+  const s = new Set(); let fence = null;
+  lines.forEach((l, i) => {
+    if (fence) { s.add(i + 1); if (closesFence(l, fence)) fence = null; return; }
+    const open = FENCE_OPEN.exec(l);
+    if (open) { fence = open[1]; s.add(i + 1); }
+  });
   return s;
 }
 

@@ -29,6 +29,32 @@ test('sectionsOf sizes each heading block and ignores # inside code fences', () 
   assert.ok(s[1].tokens > s[0].tokens);
 });
 
+// Fences close the CommonMark way: a bare fence of the same character, at least as long. A toggle on any fence line
+// would end these fences early and read the lines after the inner fence as prose.
+const NESTED = [
+  ['````md', '```', '# in backticks', '@docs/in-backticks.md', '````'],
+  ['~~~~', '~~~', '# in tildes', '@docs/in-tildes.md', '~~~~'],
+  ['```', '~~~', '# other character', '@docs/other-character.md', '```'],
+  ['```', '```js', '# info string', '@docs/info-string.md', '`````'],
+];
+
+test('sectionsOf: nested and mixed fences, longer closers and info strings on a closer', () => {
+  for (const block of NESTED) {
+    const s = sectionsOf(['# A', ...block, '# B', 'text'].join('\n'));
+    assert.deepEqual(s.map((x) => x.heading), ['A', 'B'], block.join(' | '));
+  }
+});
+
+test('extractImports, extractReferences and splitUnits skip the whole of a nested fence', () => {
+  for (const block of NESTED) {
+    const text = ['# A', ...block, '@docs/after.md', 'See `docs/after-span.md` here.'].join('\n');
+    assert.deepEqual(extractImports(text).map((i) => i.ref), ['docs/after.md'], block.join(' | '));
+    assert.deepEqual(extractReferences(text).filter((r) => r.kind === 'path').map((r) => r.ref), ['docs/after-span.md'], block.join(' | '));
+    assert.deepEqual(splitUnits(text).map((u) => u.heading + ': ' + u.text),
+      ['A: @docs/after.md See `docs/after-span.md` here.'], block.join(' | '));
+  }
+});
+
 test('splitUnits: bullets with continuations, paragraphs, table rows; skips code, headings and frontmatter', () => {
   const text = [
     '---', 'paths: src/**', '---',
