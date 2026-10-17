@@ -140,3 +140,34 @@ test('a real past fix, reversed with git show -R, is fed to the harness as the m
   assert.match(r.out, /\[real-fix\] RESULT: CAUGHT/);
   assertRestored();
 });
+
+test('refactor mode refuses (exit 2) when the command already fails without the refactor', () => {
+  const r = harness(['--refactor', 'lib.mjs', 'node', 'missing-test.mjs'], 's/a + b/b + a/\n');
+  assert.equal(r.code, 2, r.out);
+  assert.match(r.out, /NOT REFACTORED: the command fails without the refactor/);
+  assert.doesNotMatch(r.out, /REFACTOR APPLIED|RESULT/);
+  assertRestored();
+});
+
+test('an edit that deletes or empties the file is refused (exit 2) in both modes, not read as CAUGHT', () => {
+  // Reversing the commit that created a file gives a whole-file deletion; a missing module proves nothing.
+  writeFileSync(join(repo, 'extra.mjs'), 'export const y = 2;\n');
+  writeFileSync(join(repo, 'check-extra.mjs'), "import { y } from './extra.mjs';\nif (y !== 2) process.exit(1);\n");
+  git('add', 'extra.mjs', 'check-extra.mjs');
+  git('commit', '-q', '-m', 'add extra');
+  const deletion = git('show', '-R', '--format=', '--no-color', 'HEAD', '--', 'extra.mjs');
+  assert.match(deletion, /deleted file mode/);
+  for (const mode of [[], ['--refactor']]) {
+    const r = harness([...mode, 'extra.mjs', 'node', 'check-extra.mjs'], deletion);
+    assert.equal(r.code, 2, r.out);
+    assert.match(r.out, /deletes extra\.mjs/);
+    assert.doesNotMatch(r.out, /RESULT/);
+    assert.equal(readFileSync(join(repo, 'extra.mjs'), 'utf8'), 'export const y = 2;\n');
+    assert.equal(git('status', '--porcelain'), '');
+    const empty = harness([...mode, '--sed', '1,$d', 'lib.mjs', 'node', 'check.mjs']);
+    assert.equal(empty.code, 2, empty.out);
+    assert.match(empty.out, /leaves lib\.mjs empty/);
+    assert.doesNotMatch(empty.out, /RESULT/);
+    assertRestored();
+  }
+});
