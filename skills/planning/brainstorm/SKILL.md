@@ -26,8 +26,8 @@ Make a task list with one entry per phase (Frame, Diverge, React, Converge, Deci
 2. **Restate the goal** in your own words, in one or two sentences, and show it with your first question. A
    restatement that surprises the user is the most useful thing this phase can produce.
 3. **Ask at most three questions, one at a time**, and only ones whose answer changes which ideas are worth having.
-   The usual three: what the user is really after (the goal behind the ask), which constraints are hard, and what a
-   great outcome would look like. Skip any the user has already answered. Recommend nothing yet.
+   The usual three: the goal behind the ask (what the user needs once this works), which constraints are hard, and
+   what a great outcome would look like. Skip any the user has already answered. Recommend nothing yet.
 4. **Sort the constraints.** A hard constraint is one the user confirmed, or that the code, a contract or the
    platform enforces. Everything else is assumed: inherited from the first idea, from habit, or from a guess.
    Assumed constraints are open to loosening in Diverge. Treat removing one as readily as adding one: a constraint
