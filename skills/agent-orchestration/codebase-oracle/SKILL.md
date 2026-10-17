@@ -119,7 +119,8 @@ candidates you ruled out and why. For a speed question, a measurement beats a re
 
 Say the cost in one line before starting, so a user on a tight budget can say no: "This is a big question, so I will
 run N read-only explorers on separate angles; they each read the code again, which costs roughly N extra passes over
-the area." If the user declines, answer on the single-agent path in Step 3.
+the area." When the user has said their usage budget is tight, wait for a yes. If the user declines, answer on the
+single-agent path in Step 3.
 
 1. **Split it into 2 to 4 angles**, each a separate slice with its own starting point: for example the entry point
    and request path, the data model and storage, configuration, build and deployment, error handling and edge cases,
