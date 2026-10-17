@@ -1,7 +1,6 @@
 ---
 name: session-close
-description: Close a working session in a fixed order (clean tree, retrospective with the rules audit and the stale-reference check, roadmap and log updated, detailed handoff, commit and push) so the next session starts from files instead of memory. Type it to end a session, when the context is nearly full, or when a roadmap item meets its definition of done and the next one will not fit in what is left of the session.
-disable-model-invocation: true
+description: "End a working session in a fixed order: clean tree, short retrospective, roadmap and log, handoff file, commit and push. Use when the user says 'close the session', 'end the session', 'wrap up this session', 'we are done for today', when the context is nearly full, or when a roadmap item is done and the next will not fit."
 argument-hint: "[optional: what the next session should focus on]"
 ---
 

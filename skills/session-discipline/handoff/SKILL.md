@@ -1,7 +1,6 @@
 ---
 name: handoff
-description: "Transfer full working context from this session to a future one so work resumes cleanly after a pause. Use when the user says \"handoff\", \"hand off\", \"wrap up for now\", \"pause here\", \"let's continue this later\", when a session is getting long and context may be degrading, or when switching focus within the same project. This is about pausing/resuming a SESSION, not shipping finished work. Two modes: park (default: write a handoff file the next session reads) or immediate (print the handoff inline to copy into a new chat or another tool). General-purpose; works in any project."
-disable-model-invocation: true
+description: "Write a handoff so a fresh session or another tool can resume with no prior context, as HANDOFF.md or a block to copy. Use when the user says 'handoff', 'hand off', 'pause here', 'let's continue this later', 'wrap up for now', or the session is getting long. Pauses work in progress; does not commit, push or report shipped work."
 ---
 
 # Handoff
