@@ -13,16 +13,23 @@ verifying. Every command runs from the repository root unless a step says otherw
 
 ## Run ID and folders
 
-Every run picks one ID and uses it in every name it creates:
+Every run picks one ID and uses it in every name it creates. Shell variables do not survive from one command to the
+next (each Bash tool call starts a fresh shell), so the first command writes them to a file and prints the ID, and
+every later command starts by reading that file back.
 
 ```bash
 TODO(verify-app): the commands that set RUN_ID, the scratch folder RUN (deleted in Cleanup) and the evidence folder EV
-(kept), for example:
+(kept, as an absolute path), save them and print the ID, for example:
 RUN_ID="$(date +%Y%m%d-%H%M%S)-$$"
 RUN="${TMPDIR:-/tmp}/verify-<app>-$RUN_ID"
-EV=".verify-evidence/$RUN_ID"
+EV="$PWD/.verify-evidence/$RUN_ID"
 mkdir -p "$RUN" "$EV"
+printf 'RUN_ID=%s\nRUN=%s\nEV=%s\n' "$RUN_ID" "$RUN" "$EV" > "$RUN/env"
+echo "RUN_ID=$RUN_ID"
 ```
+
+Start every later command with `RUN_ID=<the printed ID>; . "${TMPDIR:-/tmp}/verify-<app>-$RUN_ID/env"`, and append
+anything learned later (the URL, the port) to that file.
 
 Isolation: TODO(verify-app): can two instances run side by side (ports, data folders, profiles)? If not: never drive
 an instance this run did not start; stop and tell the user instead.
@@ -31,7 +38,8 @@ an instance this run did not start; stop and tell the user instead.
 
 TODO(verify-app): the commands that install or build once, then start the app for verification from an empty data
 folder, including migrations and seed data. Write the process ID (and anything else the run starts) to
-`$RUN/started.txt`.
+`$RUN/started.txt`. Put the background start on a line of its own: after `cd dir && cmd &` the recorded `$!` is a
+subshell, not the app.
 
 Ready when: TODO(verify-app): the condition that proves a user could act now (a log line, a health check that covers
 the data store), and the bounded wait for it. An open port is not enough.
@@ -67,6 +75,10 @@ The folder is ignored by git and Cleanup never touches it. TODO(verify-app): wha
 (screenshots, accessibility snapshots, terminal transcripts, request and response bodies, logs, exit codes) and the
 file names.
 
+Each feature keeps its proof in its own subfolder, `$EV/<feature>/`, created with `mkdir -p` before its first step:
+most tools do not create folders, and an action whose output could not be saved has still happened. Keep each command
+you ran in `commands.txt` in the same subfolder. Before Cleanup, copy the app's log into `$EV`.
+
 Proof rules:
 
 - Use the real user path, never an internal setter, a test-only endpoint or a seeded shortcut.
@@ -98,7 +110,8 @@ TODO(verify-app): each script this skill ships, with its exact invocation, or "N
 
 `features/README.md` indexes every mapped feature. A proof that drives one entry point is incomplete when the map
 lists others. Never weaken a journey to make it pass: a missing precondition is a failure, and its reason goes in the
-feature's Gotchas.
+feature's Gotchas. A step that fails may already have changed the app's data: run Cleanup and Launch again before
+retrying it.
 
 ## Not yet proven on the real target
 

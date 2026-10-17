@@ -99,9 +99,14 @@ a consumer does, against a clean install of the built package, not the source tr
 
 ## 3. Long-running processes in Claude Code
 
-- Start a server with the Bash tool's background option, or with `nohup <command> >"$RUN/app.log" 2>&1 &` followed by
-  `echo $! >"$RUN/pids"`. A background shell ends with the session, so never rely on a server from an earlier
-  session.
+- Each Bash tool call starts a fresh shell: variables set in one call are gone in the next. Write the run's
+  variables (run ID, folders, URL) to a file in the scratch folder and read it back at the start of every command.
+- Start a server with `nohup <command> >"$RUN/app.log" 2>&1 &` on a line of its own, followed by
+  `echo $! >"$RUN/pids"`. A process started this way outlives the Bash call, and can outlive the session, which is
+  why Cleanup matters. Never rely on a server from an earlier session.
+- `$!` is the process the `&` applied to. After `cd dir && <command> &` it is a subshell, not the app, and stopping
+  it can leave the app running. Have the doctor compare the recorded ID with what the app reports or with the port's
+  owner (`lsof -iTCP:<port> -sTCP:LISTEN` or `ss -ltnp` on Linux and macOS, `Get-NetTCPConnection` on Windows).
 - Wait for readiness on a condition (a log line, a health check), in a loop with a time limit. Some environments
   refuse a bare `sleep`; `curl --retry` or a tool that waits on a condition works there.
 - Record everything the run starts: process IDs, and the process group when the start command spawns children (a

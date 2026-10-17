@@ -82,7 +82,9 @@ from this repository. The sections:
   so wait for the condition that proves a user could act now (a ready line in the log, a health check that covers
   the data store, the first page rendering its main control). Launch reaches that state from an empty data folder,
   including migrations and seed data. Record everything the run starts (process IDs, container IDs, terminal session
-  names, temporary folders) in the run's scratch folder. For a short-lived CLI or TUI there is no server to keep up:
+  names, temporary folders) in the run's scratch folder, and make sure the recorded ID is the app's own (DRIVING.md,
+  section 3). Every command in the generated skill must work in a fresh shell, because each Bash tool call starts
+  one: the template saves the run's variables to a file. For a short-lived CLI or TUI there is no server to keep up:
   launch means build or install once, then each drive gets its own isolated session (its own config and data
   folders, its own terminal session).
 - **Doctor.** One read-only check that answers "is this instance worth driving?": the process is up, it is the one
@@ -95,7 +97,8 @@ from this repository. The sections:
 - **Evidence.** Where proof goes and what counts as proof. The folder is inside the repository, ignored by git, and
   outside everything Cleanup deletes, so the proof survives the teardown. Write it on a line of its own as
   `` Evidence folder: `<path>` `` (check-map.mjs reads that line), add the folder to `.gitignore` (show the line),
-  and give each run its own subfolder. The proof standards, written into the generated skill:
+  and give each run its own subfolder, and each feature a subfolder in that, created before the feature's first step.
+  The proof standards, written into the generated skill:
   - Use the real user path, never an internal setter, a test-only endpoint or a seeded shortcut.
   - Capture the action and the state it produced, not only the final screen.
   - Check side effects as well as what is visible (a file written, a row stored, a message sent), through a second,
@@ -147,7 +150,8 @@ mapped feature (one is enough; the map is there so later runs can cover the rest
 - After cleanup, confirm that the evidence still exists at the named folder and that nothing the run started is still
   running (the recorded process IDs are gone, the port is free). A cleanup that eats the proof fails this step.
 - Fix what failed, and run the generated Cleanup after every failed attempt too, so broken attempts leave no process
-  or port behind.
+  or port behind. A step that failed may already have changed the app's data, so relaunch from empty before trying
+  again rather than carrying on with the same instance.
 - If you proved it in a stand-in for the real target (a container instead of a fresh machine, a local stack instead
   of a remote one), list every setup step the stand-in did that the target will not. Put the list in the generated
   skill under "Not yet proven on the real target". Those steps stay unproven until a run there covers them.
