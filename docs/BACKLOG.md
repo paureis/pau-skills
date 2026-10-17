@@ -139,7 +139,7 @@ Facts (Claude Code documentation, skills page, checked 2026-10-17):
   `codebase-oracle`, `migration-review`, `flaky-test-hunt`, `dependency-security-audit`, `safe-merge`
   (`merge-guard` sends the agent to it).
 - **Typed tier** (`disable-model-invocation: true`): modes, rituals and heavy workflows the user starts on purpose.
-  Everything else, including `project-setup`, `session-close`, `handoff`, `retrospective`, `claude-md-audit`,
+  Everything else, including `project-setup`, `session-close`, `handoff`, `retrospective`, `instructions-audit`,
   `lean-subagent-dev`, `methodology`, `parallel-worktrees`, `grill-me`, `to-prd`, `to-issues`,
   `improve-codebase-architecture`, `ci-cost-and-cadence`, `dependency-upgrade`, `rule-to-hook`, and every new skill
   not named in the auto tier.
@@ -286,7 +286,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
   past instance; answers open questions with a prototype; writes a plan backed by counts. Writes nothing without the
   user's yes.
 - Overlaps: `retrospective` (one session; this is the whole history), `rule-to-hook` (implements one rule; this finds
-  them), `claude-md-audit`.
+  them), `instructions-audit`.
 
 **N7 skill-eval** (`todo`, verification, typed tier).
 - Upstream: `skills/poteto-mode/playbooks/eval.md`; this repository's `evals/project-setup/` as the local model.

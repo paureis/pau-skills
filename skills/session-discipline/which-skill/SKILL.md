@@ -84,10 +84,10 @@ These change how future sessions go, not the product code.
 
 - **`retrospective`** (session-discipline): after a session with corrections, turn them into rule, memory or skill
   edits, with a gate that stops the rule files from repeating themselves.
-- **`claude-md-audit`** (session-discipline): review CLAUDE.md, AGENTS.md and similar files for size, duplicates,
+- **`instructions-audit`** (session-discipline): review CLAUDE.md, AGENTS.md and similar files for size, duplicates,
   contradictions, stale references and vague rules.
 - **`rule-to-hook`** (guards): a rule that keeps being broken becomes a hook with tests, instead of another sentence.
-  The natural next step when `retrospective` or `claude-md-audit` finds a rule that is already written down and
+  The natural next step when `retrospective` or `instructions-audit` finds a rule that is already written down and
   still ignored.
 
 ## What runs without asking

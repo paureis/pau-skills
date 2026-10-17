@@ -1,4 +1,4 @@
-// The claude-md-audit scanner: finds the instruction files an agent reads, follows @imports one level, measures them,
+// The instructions-audit scanner: finds the instruction files an agent reads, follows @imports one level, measures them,
 // and flags near-duplicate rules, references that do not resolve, secret-shaped lines and vague rules. Every
 // detector has a control: something that looks similar and must not be flagged.
 import { test } from 'node:test';
@@ -10,9 +10,9 @@ import {
   estimateTokens, fileStats, splitUnits, bigrams, overlap, findDuplicates, extractImports, extractReferences,
   pathCandidate, checkReferences, parseTargets, findSecrets, mask, findVague, findEmphasis, discoverFiles, scan,
   isPathScoped, sectionsOf, parseArgs, formatText,
-} from '../skills/session-discipline/claude-md-audit/scan.mjs';
+} from '../skills/session-discipline/instructions-audit/scan.mjs';
 
-const SCAN = repo('skills', 'session-discipline', 'claude-md-audit', 'scan.mjs');
+const SCAN = repo('skills', 'session-discipline', 'instructions-audit', 'scan.mjs');
 const put = (root, rel, text = 'x\n') => { const p = join(root, rel); mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, text); return p; };
 
 test('size: tokens are about four characters each; lines ignore the final newline', () => {

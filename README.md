@@ -74,7 +74,7 @@ green by skipping the failing test.
 - `rule-to-hook` turns a rule that keeps being broken into a hook with tests, step by step.
 - `retrospective` turns a session's corrections into rule, memory or skill edits, gated by a script so nothing gets
   written twice.
-- `claude-md-audit` finds the size, duplicates, contradictions, stale references and vague rules in your instruction
+- `instructions-audit` finds the size, duplicates, contradictions, stale references and vague rules in your instruction
   files.
 
 ### 3. One command that cannot be undone
@@ -163,7 +163,7 @@ tells you which one to type.
   `mutation-test`, `codebase-oracle`, `migration-review`, `flaky-test-hunt`, `dependency-security-audit`,
   `safe-merge`.
 - **You type them** (`/pau-skills:<skill>` or `/<plugin>:<skill>`): `project-setup`, `session-close`, `handoff`,
-  `retrospective`, `claude-md-audit`, `lean-subagent-dev`, `methodology`, `parallel-worktrees`, `grill-me`, `to-prd`,
+  `retrospective`, `instructions-audit`, `lean-subagent-dev`, `methodology`, `parallel-worktrees`, `grill-me`, `to-prd`,
   `to-issues`, `improve-codebase-architecture`, `ci-cost-and-cadence`, `dependency-upgrade`, `rule-to-hook`, `arena`,
   `architect`.
 
@@ -183,7 +183,7 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[session-close](skills/session-discipline/session-close/SKILL.md)**: Closes a session in a fixed order: clean tree, retrospective, roadmap and log, handoff, commit
   and push.
 - **[handoff](skills/session-discipline/handoff/SKILL.md)**: Writes a handoff the next session can resume from, after a retrospective gate.
-- **[claude-md-audit](skills/session-discipline/claude-md-audit/SKILL.md)**: Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
+- **[instructions-audit](skills/session-discipline/instructions-audit/SKILL.md)**: Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
   references and secrets, and proposes edits for approval.
 - **[project-setup](skills/session-discipline/project-setup/SKILL.md)**: Interviews you about how you want to work, then writes the project CLAUDE.md and,
   with a separate yes, your personal preferences, in your language. Written for people new to Claude Code.

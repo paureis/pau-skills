@@ -1,5 +1,5 @@
 ---
-name: claude-md-audit
+name: instructions-audit
 description: Audit the instruction files a coding agent reads (CLAUDE.md at every level, CLAUDE.local.md, imported files, .claude/rules, AGENTS.md, .cursorrules, Copilot instructions and similar) for token cost, duplicated and contradictory rules, stale paths and commands, vague rules, secrets, and missing essentials, then produce a ranked report with concrete proposed edits and apply only the ones the user approves. Use when the user says "audit my CLAUDE.md", "clean up CLAUDE.md", "my CLAUDE.md is too long", "the agent keeps ignoring my rules", "review our AGENTS.md", "are my instructions stale", "trim the rules file", or before handing a repository's agent setup to a team.
 disable-model-invocation: true
 argument-hint: "[project root, default: current directory]"

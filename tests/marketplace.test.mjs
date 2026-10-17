@@ -54,6 +54,16 @@ test('every skill has a SKILL.md whose name equals its folder, and a description
   }
 });
 
+test('no skill name contains a reserved word (claude.ai refuses to upload it)', () => {
+  const bad = [];
+  for (const p of plugins) {
+    for (const s of readdirSync(join(ROOT, 'skills', p.name)).filter((d) => !d.includes('.'))) {
+      if (/claude|anthropic/i.test(s)) bad.push(`${p.name}/${s}`);
+    }
+  }
+  assert.deepEqual(bad, []);
+});
+
 test('skill names are unique across plugins', () => {
   const names = plugins.flatMap((p) => readdirSync(join(ROOT, 'skills', p.name)).filter((d) => !d.includes('.')));
   assert.equal(new Set(names).size, names.length);

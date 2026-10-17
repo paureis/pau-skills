@@ -3,11 +3,14 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
-## 2026-10-17: verify-app uploads to claude.ai
+## 2026-10-17: every skill uploads to claude.ai
 
 - `verify-app`'s description wrote `verify-<app>`, which claude.ai reads as an XML tag and refuses to upload. It now
   says `verify-*`. `tests/context-budget.test.mjs` fails on any description with a tag-like `<...>`.
-- Versions: pau-skills 0.7.1, verification 0.6.1.
+- `claude-md-audit` is renamed `instructions-audit`: claude.ai refuses skill names that contain "claude". Type
+  `/instructions-audit` (or `/session-discipline:instructions-audit`) from now on. A marketplace test and
+  `scripts/new-skill.mjs` refuse any skill name containing "claude" or "anthropic".
+- Versions: pau-skills 0.8.0, verification 0.6.1, session-discipline 0.6.0.
 
 ## 2026-10-17: ideas from pstack, and a context budget
 
