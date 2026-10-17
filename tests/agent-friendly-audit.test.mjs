@@ -203,6 +203,14 @@ describe('commits', () => {
     assert.match(onMain.stdout, /# 3 fix, 1 revert, 1 fixup in 9 commits on main \(merges skipped\)/);
   });
 
+  test('--rev refuses a value that git would read as an option', () => {
+    const { dir } = history();
+    const r = runNode(SCRIPT, { args: ['commits', '--repo', dir, '--rev', '--all'] });
+    assert.equal(r.code, 1);
+    assert.equal(r.stdout, '');
+    assert.match(r.stderr, /must name a branch or commit/);
+  });
+
   test('a folder that is not a git repository is refused', () => {
     const r = runNode(SCRIPT, { args: ['commits', '--repo', tempDir('afa-nogit-')] });
     assert.equal(r.code, 1);
