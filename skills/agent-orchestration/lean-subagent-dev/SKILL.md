@@ -119,8 +119,8 @@ Write down the commit the subagent starts from.
 at what it leaves behind: commits in its worktree or branch (`git log <start commit>..`), the files it changed, the
 test output it wrote. Where your Claude Code version has `ListAgents`, it shows whether a subagent is busy or idle
 without waking it. Never send a running or finished subagent a message only to ask how it is going: a message resumes
-it from its transcript and spends usage on a status report. A message is for a fix round or a real question. One fix
-round goes by message (step 6); a new task gets a fresh subagent with its own brief, never a resumed one.
+it from its transcript and spends usage on a status report. A message is for a fix round or a real question. The one fix
+round may go by message (step 6); a new task gets a fresh subagent with its own brief, never a resumed one.
 
 ## 5. Check the work yourself
 
