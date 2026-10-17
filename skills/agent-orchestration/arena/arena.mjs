@@ -72,18 +72,27 @@ export function assignLabels(candidates, rng) {
   return shuffle(candidates, rng).map((candidate, i) => ({ label: String.fromCharCode(65 + i), candidate }));
 }
 
+// Code fences as CommonMark defines them: three or more backticks or tildes open a fence, and a backtick fence's info
+// string has no backtick in it. Only a bare fence of the same character, at least as long, closes it. Any indentation
+// is accepted, because fences inside list items are indented.
+const FENCE_OPEN = /^\s*(`{3,}(?=[^`]*$)|~{3,})/;
+const closesFence = (line, fence) => {
+  const m = /^\s*(`{3,}|~{3,})\s*$/.exec(line);
+  return !!m && m[1][0] === fence[0] && m[1].length >= fence.length;
+};
+
 /** The lines of a Markdown text that are not inside a fenced code block (``` or ~~~). */
 export function outsideFences(text) {
   const out = [];
   let fence = null;
   for (const line of String(text).split(/\r?\n/)) {
-    const m = /^\s*(`{3,}|~{3,})/.exec(line);
-    if (m) {
-      if (fence === null) fence = m[1][0];
-      else if (m[1][0] === fence) fence = null;
+    if (fence) {
+      if (closesFence(line, fence)) fence = null;
       continue;
     }
-    if (fence === null) out.push(line);
+    const open = FENCE_OPEN.exec(line);
+    if (open) { fence = open[1]; continue; }
+    out.push(line);
   }
   return out;
 }
