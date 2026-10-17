@@ -2,13 +2,14 @@
 // judge and unblind commands against real folders, with a stand-in for the `claude` command so no model is called.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, existsSync, readdirSync, symlinkSync, utimesSync, chmodSync } from 'node:fs';
 import { join, sep } from 'node:path';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
   META_WORDS, findMetaWords, extractActions, renderActions, childEnv, candidateArgv, judgeArgv, validateRubric,
-  parseScores, disagreements, variantMeans, skillNameOf, parseArgs, rubricTemplate,
+  parseScores, disagreements, variantMeans, skillNameOf, parseArgs, rubricTemplate, platformProblem, ALLOWED_ENV,
 } from '../skills/verification/skill-eval/skill-eval.mjs';
 
 const SCRIPT = repo('skills', 'verification', 'skill-eval', 'skill-eval.mjs');
@@ -17,7 +18,10 @@ const FAKE = join(FIX, 'fake-claude.mjs');
 const TRANSCRIPT = readFileSync(join(FIX, 'transcript.jsonl'), 'utf8');
 
 // The orchestrator's own scores, in the format the judge uses.
-const MY_READ = ['Criterion 1: gone', '  A: 5', '  B: 3', '  C: 3', '  D: 3', 'Criterion 2: sorted', '  A: 3', '  B: 3', '  C: 3', '  D: 3', 'Criterion 3: copy', '  A: 3', '  B: 3', '  C: 3', '  D: 3'].join('\n');
+const MY_READ = ['Criterion 1: gone', '  A: 5/5', '  B: 3/5', '  C: 3/5', '  D: 3/5', 'Criterion 2: sorted', '  A: 3/5', '  B: 3/5', '  C: 3/5', '  D: 3/5', 'Criterion 3: copy', '  A: 3/5', '  B: 3/5', '  C: 3/5', '  D: 3/5'].join('\n');
+
+// The variables the stand-in needs, passed the way a user passes a login variable.
+const PASS = ['--pass-env', 'FAKE_CLAUDE_LOG', 'FAKE_CLAUDE_FAIL', 'FAKE_CLAUDE_DENY', 'FAKE_CLAUDE_LOGGED_OUT'];
 
 const GOOD_RUBRIC = ['# Rubric', '', '1. Repeated lines are gone.', '2. The lines are sorted.', '3. A copy of the original exists.', ''].join('\n');
 
@@ -44,11 +48,20 @@ function setup({ extra = [], prompt = '/tidy-notes my shopping list in notes.txt
 
 const plan = (lab) => JSON.parse(readFileSync(join(lab, 'plan.json'), 'utf8'));
 
+const readLog = (log) => (existsSync(log) ? readdirSync(log).map((f) => JSON.parse(readFileSync(join(log, f), 'utf8'))) : []);
+
 function runFake(lab, { extra = [], env = {} } = {}) {
   const log = join(scratch(), 'log');
-  const r = runNode(SCRIPT, { args: ['run', lab, '--model', 'some-model', ...extra], env: { SKILL_EVAL_CLAUDE: FAKE, FAKE_CLAUDE_LOG: log, CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'parent', CLAUDE_CODE_REMOTE_SESSION_ID: 'parent', CLAUDE_ADDITIONAL_DIRECTORIES: '/somewhere', KEEP_ME: 'yes', ...env } });
-  const calls = existsSync(log) ? readdirSync(log).map((f) => JSON.parse(readFileSync(join(log, f), 'utf8'))) : [];
-  return { ...r, calls };
+  const r = runNode(SCRIPT, { args: ['run', lab, '--model', 'some-model', ...extra, ...PASS], env: { SKILL_EVAL_CLAUDE: FAKE, FAKE_CLAUDE_LOG: log, CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'parent', CLAUDE_CODE_REMOTE_SESSION_ID: 'parent', CLAUDE_ADDITIONAL_DIRECTORIES: '/somewhere', CLAUDE_CONFIG_DIR: '/elsewhere', KEEP_ME: 'yes', HTTPS_PROXY: 'http://proxy.example.com:3128', LANG: 'C.UTF-8', ...env } });
+  const all = readLog(log);
+  return { ...r, calls: all.filter((c) => c.kind !== 'auth'), auth: all.filter((c) => c.kind === 'auth') };
+}
+
+function judgeFake(lab, { extra = [], env = {} } = {}) {
+  const log = join(scratch(), 'log');
+  const r = runNode(SCRIPT, { args: ['judge', lab, '--model', 'judge-model', ...extra, ...PASS], env: { SKILL_EVAL_CLAUDE: FAKE, FAKE_CLAUDE_LOG: log, CLAUDECODE: '1', ...env } });
+  const all = readLog(log);
+  return { ...r, calls: all.filter((c) => c.kind !== 'auth'), auth: all.filter((c) => c.kind === 'auth') };
 }
 
 describe('findMetaWords', () => {
@@ -89,9 +102,28 @@ describe('skillNameOf', () => {
 });
 
 describe('childEnv', () => {
-  test('sets HOME and removes every variable that would tie the run to this session', () => {
-    const env = childEnv({ PATH: '/bin', HOME: '/root', CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'x', CLAUDE_CODE_CHILD_SESSION: '1', CLAUDE_CODE_REMOTE_SESSION_ID: 'y', CLAUDE_ADDITIONAL_DIRECTORIES: '/d', CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD: '1' }, '/sandbox');
-    assert.deepEqual(env, { PATH: '/bin', HOME: '/sandbox' });
+  test('keeps only the allowlist and the variables passed by name, and sets HOME', () => {
+    const env = childEnv({
+      PATH: '/bin', HOME: '/root', LANG: 'C.UTF-8', LC_ALL: 'C', TMPDIR: '/t', HTTPS_PROXY: 'p', https_proxy: 'p', NO_PROXY: 'n',
+      NODE_EXTRA_CA_CERTS: '/ca', SSL_CERT_FILE: '/ca2', PWD: '/here', OLDPWD: '/there', CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'x',
+      CLAUDE_CONFIG_DIR: '/cfg', ANTHROPIC_API_KEY: 'k', CLAUDE_CODE_USER_EMAIL: 'e', CLAUDE_EFFORT: 'max', LEAN_SUBAGENT_BUDGET: 'tight',
+      SKILL_EVAL_CLAUDE: '/x', VSCODE_PID: '1', CLAUDE_CODE_SYNC_SKILLS: '1', MY_LOGIN: 's',
+    }, '/sandbox', ['MY_LOGIN', 'NOT_SET']);
+    assert.deepEqual(Object.keys(env).sort(), ['HOME', 'HTTPS_PROXY', 'LANG', 'LC_ALL', 'MY_LOGIN', 'NODE_EXTRA_CA_CERTS', 'NO_PROXY', 'PATH', 'SSL_CERT_FILE', 'TMPDIR', 'https_proxy']);
+    assert.equal(env.HOME, '/sandbox');
+  });
+
+  test('the allowlist holds no Claude Code, Anthropic, IDE or working-folder variable', () => {
+    assert.deepEqual(ALLOWED_ENV.filter((n) => /CLAUDE|ANTHROPIC|PWD|VSCODE|IDE|EMAIL|BUDGET/i.test(n)), []);
+  });
+});
+
+describe('platformProblem', () => {
+  test('refuses Windows for the real command, which would lose argument quoting, and accepts a script or another system', () => {
+    assert.match(platformProblem('win32', 'claude'), /Windows/);
+    assert.equal(platformProblem('win32', 'C:/x/fake.mjs'), null);
+    assert.equal(platformProblem('linux', 'claude'), null);
+    assert.equal(platformProblem('darwin', 'claude'), null);
   });
 });
 
@@ -184,10 +216,27 @@ describe('rubric and scores', () => {
     assert.match(validateRubric('1. <criterion>\n2. b\n3. c').join(' '), /placeholder/);
   });
 
-  test('parseScores reads "Criterion n" blocks with one letter and score per line, bold or plain', () => {
-    const text = ['Criterion 1: gone', '  A: 4  evidence', '  **B**: 2/5 evidence', 'Criterion 2: sorted', '- A: 5', '- B: 3', 'Totals: A 9, B 5'].join('\n');
-    assert.deepEqual(parseScores(text), [{ n: 1, text: 'gone', scores: { A: 4, B: 2 } }, { n: 2, text: 'sorted', scores: { A: 5, B: 3 } }]);
-    assert.deepEqual(parseScores('nothing here'), []);
+  test('parseScores reads "Criterion n" blocks of "<letter>: <n>/5" lines, bold or plain', () => {
+    const text = ['Criterion 1: gone', '  A: 4/5  evidence', '  **B**: 2/5 evidence', '', 'Criterion 2: sorted', '- A: 5/5', '- B: 3/5', 'Totals: A 9, B 5'].join('\n');
+    const r = parseScores(text);
+    assert.deepEqual(r.criteria, [{ n: 1, text: 'gone', scores: { A: 4, B: 2 } }, { n: 2, text: 'sorted', scores: { A: 5, B: 3 } }]);
+    assert.deepEqual(r.problems, []);
+    assert.deepEqual(parseScores('nothing here').criteria, []);
+  });
+
+  test('a block ends at the first line that is not a score, so a later note never counts as a score', () => {
+    const text = ['Criterion 1: gone', '  A: 5/5  ok', '  B: 5/5  ok', 'Criterion 2: sorted', '  A: 5/5', '  B: 5/5', '',
+      'Notes:', '  A: 2 refused commands', '  B: 1 retry', 'Output A: 1/5 sloppy'].join('\n');
+    const r = parseScores(text);
+    assert.deepEqual(r.criteria.map((c) => c.scores), [{ A: 5, B: 5 }, { A: 5, B: 5 }]);
+    assert.match(r.problems.join(' '), /outside a criterion/);
+  });
+
+  test('a score without /5, or a letter twice in one block, is not read as a score', () => {
+    assert.deepEqual(parseScores('Criterion 1: x\n  A: 4  evidence').criteria[0].scores, {});
+    const twice = parseScores('Criterion 1: x\n  A: 4/5\n  A: 2/5');
+    assert.deepEqual(twice.criteria[0].scores, { A: 4 });
+    assert.match(twice.problems.join(' '), /twice/);
   });
 
   test('disagreements are scores two or more apart on the same criterion and label', () => {
@@ -217,6 +266,19 @@ describe('parseArgs', () => {
     assert.deepEqual(o.allowTools, ['Bash(cp *)', 'Bash(ls *)', 'Edit']);
     assert.equal(o.model, 'm');
     assert.throws(() => parseArgs(['run', 'lab', '--model', 'm', '--allow-tool']));
+  });
+
+  test('--pass-env takes one name or several, for run and judge', () => {
+    assert.deepEqual(parseArgs(['run', 'lab', '--model', 'm', '--pass-env', 'A_KEY', 'B_KEY']).passEnv, ['A_KEY', 'B_KEY']);
+    assert.deepEqual(parseArgs(['judge', 'lab', '--model', 'm', '--pass-env', 'A_KEY']).passEnv, ['A_KEY']);
+    assert.throws(() => parseArgs(['run', 'lab', '--model', 'm', '--pass-env', 'not a name']));
+  });
+
+  test('with no arguments it prints only the usage', () => {
+    const r = runNode(SCRIPT);
+    assert.equal(r.code, 2);
+    assert.match(r.stderr, /^usage:/);
+    assert.doesNotMatch(r.stderr, /unknown command/);
   });
 
   test('bad input throws', () => {
@@ -252,9 +314,110 @@ describe('setup', () => {
     }
     const dirs = new Set(p.runs.map((r) => r.dir));
     assert.equal(dirs.size, 4);
+    for (const r of p.runs) assert.match(r.id, /^[0-9a-f]{4}$/, 'a run id says nothing about its variant or its place');
+    assert.equal(new Set(p.runs.map((r) => r.id)).size, 4);
     assert.ok(existsSync(join(lab, 'rubric.md')));
     assert.match(stdout, /4 runs \(2 variants x 2\) \+ 1 judge = 5/);
     for (const r of p.runs) assert.ok(!r.dir.startsWith(lab), 'no run inside the lab folder');
+  });
+
+  test('the runs are listed in a shuffled order, so neither the id nor the place gives the variant away', () => {
+    const orders = new Set();
+    for (const seed of ['1', '2', '3', '4', '5', '6']) {
+      const s = setup({ extra: ['--seed', seed] });
+      assert.equal(s.code, 0, s.stderr);
+      orders.add(plan(s.lab).runs.map((r) => r.variant).join(','));
+    }
+    assert.ok(orders.size > 1, `always ${[...orders][0]}`);
+  });
+
+  test('refuses more than 26 runs, which the letters cannot label', () => {
+    const r = setup({ n: '14' });
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /26/);
+    assert.ok(!existsSync(r.root));
+  });
+
+  test('refuses a link in the task or a variant: the copy would point back at the original', () => {
+    const task = join(scratch(), 'shop');
+    mkdirSync(task, { recursive: true });
+    writeFileSync(join(task, 'notes.txt'), 'milk\n');
+    symlinkSync('notes.txt', join(task, 'list.txt'));
+    const r = setup({ task });
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /list\.txt.*link/);
+    const variant = join(scratch(), 'tidy');
+    mkdirSync(variant);
+    writeFileSync(join(variant, 'SKILL.md'), readFileSync(join(FIX, 'variant-a', 'SKILL.md')));
+    symlinkSync(join(FIX, 'variant-b', 'SKILL.md'), join(variant, 'OTHER.md'));
+    const v = setup({ variants: [`alpha=${variant}`, `bravo=${join(FIX, 'variant-b')}`] });
+    assert.equal(v.code, 1);
+    assert.match(v.stderr, /OTHER\.md.*link/);
+  });
+
+  test('refuses a root that is not new and empty, and a task, variant or prompt under the root', () => {
+    const base = scratch();
+    const p = writePrompt(base, '/tidy-notes clean notes.txt');
+    const common = ['--variant', `b=${join(FIX, 'variant-b')}`];
+    const full = join(base, 'full');
+    mkdirSync(full);
+    writeFileSync(join(full, 'old.txt'), 'x');
+    const r1 = runNode(SCRIPT, { args: ['setup', join(base, 'lab1'), '--root', full, '--task', join(FIX, 'task'), '--variant', `a=${join(FIX, 'variant-a')}`, ...common, '--prompt', p] });
+    assert.equal(r1.code, 1);
+    assert.match(r1.stderr, /empty/);
+    const root = join(base, 'root2');
+    mkdirSync(join(root, 'v'), { recursive: true });
+    writeFileSync(join(root, 'v', 'SKILL.md'), readFileSync(join(FIX, 'variant-a', 'SKILL.md')));
+    const r2 = runNode(SCRIPT, { args: ['setup', join(base, 'lab2'), '--root', root, '--task', join(FIX, 'task'), '--variant', `a=${join(root, 'v')}`, ...common, '--prompt', p] });
+    assert.equal(r2.code, 1);
+    assert.match(r2.stderr, /variant a.*under the root/);
+    const root3 = join(base, 'root3');
+    mkdirSync(root3);
+    const p3 = writePrompt(root3, '/tidy-notes clean notes.txt');
+    const r3 = runNode(SCRIPT, { args: ['setup', join(base, 'lab3'), '--root', root3, '--task', join(FIX, 'task'), '--variant', `a=${join(FIX, 'variant-a')}`, ...common, '--prompt', p3] });
+    assert.equal(r3.code, 1);
+    assert.match(r3.stderr, /prompt.*under the root/);
+    const empty = join(base, 'root4');
+    mkdirSync(empty);
+    const r4 = runNode(SCRIPT, { args: ['setup', join(base, 'lab4'), '--root', empty, '--task', join(FIX, 'task'), '--variant', `a=${join(FIX, 'variant-a')}`, ...common, '--prompt', p] });
+    assert.equal(r4.code, 0, r4.stderr);
+  });
+
+  test('a task folder named home gets a HOME that does not collide with it', () => {
+    const task = join(scratch(), 'home');
+    mkdirSync(task);
+    writeFileSync(join(task, 'notes.txt'), 'milk\n');
+    const r = setup({ task });
+    assert.equal(r.code, 0, r.stderr);
+    for (const run of plan(r.lab).runs) {
+      assert.notEqual(run.home, run.dir);
+      assert.ok(existsSync(join(run.dir, 'notes.txt')));
+      assert.deepEqual(readdirSync(run.home), []);
+    }
+  });
+
+  test('a failure while writing removes everything setup made, and keeps your own files in the lab', { skip: process.platform === 'win32' }, () => {
+    const realGit = spawnSync('sh', ['-c', 'command -v git'], { encoding: 'utf8' }).stdout.trim();
+    const bin = join(scratch(), 'bin');
+    mkdirSync(bin);
+    writeFileSync(join(bin, 'git'), `#!/bin/sh\nfor a in "$@"; do [ "$a" = commit ] && exit 1; done\nexec "${realGit}" "$@"\n`);
+    chmodSync(join(bin, 'git'), 0o755);
+    const base = scratch();
+    const lab = join(base, 'lab');
+    mkdirSync(lab);
+    const p = writePrompt(lab, '/tidy-notes clean notes.txt');
+    const root = join(base, 'work');
+    const r = runNode(SCRIPT, { args: ['setup', lab, '--root', root, '--task', join(FIX, 'task'), '--variant', `a=${join(FIX, 'variant-a')}`, '--variant', `b=${join(FIX, 'variant-b')}`, '--prompt', p], env: { PATH: `${bin}:${process.env.PATH}` } });
+    assert.equal(r.code, 1, r.stdout);
+    assert.ok(!existsSync(root) || readdirSync(root).length === 0, 'no run folder left');
+    assert.deepEqual(readdirSync(lab), ['prompt.txt']);
+  });
+
+  test('--grade-reply is recorded in the plan', () => {
+    const r = setup({ extra: ['--grade-reply'] });
+    assert.equal(r.code, 0, r.stderr);
+    assert.equal(plan(r.lab).gradeReply, true);
+    assert.equal(plan(setup().lab).gradeReply, false);
   });
 
   test('a variant of none gets no skill folder', () => {
@@ -393,7 +556,9 @@ describe('run', () => {
       const call = r.calls.find((c) => c.cwd === run.dir);
       assert.ok(call, `a call ran in ${run.dir}`);
       assert.equal(call.home, run.home);
-      assert.deepEqual(call.env, { CLAUDECODE: null, CLAUDE_CODE_SESSION_ID: null, CLAUDE_CODE_CHILD_SESSION: null, CLAUDE_CODE_REMOTE_SESSION_ID: null, CLAUDE_ADDITIONAL_DIRECTORIES: null, CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD: null, KEEP_ME: 'yes' });
+      const extra = call.names.filter((n) => !ALLOWED_ENV.includes(n) && !/^LC_/.test(n) && !['HOME', 'FAKE_CLAUDE_LOG'].includes(n));
+      assert.deepEqual(extra, [], 'only the allowlist and the passed names reach a run');
+      for (const n of ['PATH', 'HOME', 'HTTPS_PROXY', 'LANG', 'FAKE_CLAUDE_LOG']) assert.ok(call.names.includes(n), n);
       assert.equal(call.argv[1], p.prompts[run.variant]);
       assert.ok(call.argv.includes('Bash(ls *)'));
       assert.ok(call.argv.includes('some-model'));
@@ -410,6 +575,45 @@ describe('run', () => {
     assert.equal(again.code, 1);
     assert.equal(again.calls.length, 0);
     assert.equal(runFake(lab, { extra: ['--force'] }).code, 0);
+  });
+
+  test('--force rebuilds every run folder, its HOME and the installed variant from the lab before running again', () => {
+    const { lab } = setup();
+    assert.equal(runFake(lab).code, 0);
+    assert.equal(runFake(lab, { extra: ['--force'] }).code, 0);
+    for (const run of plan(lab).runs) {
+      assert.equal(readFileSync(join(run.dir, 'notes.txt'), 'utf8').split('tidied').length - 1, 1, 'the first run\'s edit is gone');
+      assert.equal(readFileSync(join(run.dir, '.claude', 'skills', 'tidy-notes', 'SKILL.md'), 'utf8').split('INSTALLED VARIANT TEXT').length - 1, 1);
+      assert.equal(readFileSync(join(run.home, '.seen'), 'utf8').trim().split('\n').length, 1, 'a fresh HOME');
+      const log = spawnSync('git', ['-C', run.dir, 'log', '--format=%H'], { encoding: 'utf8' }).stdout.trim().split('\n');
+      assert.deepEqual(log, [run.base]);
+    }
+  });
+
+  test('refuses to run again once a blind copy exists', () => {
+    const { lab } = setup();
+    assert.equal(runFake(lab).code, 0);
+    writeFileSync(join(lab, 'rubric.md'), GOOD_RUBRIC);
+    assert.equal(runNode(SCRIPT, { args: ['blind', lab, '--out', join(scratch(), 'b')] }).code, 0);
+    const again = runFake(lab, { extra: ['--force'] });
+    assert.equal(again.code, 1);
+    assert.match(again.stderr, /blind/);
+    assert.equal(again.calls.length, 0);
+  });
+
+  test('checks the login under the empty HOME first, and points at --real-home when it fails', () => {
+    const s = setup();
+    // The login is checked under a fresh empty HOME in the temporary folder, named h-XXXXXX.
+    const emptyHomes = join(tmpdir(), 'h-');
+    const out = runFake(s.lab, { env: { FAKE_CLAUDE_LOGGED_OUT: emptyHomes } });
+    assert.equal(out.code, 1);
+    assert.match(out.stderr, /logged in.*--real-home/s);
+    assert.equal(out.calls.length, 0, 'no run started');
+    assert.ok(out.auth.length >= 1);
+    const real = runFake(s.lab, { extra: ['--real-home'], env: { FAKE_CLAUDE_LOGGED_OUT: emptyHomes } });
+    assert.equal(real.code, 0, real.stderr);
+    for (const c of real.calls) assert.equal(c.home, process.env.HOME);
+    assert.equal(JSON.parse(readFileSync(join(s.lab, 'run.json'), 'utf8')).realHome, true);
   });
 
   test('a run that fails is reported and the command exits 1', () => {
@@ -467,6 +671,72 @@ describe('blind, judge and unblind', () => {
     assert.doesNotMatch(r.stdout, /alpha|bravo|\br\d+\b/);
   });
 
+  test('the letters are shuffled: different seeds give different letter-to-run maps', () => {
+    const s = ready();
+    const maps = new Set();
+    for (const seed of ['1', '2', '3', '4', '5', '6']) {
+      const r = runNode(SCRIPT, { args: ['blind', s.lab, '--out', join(scratch(), 'b'), '--seed', seed, '--force'] });
+      assert.equal(r.code, 0, r.stderr);
+      maps.add(JSON.stringify(JSON.parse(readFileSync(join(s.lab, 'key.json'), 'utf8')).labels));
+    }
+    assert.ok(maps.size > 1, 'every seed gave the same letters');
+  });
+
+  test('blind --force refuses while your read or a verdict for the old letters exists', () => {
+    const s = ready();
+    assert.equal(runNode(SCRIPT, { args: ['blind', s.lab, '--out', join(scratch(), 'b')] }).code, 0);
+    writeFileSync(join(s.lab, 'my-read.md'), MY_READ);
+    const r = runNode(SCRIPT, { args: ['blind', s.lab, '--out', join(scratch(), 'b'), '--force'] });
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /my-read\.md/);
+  });
+
+  test('judge and unblind refuse a read older than the key', () => {
+    const s = ready();
+    assert.equal(runNode(SCRIPT, { args: ['blind', s.lab, '--out', join(scratch(), 'b')] }).code, 0);
+    writeFileSync(join(s.lab, 'my-read.md'), MY_READ);
+    const old = new Date(Date.now() - 3600_000);
+    utimesSync(join(s.lab, 'my-read.md'), old, old);
+    const j = judgeFake(s.lab);
+    assert.equal(j.code, 1);
+    assert.match(j.stderr, /older than/);
+    writeFileSync(join(s.lab, 'my-read.md'), MY_READ);
+    assert.equal(judgeFake(s.lab).code, 0);
+    utimesSync(join(s.lab, 'verdict.md'), old, old);
+    const u = runNode(SCRIPT, { args: ['unblind', s.lab] });
+    assert.equal(u.code, 1);
+    assert.match(u.stderr, /older than/);
+  });
+
+  test('files the task ignores through .gitignore are listed when a run changes them', () => {
+    const task = join(scratch(), 'shop');
+    mkdirSync(join(task, 'build'), { recursive: true });
+    writeFileSync(join(task, 'notes.txt'), 'milk\n');
+    writeFileSync(join(task, '.gitignore'), 'build/\n');
+    writeFileSync(join(task, 'build', 'old.txt'), 'kept\n');
+    const s = setup({ task });
+    assert.equal(s.code, 0, s.stderr);
+    assert.equal(runFake(s.lab).code, 0);
+    writeFileSync(join(s.lab, 'rubric.md'), GOOD_RUBRIC);
+    const out = join(scratch(), 'b');
+    assert.equal(runNode(SCRIPT, { args: ['blind', s.lab, '--out', out] }).code, 0);
+    const md = readFileSync(join(out, 'A.md'), 'utf8');
+    assert.match(md, /## Ignored files it changed[\s\S]*new: build\/out\.txt/);
+    assert.doesNotMatch(md, /build\/old\.txt/, 'an ignored file it left alone is not listed');
+  });
+
+  test('with --grade-reply the final message is marked as the work product', () => {
+    const s = setup({ extra: ['--grade-reply'] });
+    assert.equal(runFake(s.lab).code, 0);
+    writeFileSync(join(s.lab, 'rubric.md'), GOOD_RUBRIC);
+    const out = join(scratch(), 'b');
+    assert.equal(runNode(SCRIPT, { args: ['blind', s.lab, '--out', out] }).code, 0);
+    const md = readFileSync(join(out, 'A.md'), 'utf8');
+    assert.match(md, /## What it said at the end \(the work product/);
+    assert.doesNotMatch(md, /not evidence/);
+    assert.match(readFileSync(join(out, 'bundle.md'), 'utf8'), /final message is the work product/);
+  });
+
   test('the rubric guidance in an HTML comment never reaches the reviewer, and the template keeps it there', () => {
     const s = ready();
     assert.match(rubricTemplate(), /<!--[\s\S]*variant[\s\S]*-->/);
@@ -491,15 +761,14 @@ describe('blind, judge and unblind', () => {
     const out = join(scratch(), 'b');
     assert.equal(runNode(SCRIPT, { args: ['blind', s.lab, '--out', out] }).code, 0);
     writeFileSync(join(s.lab, 'my-read.md'), MY_READ);
-    const log = join(scratch(), 'log');
-    const r = runNode(SCRIPT, { args: ['judge', s.lab, '--model', 'judge-model'], env: { SKILL_EVAL_CLAUDE: FAKE, FAKE_CLAUDE_LOG: log, CLAUDECODE: '1' } });
+    const r = judgeFake(s.lab);
     assert.equal(r.code, 0, r.stderr);
-    const calls = readdirSync(log).map((f) => JSON.parse(readFileSync(join(log, f), 'utf8')));
-    assert.equal(calls.length, 1);
-    const [c] = calls;
+    assert.equal(r.calls.length, 1);
+    const [c] = r.calls;
     assert.equal(c.stdin, readFileSync(join(out, 'bundle.md'), 'utf8'));
     assert.ok(c.argv.includes('judge-model'));
-    assert.equal(c.env.CLAUDECODE, null);
+    assert.ok(!c.names.includes('CLAUDECODE'));
+    assert.ok(r.auth.length >= 1, 'the login was checked first');
     for (const d of [c.cwd, c.home]) {
       assert.ok(!d.startsWith(s.lab) && !d.startsWith(s.root) && !d.startsWith(out), d);
     }
@@ -508,19 +777,21 @@ describe('blind, judge and unblind', () => {
 
   test('judge refuses before blind, needs --model, and refuses until your own read is saved', () => {
     const s = ready();
-    const log = join(scratch(), 'log');
-    const env = { SKILL_EVAL_CLAUDE: FAKE, FAKE_CLAUDE_LOG: log };
-    assert.equal(runNode(SCRIPT, { args: ['judge', s.lab, '--model', 'm'], env }).code, 1);
-    assert.equal(runNode(SCRIPT, { args: ['judge', s.lab], env }).code, 2);
+    assert.equal(judgeFake(s.lab).code, 1);
+    assert.equal(runNode(SCRIPT, { args: ['judge', s.lab], env: { SKILL_EVAL_CLAUDE: FAKE } }).code, 2);
     assert.equal(runNode(SCRIPT, { args: ['blind', s.lab, '--out', join(scratch(), 'b')] }).code, 0);
-    const early = runNode(SCRIPT, { args: ['judge', s.lab, '--model', 'm'], env });
+    const early = judgeFake(s.lab);
     assert.equal(early.code, 1, 'no read of my own yet');
     assert.match(early.stderr, /my-read\.md/);
-    writeFileSync(join(s.lab, 'my-read.md'), 'I liked A best.');
-    const unreadable = runNode(SCRIPT, { args: ['judge', s.lab, '--model', 'm'], env });
+    writeFileSync(join(s.lab, 'my-read.md'), 'I liked A best.\nCriterion 1: x\n  A: 4  no score out of 5');
+    const unreadable = judgeFake(s.lab);
     assert.equal(unreadable.code, 1, 'a read with no scores in the format is refused');
     assert.match(unreadable.stderr, /Criterion/);
-    assert.ok(!existsSync(log), 'no judge was started');
+    writeFileSync(join(s.lab, 'my-read.md'), `${MY_READ}\nNotes:\n  A: 2/5 stray`);
+    const stray = judgeFake(s.lab);
+    assert.equal(stray.code, 1, 'a score line outside a block is refused in your own read');
+    assert.match(stray.stderr, /outside a criterion/);
+    assert.equal(early.calls.length + unreadable.calls.length + stray.calls.length, 0, 'no judge was started');
   });
 
   test('unblind refuses until the verdict is saved, then maps letters to variants and lists disagreements', () => {
@@ -530,7 +801,7 @@ describe('blind, judge and unblind', () => {
     const early = runNode(SCRIPT, { args: ['unblind', s.lab] });
     assert.equal(early.code, 1, 'no verdict yet');
     assert.match(early.stderr, /verdict\.md/);
-    assert.equal(runNode(SCRIPT, { args: ['judge', s.lab, '--model', 'm'], env: { SKILL_EVAL_CLAUDE: FAKE } }).code, 0);
+    assert.equal(judgeFake(s.lab).code, 0);
     const r = runNode(SCRIPT, { args: ['unblind', s.lab] });
     assert.equal(r.code, 0, r.stderr);
     const key = JSON.parse(readFileSync(join(s.lab, 'key.json'), 'utf8')).labels;

@@ -4,20 +4,25 @@
  * what each run did. Every step that leaks the setup to a run, or the key to the reviewer, is done here.
  *
  *   node skill-eval.mjs setup <lab-dir> --root <dir> --task <dir> --variant <name>=<skill-dir|none> (twice or more)
- *                       --prompt [<name>=]<file> [--n 3] [--slug <folder name>] [--allow-word <word>]...
+ *                       --prompt [<name>=]<file> [--n 3] [--slug <folder name>] [--allow-word <word>]... [--grade-reply]
+ *                       [--seed <integer>]
  *       Checks the prompt, the working directory path and every file and folder name for the words a run must never
- *       see (META_WORDS), and refuses on a hit; a hit inside a file only warns. Then makes, per variant, N folders
- *       <root>/tmp.XXXXXX/<slug>, each a copy of the task (without .git) with that variant of the skill in
- *       .claude/skills/<name>/, a fresh git repository with one commit, and an empty HOME next to it. The plan (which
- *       folder is which variant) and a rubric template go to <lab-dir>, which must be apart from <root> and hold no
- *       earlier plan. A root with CLAUDE.md, CLAUDE.local.md, AGENTS.md or .claude in it or above it is refused: every
- *       run would load them.
+ *       see (META_WORDS), and refuses on a hit; a hit inside a file only warns. Refuses a link in the task or a
+ *       variant, more than 26 runs, a root that is not new and empty or that has CLAUDE.md, CLAUDE.local.md, AGENTS.md
+ *       or .claude in it or above it, and a lab, task, variant or prompt under the root. Then copies the task and the
+ *       variants into <lab-dir>/source/ and makes, per variant, N folders <root>/tmp.XXXXXX/<slug>, each a copy of the
+ *       task (without .git) with that variant of the skill in .claude/skills/<name>/, a fresh git repository with one
+ *       commit, and an empty HOME next to it. Runs get random ids and a shuffled order. The plan (which folder is which
+ *       variant) and a rubric template go to <lab-dir>. On a failure it removes what it made.
  *
- *   node skill-eval.mjs run <lab-dir> --model <model> [--effort <level>] [--allow-tool <rule>...]... [--parallel <k>]
- *                       [--timeout-min 30] [--max-budget-usd <x>] [--force]
- *       Runs every folder as `claude -p <prompt> --output-format stream-json --verbose`, with the empty HOME, only the
- *       project's settings, no MCP server and none of this session's identity variables, and saves each transcript as
- *       <lab-dir>/runs/<id>.jsonl. Prints the cost of each run and the total.
+ *   node skill-eval.mjs run <lab-dir> --model <model> [--effort <level>] [--allow-tool <rule>...]...
+ *                       [--pass-env <NAME>...] [--real-home] [--parallel <k>] [--timeout-min 30] [--max-budget-usd <x>]
+ *                       [--force]
+ *       Checks that `claude auth status` is logged in under an empty HOME, then runs every folder as
+ *       `claude -p <prompt> --output-format stream-json --verbose` with the empty HOME, only the project's settings, no
+ *       MCP server and an environment built from ALLOWED_ENV plus the --pass-env names, and saves each transcript as
+ *       <lab-dir>/runs/<id>.jsonl. --force rebuilds every folder and HOME from <lab-dir>/source/ first. --real-home
+ *       uses your HOME instead, when the empty one cannot log in. Prints the cost of each run and the total.
  *
  *   node skill-eval.mjs actions <transcript.jsonl>
  *       Prints what one run did: every tool call with the file, command or pattern it used, failures, permission
@@ -25,26 +30,30 @@
  *
  *   node skill-eval.mjs blind <lab-dir> [--out <dir>] [--seed <integer>] [--force]
  *       Checks <lab-dir>/rubric.md (3 to 6 numbered criteria, no placeholder), then writes one file per run under
- *       shuffled letters: its actions, the diff of everything it changed (the installed skill left out), its commits,
- *       and its final message, with machine paths replaced. Also writes bundle.md: the reviewer brief, the rubric and
- *       every output. The key goes to <lab-dir>/key.json and is not printed.
+ *       shuffled letters: its actions, the diff of everything it changed (the installed skill left out), the ignored
+ *       files it changed, its commits, and its final message, with machine paths replaced. Also writes bundle.md: the
+ *       reviewer brief, the rubric and every output. The key goes to <lab-dir>/key.json and is not printed. --force
+ *       makes new letters, and is refused while my-read.md or verdict.md for the old letters exists.
  *
- *   node skill-eval.mjs judge <lab-dir> --model <model> [--effort <level>] [--force]
- *       Needs your own scores in <lab-dir>/my-read.md first. Sends bundle.md on standard input to `claude -p` with no
- *       tools, no saved session, an empty HOME and an empty working folder, and saves the reply as
+ *   node skill-eval.mjs judge <lab-dir> --model <model> [--effort <level>] [--pass-env <NAME>...] [--real-home] [--force]
+ *       Needs your own scores in <lab-dir>/my-read.md first, newer than the key. Sends bundle.md on standard input to
+ *       `claude -p` with no tools, no saved session, an empty HOME and an empty working folder, and saves the reply as
  *       <lab-dir>/verdict.md.
  *
  *   node skill-eval.mjs unblind <lab-dir>
  *       Prints which letter was which run and variant, the mean scores per variant from the verdict and from your
  *       read, every score where you and the reviewer are 2 or more apart, and the cost.
  *
- * SKILL_EVAL_CLAUDE names the command to run instead of `claude` (a .mjs or .js file runs with this Node); the tests use
- * it. Exit codes: 0 done; 1 refused or failed; 2 usage. Node 20+, standard library only.
+ * Scores, in my-read.md and in the verdict: a "Criterion <n>: <text>" line, then one "  <letter>: <1-5>/5  <evidence>"
+ * line per output; the block ends at the first other line. SKILL_EVAL_CLAUDE names the command to run instead of
+ * `claude` (a .mjs or .js file runs with this Node); the tests use it. Windows is refused for the real command.
+ * Exit codes: 0 done; 1 refused or failed; 2 usage. Node 20+, standard library only.
  */
 import {
   mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, statSync, realpathSync, mkdtempSync, cpSync, rmSync,
   createWriteStream,
 } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join, resolve, dirname, relative, isAbsolute, basename, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
@@ -89,18 +98,32 @@ export function skillNameOf(text) {
 // ---------------------------------------------------------------------------------------------------------------
 
 /**
- * Variables that tie a nested `claude` to the session that started it (its session id, its extra directories and
- * their CLAUDE.md files). Without removing them, a run shares this session's identity.
+ * The only variables a run gets from this environment, plus LC_* and the names passed with --pass-env: the search
+ * path, the shell, the locale, the temporary folder, and the proxy and certificate variables a container needs to
+ * reach the network. Everything else stays out: this session's identity (CLAUDECODE, CLAUDE_CODE_*), CLAUDE_CONFIG_DIR
+ * (which would undo the empty HOME), ANTHROPIC_*, IDE variables, PWD and the like.
  */
-export const IDENTITY_VARS = ['CLAUDECODE', 'CLAUDE_CODE_SESSION_ID', 'CLAUDE_CODE_CHILD_SESSION', 'CLAUDE_CODE_REMOTE_SESSION_ID',
-  'CLAUDE_ADDITIONAL_DIRECTORIES', 'CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD'];
+export const ALLOWED_ENV = ['PATH', 'SHELL', 'TERM', 'LANG', 'LANGUAGE', 'TZ', 'TMPDIR', 'TMP', 'TEMP',
+  'HTTPS_PROXY', 'HTTP_PROXY', 'NO_PROXY', 'ALL_PROXY', 'https_proxy', 'http_proxy', 'no_proxy', 'all_proxy',
+  'NODE_EXTRA_CA_CERTS', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'REQUESTS_CA_BUNDLE', 'CURL_CA_BUNDLE', 'GIT_SSL_CAINFO',
+  'NIX_SSL_CERT_FILE'];
 
-/** The environment for a run: this one, with HOME set to the run's own empty folder and the identity removed. */
-export function childEnv(env, home) {
-  const out = { ...env, HOME: home };
-  if ('USERPROFILE' in env) out.USERPROFILE = home;
-  for (const k of IDENTITY_VARS) delete out[k];
+/** The environment for a run: the allowlist and the passed names from `env`, with HOME set to `home`. */
+export function childEnv(env, home, pass = []) {
+  const out = {};
+  for (const [k, v] of Object.entries(env)) {
+    if (ALLOWED_ENV.includes(k) || /^LC_[A-Z]+$/.test(k) || pass.includes(k)) out[k] = v;
+  }
+  out.HOME = home;
   return out;
+}
+
+/** Why this platform cannot start `cmd` with its arguments intact, or null. */
+export function platformProblem(platform, cmd) {
+  if (platform === 'win32' && !/\.(mjs|js)$/.test(cmd)) {
+    return 'Windows is not supported: starting claude there goes through cmd.exe, which splits and rewrites the prompt and drops the empty --tools value. Run skill-eval under WSL, Linux or macOS';
+  }
+  return null;
 }
 
 /** The arguments for one run. --allowedTools takes a list, so it comes last. */
@@ -127,10 +150,40 @@ export function judgeArgv({ model, effort = null }) {
   return a;
 }
 
+const claudeName = () => process.env.SKILL_EVAL_CLAUDE || 'claude';
+
 function claudeCommand(argv) {
-  const cmd = process.env.SKILL_EVAL_CLAUDE || 'claude';
-  if (/\.(mjs|js)$/.test(cmd)) return { file: process.execPath, args: [cmd, ...argv], shell: false };
-  return { file: cmd, args: argv, shell: process.platform === 'win32' };
+  const cmd = claudeName();
+  if (/\.(mjs|js)$/.test(cmd)) return { file: process.execPath, args: [cmd, ...argv] };
+  return { file: cmd, args: argv };
+}
+
+/** Null when `claude auth status` reports a login under `home`, else the reason. */
+function loginProblem(home, pass) {
+  const { file, args } = claudeCommand(['auth', 'status']);
+  const cwd = mkdtempSync(join(tmpdir(), 'a-'));
+  try {
+    const r = spawnSync(file, args, { cwd, env: childEnv(process.env, home, pass), encoding: 'utf8', timeout: 120_000 });
+    let loggedIn = false;
+    try { loggedIn = JSON.parse(r.stdout).loggedIn === true; } catch { /* not JSON */ }
+    return r.status === 0 && loggedIn ? null : `claude auth status: exit ${r.status}, ${firstLine(r.stdout || r.stderr) || 'no output'}`;
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+}
+
+/** Check the login the runs will have; returns an error sentence or null. */
+function checkLogin(o) {
+  const home = o.realHome ? process.env.HOME : mkdtempSync(join(tmpdir(), 'h-'));
+  try {
+    const why = loginProblem(home, o.passEnv);
+    if (!why) return null;
+    return o.realHome
+      ? `claude is not logged in with your own HOME either (${why})`
+      : `a run under an empty HOME is not logged in (${why}). Pass the variable that holds your login with --pass-env (for example ANTHROPIC_API_KEY), or use --real-home, which runs with your HOME and only the project's settings`;
+  } finally {
+    if (!o.realHome) rmSync(home, { recursive: true, force: true });
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -206,9 +259,12 @@ function replaceAll(text, pairs) {
   return t;
 }
 
-/** The run's own last message, marked as not evidence. */
-export function finalSection(x) {
-  return ['## What it said at the end (not evidence: grade what it did and what it changed, not this)', '', x.finalText || '(nothing)', ''].join('\n');
+/** The run's own last message: not evidence, unless the reply is the work product (`work`). */
+export function finalSection(x, { work = false } = {}) {
+  const heading = work
+    ? '## What it said at the end (the work product: grade it, and check what it says about its own steps against them)'
+    : '## What it said at the end (not evidence: grade what it did and what it changed, not this)';
+  return [heading, '', x.finalText || '(nothing)', ''].join('\n');
 }
 
 /** The actions of one run as Markdown, with `replace` pairs applied to every line; `final: false` leaves out its last message. */
@@ -231,6 +287,7 @@ export function renderActions(x, { replace = [], final = true } = {}) {
 // ---------------------------------------------------------------------------------------------------------------
 
 export const MIN_CRITERIA = 3;
+export const MAX_RUNS = 26;
 export const MAX_CRITERIA = 6;
 
 function outsideFences(text) {
@@ -278,18 +335,34 @@ Task: <one line: what every run was asked to do, in words that fit every variant
 `;
 }
 
-/** Scores in the "Criterion n: ..." then "  A: 4  evidence" format: [{ n, text, scores: { A: 4 } }]. */
+const SCORE_LINE = /^\s*(?:[-+]\s*)?([A-Z])\s*:\s*([1-5])\s*\/\s*5(?!\d)/;
+const LOOKS_LIKE_SCORE = /^\s*(?:[-+]\s*)?([A-Z])\s*[:=]\s*\d/;
+
+/**
+ * Scores in the "Criterion <n>: <text>" then "  A: 4/5  evidence" format. A block holds only score lines (blank lines
+ * before its first score are allowed) and ends at the first other line, so a later note such as "A: 2 retries" is
+ * never read as a score. Returns { criteria: [{ n, text, scores: { A: 4 } }], problems: [sentences] }.
+ */
 export function parseScores(text) {
-  const out = [];
+  const criteria = [];
+  const problems = [];
   let cur = null;
-  for (const raw of String(text).split(/\r?\n/)) {
+  String(text).split(/\r?\n/).forEach((raw, i) => {
     const line = raw.replace(/[*`]/g, '');
     const c = /^\s*#*\s*Criterion\s+(\d+)\s*[:.)]?\s*(.*)$/i.exec(line);
-    if (c) { cur = { n: Number(c[1]), text: c[2].trim(), scores: {} }; out.push(cur); continue; }
-    const s = cur && /^\s*(?:[-+]\s*)?([A-Z])\s*[:=]\s*([1-5])(?:\s*\/\s*5)?(?!\d)/.exec(line);
-    if (s) cur.scores[s[1]] = Number(s[2]);
-  }
-  return out;
+    if (c) { cur = { n: Number(c[1]), text: c[2].trim(), scores: {} }; criteria.push(cur); return; }
+    if (!line.trim()) { if (cur && Object.keys(cur.scores).length) cur = null; return; }
+    const s = SCORE_LINE.exec(line);
+    if (cur && s) {
+      if (s[1] in cur.scores) problems.push(`line ${i + 1}: ${s[1]} is scored twice in criterion ${cur.n}; the first score counts`);
+      else cur.scores[s[1]] = Number(s[2]);
+      return;
+    }
+    if (cur && LOOKS_LIKE_SCORE.test(line)) { problems.push(`line ${i + 1}: a score without /5 is not read: ${raw.trim()}`); return; }
+    if (!cur && (s || LOOKS_LIKE_SCORE.test(line))) problems.push(`line ${i + 1}: a score line outside a criterion block is not read: ${raw.trim()}`);
+    cur = null;
+  });
+  return { criteria, problems };
 }
 
 /** Scores 2 or more apart between the reviewer and you, on the same criterion and letter. */
@@ -330,20 +403,20 @@ export function variantMeans(scores, labelToVariant) {
 // ---------------------------------------------------------------------------------------------------------------
 
 const USAGE = `usage:
-  skill-eval.mjs setup <lab-dir> --root <dir> --task <dir> --variant <name>=<skill-dir|none> --variant ... --prompt [<name>=]<file> [--n 3] [--slug <name>] [--allow-word <word>]...
-  skill-eval.mjs run <lab-dir> --model <model> [--effort <level>] [--allow-tool <rule>...]... [--parallel <k>] [--timeout-min 30] [--max-budget-usd <x>] [--force]
+  skill-eval.mjs setup <lab-dir> --root <dir> --task <dir> --variant <name>=<skill-dir|none> --variant ... --prompt [<name>=]<file> [--n 3] [--slug <name>] [--allow-word <word>]... [--grade-reply] [--seed <integer>]
+  skill-eval.mjs run <lab-dir> --model <model> [--effort <level>] [--allow-tool <rule>...]... [--pass-env <NAME>...] [--real-home] [--parallel <k>] [--timeout-min 30] [--max-budget-usd <x>] [--force]
   skill-eval.mjs actions <transcript.jsonl>
   skill-eval.mjs blind <lab-dir> [--out <dir>] [--seed <integer>] [--force]
-  skill-eval.mjs judge <lab-dir> --model <model> [--effort <level>] [--force]
+  skill-eval.mjs judge <lab-dir> --model <model> [--effort <level>] [--pass-env <NAME>...] [--real-home] [--force]
   skill-eval.mjs unblind <lab-dir>`;
 
 const NAME = /^[a-z][a-z0-9-]*$/;
 const FLAGS = {
-  setup: { '--root': 'one', '--task': 'one', '--variant': 'many', '--prompt': 'many', '--n': 'one', '--slug': 'one', '--allow-word': 'many' },
-  run: { '--model': 'one', '--effort': 'one', '--allow-tool': 'list', '--parallel': 'one', '--timeout-min': 'one', '--max-budget-usd': 'one', '--force': 'bool' },
+  setup: { '--root': 'one', '--task': 'one', '--variant': 'many', '--prompt': 'many', '--n': 'one', '--slug': 'one', '--allow-word': 'many', '--grade-reply': 'bool', '--seed': 'one' },
+  run: { '--model': 'one', '--effort': 'one', '--allow-tool': 'list', '--pass-env': 'list', '--real-home': 'bool', '--parallel': 'one', '--timeout-min': 'one', '--max-budget-usd': 'one', '--force': 'bool' },
   actions: {},
   blind: { '--out': 'one', '--seed': 'one', '--force': 'bool' },
-  judge: { '--model': 'one', '--effort': 'one', '--force': 'bool' },
+  judge: { '--model': 'one', '--effort': 'one', '--pass-env': 'list', '--real-home': 'bool', '--force': 'bool' },
   unblind: {},
 };
 const fail = (msg) => { throw new Error(`${msg}\n${USAGE}`); };
@@ -351,7 +424,8 @@ const fail = (msg) => { throw new Error(`${msg}\n${USAGE}`); };
 /** Parse the command line; throws on anything it does not understand. */
 export function parseArgs(argv) {
   const [cmd, target, ...rest] = argv;
-  if (!(cmd in FLAGS)) fail('unknown command');
+  if (!argv.length) throw new Error(USAGE);
+  if (!(cmd in FLAGS)) fail(`unknown command ${cmd}`);
   if (!target || target.startsWith('--')) fail(`${cmd} needs a folder or file`);
   const raw = {};
   for (let i = 0; i < rest.length; i++) {
@@ -395,10 +469,15 @@ export function parseArgs(argv) {
     });
     o.allowWords = raw['--allow-word'] || [];
     for (const w of o.allowWords) if (!META_WORDS.includes(w)) fail(`--allow-word takes one of: ${META_WORDS.join(', ')}`);
+    o.gradeReply = !!raw['--grade-reply'];
+    o.seed = int('--seed', -(2 ** 31), 2 ** 31, null);
   } else if (cmd === 'run' || cmd === 'judge') {
     if (!raw['--model']) fail(`${cmd} needs --model: name the model every run uses, and record it`);
     o.model = raw['--model'];
     o.effort = raw['--effort'] || null;
+    o.passEnv = raw['--pass-env'] || [];
+    for (const n of o.passEnv) if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(n)) fail(`--pass-env takes variable names: ${n}`);
+    o.realHome = !!raw['--real-home'];
     if (cmd === 'run') {
       o.allowTools = raw['--allow-tool'] || [];
       o.parallel = int('--parallel', 1, 100, null);
@@ -446,14 +525,15 @@ export function inheritedConfig(dir) {
   return found;
 }
 
-/** Every file and folder under dir, as relative paths with /, skipping .git. */
+/** Every entry under dir, as relative paths with /, skipping .git: { rel, abs, dir, other } (other: a link or special file). */
 function walk(dir) {
   const out = [];
   const visit = (abs, rel) => {
     for (const e of readdirSync(abs, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
       if (e.name === '.git') continue;
       const r = rel ? `${rel}/${e.name}` : e.name;
-      out.push({ rel: r, abs: join(abs, e.name), dir: e.isDirectory() });
+      const other = e.isSymbolicLink() ? 'a link' : (!e.isDirectory() && !e.isFile() ? 'not a file or folder' : null);
+      out.push({ rel: r, abs: join(abs, e.name), dir: e.isDirectory(), other });
       if (e.isDirectory()) visit(join(abs, e.name), r);
     }
   };
@@ -469,11 +549,50 @@ function readText(file) {
   } catch { return null; }
 }
 
-function git(cwd, args, env = process.env) {
+/** This environment without the variables that point git at another repository. */
+const gitEnv = (extra = {}) => ({
+  ...Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES)$/.test(k))),
+  ...extra,
+});
+
+function git(cwd, args, env = gitEnv()) {
   return spawnSync('git', args, { cwd, env, encoding: 'utf8', maxBuffer: 64 << 20 });
 }
 
+/** The files .gitignore hides in a run folder, the installed skill left out: { path: sha256 }. */
+function ignoredManifest(dir, skill) {
+  const r = git(dir, ['ls-files', '-z', '--others', '--ignored', '--exclude-standard']);
+  const out = {};
+  for (const f of r.stdout.split('\0').filter(Boolean)) {
+    if (skill && f.startsWith(`.claude/skills/${skill}/`)) continue;
+    try { out[f] = createHash('sha256').update(readFileSync(join(dir, f))).digest('hex'); } catch { out[f] = 'unreadable'; }
+  }
+  return out;
+}
+
+const HOME_NAME = (slug) => (slug === 'home' ? 'home-folder' : 'home');
+
+/** (Re)build one run folder and its HOME from the lab's copies; sets run.base and run.ignored. */
+function buildRun(run, plan, lab) {
+  rmSync(run.dir, { recursive: true, force: true });
+  rmSync(run.home, { recursive: true, force: true });
+  cpSync(join(lab, 'source', 'task'), run.dir, { recursive: true });
+  const v = plan.variants.find((x) => x.name === run.variant);
+  if (v.dir) cpSync(join(lab, 'source', 'variants', v.name), join(run.dir, '.claude', 'skills', plan.skill), { recursive: true });
+  mkdirSync(run.home);
+  const steps = [['init', '-q'], ['symbolic-ref', 'HEAD', 'refs/heads/main'], ['config', 'user.name', 'Sam Rivera'],
+    ['config', 'user.email', 'sam@example.com'], ['config', 'commit.gpgsign', 'false'], ['add', '-A'],
+    ['commit', '-q', '--allow-empty', '-m', 'Initial commit']];
+  for (const st of steps) {
+    const r = git(run.dir, st);
+    if (r.status !== 0) throw new Error(`git ${st.join(' ')} failed in ${run.dir}: ${r.stderr}`);
+  }
+  run.base = git(run.dir, ['rev-parse', 'HEAD']).stdout.trim();
+  run.ignored = ignoredManifest(run.dir, plan.skill);
+}
+
 const readJson = (f) => JSON.parse(readFileSync(f, 'utf8'));
+const mtime = (f) => statSync(f).mtimeMs;
 const money = (v) => `$${(v || 0).toFixed(2)}`;
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -495,18 +614,23 @@ function setup(o, out, err) {
     return refuse(`the lab folder ${lab} and the root ${root} must be apart: neither inside the other, so no run can reach the plan`);
   }
   if (isInside(rootReal, taskReal) || isInside(labReal, taskReal)) return refuse(`the root and the lab folder must be outside the task folder ${task}`);
+  if (isInside(taskReal, rootReal)) return refuse(`the task ${task} is under the root; keep it outside, the root holds only the run folders`);
   const inherited = inheritedConfig(rootReal);
   if (inherited.length) {
     return refuse(`a run under ${root} would also load ${inherited.join(', ')}; pick a root with no Claude Code files in it or above it (outside your home folder and outside any project)`);
   }
 
   if (o.variants.length < 2) return refuse('give at least two variants (--variant <name>=<skill folder or none>, once per variant)');
+  if (o.variants.length * o.n > MAX_RUNS) {
+    return refuse(`${o.variants.length} variants x ${o.n} = ${o.variants.length * o.n} runs; at most ${MAX_RUNS} can be labelled A to Z`);
+  }
   const names = o.variants.map((v) => v.name);
   if (new Set(names).size !== names.length) return refuse(`variant names repeat: ${names.join(', ')}`);
   const skillNames = new Set();
   for (const v of o.variants) {
     if (!v.dir) continue;
     v.dir = resolve(v.dir);
+    if (isInside(realOrPlanned(v.dir), rootReal)) return refuse(`variant ${v.name} (${v.dir}) is under the root; keep it outside, the root holds only the run folders`);
     const md = join(v.dir, 'SKILL.md');
     if (!existsSync(md)) return refuse(`variant ${v.name}: ${md} does not exist`);
     const n = skillNameOf(readFileSync(md, 'utf8'));
@@ -531,6 +655,7 @@ function setup(o, out, err) {
     if (!p) return refuse(`variant ${v.name} has no prompt`);
     const f = resolve(p.file);
     if (!existsSync(f)) return refuse(`the prompt file ${f} does not exist`);
+    if (isInside(realOrPlanned(f), rootReal)) return refuse(`the prompt file ${f} is under the root; a run could read it. Keep it in the lab folder`);
     prompts[v.name] = readFileSync(f, 'utf8').trim();
     if (!prompts[v.name]) return refuse(`the prompt for ${v.name} is empty`);
     const hits = findMetaWords(prompts[v.name], { allow, exempt });
@@ -538,6 +663,9 @@ function setup(o, out, err) {
     if (!v.dir && skill && new RegExp(`^/${escapeRe(skill)}(\\s|$)`).test(prompts[v.name])) {
       return refuse(`variant ${v.name} has no skill, but its prompt starts with /${skill}; give it its own prompt (--prompt ${v.name}=<file>)`);
     }
+  }
+  if (existsSync(root) && (!statSync(root).isDirectory() || readdirSync(root).length)) {
+    return refuse(`the root ${root} must be new and empty (for example from mktemp -d): it may hold only the run folders`);
   }
 
   // The working directory path: refused on any hit, whatever --allow-word says.
@@ -553,11 +681,13 @@ function setup(o, out, err) {
     pathWarnings.push(`the working folder path (${sample}) is long or has a part that starts with -; a run may mistype it and be refused. A short root such as one from mktemp -d is safer`);
   }
 
-  // Names inside the task and the variants: refused. Contents: a warning.
+  // Names inside the task and the variants: refused. Links: refused. Contents: a warning.
   const nameHits = [];
+  const others = [];
   const warnings = [];
   const scan = (dir, shown) => {
     for (const e of walk(dir)) {
+      if (e.other) { others.push(`${shown}/${e.rel} is ${e.other}`); continue; }
       const hits = findMetaWords(e.rel.split('/').pop(), { allow, exempt });
       if (hits.length) nameHits.push(`${shown}/${e.rel} (${hits.join(', ')})`);
       if (e.dir) continue;
@@ -574,51 +704,64 @@ function setup(o, out, err) {
     return refuse(`the task already has .claude/skills/${skill}; remove it, each run gets its own variant there`);
   }
   for (const v of o.variants) if (v.dir) scan(v.dir, `variant ${v.name}`);
+  if (others.length) {
+    return refuse('a copy of a link would point back at the original, shared by every run; replace these with the files themselves:', ...others.slice(0, 20));
+  }
   if (nameHits.length) {
     return refuse(`these names contain a word a run must not see; rename them, or pass --allow-word when the word belongs to the task itself:`, ...nameHits.slice(0, 20));
   }
   if (spawnSync('git', ['--version']).status !== 0) return refuse('git is needed to record what each run changed');
 
-  // Write.
-  mkdirSync(join(lab, 'runs'), { recursive: true });
-  mkdirSync(root, { recursive: true });
-  const runs = [];
-  for (const v of o.variants) {
-    for (let k = 0; k < o.n; k++) {
+  // Write, and on any failure remove what was made.
+  const labExisted = existsSync(lab);
+  const rootExisted = existsSync(root);
+  const made = [];
+  const rng = mulberry32(o.seed ?? randomInt(2 ** 31));
+  try {
+    mkdirSync(join(lab, 'runs'), { recursive: true });
+    const noGit = (src) => basename(src) !== '.git';
+    cpSync(task, join(lab, 'source', 'task'), { recursive: true, filter: noGit });
+    for (const v of o.variants) if (v.dir) cpSync(v.dir, join(lab, 'source', 'variants', v.name), { recursive: true, filter: noGit });
+    mkdirSync(root, { recursive: true });
+    const plan = { skill, slug, root, n: o.n, allowWords: allow, gradeReply: !!o.gradeReply, variants: o.variants, prompts, runs: [] };
+    const ids = new Set();
+    const newId = () => {
+      for (;;) {
+        const id = Math.floor(rng() * 0x10000).toString(16).padStart(4, '0');
+        if (!ids.has(id)) { ids.add(id); return id; }
+      }
+    };
+    const slots = shuffle(o.variants.flatMap((v) => Array.from({ length: o.n }, () => v.name)), rng);
+    for (const variant of slots) {
       let parent;
       for (let tries = 0; ; tries++) {
         parent = mkdtempSync(join(root, 'tmp.'));
+        made.push(parent);
         if (!findMetaWords(basename(parent)).length) break;
-        rmSync(parent, { recursive: true, force: true });
         if (tries > 20) throw new Error('could not make a neutral folder name');
       }
-      const dir = join(parent, slug);
-      const home = join(parent, 'home');
-      cpSync(task, dir, { recursive: true, filter: (src) => basename(src) !== '.git' });
-      if (v.dir) cpSync(v.dir, join(dir, '.claude', 'skills', skill), { recursive: true, filter: (src) => basename(src) !== '.git' });
-      mkdirSync(home);
-      const steps = [['init', '-q'], ['symbolic-ref', 'HEAD', 'refs/heads/main'], ['config', 'user.name', 'Sam Rivera'],
-        ['config', 'user.email', 'sam@example.com'], ['config', 'commit.gpgsign', 'false'], ['add', '-A'],
-        ['commit', '-q', '--allow-empty', '-m', 'Initial commit']];
-      for (const s of steps) {
-        const r = git(dir, s);
-        if (r.status !== 0) throw new Error(`git ${s.join(' ')} failed in ${dir}: ${r.stderr}`);
-      }
-      const base = git(dir, ['rev-parse', 'HEAD']).stdout.trim();
-      runs.push({ id: `r${runs.length + 1}`, variant: v.name, dir, home, base });
+      const run = { id: newId(), variant, dir: join(parent, slug), home: join(parent, HOME_NAME(slug)) };
+      buildRun(run, plan, lab);
+      plan.runs.push(run);
     }
+    writeFileSync(join(lab, 'plan.json'), JSON.stringify(plan, null, 2) + '\n');
+    writeFileSync(join(lab, 'rubric.md'), rubricTemplate());
+  } catch (e) {
+    for (const d of made) rmSync(d, { recursive: true, force: true });
+    if (!rootExisted) rmSync(root, { recursive: true, force: true });
+    if (!labExisted) rmSync(lab, { recursive: true, force: true });
+    else for (const f of ['runs', 'source', 'plan.json', 'rubric.md']) rmSync(join(lab, f), { recursive: true, force: true });
+    throw e;
   }
-  const plan = { skill, slug, root, n: o.n, allowWords: allow, variants: o.variants, prompts, runs };
-  writeFileSync(join(lab, 'plan.json'), JSON.stringify(plan, null, 2) + '\n');
-  writeFileSync(join(lab, 'rubric.md'), rubricTemplate());
 
   for (const w of pathWarnings) err(`warning: ${w}`);
   for (const w of warnings.slice(0, 20)) err(`warning: ${w}`);
   if (warnings.length > 20) err(`warning: and ${warnings.length - 20} more lines with such words`);
   if (warnings.length) err('warning: a run reads these files; keep such words only where the task or the skill needs them');
-  out(`Lab folder: ${lab} (only you read it: the plan, the rubric, the transcripts and the key go here)`);
+  const total = o.variants.length * o.n;
+  out(`Lab folder: ${lab} (only you read it: the plan, the sources, the rubric, the transcripts and the key go here)`);
   out(`Skill: ${skill || '(none: the variants differ by prompt only)'}`);
-  out(`Runs: ${runs.length} runs (${o.variants.length} variants x ${o.n}) + 1 judge = ${runs.length + 1} claude -p runs`);
+  out(`Runs: ${total} runs (${o.variants.length} variants x ${o.n}) + 1 judge = ${total + 1} claude -p runs`);
   out(`Next: write ${join(lab, 'rubric.md')}, then: node skill-eval.mjs run ${lab} --model <model>`);
   return 0;
 }
@@ -627,15 +770,15 @@ function setup(o, out, err) {
 // run
 // ---------------------------------------------------------------------------------------------------------------
 
-function runOne(run, argv, { lab, timeoutMin }) {
+function runOne(run, argv, { lab, timeoutMin, env }) {
   return new Promise((done) => {
-    const { file, args, shell } = claudeCommand(argv);
+    const { file, args } = claudeCommand(argv);
     const started = Date.now();
     const stdout = createWriteStream(join(lab, 'runs', `${run.id}.jsonl`));
     const stderr = createWriteStream(join(lab, 'runs', `${run.id}.err`));
     let child;
     try {
-      child = spawn(file, args, { cwd: run.dir, env: childEnv(process.env, run.home), stdio: ['ignore', 'pipe', 'pipe'], shell });
+      child = spawn(file, args, { cwd: run.dir, env, stdio: ['ignore', 'pipe', 'pipe'] });
     } catch (e) {
       done({ exit: null, error: e.message, seconds: 0 });
       return;
@@ -663,13 +806,26 @@ async function run(o, out, err) {
   const planFile = join(lab, 'plan.json');
   if (!existsSync(planFile)) { err(`refused: ${planFile} does not exist (run setup first)`); return 1; }
   const plan = readJson(planFile);
-  const done = plan.runs.filter((r) => existsSync(join(lab, 'runs', `${r.id}.jsonl`)));
-  if (done.length && !o.force) {
-    err(`refused: transcripts already exist for ${done.map((r) => r.id).join(', ')}; pass --force to run again and replace them`);
+  const platform = platformProblem(process.platform, claudeName());
+  if (platform) { err(`refused: ${platform}`); return 1; }
+  if (existsSync(join(lab, 'key.json'))) {
+    err('refused: a blind copy of these runs exists (key.json); runs made now would not match it. Start a new lab folder with setup');
     return 1;
   }
+  const done = plan.runs.filter((r) => existsSync(join(lab, 'runs', `${r.id}.jsonl`)));
+  if (done.length && !o.force) {
+    err(`refused: transcripts already exist for ${done.map((r) => r.id).join(', ')}; pass --force to rebuild every run folder and run again`);
+    return 1;
+  }
+  if (done.length) {
+    // A rerun starts from the lab's copies, not from what the last run left behind.
+    for (const r of plan.runs) buildRun(r, plan, lab);
+    writeFileSync(planFile, JSON.stringify(plan, null, 2) + '\n');
+  }
+  const login = checkLogin(o);
+  if (login) { err(`refused: ${login}`); return 1; }
   mkdirSync(join(lab, 'runs'), { recursive: true });
-  writeFileSync(join(lab, 'run.json'), JSON.stringify({ model: o.model, effort: o.effort, allowTools: o.allowTools, maxBudgetUsd: o.maxBudgetUsd, at: new Date().toISOString() }, null, 2) + '\n');
+  writeFileSync(join(lab, 'run.json'), JSON.stringify({ model: o.model, effort: o.effort, allowTools: o.allowTools, passEnv: o.passEnv, realHome: o.realHome, maxBudgetUsd: o.maxBudgetUsd, at: new Date().toISOString() }, null, 2) + '\n');
   const queue = [...plan.runs];
   const results = new Map();
   const width = o.parallel || queue.length;
@@ -677,7 +833,8 @@ async function run(o, out, err) {
     while (queue.length) {
       const r = queue.shift();
       const argv = candidateArgv({ prompt: plan.prompts[r.variant], model: o.model, skill: plan.variants.find((v) => v.name === r.variant).dir ? plan.skill : null, allowTools: o.allowTools, effort: o.effort, maxBudgetUsd: o.maxBudgetUsd });
-      const res = await runOne(r, argv, { lab, timeoutMin: o.timeoutMin });
+      const env = childEnv(process.env, o.realHome ? process.env.HOME : r.home, o.passEnv);
+      const res = await runOne(r, argv, { lab, timeoutMin: o.timeoutMin, env });
       writeFileSync(join(lab, 'runs', `${r.id}.json`), JSON.stringify(res, null, 2) + '\n');
       results.set(r.id, res);
     }
@@ -695,7 +852,8 @@ async function run(o, out, err) {
     if (!x.finished) notes.push('no result line: the run did not finish');
     if (res.error) notes.push(res.error);
     if (plan.skill && x.skills.length && x.skills.includes(plan.skill) !== hasSkill) {
-      notes.push(hasSkill ? `the skill ${plan.skill} was not offered to this run` : `a copy of ${plan.skill} reached a run that should have none`);
+      // Worded the same either way, so the line does not say which variant the run had.
+      notes.push(`isolation broken: the skills offered do not match this run's variant (unblind shows which)`);
     }
     if (x.denials.length) notes.push(`refused by permissions: ${x.denials.join('; ')}`);
     if (res.exit !== 0 || !x.finished) bad++;
@@ -732,11 +890,24 @@ function shuffle(items, rng) {
 
 const DIFF_LIMIT = 100_000;
 
+/** The ignored files a run created, changed or deleted, as lines. */
+function ignoredChanges(run, skill) {
+  const before = run.ignored || {};
+  const now = ignoredManifest(run.dir, skill);
+  const lines = [];
+  for (const [f, h] of Object.entries(now)) {
+    if (!(f in before)) lines.push(`new: ${f}`);
+    else if (before[f] !== h) lines.push(`changed: ${f}`);
+  }
+  for (const f of Object.keys(before)) if (!(f in now)) lines.push(`deleted: ${f}`);
+  return lines.sort((a, b) => (a.split(': ')[1] < b.split(': ')[1] ? -1 : 1));
+}
+
 /** Everything a run changed since its first commit, the installed skill left out, and the commits it made. */
 function changesOf(run, skill) {
   const tmp = mkdtempSync(join(tmpdir(), 'idx-'));
   try {
-    const env = { ...process.env, GIT_INDEX_FILE: join(tmp, 'index') };
+    const env = gitEnv({ GIT_INDEX_FILE: join(tmp, 'index') });
     const spec = ['--', '.', ...(skill ? [`:(exclude).claude/skills/${skill}`] : [])];
     for (const args of [['read-tree', 'HEAD'], ['add', '-A', ...spec]]) {
       const r = git(run.dir, args, env);
@@ -771,6 +942,10 @@ function blind(o, out, err) {
   const plan = readJson(join(lab, 'plan.json'));
   const keyFile = join(lab, 'key.json');
   if (existsSync(keyFile) && !o.force) return refuse(`${keyFile} exists: a blind copy was already made. Pass --force to make a new one and replace the key`);
+  const scored = ['my-read.md', 'verdict.md'].filter((f) => existsSync(join(lab, f)));
+  if (existsSync(keyFile) && scored.length) {
+    return refuse(`${scored.join(' and ')} score the current letters; new letters would pair them with the wrong runs. Move them out of ${lab} first`);
+  }
   const rubric = existsSync(join(lab, 'rubric.md')) ? readFileSync(join(lab, 'rubric.md'), 'utf8') : '';
   const problems = validateRubric(rubric);
   if (problems.length) return refuse(...problems);
@@ -800,6 +975,7 @@ function blind(o, out, err) {
   const files = {};
   for (const { run: r, x, label } of labelled) {
     const { diff, commits } = changesOf(r, plan.skill);
+    const ignored = ignoredChanges(r, plan.skill);
     const pairs = [];
     for (const [p, to] of [[r.dir, '<project>'], [r.home, '<home>'], [dirname(r.dir), '<tmp>'], [plan.root, '<tmp>']]) {
       pairs.push([p, to]);
@@ -810,8 +986,9 @@ function blind(o, out, err) {
       renderActions(x, { final: false }),
       '## What it changed', '',
       diff.trim() ? fenced(diff.trimEnd(), 'diff') : 'No file changed.', '',
+      ...(ignored.length ? ['## Ignored files it changed (.gitignore covers them; names only)', '', ...ignored.slice(0, 50).map((l) => `- ${l}`), ...(ignored.length > 50 ? [`- and ${ignored.length - 50} more`] : []), ''] : []),
       ...(commits ? ['## Commits it made', '', commits, ''] : []),
-      finalSection(x),
+      finalSection(x, { work: plan.gradeReply }),
     ].join('\n');
     files[label] = replaceAll(body, pairs);
   }
@@ -822,7 +999,10 @@ function blind(o, out, err) {
   const rubricBody = shown.replace(/^\s*#\s*Rubric\s*\r?\n/, '').trim();
   for (const [label, text] of Object.entries(files)) writeFileSync(join(blindDir, `${label}.md`), text);
   writeFileSync(join(blindDir, 'rubric.md'), shown);
-  const bundle = [judgeBrief(), '', '# Rubric', '', rubricBody, '', ...Object.values(files)].join('\n');
+  const replyNote = plan.gradeReply
+    ? ['', 'For this task the final message is the work product: grade it as the run\'s output, and check what it says about its own steps against "What it did".']
+    : [];
+  const bundle = [judgeBrief(), ...replyNote, '', '# Rubric', '', rubricBody, '', ...Object.values(files)].join('\n');
   writeFileSync(join(blindDir, 'bundle.md'), bundle);
   const key = { labels: Object.fromEntries(labelled.map((l) => [l.label, l.run.id])), dropouts, blindDir };
   writeFileSync(keyFile, JSON.stringify(key, null, 2) + '\n');
@@ -838,7 +1018,7 @@ function blind(o, out, err) {
 // judge and unblind
 // ---------------------------------------------------------------------------------------------------------------
 
-const SCORE_FORMAT = 'one "Criterion <n>: <text>" line per criterion, then one "  <letter>: <1-5>  <evidence>" line per output';
+const SCORE_FORMAT = 'one "Criterion <n>: <text>" line per criterion, then one "  <letter>: <1-5>/5  <evidence>" line per output, and nothing else in the block';
 
 function judge(o, out, err) {
   const refuse = (...lines) => { for (const l of lines) err(`refused: ${l}`); return 1; };
@@ -850,32 +1030,40 @@ function judge(o, out, err) {
   if (!existsSync(bundleFile)) return refuse(`${bundleFile} is missing; run blind --force again`);
   const mine = join(lab, 'my-read.md');
   if (!existsSync(mine)) return refuse(`write your own scores to ${mine} first (${SCORE_FORMAT}): a verdict read first anchors them`);
-  if (!parseScores(readFileSync(mine, 'utf8')).some((c) => Object.keys(c.scores).length)) {
-    return refuse(`${mine} has no scores in the format: ${SCORE_FORMAT}`);
-  }
+  if (mtime(mine) < mtime(keyFile)) return refuse(`${mine} is older than key.json: it scores letters from an earlier blind copy. Score the current letters`);
+  const myScores = parseScores(readFileSync(mine, 'utf8'));
+  if (!myScores.criteria.some((c) => Object.keys(c.scores).length)) return refuse(`${mine} has no scores in the format: ${SCORE_FORMAT}`);
+  if (myScores.problems.length) return refuse(`${mine} has lines that look like scores but are not read; fix them (${SCORE_FORMAT}):`, ...myScores.problems);
   if (existsSync(join(lab, 'verdict.md')) && !o.force) return refuse('verdict.md exists; pass --force to ask again and replace it');
   const plan = readJson(join(lab, 'plan.json'));
+  const platform = platformProblem(process.platform, claudeName());
+  if (platform) return refuse(platform);
+  const login = checkLogin(o);
+  if (login) return refuse(login);
 
   const cwd = mkdtempSync(join(tmpdir(), 'r-'));
-  const home = mkdtempSync(join(tmpdir(), 'h-'));
+  const home = o.realHome ? null : mkdtempSync(join(tmpdir(), 'h-'));
   try {
-    for (const d of [cwd, home]) {
+    for (const d of [cwd, home].filter(Boolean)) {
       if ([lab, plan.root, key.blindDir].some((f) => isInside(realpathSync(d), realOrPlanned(f)))) return refuse('the temporary folder is inside the lab, the root or the blind folder');
     }
-    const { file, args, shell } = claudeCommand(judgeArgv({ model: o.model, effort: o.effort }));
-    const r = spawnSync(file, args, { cwd, env: childEnv(process.env, home), input: readFileSync(bundleFile, 'utf8'), encoding: 'utf8', timeout: 30 * 60_000, maxBuffer: 64 << 20, shell });
+    const { file, args } = claudeCommand(judgeArgv({ model: o.model, effort: o.effort }));
+    const env = childEnv(process.env, home || process.env.HOME, o.passEnv);
+    const r = spawnSync(file, args, { cwd, env, input: readFileSync(bundleFile, 'utf8'), encoding: 'utf8', timeout: 30 * 60_000, maxBuffer: 64 << 20 });
     if (r.status !== 0) { err(`failed: the reviewer exited ${r.status}: ${(r.stderr || r.stdout || '').slice(0, 2000)}`); return 1; }
     let res;
     try { res = JSON.parse(r.stdout); } catch { err('failed: the reviewer did not print one JSON result'); return 1; }
     writeFileSync(join(lab, 'verdict.md'), String(res.result ?? '') + '\n');
-    writeFileSync(join(lab, 'judge.json'), JSON.stringify({ model: o.model, effort: o.effort, costUsd: res.total_cost_usd ?? null, isError: !!res.is_error }, null, 2) + '\n');
-    const n = parseScores(res.result).length;
+    writeFileSync(join(lab, 'judge.json'), JSON.stringify({ model: o.model, effort: o.effort, realHome: o.realHome, costUsd: res.total_cost_usd ?? null, isError: !!res.is_error }, null, 2) + '\n');
+    const read = parseScores(res.result);
+    const n = read.criteria.filter((c) => Object.keys(c.scores).length).length;
     out(`Verdict: ${join(lab, 'verdict.md')} (${n ? `${n} criteria read` : `no scores in the format; read it by hand`}), cost ${money(res.total_cost_usd)}`);
+    for (const pr of read.problems) out(`warning: verdict ${pr}`);
     out(`Next: node skill-eval.mjs unblind ${lab}`);
     return 0;
   } finally {
     rmSync(cwd, { recursive: true, force: true });
-    rmSync(home, { recursive: true, force: true });
+    if (home) rmSync(home, { recursive: true, force: true });
   }
 }
 
@@ -883,6 +1071,12 @@ function unblind(o, out, err) {
   const lab = resolve(o.target);
   for (const f of ['plan.json', 'key.json', 'my-read.md', 'verdict.md']) {
     if (!existsSync(join(lab, f))) { err(`refused: ${join(lab, f)} is missing (order: blind, my-read.md, judge, unblind)`); return 1; }
+  }
+  for (const f of ['my-read.md', 'verdict.md']) {
+    if (mtime(join(lab, f)) < mtime(join(lab, 'key.json'))) {
+      err(`refused: ${join(lab, f)} is older than key.json: it scores the letters of an earlier blind copy`);
+      return 1;
+    }
   }
   const plan = readJson(join(lab, 'plan.json'));
   const key = readJson(join(lab, 'key.json'));
@@ -892,8 +1086,10 @@ function unblind(o, out, err) {
   for (const [l, id] of Object.entries(key.labels)) out(`${l}       ${id}   ${labelToVariant[l]}`);
   if (key.dropouts.length) out(`Dropouts: ${key.dropouts.map((id) => `${id} (${variantOf(id)})`).join(', ')}`);
 
-  const judged = parseScores(readFileSync(join(lab, 'verdict.md'), 'utf8'));
-  const mine = parseScores(readFileSync(join(lab, 'my-read.md'), 'utf8'));
+  const judgedRead = parseScores(readFileSync(join(lab, 'verdict.md'), 'utf8'));
+  const judged = judgedRead.criteria;
+  const mine = parseScores(readFileSync(join(lab, 'my-read.md'), 'utf8')).criteria;
+  for (const pr of judgedRead.problems) out(`warning: verdict ${pr}`);
   const show = (who, scores) => {
     if (!scores.some((c) => Object.keys(c.scores).length)) { out(`${who}: no scores in the format; compare by hand`); return; }
     out(`${who}, mean per criterion by variant:`);

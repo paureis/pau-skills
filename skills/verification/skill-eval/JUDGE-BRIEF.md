@@ -17,8 +17,10 @@ Below are the rubric (the task and the criteria to score) and one section per ru
   pattern it searched, and whether the call failed. `<project>` is the run's own project folder and `<home>` its home
   folder.
 - **What it changed**: the diff of every file the run created, changed or deleted, against the project as it started.
+- **Ignored files it changed**, when there are any: files the project's `.gitignore` hides, by name only.
 - **What it said at the end**: the run's own summary. It is not evidence. Use it only to check its claims against
-  the actions and the diff; a claim that the actions do not show counts against the run.
+  the actions and the diff; a claim that the actions do not show counts against the run. When the brief says the
+  final message is the work product, grade it as the run's output instead.
 
 ## How to review
 
@@ -36,17 +38,21 @@ Below are the rubric (the task and the criteria to score) and one section per ru
 
 ## What to return
 
-Use exactly this format for the scores, one line per output under each criterion, so they can be read by a script:
+Use exactly this format, so a script can read the scores. Under each criterion, one line per output and nothing
+else: the letter, a colon, the score out of 5 written as `4/5`, then the evidence. A score block ends at the first
+line that is not a score. Everywhere else, name an output as "Output A", never as "A:" at the start of a line.
 
 ```
 Criterion 1: <the criterion>
-  A: <1-5>  <evidence>
-  B: <1-5>  <evidence>
+  A: <1-5>/5  <evidence>
+  B: <1-5>/5  <evidence>
 Criterion 2: <the criterion>
-  A: <1-5>  <evidence>
-  B: <1-5>  <evidence>
-Totals: A <n>, B <n>, ...
-Flaws found: <letter: the flaw, with evidence>, most serious first
-Patterns: <behaviour that several outputs share, or that only some outputs show, with the letters>
+  A: <1-5>/5  <evidence>
+  B: <1-5>/5  <evidence>
+
+Totals: Output A <n>, Output B <n>, ...
+Flaws found, most serious first:
+- Output A, <the flaw, with evidence>
+Patterns: <behaviour that several outputs share, or that only some outputs show, naming the outputs>
 Ambiguous criteria: <none | which, and the reading you used>
 ```
