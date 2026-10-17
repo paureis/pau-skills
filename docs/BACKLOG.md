@@ -162,50 +162,51 @@ Things that bit the third batch (M1 with M3, M4 with M6, M2, M7):
 
 ## Kickoff for the next session
 
-The owner starts each batch in a fresh session with a message like this one. Change the item list to the batch at
-hand (see "Order"); the rest stays.
+The owner starts each batch in a fresh session with a message like this one. This one is for P0.5. For the fourth
+batch after it, change the item list to that batch (see "Order") and drop the Part B paragraph; the rest stays.
 
 ```text
-You are the orchestrator for the next batch of pstack work in this repository. Do not build the skills yourself;
-run builder subagents and integrate their work.
+You are the orchestrator for the next batch of work in this repository: item P0.5, every skill loads on its own.
+Do not build the skills yourself; run builder subagents and integrate their work. Part B, trimming the plugins in my
+account, we do together in this session.
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules).
-2. docs/BACKLOG.md, especially "How to work an item", "How to run a batch" (all 10 steps and both lists of things
-   that bit earlier batches), "Decisions taken", "Context budget", "Order" and the items you are about to build.
+2. docs/BACKLOG.md, especially decision 7, item P0.5 (all of it), "How to run a batch" (all 10 steps and every list
+   of things that bit earlier batches), "Context budget" and "Order".
 3. skills/agent-orchestration/lean-subagent-dev/SKILL.md and its BRIEF-TEMPLATE.md and TRIAGE.md. Work that way for
    the whole session. The usage budget is generous: same model for every subagent, a read-only plan check of every
-   brief before any builder starts, a fresh reviewer for every item, and a cold run for anything that generates or
-   drives something.
+   brief before any builder starts, a fresh reviewer, and a cold run for the trigger check.
 
-This batch is the "Next, the fourth batch" line of the Order section in docs/BACKLOG.md:
-- M5 retrospective
-- M8 safe-merge and evaluator (one builder)
-- M9 improve-codebase-architecture
-- M11 small additions (one builder)
-- M10 which-skill in the orchestrator's integration pass (it is a shared file)
+Step 0 first: ask me to run /context and tell you the skills line and the context window, before any edit. Use it to
+set the description limits (P0.5, Part A, step 2).
 
-These items change existing skills, so every builder works only in its own skill folders and tests, and the
-orchestrator owns every shared file (README, ORIGINS, NOTICE, CHANGELOG, marketplace.json, which-skill, plugin
-READMEs, tests/standalone.test.mjs, docs/). Follow "How to run a batch" step by step: get the upstream pstack source
-once into the scratchpad, one git worktree and one written brief per builder, a plan check per brief, launch the
-builders in one message in the background, verify each builder's work yourself, one fresh reviewer per item (plus a
-cold run where it applies), triage with TRIAGE.md, one fix round sent back to the same builder, a second look on the
-fix only, merge one branch at a time with the full suite after each merge, then one integration pass and one pull
-request. Watch CI on macOS as well as Linux.
+Part A, the repository, as one batch with builders split by plugin group (session-discipline, verification,
+agent-orchestration with guards, planning), each in its own git worktree:
+- remove disable-model-invocation from every skill;
+- rewrite all 34 descriptions as short trigger lists within the limits, watching for collisions with my other
+  plugins' skills;
+- add the confirm paragraph, word for word, to the skills on the P0.5 confirm list (settle the list in the plan check);
+- rewrite every "suggest the user run /..." mention so a skill can start another one directly;
+- you own the tests (context budget limits, no flag left, the confirm paragraph exactly on the listed skills),
+  scripts/new-skill.mjs, docs/ADDING-A-SKILL.md, README, which-skill, CHANGELOG, marketplace.json versions and
+  docs/BACKLOG.md.
+
+Part B, my account: from this session's own skill listing, give me a table of every plugin installed for me, how many
+skills it adds and whether its connectors work here, with keep, maybe or remove and why. I decide each one and turn
+them off myself; then a new session measures /context again.
 
 Rules that matter most:
-- Nothing moves into the auto tier; it is full. A changed skill keeps its tier.
-- Anything adapted from pstack gets the NOTICE entry, the license and metadata.upstream frontmatter, and an ORIGINS
-  "What this version changes" list from a real diff. Update the existing ORIGINS section of each changed skill.
-- No em or en dashes anywhere; plain English; Node standard library only; every skill works on its own.
+- Every skill works on its own; no em or en dashes; plain English; Node standard library only.
+- Descriptions stay under 1,024 characters with no angle-bracket tag (claude.ai upload rules).
 - Builders commit and never push. You push the working branch and open the PR. Never merge it yourself.
+- Watch CI on macOS as well as Linux.
 
-When the PR is open, tell me in plain words what was built, what the reviews found, and anything I need to decide.
-After I merge it, do step 10 of "How to run a batch": `node scripts/pack-skills.mjs --since <main before the batch>`
-for a zip of every changed skill, send them to me with which are new and which replace an existing one, and once I
-have uploaded them, have me confirm the sync in a new session. Then update the skill count on my profile README in
-paureis/paureis (the pau-skills line) if it changed, and mark the items done in docs/BACKLOG.md.
+When the PR is open, tell me in plain words what changed, the new description totals against the budget, what the
+reviews and the trigger cold run found, and anything I need to decide. After I merge it, run
+`node scripts/pack-skills.mjs --all` on main and send me all 34 zips (each replaces a skill I already have), have me
+confirm the sync and run /context in a new session, then mark P0.5 done in docs/BACKLOG.md with the before and after
+numbers.
 ```
 
 ## Decisions taken (2026-10-17)
@@ -225,6 +226,13 @@ paureis/paureis (the pau-skills line) if it changed, and mark the items done in 
 6. **Shortened auto descriptions stay as they are.** The most used trigger phrases of `migration-review` were
    restored; restoring more would cost characters from another auto skill for little gain.
 
+7. **Every skill loads on its own (2026-10-17, replaces the tier limits of decision 4).** The owner finds typed
+   skills hard to use: they have to remember each name and type it. So every skill becomes model-invocable, and the
+   context cost is kept down by short descriptions instead of by a small auto tier. Skills that launch subagents or
+   paid runs, take over the session, or write outside the conversation first say what they will do and what it costs,
+   and wait for a yes, when the agent started them on its own. Typing `/name` still works for every skill. Item P0.5
+   does it.
+
 ## Context budget
 
 Facts (Claude Code documentation, skills page, checked 2026-10-17):
@@ -236,7 +244,7 @@ Facts (Claude Code documentation, skills page, checked 2026-10-17):
 - On 2026-10-17 the 25 skills here were all model-invocable and their descriptions totalled about 15,000
   characters, already over the budget of a 200k window.
 
-**Policy.**
+**Policy until P0.5 lands** (P0.5 replaces it; see "Policy after P0.5" in that item).
 - **Auto tier** (the model may start it): skills an agent should reach for without being asked, because the user
   would not know to type them at that moment. At most 12 skills, each description at most 400 characters, all auto
   descriptions together at most 4,500 characters.
@@ -275,6 +283,92 @@ section with the MIT text, copyright 2026 Lauren Tan, listing adapted files as t
 `skills/unslop/SKILL.md` (AI vocabulary such as delve, pivotal, tapestry, seamless, leverage as a verb; "serves as";
 "not just X but Y"; chatbot phrases; filler), skipping code blocks and inline code. Check `evals/project-setup/grade.mjs`
 for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the new rules find.
+
+**P0.5 Every skill loads on its own** (`todo`, orchestrator plus builders, touches every skill). Decision 7.
+
+Why. Typed skills cost the owner effort: they must remember each skill's name and what it does. A skill the agent can
+start from the user's own words ("help me brainstorm", "close the session") is used more. The tier limits came from
+decision 4, when the whole skill listing was over budget; measured on 2026-10-17, the 12 auto descriptions take 4,590
+characters (about 1,150 tokens) and the 22 typed ones would add 14,136 characters (about 3,500 tokens) as written.
+
+The budget to design for. Claude Code gives the skill listing about 1% of the context window: about 8,000 characters
+on a 200k window, about 40,000 on a 1M window. Over budget, it drops the descriptions of the least used skills and
+keeps only their names. The owner's account also carries roughly 170 skills from other plugins (sales, legal, finance,
+human resources, marketing, product management, operations, design, engineering, data, customer support, enterprise
+search, Common Room, Apollo, brand voice, Slack, productivity, Cowork plugin management). In the session that planned
+this item, several of this repository's skills, auto ones included (`bug-fix`, `verify-app`, `evaluator`), showed as
+bare names with no description: Claude Code had already cut them for space. So this item has two halves: shorter
+descriptions here, and fewer plugins in the owner's account.
+
+Step 0, before any edit (the owner, in a fresh session): run `/context` and report the line for skills (tokens) and
+the model's context window. That is the baseline, and it says which budget applies (8,000 or 40,000 characters).
+
+Part A, the repository:
+1. **Remove `disable-model-invocation: true` from all 22 typed skills.** Keep their `argument-hint`.
+2. **Rewrite every description, all 34, as a trigger list.** One sentence on what it does, then the phrases a person
+   would actually say. Targets: at most 300 characters each and at most 9,000 in total, so all 34 fit the 200k-window
+   budget on their own (34 x 265 is about 9,000). If step 0 shows a 1M window, 400 each and 12,000 in total are fine;
+   decide from the measurement and write the numbers into the test. Keep the most used trigger phrases (decision 6),
+   drop restated detail that the body already has, and keep the claude.ai upload rules (under 1,024 characters, no
+   angle-bracket tag). Watch for collisions with the owner's other plugins, which have `product-management:brainstorm`,
+   `engineering:code-review`, `engineering:debug` and `engineering:testing-strategy`: each description should say what
+   makes this one different (for example `brainstorm` widens options before `grill-me` narrows them).
+3. **Add a confirm step to the skills that cost something when the agent starts them on its own.** A short paragraph
+   near the top, the same words in each: "If you started this skill on your own, without the user typing its name or
+   asking for it, first say in one or two lines what it will do and what it will cost, and wait for a yes. If the
+   user asked for it, go ahead." The list, to settle in the batch's plan check:
+   - launches subagents or headless runs: `arena`, `skill-eval`, `hillclimb`, `agent-friendly-audit`,
+     `parallel-worktrees`, `brainstorm` (when it uses subagents per lens), `verify-app` (create and maintain modes),
+     `codebase-oracle` (already states the cost before explorers; make its wording match);
+   - takes over the session or sets a way of working: `lean-subagent-dev`, `methodology`, `grill-me`;
+   - writes or commits outside the conversation: `session-close`, `handoff`, `project-setup`, `retrospective`,
+     `instructions-audit` (when it edits), `rule-to-hook`, `dependency-upgrade`, `ci-cost-and-cadence` (when it
+     builds), `improve-codebase-architecture`, `to-issues` (when it files issues).
+   Read-only and advisory skills (`which-skill`, `tdd`, `bug-fix`, `review-triage`, `evaluator`, `mutation-test`,
+   `migration-review`, `flaky-test-hunt`, `dependency-security-audit`, `safe-merge`, `sharpen`, `to-prd`, `architect`)
+   do not ask; they already act only on what the user asked for. `safe-merge` keeps its own confirmations.
+4. **Rewrite every mention of a typed skill.** "Suggest the user run `/<plugin>:<name>`" becomes "use `<name>` if it is
+   installed", now that any skill can start another. `tests/standalone.test.mjs` still needs "if it is installed" in the
+   same paragraph. This makes P1.4 moot; close it.
+5. **Tests.** `tests/context-budget.test.mjs`: drop the 12-skill cap, set the per-description and total limits from
+   step 2, and fail if any skill still has `disable-model-invocation: true` (a ratchet at zero). New: a test that every
+   skill on the confirm list carries the confirm paragraph word for word, and no other skill does, so the list cannot
+   drift. Prove both with `mutate.sh`.
+6. **Tooling and docs.** `scripts/new-skill.mjs` stops writing `disable-model-invocation: true` and its test follows;
+   `docs/ADDING-A-SKILL.md` step 2 describes the new rule (short trigger description, confirm paragraph when the skill
+   costs something); README "What loads on its own" becomes one list plus the confirm list; `which-skill` drops its
+   tier split; the "Context budget" policy here is replaced by "Policy after P0.5" below; CLAUDE.md if it mentions
+   tiers. Fixtures under `tests/fixtures/` that use the flag on purpose stay as they are.
+7. **Versions.** Minor bump for every plugin and the bundle; `pau-skills-hooks` only if a hook changed (none should).
+
+Policy after P0.5: every skill is model-invocable; descriptions are trigger lists within the limits the test sets;
+skills that spend, take over or write ask first when the agent started them; the listing is measured with `/context`
+after each upload.
+
+Part B, the owner's account (no repository change; done together in the session):
+1. List the plugins installed for the owner and how many skills each adds, from the session's own skill listing.
+2. Sort them into keep, maybe and remove, from what the owner actually uses. A first guess from this session: the
+   owner works on software and on this repository, so `sales` (about 40 skills), `legal`, `finance`,
+   `human-resources`, `marketing`, `common-room`, `apollo`, `brand-voice`, `customer-support` and `slack-by-salesforce`
+   are likely removals; `engineering`, `design`, `data`, `productivity`, `product-management`, `operations` and
+   `enterprise-search` are maybes. Many of their connectors also fail in cloud sessions (proxy 403), so they add names
+   without working tools. The owner decides each one.
+3. The owner turns them off where they were installed (claude.ai, Customize; or the organization's plugin settings).
+4. In a new session, `/context` again: the skills line should drop, and every skill here should show its description.
+
+Shipping. Every skill's frontmatter changes, so all 34 are re-uploaded once: `node scripts/pack-skills.mjs --all` on
+main after the merge, then replace each skill on claude.ai (none is new, none is removed). Then a new session confirms
+the sync (`ls ~/.claude/skills/synced/*/<name>/`), runs `/context`, and tries a few plain requests ("let's brainstorm
+options for X", "wrap up this session", "is this test any good") to see the right skill start, with a confirm question
+where the list says so.
+
+How to run it. As a batch ("How to run a batch"), with builders split by plugin group so each touches disjoint files:
+session-discipline, verification, agent-orchestration with guards, and planning. The orchestrator owns the tests in
+step 5, the tooling and docs in step 6, versions, README, which-skill and this file, and writes the confirm paragraph
+once so every builder pastes the same words. Each builder rewrites its descriptions, removes the flag, adds the confirm
+paragraph where the list says, and fixes typed-skill mentions in its own folders. Review: one fresh reviewer over all
+descriptions for collisions and lost triggers, and a cold run that sends ten plain requests to a headless `claude -p`
+holding only this repository's skills and checks which skill each one starts.
 
 ### N. New skills
 
@@ -553,10 +647,12 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 2. Done: N1 verify-app, N2 arena with N3 architect, N4 bug-fix.
 3. Done: N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval, P1.1 pack-skills, N11 brainstorm.
 4. Done: M1 with M3, M4 with M6, M2 rule-to-hook, M7 codebase-oracle (the third batch).
-5. **Next, the fourth batch:** M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M11
+5. **Next: P0.5, every skill loads on its own** (decision 7), before any new work, so the fourth batch is built
+   under the new rule. Part B, trimming the owner's plugins, runs in the same session.
+6. **Then the fourth batch:** M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M11
    small additions (one builder). M10 `which-skill` is a shared file the orchestrator owns, so the orchestrator does it
    in that batch's integration pass. P1.2 to P1.4 can ride along as a small fifth builder.
-6. N8 overnight-run, N9 engineering-principles.
+7. N8 overnight-run, N9 engineering-principles.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
 
@@ -574,7 +670,7 @@ When the batch is merged, update the skill count on the author's GitHub profile 
 - **P1.3 version-bump check** (`todo`). Nothing checks that a change to a plugin's files bumps that plugin's version
   and the bundle's, though CLAUDE.md requires it. A test or script that compares against the merge base and names the
   plugin to bump. Found by the same cold run; the owner decides whether it is worth its code.
-- **P1.4 typed-skill names** (`todo`). Some skills name a typed skill as `/<name>` without the
+- **P1.4 typed-skill names** (`todo`, made moot by P0.5; close it there). Some skills name a typed skill as `/<name>` without the
   `/<plugin>:<name>` form the rest of the repository uses (the cold run found three live instances, for example in
   `architect` and `which-skill`). A test that fails on the bare form, as a ratchet at the current count.
 
