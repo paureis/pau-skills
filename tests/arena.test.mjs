@@ -5,7 +5,7 @@ import { writeFileSync, readFileSync, mkdirSync, existsSync, readdirSync, symlin
 import { join } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
-  mulberry32, shuffle, assignLabels, countCriteria, validateRubric, isExcluded, rubricTemplate,
+  mulberry32, shuffle, assignLabels, countCriteria, validateRubric, isExcluded, rubricTemplate, outsideFences,
   synthesisTemplate, parseArgs, main,
 } from '../skills/agent-orchestration/arena/arena.mjs';
 
@@ -93,6 +93,28 @@ describe('rubric', () => {
     const text = ['1. one', '2. two', '```', '3. code', '4. code', '```', '~~~', '5. code', '~~~'].join('\n');
     assert.equal(countCriteria(text), 2);
     assert.match(validateRubric(text).join(' '), /3 to 6/);
+  });
+
+  test('fences close the CommonMark way: same character, at least as long, nothing after it', () => {
+    // A shorter fence inside a longer one is content, not a closer.
+    assert.deepEqual(outsideFences(['````', '```', '1. inside a fence', '````', '1. outside'].join('\n')), ['1. outside']);
+    assert.deepEqual(outsideFences(['~~~~', '~~~', '1. inside', '~~~~', '1. outside'].join('\n')), ['1. outside']);
+    // The other character does not close the fence.
+    assert.deepEqual(outsideFences(['```', '~~~', '1. inside', '```', '1. outside'].join('\n')), ['1. outside']);
+    assert.deepEqual(outsideFences(['~~~', '```', '1. inside', '~~~', '1. outside'].join('\n')), ['1. outside']);
+    // A longer closer closes; a fence line with an info string does not.
+    assert.deepEqual(outsideFences(['```', '1. inside', '`````', '1. outside'].join('\n')), ['1. outside']);
+    assert.deepEqual(outsideFences(['```', '```js', '1. inside', '```', '1. outside'].join('\n')), ['1. outside']);
+    // A backtick info string cannot hold a backtick, so this line is inline code, not a fence.
+    assert.deepEqual(outsideFences('```a` b```\n1. outside'), ['```a` b```', '1. outside']);
+    // Indented fences (inside list items) count, and spaces after a closer are allowed.
+    assert.deepEqual(outsideFences(['  ```', '1. inside', '  ```  ', '1. outside'].join('\n')), ['1. outside']);
+  });
+
+  test('a rubric that shows a nested fence counts only its own criteria', () => {
+    const text = ['1. one', '2. two', '3. three', '````md', '```', '1. example', '````', ''].join('\n');
+    assert.equal(countCriteria(text), 3);
+    assert.deepEqual(validateRubric(text), []);
   });
 });
 

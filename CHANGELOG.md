@@ -3,6 +3,15 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-17: code fences close the CommonMark way in arena and instructions-audit
+
+- `arena.mjs` and the `instructions-audit` scanner toggled a code fence on any fence line, so a shorter fence inside a
+  longer one, or a fence of the other character, ended the block early. A rubric that showed a nested fence could then
+  count the wrong number of criteria, and the scanner could read code as headings, rules, imports or references. Both
+  now close a fence only on a bare fence of the same character, at least as long, as `tests/style.test.mjs` and
+  `verify-app` already did. The scanner's `splitUnits` had the same toggle and is fixed with them.
+- Versions: agent-orchestration 0.5.1, session-discipline 0.6.1, pau-skills 0.8.1.
+
 ## 2026-10-17: pau-skills-hooks, the hooks without the skills
 
 - New plugin `pau-skills-hooks`: every hook in the marketplace and no skills, about zero tokens of always-on context.
