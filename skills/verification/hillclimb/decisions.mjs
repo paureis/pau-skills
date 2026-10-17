@@ -8,19 +8,25 @@
  *       Appends one row to <log> (a decision.tsv), creating it and its folder with the header when it is missing.
  *       Columns: time, attempt, hypothesis, change, measurement, delta, tests, decision, note. The time is now, in
  *       UTC; the attempt defaults to "baseline" on a baseline row and otherwise to one more than the highest numbered
- *       attempt so far (the first is 1); the delta is computed against the best kept so far, which is the latest
- *       baseline or keep row.
+ *       attempt so far (the first is 1). The delta is computed against the best kept so far: the best number, in the
+ *       run's direction, among the latest baseline row and the keeps after it. Each attempt is stood for by its latest
+ *       row, so a correction (a new row with the same --id) replaces the attempt's earlier rows everywhere: a keep
+ *       corrected to a revert is no longer the reference, the best or a kept attempt, and a corrected keep is judged
+ *       against the rows before it, not against itself.
  *
  *   node decisions.mjs measure [--runs 5] [--warmup 1] [--value time|stdout] [--shell] -- <command> [args...]
  *       Runs the command --warmup times unrecorded, then --runs times, and prints one line in the measurement format.
  *       --value time (the default) records the wall time of each run in seconds; --value stdout records the number
  *       on the last non-empty line the command printed, with its unit (for a size, a memory figure or a score).
  *       Each recorded value goes to stderr. Any run that exits non-zero, or prints no number, fails the measurement.
- *       --shell runs the command through the system shell (pipes, &&, or npm and similar on Windows).
+ *       Values are printed with up to 12 significant digits (times rounded to the microsecond), so no digit of the
+ *       input is lost. --shell runs the command through the system shell (pipes, redirection, &&, or npm and similar
+ *       on Windows); it then takes the whole command as one quoted argument after "--" and refuses more than one.
  *
  *   node decisions.mjs summary <log>
- *       Prints the log as a Markdown table, then the baseline, the best kept number, the attempt counts and the first
- *       baseline's note (where the stop predicate is written). An attempt is counted once, by its latest row, and the
+ *       Prints the log as a Markdown table, then the latest baseline (and the first, when there are several), the best
+ *       kept number against the latest baseline, the attempt counts and the first baseline's note (where the stop
+ *       predicate is written). An attempt is counted once, by its latest row, and the
  *       row with attempt id "sensitivity" (the deliberate regression) is not counted.
  *
  * The measurement format: `median=<number><unit> runs=<count> spread=<number><unit>`, keys in any order, the same
@@ -29,19 +35,21 @@
  * than the larger of their two spreads.
  *
  * append refuses, and writes nothing, when: a field holds a tab, a newline or another control character; the log is
- * inside a git work tree (a folder with .git above it), where a reset or clean could erase it; the file exists but
- * its first line is not the header, its last line has no newline, or a row has the wrong number of fields; the
- * decision or tests value is unknown; a keep or revert has no hypothesis or no change; a measurement is given but
- * does not parse, or uses a different unit from the reference. A baseline also needs a measurement with at least 3
- * runs, and --better (which way is better; a later baseline must keep the first one's direction). A keep also needs
- * a measurement with at least 3 runs, passing tests, a baseline before it, and a number that is better than the
- * best kept so far beyond noise; a keep within noise is accepted only when its note starts with "simplification".
+ * inside a git work tree (a folder with .git above it, for the path, its resolved folder, or the file a link leads
+ * to), where a reset or clean could erase it; the file exists but its first line is not the header, its last line
+ * has no newline, or a row has the wrong number of fields; the decision or tests value is unknown; a keep or revert
+ * has no hypothesis or no change; a measurement is given but does not parse, or uses a different unit from the
+ * reference. A baseline also needs a measurement with at least 3 runs, passing tests, and --better (which way is
+ * better; a later baseline must keep the first one's direction). A keep also needs a measurement with at least 3
+ * runs, passing tests, a baseline before it, and a number that is better than the best kept so far beyond noise; a
+ * keep within noise of the best is accepted only when its note starts with "simplification" (so simplifications
+ * cannot drift away from the best number one small step at a time).
  * Earlier rows are never rewritten: the file is only ever opened for appending.
  *
  * Exit codes: 0 done; 1 refused, a run failed, or a file error; 2 usage (unknown command or option, a bad value).
  * Node 20+, standard library only.
  */
-import { appendFileSync, existsSync, mkdirSync, readFileSync, realpathSync } from 'node:fs';
+import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -55,6 +63,7 @@ const REFERENCE = /^reference \((lower|higher) is better\)$/;
 const NUMBER = /^([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)([A-Za-z%/]*)$/;
 
 class Refusal extends Error {}
+const at = (row, name) => row[HEADER.indexOf(name)];
 class Usage extends Error {}
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -97,9 +106,9 @@ export function median(values) {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
-/** Four significant digits, without trailing zeros. */
+/** Up to 12 significant digits, without trailing zeros: holds any measured input and drops floating point noise. */
 export function formatNumber(x) {
-  return String(Number(x.toPrecision(4)));
+  return String(Number(x.toPrecision(12)));
 }
 
 export function formatMeasurement(values, unit) {
@@ -125,7 +134,10 @@ export function describeDelta(ref, cur, better) {
   return { text: `${abs}${pct} ${verdict}`, gap, better: isBetter, beyondNoise };
 }
 
-/** The folder holding a .git entry at or above the path, or null. Checks the path as given and as resolved. */
+/**
+ * The folder holding a .git entry at or above the path, or null. Checks the path as given, its folder as resolved,
+ * and, when the path is a link, the file the link leads to (or would create, for a link to nothing).
+ */
 export function insideGitTree(path) {
   const walk = (start) => {
     for (let dir = start; ; dir = dirname(dir)) {
@@ -133,12 +145,40 @@ export function insideGitTree(path) {
       if (dirname(dir) === dir) return null;
     }
   };
+  const walkResolved = (file) => {
+    let existing = dirname(file);
+    while (!existsSync(existing) && dirname(existing) !== existing) existing = dirname(existing);
+    try { return walk(realpathSync(existing)); } catch { return null; }
+  };
   const abs = resolve(path);
-  const found = walk(dirname(abs));
-  if (found) return found;
-  let existing = dirname(abs);
-  while (!existsSync(existing) && dirname(existing) !== existing) existing = dirname(existing);
-  try { return walk(realpathSync(existing)); } catch { return null; }
+  let target = abs;
+  try {
+    if (existsSync(abs)) target = realpathSync(abs);
+    else if (lstatSync(abs).isSymbolicLink()) target = resolve(dirname(abs), readlinkSync(abs));
+  } catch { /* no such file: nothing to follow */ }
+  return walk(dirname(abs)) ?? walkResolved(abs) ?? walk(dirname(target)) ?? walkResolved(target);
+}
+
+/**
+ * The reference a new row is compared with: the best number (in the run's direction) among the latest baseline row
+ * and the keeps after it. Each attempt is stood for by its latest row, so a keep later corrected to a revert drops
+ * out, and rows with the attempt id `exclude` (the attempt being written) are left out.
+ */
+export function bestKept(rows, direction, exclude) {
+  const own = rows.filter((r) => at(r, 'attempt') !== exclude);
+  let last = -1;
+  own.forEach((r, i) => { if (at(r, 'decision') === 'baseline') last = i; });
+  if (last < 0) return null;
+  const latest = new Map();
+  own.forEach((r, i) => { if (at(r, 'decision') !== 'baseline') latest.set(at(r, 'attempt'), { r, first: latest.get(at(r, 'attempt'))?.first ?? i }); });
+  let best = own[last];
+  let bestM = parseMeasurement(at(best, 'measurement'));
+  for (const { r, first } of latest.values()) {
+    if (first < last || at(r, 'decision') !== 'keep') continue;
+    const m = parseMeasurement(at(r, 'measurement'));
+    if (direction === 'higher' ? m.median >= bestM.median : m.median <= bestM.median) { best = r; bestM = m; }
+  }
+  return { row: best, m: bestM };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -188,6 +228,9 @@ export function parseArgs(argv) {
         opts[o.slice(2)] = Number(v);
       }
     }
+    if (opts.shell && command.length !== 1) {
+      throw new Usage(`--shell takes the whole command as one argument after "--", quoted (for example -- "wc -c < out.bin"); got ${command.length} arguments`);
+    }
     return opts;
   }
   throw new Usage(cmd ? `unknown command ${cmd}` : 'no command');
@@ -207,7 +250,6 @@ function readLog(log) {
   });
 }
 
-const at = (row, name) => row[HEADER.indexOf(name)];
 
 function buildRow(log, fields, now) {
   for (const [k, v] of Object.entries(fields)) {
@@ -227,6 +269,7 @@ function buildRow(log, fields, now) {
   if (fields.measurement !== undefined) {
     try { m = parseMeasurement(fields.measurement); } catch (e) { throw new Refusal(`--measurement: ${e.message}`); }
   }
+  if (decision === 'baseline' && tests !== 'pass') throw new Refusal('a baseline needs passing tests: the gate must be green before the first change, or it cannot tell a broken change from a good one');
   if (decision !== 'revert') {
     if (!m) throw new Refusal(`a ${decision} needs --measurement "median=<n><unit> runs=<count> spread=<n><unit>"; a number with no run count or spread is not a result`);
     if (m.runs < MIN_RUNS) throw new Refusal(`a ${decision} needs at least ${MIN_RUNS} runs, not ${m.runs}; one or two runs cannot show the spread`);
@@ -234,6 +277,8 @@ function buildRow(log, fields, now) {
 
   const baselines = rows.filter((r) => at(r, 'decision') === 'baseline');
   const firstDirection = baselines.length ? REFERENCE.exec(at(baselines[0], 'delta'))?.[1] : undefined;
+  const numbers = rows.map((r) => at(r, 'attempt')).filter((id) => /^\d+$/.test(id)).map(Number);
+  const attempt = fields.id ?? (decision === 'baseline' ? 'baseline' : String(Math.max(0, ...numbers) + 1));
   let delta = '';
   if (decision === 'baseline') {
     if (!['lower', 'higher'].includes(fields.better)) throw new Refusal('a baseline needs --better lower or --better higher: which way the metric improves');
@@ -241,11 +286,11 @@ function buildRow(log, fields, now) {
     delta = `reference (${fields.better} is better)`;
   } else {
     if (fields.better !== undefined) throw new Refusal('--better belongs on a baseline row only');
-    const refRow = [...rows].reverse().find((r) => ['baseline', 'keep'].includes(at(r, 'decision')));
-    if (!refRow) {
+    const reference = bestKept(rows, firstDirection, attempt);
+    if (!reference) {
       if (decision === 'keep') throw new Refusal('a keep needs a baseline row before it; measure the baseline first');
     } else if (m) {
-      const ref = parseMeasurement(at(refRow, 'measurement'));
+      const ref = reference.m;
       let d;
       try { d = describeDelta(ref, m, firstDirection); } catch (e) { throw new Refusal(e.message); }
       delta = d.text;
@@ -258,8 +303,6 @@ function buildRow(log, fields, now) {
       }
     }
   }
-  const numbers = rows.map((r) => at(r, 'attempt')).filter((id) => /^\d+$/.test(id)).map(Number);
-  const attempt = fields.id ?? (decision === 'baseline' ? 'baseline' : String(Math.max(0, ...numbers) + 1));
   return { row: [now.toISOString(), attempt, hypothesis, change, fields.measurement ?? '', delta, tests, decision, fields.note ?? ''], created: !rows.length && !existsSync(log) };
 }
 
@@ -280,7 +323,9 @@ function measure(opts, out, err) {
     const warm = i < opts.warmup;
     const label = warm ? `warmup ${i + 1}` : `run ${i - opts.warmup + 1}`;
     const start = process.hrtime.bigint();
-    const r = spawnSync(opts.command[0], opts.command.slice(1), { encoding: 'utf8', shell: opts.shell, maxBuffer: 256 * 1024 * 1024 });
+    const r = opts.shell
+      ? spawnSync(opts.command[0], { encoding: 'utf8', shell: true, maxBuffer: 256 * 1024 * 1024 })
+      : spawnSync(opts.command[0], opts.command.slice(1), { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
     const seconds = Number(process.hrtime.bigint() - start) / 1e9;
     if (r.error) { err(`${label}: could not start ${opts.command[0]}: ${r.error.message}`); return 1; }
     if (r.status !== 0) {
@@ -290,7 +335,7 @@ function measure(opts, out, err) {
       return 1;
     }
     if (warm) continue;
-    let value = seconds;
+    let value = Math.round(seconds * 1e6) / 1e6;
     if (opts.value === 'stdout') {
       const last = (r.stdout || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).pop() ?? '';
       const q = parseQuantity(last);
@@ -315,17 +360,22 @@ function summary(log, out) {
   for (const r of rows) out(`| ${r.map(cell).join(' | ')} |`);
   out('');
   const first = rows.find((r) => at(r, 'decision') === 'baseline');
+  const baselines = rows.filter((r) => at(r, 'decision') === 'baseline');
   const latest = new Map();
   for (const r of rows) {
     if (['keep', 'revert'].includes(at(r, 'decision')) && at(r, 'attempt') !== SENSITIVITY) latest.set(at(r, 'attempt'), at(r, 'decision'));
   }
   const kept = [...latest.values()].filter((d) => d === 'keep').length;
   if (first) {
-    const b = parseMeasurement(at(first, 'measurement'));
-    const best = [...rows].reverse().find((r) => ['baseline', 'keep'].includes(at(r, 'decision')));
-    const m = parseMeasurement(at(best, 'measurement'));
+    const direction = REFERENCE.exec(at(first, 'delta'))?.[1];
+    const lastBase = baselines[baselines.length - 1];
+    const b = parseMeasurement(at(lastBase, 'measurement'));
+    const { row: best, m } = bestKept(rows, direction, undefined);
     const pct = b.median === 0 ? '' : `${m.median - b.median > 0 ? '+' : m.median < b.median ? '-' : ''}${Math.abs(((m.median - b.median) / Math.abs(b.median)) * 100).toFixed(1)}%, `;
-    out(`baseline ${formatNumber(b.median)}${b.unit}, best ${formatNumber(m.median)}${m.unit} (${pct}attempt ${at(best, 'attempt')})`);
+    const which = baselines.length > 1
+      ? ` (the latest of ${baselines.length} baselines; the first was ${formatNumber(parseMeasurement(at(first, 'measurement')).median)}${b.unit})`
+      : '';
+    out(`baseline ${formatNumber(b.median)}${b.unit}${which}, best ${formatNumber(m.median)}${m.unit} (${pct}attempt ${at(best, 'attempt')})`);
   }
   out(`attempts ${latest.size} (kept ${kept}, reverted ${latest.size - kept}), not counting the sensitivity check`);
   if (first && at(first, 'note')) out(`first baseline note: ${at(first, 'note')}`);

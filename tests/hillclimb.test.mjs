@@ -3,7 +3,7 @@
 // tree, a file edited by hand), the append-only guarantee, measure against small node commands, and summary.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, existsSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
@@ -74,11 +74,14 @@ describe('parseMeasurement', () => {
 });
 
 describe('numbers', () => {
-  test('median of odd and even counts, and formatting to 4 significant digits', () => {
+  test('median of odd and even counts, and formatting that keeps every digit of the input', () => {
     assert.equal(median([3, 1, 2]), 2);
     assert.equal(median([4, 1, 3, 2]), 2.5);
-    assert.equal(formatNumber(1.234567), '1.235');
-    assert.equal(formatNumber(0.0123456), '0.01235');
+    // Up to 12 significant digits: enough to hold any input, few enough to drop floating point noise.
+    assert.equal(formatNumber(1.234567), '1.234567');
+    assert.equal(formatNumber(1234567), '1234567');
+    assert.equal(formatNumber(0.1 + 0.2), '0.3');
+    assert.equal(formatNumber(2.05 - 2), '0.05');
     assert.equal(formatNumber(2), '2');
   });
 
@@ -279,6 +282,77 @@ describe('append', () => {
     assert.deepEqual(rows(log).map((r) => r[col('attempt')]), ['baseline', 'sensitivity', '1', '2', '2', '10', '11', 'baseline', '12']);
   });
 
+  test('a correction stands for its attempt: a corrected keep is judged against the rows before it, not itself', () => {
+    const log = newLog();
+    baseline(log);
+    const keep = (extra) => append(log, { decision: 'keep', tests: 'pass', hypothesis: 'h', change: 'c', ...extra });
+    assert.equal(keep({ measurement: 'median=1.00s runs=5 spread=0.05s' }).code, 0);
+    const r = keep({ id: '1', measurement: 'median=1.05s runs=5 spread=0.05s', note: 'corrects: pasted the wrong run' });
+    assert.equal(r.code, 0, r.err);
+    assert.equal(rows(log)[2][col('delta')], '-0.95s -47.5% better, beyond noise');
+  });
+
+  test('a keep corrected to a revert stops being the reference, the best and a kept attempt', () => {
+    const log = newLog();
+    baseline(log);
+    append(log, { decision: 'keep', tests: 'pass', measurement: 'median=1.00s runs=5 spread=0.05s', hypothesis: 'h', change: 'c' });
+    assert.equal(append(log, { decision: 'revert', tests: 'fail', id: '1', hypothesis: 'h', change: 'c', note: 'corrects: broke parsing' }).code, 0);
+    const r = append(log, { decision: 'keep', tests: 'pass', measurement: 'median=1.50s runs=5 spread=0.05s', hypothesis: 'h2', change: 'c2' });
+    assert.equal(r.code, 0, r.err);
+    assert.equal(rows(log)[3][col('delta')], '-0.5s -25.0% better, beyond noise');
+    const s = run(['summary', log]).out;
+    assert.match(s, /best 1\.5s \(-25\.0%, attempt 2\)/);
+    assert.match(s, /attempts 2 \(kept 1, reverted 1\)/);
+  });
+
+  test('simplifications cannot drift: each is compared with the best number kept, not the previous simplification', () => {
+    const log = newLog();
+    baseline(log);
+    const simp = (median) => append(log, { decision: 'keep', tests: 'pass', measurement: `median=${median}s runs=5 spread=0.1s`, hypothesis: 'h', change: 'c', note: 'simplification: fewer lines' });
+    assert.equal(simp('2.09').code, 0);
+    const r = simp('2.18');
+    assert.equal(r.code, 1, 'a second simplification 9% worse than the baseline was accepted');
+    assert.match(r.err, /worse/);
+  });
+
+  test('a metric where higher is better keeps a higher number and refuses a lower one', () => {
+    const log = newLog();
+    baseline(log, { better: 'higher', measurement: 'median=100ops/s runs=5 spread=2ops/s' });
+    const keep = (m) => append(log, { decision: 'keep', tests: 'pass', measurement: m, hypothesis: 'h', change: 'c' });
+    assert.match(keep('median=90ops/s runs=5 spread=2ops/s').err, /worse/);
+    const r = keep('median=120ops/s runs=5 spread=2ops/s');
+    assert.equal(r.code, 0, r.err);
+    assert.equal(rows(log)[1][col('delta')], '+20ops/s +20.0% better, beyond noise');
+  });
+
+  test('refuses a baseline with failing tests: the gate must be green before the first change', () => {
+    const log = newLog();
+    const r = baseline(log, { tests: 'fail' });
+    assert.equal(r.code, 1);
+    assert.match(r.err, /tests/);
+    assert.equal(existsSync(log), false);
+  });
+
+  test('refuses a log path that is a link into a git work tree, existing or not', () => {
+    const dir = tempDir('hillclimb-repo-');
+    mkdirSync(join(dir, '.git'));
+    const inside = join(dir, 'decision.tsv');
+    const outside = tempDir('hillclimb-');
+    baseline(join(outside, 'real.tsv'));
+    writeFileSync(inside, readFileSync(join(outside, 'real.tsv')));
+    const before = readFileSync(inside, 'utf8');
+    const link = join(outside, 'link.tsv');
+    symlinkSync(inside, link);
+    assert.equal(insideGitTree(link), dir);
+    assert.match(append(link, { decision: 'revert', tests: 'pass', hypothesis: 'h', change: 'c' }).err, /git/);
+    assert.equal(readFileSync(inside, 'utf8'), before);
+    const dangling = join(outside, 'dangling.tsv');
+    symlinkSync(join(dir, 'new.tsv'), dangling);
+    assert.equal(insideGitTree(dangling), dir);
+    assert.match(baseline(dangling).err, /git/);
+    assert.equal(existsSync(join(dir, 'new.tsv')), false);
+  });
+
   test('creates the parent folder when it is missing', () => {
     const log = join(tempDir('hillclimb-'), 'a', 'b', 'decision.tsv');
     assert.equal(baseline(log).code, 0);
@@ -316,6 +390,28 @@ describe('measure', () => {
     const r = runNode(SCRIPT, { args: ['measure', '--runs', '5', '--warmup', '0', '--value', 'stdout', '--', process.execPath, prog] });
     assert.equal(r.code, 0, r.stderr);
     assert.equal(r.stdout.trim(), 'median=30KB runs=5 spread=40KB');
+  });
+
+  test('--value stdout keeps every digit of the input', () => {
+    const dir = tempDir('hillclimb-measure-');
+    const counter = join(dir, 'n.txt');
+    const prog = join(dir, 'size.mjs');
+    writeFileSync(prog, [
+      `import { readFileSync, writeFileSync, existsSync } from 'node:fs';`,
+      `const n = existsSync(${JSON.stringify(counter)}) ? Number(readFileSync(${JSON.stringify(counter)}, 'utf8')) + 1 : 0;`,
+      `writeFileSync(${JSON.stringify(counter)}, String(n));`,
+      `console.log([1234567, 1234520, 1234568][n] + 'B');`,
+    ].join('\n'));
+    const r = runNode(SCRIPT, { args: ['measure', '--runs', '3', '--warmup', '0', '--value', 'stdout', '--', process.execPath, prog] });
+    assert.equal(r.code, 0, r.stderr);
+    assert.equal(r.stdout.trim(), 'median=1234567B runs=3 spread=48B');
+  });
+
+  test('--shell takes the whole command as one argument, and refuses more than one', () => {
+    assert.throws(() => parseArgs(['measure', '--shell', '--', 'node', '-e', 'console.log(1)']), /one argument/);
+    const r = runNode(SCRIPT, { args: ['measure', '--shell', '--runs', '3', '--warmup', '0', '--value', 'stdout', '--', `"${process.execPath}" -e "console.log(7)" | cat`] });
+    assert.equal(r.code, 0, r.stderr);
+    assert.equal(r.stdout.trim(), 'median=7 runs=3 spread=0');
   });
 
   test('a run that fails, or prints no number with --value stdout, fails the measurement', () => {
@@ -360,6 +456,27 @@ describe('summary', () => {
     append(log, { decision: 'revert', tests: 'fail', id: '2', hypothesis: 'h', change: 'c', note: 'corrects: tests failed' });
     const r = run(['summary', log]);
     assert.match(r.out, /attempts 2 \(kept 1, reverted 1\)/);
+  });
+
+  test('the table has the header once and one line per row', () => {
+    const log = newLog();
+    baseline(log);
+    append(log, { decision: 'revert', tests: 'pass', hypothesis: 'h', change: 'c' });
+    const lines = run(['summary', log]).out.split('\n');
+    assert.equal(lines.filter((l) => l.startsWith('| time | attempt |')).length, 1);
+    assert.equal(lines.filter((l) => l.startsWith('| ')).length, 3);
+    assert.match(run(['summary', log]).out, /attempts 1 \(kept 0, reverted 1\)/);
+  });
+
+  test('after a re-baseline, the best is compared with the latest baseline, and the summary says so', () => {
+    const log = newLog();
+    baseline(log, { note: 'stop: half and at least 3 attempts' });
+    append(log, { decision: 'keep', tests: 'pass', measurement: 'median=1.00s runs=5 spread=0.05s', hypothesis: 'h', change: 'c' });
+    baseline(log, { measurement: 'median=4.00s runs=5 spread=0.1s', note: 'harness changed: larger case' });
+    append(log, { decision: 'keep', tests: 'pass', measurement: 'median=3.00s runs=5 spread=0.1s', hypothesis: 'h2', change: 'c2' });
+    const s = run(['summary', log]).out;
+    assert.match(s, /baseline 4s \(the latest of 2 baselines; the first was 2s\), best 3s \(-25\.0%, attempt 2\)/);
+    assert.match(s, /first baseline note: stop: half and at least 3 attempts/);
   });
 
   test('a missing log is an error', () => {
