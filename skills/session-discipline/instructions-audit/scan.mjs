@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Instruction-file scanner for the claude-md-audit skill. Node 20+ standard library only.
+ * Instruction-file scanner for the instructions-audit skill. Node 20+ standard library only.
  *
  *   node scan.mjs [root]                 text report for the project at [root] (default: the current directory)
  *   node scan.mjs [root] --json          the same data as JSON

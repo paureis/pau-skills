@@ -86,7 +86,9 @@ reads paths, table headers, the status column name, status words and the "answer
 `summarize()` function is exported for tests.
 
 
-### claude-md-audit and `scan.mjs` (Original)
+### instructions-audit and `scan.mjs` (Original)
+
+Named `claude-md-audit` until 2026-10-17; claude.ai refuses skill names that contain "claude".
 
 **Problem.** Instruction files such as CLAUDE.md and AGENTS.md grow by accretion: rules are restated in new words,
 paths and commands go stale after refactors, and different files or tools end up contradicting each other. Every

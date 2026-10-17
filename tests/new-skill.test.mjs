@@ -45,7 +45,7 @@ test('creates the skill, the ORIGINS stub in its group and the README bullet in 
 test('refuses an existing name in any plugin, an unknown plugin and a bad name, changing nothing', () => {
   const dir = fixture();
   const before = snapshot(dir);
-  for (const args of [['planning', 'handoff'], ['guards', 'tdd'], ['nope', 'x-y'], ['guards', 'Bad_Name'], ['guards', 'claude-thing'], ['guards']]) {
+  for (const args of [['planning', 'handoff'], ['guards', 'tdd'], ['nope', 'x-y'], ['guards', 'Bad_Name'], ['guards', 'claude-thing'], ['guards', 'my-claude-audit'], ['guards', 'anthropic-x'], ['guards']]) {
     const r = runNode(SCRIPT, { args: [...args, '--root', dir] });
     assert.equal(r.code, 2, `should refuse ${args.join(' ')}`);
   }

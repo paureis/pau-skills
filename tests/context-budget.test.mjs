@@ -174,6 +174,8 @@ const checks = {
     return total > MAX_AUTO_TOTAL ? [`auto-tier descriptions total ${total} characters`] : [];
   },
   any: (skills) => skills.filter((s) => s.description.length > MAX_ANY_DESCRIPTION).map((s) => `${s.id}: ${s.description.length}`),
+  // claude.ai refuses to upload a skill whose description contains anything shaped like an XML tag, such as `<app>`.
+  tags: (skills) => skills.filter((s) => /<[A-Za-z/!?]/.test(s.description)).map((s) => `${s.id}: ${s.description.match(/<[^>]*>?/)[0]}`),
 };
 
 const SKILLS = readSkills();
@@ -213,6 +215,14 @@ test('the skills were found and parsed', () => {
   assert.ok(SKILLS.length >= 20, `expected at least 20 skills, got ${SKILLS.length}`);
   assert.ok(auto(SKILLS).length >= 1, 'no auto-tier skill found');
   assert.ok(SKILLS.some((s) => s.typed), 'no typed-tier skill found');
+});
+
+test('no description contains an XML-like tag (claude.ai rejects the upload)', () => {
+  assert.deepEqual(checks.tags(SKILLS), []);
+  const fake = (description) => ({ id: 'x', typed: true, description });
+  assert.deepEqual(checks.tags([fake('a project skill, .claude/skills/verify-<app>/')]), ['x: <app>']);
+  assert.deepEqual(checks.tags([fake('closing </b> tag')]).length, 1);
+  assert.deepEqual(checks.tags([fake('use it when a < b, or for 2<3')]), []);
 });
 
 test('every skill has a non-empty description (the / menu shows it)', () => {

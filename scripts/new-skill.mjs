@@ -18,7 +18,8 @@ export const MARK = 'TODO(new-skill)';
 /** Plan the three edits without touching the disk. Returns { files: [{ path, text }] } or throws with the reason. */
 export function plan(root, pluginName, skill) {
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(skill || '')) throw new Error(`the skill name must be kebab-case (a-z, 0-9, single dashes): ${skill}`);
-  if (skill.startsWith('claude-') || skill.startsWith('anthropic-')) throw new Error(`names starting with claude- or anthropic- are reserved: ${skill}`);
+  // claude.ai refuses to upload a skill whose name contains either word anywhere.
+  if (/claude|anthropic/.test(skill)) throw new Error(`names containing "claude" or "anthropic" are reserved: ${skill}`);
   const pluginsDir = join(root, 'skills');
   const plugins = existsSync(pluginsDir) ? readdirSync(pluginsDir).filter((p) => !p.includes('.')) : [];
   if (!plugins.includes(pluginName)) throw new Error(`unknown plugin "${pluginName}"; plugins: ${plugins.join(', ') || 'none'}`);
