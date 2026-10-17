@@ -1,2 +1,4 @@
 {"type":"user","isSidechain":false,"timestamp":"2026-03-05T09:00:00.000Z","uuid":"v1","message":{"role":"user","content":"Stop.\n\nRun the tests before you say done."}}
 {"type":"assistant","isSidechain":false,"timestamp":"2026-03-05T09:00:03.000Z","uuid":"v2","message":{"role":"assistant","content":[{"type":"text","text":"Running them now."}]}}
+{"type":"user","isSidechain":false,"timestamp":"2026-03-05T09:00:09.000Z","uuid":"v3","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t2","content":"TOOL OUTPUT that must not appear"},{"type":"text","text":"HOOK FEEDBACK that must not appear"}]}}
+{"type":"user","isSidechain":false,"timestamp":"2026-03-05T09:00:12.000Z","uuid":"v4","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t3","content":"TOOL OUTPUT that must not appear","is_error":true},{"type":"text","text":"[Request interrupted by user for tool use]"}]}}

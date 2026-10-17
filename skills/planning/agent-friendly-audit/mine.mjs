@@ -141,7 +141,11 @@ export function userText(entry) {
   let text;
   if (typeof msg.content === 'string') text = msg.content;
   else if (Array.isArray(msg.content)) {
-    if (msg.content.some((b) => b && b.type === 'tool_result')) return null;
+    // Text next to a tool result is written by the harness (hook feedback, for example), except an interrupt.
+    if (msg.content.some((b) => b && b.type === 'tool_result')) {
+      const stop = msg.content.find((b) => b?.type === 'text' && /^\[Request interrupted by user/.test(b.text || ''));
+      return stop ? oneLine(stop.text) : null;
+    }
     text = msg.content.map((b) => (b?.type === 'text' ? b.text : b?.type === 'image' ? '[image] ' : '')).join('');
   } else return null;
   const name = /<command-name>([\s\S]*?)<\/command-name>/.exec(text);

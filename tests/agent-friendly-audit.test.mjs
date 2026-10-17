@@ -59,6 +59,7 @@ describe('classify', () => {
     assert.equal(classify('Add bug-fix skill', ''), null);
     assert.equal(classify('Add a prefix helper', ''), null);
     assert.equal(classify('Rename fix-ups folder', ''), null);
+    assert.equal(classify('Update the bug-fix skill wording', ''), null);
     // A subject that adds something new names "fix" as a topic, not as a correction.
     assert.equal(classify('Add flaky-test-hunt: find why a test fails, and prove the fix', ''), null);
     assert.equal(classify('Create a fix-it checklist and fix the docs', ''), null);
@@ -144,9 +145,10 @@ describe('transcripts', () => {
       '12\t2026-03-02\t! git status',
       '14\t2026-03-02\t[image] Again: the config loader. This is the third time.',
       '1\t2026-03-05\tStop. Run the tests before you say done.',
+      '4\t2026-03-05\t[Request interrupted by user for tool use]',
     ]);
     assert.match(r.stdout, /^## 0a1b2c3d-0000-4000-8000-000000000001\.jsonl$/m);
-    assert.match(r.stdout, /# 7 user messages in 2 sessions; skipped 1 subagent transcript and 1 unreadable line/);
+    assert.match(r.stdout, /# 8 user messages in 2 sessions; skipped 1 subagent transcript and 1 unreadable line/);
   });
 
   test('refuses the folder that holds every project, so other projects are never read', () => {
