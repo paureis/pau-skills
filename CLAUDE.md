@@ -31,8 +31,9 @@ This is a Claude Code plugin marketplace. Read this before changing anything.
 - Bump the version of every plugin whose files changed, and the `pau-skills` bundle, in `marketplace.json`, and add a
   line to `CHANGELOG.md`. When a hook changes, bump `pau-skills-hooks` as well.
 - The owner installs skills by uploading them to claude.ai (zips, one per skill, folder at the root) and hooks through
-  `pau-skills-hooks`. After a merge that adds or changes a skill, hand over the zips for those skills; see step 10 of
-  "How to run a batch" in docs/BACKLOG.md.
+  `pau-skills-hooks`. After a merge that adds or changes a skill, hand over the zips for those skills, built on main
+  with `node scripts/pack-skills.mjs --since <main before the change>`; see step 10 of "How to run a batch" in
+  docs/BACKLOG.md. A new batch starts from the kickoff message in that file.
 
 ## Checks before every commit
 
