@@ -13,7 +13,7 @@
  *       earlier plan. A root with CLAUDE.md, CLAUDE.local.md, AGENTS.md or .claude in it or above it is refused: every
  *       run would load them.
  *
- *   node skill-eval.mjs run <lab-dir> --model <model> [--effort <level>] [--allow-tool <rule>]... [--parallel <k>]
+ *   node skill-eval.mjs run <lab-dir> --model <model> [--effort <level>] [--allow-tool <rule>...]... [--parallel <k>]
  *                       [--timeout-min 30] [--max-budget-usd <x>] [--force]
  *       Runs every folder as `claude -p <prompt> --output-format stream-json --verbose`, with the empty HOME, only the
  *       project's settings, no MCP server and none of this session's identity variables, and saves each transcript as
@@ -251,7 +251,7 @@ function outsideFences(text) {
 /** Problems with a rubric, as sentences; empty when it is usable. */
 export function validateRubric(text) {
   const errors = [];
-  const lines = outsideFences(text);
+  const lines = outsideFences(withoutComments(text));
   const n = lines.filter((l) => /^\s*\d+[.)]\s+\S/.test(l)).length;
   if (n < MIN_CRITERIA || n > MAX_CRITERIA) errors.push(`the rubric has ${n} numbered criteria; it needs ${MIN_CRITERIA} to ${MAX_CRITERIA}`);
   const left = lines.join('\n').match(/<(criterion|one line)\b[^>]*>/i);
@@ -259,14 +259,18 @@ export function validateRubric(text) {
   return errors;
 }
 
+/** A Markdown text without its HTML comments, which are notes for you and never reach the reviewer. */
+export const withoutComments = (text) => String(text).replace(/<!--[\s\S]*?-->\s*/g, '');
+
 export function rubricTemplate() {
   return `# Rubric
 
-Task: <one line: what every run was asked to do, in words that fit every variant>
+<!-- Only you read this comment: blind leaves comments out of the reviewer's copy. The rest of the file goes to the
+reviewer, never to a run. It must not say which variant is which or what changed between them. Write 3 to 6
+criteria that can be checked from what a run did (files opened, commands run, edits made) and what it changed,
+specific to this task. Replace every placeholder line. -->
 
-Only the reviewer and you read this file; no run sees it. It must not say which variant is which, or what changed
-between them. Write 3 to 6 criteria that can be checked from what a run did (files opened, commands run, edits
-made) and what it changed, specific to this task. Replace every placeholder line.
+Task: <one line: what every run was asked to do, in words that fit every variant>
 
 1. <criterion: a behaviour the change should cause, checkable in the actions or the diff>
 2. <criterion>
@@ -327,7 +331,7 @@ export function variantMeans(scores, labelToVariant) {
 
 const USAGE = `usage:
   skill-eval.mjs setup <lab-dir> --root <dir> --task <dir> --variant <name>=<skill-dir|none> --variant ... --prompt [<name>=]<file> [--n 3] [--slug <name>] [--allow-word <word>]...
-  skill-eval.mjs run <lab-dir> --model <model> [--effort <level>] [--allow-tool <rule>]... [--parallel <k>] [--timeout-min 30] [--max-budget-usd <x>] [--force]
+  skill-eval.mjs run <lab-dir> --model <model> [--effort <level>] [--allow-tool <rule>...]... [--parallel <k>] [--timeout-min 30] [--max-budget-usd <x>] [--force]
   skill-eval.mjs actions <transcript.jsonl>
   skill-eval.mjs blind <lab-dir> [--out <dir>] [--seed <integer>] [--force]
   skill-eval.mjs judge <lab-dir> --model <model> [--effort <level>] [--force]
@@ -336,7 +340,7 @@ const USAGE = `usage:
 const NAME = /^[a-z][a-z0-9-]*$/;
 const FLAGS = {
   setup: { '--root': 'one', '--task': 'one', '--variant': 'many', '--prompt': 'many', '--n': 'one', '--slug': 'one', '--allow-word': 'many' },
-  run: { '--model': 'one', '--effort': 'one', '--allow-tool': 'many', '--parallel': 'one', '--timeout-min': 'one', '--max-budget-usd': 'one', '--force': 'bool' },
+  run: { '--model': 'one', '--effort': 'one', '--allow-tool': 'list', '--parallel': 'one', '--timeout-min': 'one', '--max-budget-usd': 'one', '--force': 'bool' },
   actions: {},
   blind: { '--out': 'one', '--seed': 'one', '--force': 'bool' },
   judge: { '--model': 'one', '--effort': 'one', '--force': 'bool' },
@@ -355,6 +359,14 @@ export function parseArgs(argv) {
     const kind = FLAGS[cmd][flag];
     if (!kind) fail(`unknown option ${flag}`);
     if (kind === 'bool') { raw[flag] = true; continue; }
+    if (kind === 'list') {
+      // Like claude's own --allowedTools: every value up to the next option.
+      const start = i + 1;
+      while (rest[i + 1] !== undefined && !rest[i + 1].startsWith('--')) i++;
+      if (i < start) fail(`${flag} needs a value`);
+      (raw[flag] ||= []).push(...rest.slice(start, i + 1));
+      continue;
+    }
     const val = rest[++i];
     if (val === undefined) fail(`${flag} needs a value`);
     if (kind === 'many') (raw[flag] ||= []).push(val);
@@ -534,6 +546,13 @@ function setup(o, out, err) {
   const pathHits = findMetaWords(`${rootReal}${sep}${slug}`);
   if (pathHits.length) return refuse(`the working directory path ${join(rootReal, slug)} contains ${pathHits.map((h) => `"${h}"`).join(', ')}; every run sees it. Pick a root and a folder name a user might pick`);
 
+  // A long path, or a part that starts with -, gets mistyped: a dry run read `-home-x/` as `-home-x-` and was refused.
+  const pathWarnings = [];
+  const sample = join(rootReal, 'tmp.XXXXXX', slug);
+  if (sample.length > 100 || rootReal.split(sep).some((part) => part.startsWith('-'))) {
+    pathWarnings.push(`the working folder path (${sample}) is long or has a part that starts with -; a run may mistype it and be refused. A short root such as one from mktemp -d is safer`);
+  }
+
   // Names inside the task and the variants: refused. Contents: a warning.
   const nameHits = [];
   const warnings = [];
@@ -593,6 +612,7 @@ function setup(o, out, err) {
   writeFileSync(join(lab, 'plan.json'), JSON.stringify(plan, null, 2) + '\n');
   writeFileSync(join(lab, 'rubric.md'), rubricTemplate());
 
+  for (const w of pathWarnings) err(`warning: ${w}`);
   for (const w of warnings.slice(0, 20)) err(`warning: ${w}`);
   if (warnings.length > 20) err(`warning: and ${warnings.length - 20} more lines with such words`);
   if (warnings.length) err('warning: a run reads these files; keep such words only where the task or the skill needs them');
@@ -677,7 +697,7 @@ async function run(o, out, err) {
     if (plan.skill && x.skills.length && x.skills.includes(plan.skill) !== hasSkill) {
       notes.push(hasSkill ? `the skill ${plan.skill} was not offered to this run` : `a copy of ${plan.skill} reached a run that should have none`);
     }
-    if (x.denials.length) notes.push(`${x.denials.length} tool calls refused by permissions`);
+    if (x.denials.length) notes.push(`refused by permissions: ${x.denials.join('; ')}`);
     if (res.exit !== 0 || !x.finished) bad++;
     out(`${r.id}: exit ${res.exit ?? res.signal ?? 'none'}, ${money(x.costUsd)}${notes.length ? `; ${notes.join('; ')}` : ''}`);
   }
@@ -731,6 +751,13 @@ function changesOf(run, skill) {
   }
 }
 
+/** A fenced code block whose fence is longer than any run of backticks inside the text. */
+function fenced(text, info = '') {
+  const longest = Math.max(0, ...[...text.matchAll(/`+/g)].map((m) => m[0].length));
+  const fence = '`'.repeat(Math.max(3, longest + 1));
+  return [`${fence}${info}`, text, fence].join('\n');
+}
+
 function judgeBrief() {
   const text = readFileSync(join(HERE, 'JUDGE-BRIEF.md'), 'utf8');
   const at = text.search(/^---\s*$/m);
@@ -782,7 +809,7 @@ function blind(o, out, err) {
       `# Output ${label}`, '',
       renderActions(x, { final: false }),
       '## What it changed', '',
-      diff.trim() ? ['```diff', diff.trimEnd(), '```'].join('\n') : 'No file changed.', '',
+      diff.trim() ? fenced(diff.trimEnd(), 'diff') : 'No file changed.', '',
       ...(commits ? ['## Commits it made', '', commits, ''] : []),
       finalSection(x),
     ].join('\n');
@@ -791,9 +818,10 @@ function blind(o, out, err) {
 
   if (o.out) mkdirSync(blindDir, { recursive: true });
   else blindDir = mkdtempSync(join(tmpdir(), 'blind-'));
-  const rubricBody = rubric.replace(/^\s*#\s*Rubric\s*\r?\n/, '').trim();
+  const shown = withoutComments(rubric);
+  const rubricBody = shown.replace(/^\s*#\s*Rubric\s*\r?\n/, '').trim();
   for (const [label, text] of Object.entries(files)) writeFileSync(join(blindDir, `${label}.md`), text);
-  writeFileSync(join(blindDir, 'rubric.md'), rubric);
+  writeFileSync(join(blindDir, 'rubric.md'), shown);
   const bundle = [judgeBrief(), '', '# Rubric', '', rubricBody, '', ...Object.values(files)].join('\n');
   writeFileSync(join(blindDir, 'bundle.md'), bundle);
   const key = { labels: Object.fromEntries(labelled.map((l) => [l.label, l.run.id])), dropouts, blindDir };

@@ -41,8 +41,9 @@ review, so about R + 1 times the cost of doing the task once, plus my reading of
 `tight`, suggest N = 2. Never go below 2: with one run per variant, a difference can be the change or plain run to run
 variation, and nothing tells them apart. Wait for the answer.
 
-For scale: a dry run of a two line skill on an eight line text file cost about 0.05 to 0.10 US dollars per run and
-0.03 for the review on a mid-size model (October 2026). A real task costs what doing it once costs, per run.
+For scale: a dry run of a five step skill on an eight line text file, with `claude-sonnet-5-5`, cost 0.04 to 0.06
+US dollars per run and 0.04 for the review, and the four runs took 17 seconds in parallel (October 2026). A real
+task costs what doing it once costs, per run.
 
 ## What a run sees, and how it is kept clean
 
@@ -59,7 +60,8 @@ of every transcript lists the skills, plugins and MCP servers the run got, and `
   `CLAUDE_ADDITIONAL_DIRECTORIES`, `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD`; without them a nested run reuses
   this session's id and extra folders). The login still works. The run then sees the one variant in its project's
   `.claude/skills/` plus Claude Code's built-in skills and plugins. `--setting-sources project` alone, with the real
-  HOME, also hid the user and synced skills, but it leaves the home folder's files in reach; keep both.
+  HOME, also hid the user and synced skills; the empty HOME also keeps out your `~/.claude/CLAUDE.md`, memory and
+  settings, which were not checked with the flag alone. Keep both.
 - Built-in skills always remain: `verify`, `debug`, `code-review`, `simplify`, `run`, `deep-research`, `design`,
   `loop`, `batch` and a few more (the full list is in each transcript). When the skill under test does the same job
   as one of them, a run may pick the built-in one: name that confound in the report.
@@ -68,9 +70,13 @@ of every transcript lists the skills, plugins and MCP servers the run got, and `
 - Claude Code reads `CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md` and `.claude/` from the working folder and every
   folder above it, so `setup` refuses a root that has any of them in it or above it. A folder under your home folder
   has `~/.claude` above it; use `mktemp -d`.
+- Keep the root path short and plain. In a dry run under a long path with a part starting with `-`
+  (`/tmp/x/-home-user-project/...`), a run mistyped its own working folder, its read was refused as outside the
+  project, and it gave up: the run measured the path, not the skill. `setup` warns about such a path.
 - A run sees its working folder's path in its system prompt, which is why `setup` refuses a meta word in any part
-  of it. Run folders sit side by side under the root as `tmp.XXXXXX/<project>`; a run that lists two levels up could
-  see that other folders exist. That is rare; note it if a transcript shows it.
+  of it. A read outside its folder is refused in `-p` mode, so a run cannot open the lab folder. Run folders sit
+  side by side under the root as `tmp.XXXXXX/<project>`; a run that lists two levels up could see that other folders
+  exist. That is rare; note it if a transcript shows it.
 - A subagent started with the Agent tool is not used for the runs: it inherits this session's skills (including any
   installed copy of the skill under test), CLAUDE.md files and MCP servers, and returns only its last message, not a
   transcript. A prompt only change runs headless too, with `--variant <name>=none`.
@@ -127,22 +133,27 @@ Then write the rubric into `$LAB/rubric.md` (the template is there), with a `Tas
 ## Phase 3: Run
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" run "$LAB" --model <model> --allow-tool '<rule>' ...
+node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" run "$LAB" --model <model> --allow-tool 'Bash(cp *)' 'Bash(ls *)'
 ```
 
 - `--model` is required. Headless runs default to a different model than this session; pass the one the skill is
   meant for (usually the model you run on) and record it.
-- Every run uses `--permission-mode acceptEdits`, so it can edit files in its folder. A command needs an
-  `--allow-tool` rule (`'Bash(npm test)'`, `'Bash(pytest *)'`, `'Bash(go test ./...)'`, `'Bash(cargo test *)'`, `'Bash(git *)'`):
-  a refused command shows up as a failed step, and a run blocked by permissions measures the permissions, not the
-  skill. `Skill(<name>)` is added for you, since a skill with `allowed-tools` asks permission when it loads and `-p`
-  cannot answer.
+- Every run uses `--permission-mode acceptEdits`, so it can edit files in its folder, and Claude Code lets read
+  only commands such as `ls`, `cat` and `wc` through. Any other command needs an `--allow-tool` rule, one or several
+  after the flag, as in `claude --allowedTools`: `'Bash(npm test)'`, `'Bash(pytest *)'`, `'Bash(go test ./...)'`,
+  `'Bash(cargo test *)'`, `'Bash(git *)'`. A rule covers one command: `cp a b && sort a` is refused unless every
+  part is allowed. A refused command shows up as a failed step, and a run blocked by permissions measures the
+  permissions, not the skill. `Skill(<name>)` is added for you, since a skill with `allowed-tools` asks permission
+  when it loads and `-p` cannot answer.
 - The runs go in parallel (`--parallel <k>` to limit), each up to 30 minutes (`--timeout-min`). Transcripts are saved
   in `$LAB/runs/`, never in a run folder.
 
-Read every line it prints: a run that did not finish, a warning that the skill was not offered to a run (or reached
-a run that should have none), and refused tool calls. A run that failed outright is a dropout; with fewer than two
-runs left per variant, fix the cause and run again with `--force`.
+Read every line it prints, one per run by id: a run that did not finish, a warning that the skill was not offered
+to a run (or reached a run that should have none), and every refused tool call. A refusal that the run worked around
+is noise to note; a refusal that stopped the work (a mistyped path, a command the task needs) means the setup is
+wrong: fix it and run again with `--force`. To see a run's steps before that, use
+`node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" actions "$LAB/runs/<id>.jsonl"`. A run that failed outright is a dropout;
+with fewer than two runs left per variant, fix the cause and run again.
 
 ## Phase 4: Read blind
 
@@ -156,8 +167,8 @@ failed, the diff of everything the run changed since its first commit (the insta
 made, and last its own final message, marked as not evidence. Paths are replaced with `<project>`, `<home>` and
 `<tmp>`. It also writes `bundle.md`, the reviewer's whole input, and the key in `$LAB/key.json`.
 
-Read every letter file in full. Do not open `plan.json`, `key.json` or `runs/` before your scores are written: they
-name the variants. Look for anything other than behaviour that would tell a reader which setup a run had (a path or
+Read every letter file in full. Do not open `plan.json` or `key.json` before your scores are written: they name the
+variants. Look for anything other than behaviour that would tell a reader which setup a run had (a path or
 a name the run printed); replace it with `[removed]` in `bundle.md`. Then write `$LAB/my-read.md` in the reviewer's
 format, one block per criterion:
 
@@ -203,7 +214,8 @@ each run and the review).
    adds the behaviour and makes the work worse is a trade, not a win.
 5. **Decide.** The change works when the behaviour separates the variants in your read and in the reviewer's, for
    most runs, with no criterion worse. The result is unclear when the counts overlap or you and the reviewer
-   disagree on the behaviour: run more (N of 5) or sharpen the task so the behaviour has a clear chance to show.
+   disagree on the behaviour: run more (N of 5, in a new lab folder) or sharpen the task so the behaviour has a
+   clear chance to show.
 
 Clean up: delete the root and the blind folder (`rm -rf "$ROOT" <blind folder>`). Keep `$LAB` while the user may
 want the transcripts, and say where it is.

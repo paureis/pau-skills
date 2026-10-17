@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
   META_WORDS, findMetaWords, extractActions, renderActions, childEnv, candidateArgv, judgeArgv, validateRubric,
-  parseScores, disagreements, variantMeans, skillNameOf, parseArgs,
+  parseScores, disagreements, variantMeans, skillNameOf, parseArgs, rubricTemplate,
 } from '../skills/verification/skill-eval/skill-eval.mjs';
 
 const SCRIPT = repo('skills', 'verification', 'skill-eval', 'skill-eval.mjs');
@@ -212,6 +212,13 @@ describe('parseArgs', () => {
     assert.deepEqual(o.prompts, [{ variant: null, file: 'p' }]);
   });
 
+  test('--allow-tool takes one rule or several, and can repeat', () => {
+    const o = parseArgs(['run', 'lab', '--allow-tool', 'Bash(cp *)', 'Bash(ls *)', '--model', 'm', '--allow-tool', 'Edit']);
+    assert.deepEqual(o.allowTools, ['Bash(cp *)', 'Bash(ls *)', 'Edit']);
+    assert.equal(o.model, 'm');
+    assert.throws(() => parseArgs(['run', 'lab', '--model', 'm', '--allow-tool']));
+  });
+
   test('bad input throws', () => {
     for (const bad of [[], ['nope'], ['setup'], ['setup', 'lab', '--n', '0'], ['setup', 'lab', '--variant', 'noequals'],
       ['setup', 'lab', '--variant', 'Bad Name=x'], ['run', 'lab', '--parallel', 'x'], ['blind', 'lab', '--seed', 'x'], ['run', 'lab', '--wat', '1']]) {
@@ -304,6 +311,16 @@ describe('setup', () => {
     assert.equal(allowed.code, 0, allowed.stderr);
   });
 
+  test('a working folder path that a run could mistype only warns', () => {
+    const base = scratch();
+    const p = writePrompt(base, '/tidy-notes clean notes.txt');
+    const r = runNode(SCRIPT, { args: ['setup', join(base, 'lab'), '--root', join(base, '-home-sam-shop', 'work'), '--task', join(FIX, 'task'), '--variant', `a=${join(FIX, 'variant-a')}`, '--variant', `b=${join(FIX, 'variant-b')}`, '--prompt', p] });
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stderr, /warning:.*mistype/);
+    const plain = runNode(SCRIPT, { args: ['setup', join(base, 'lab2'), '--root', join(base, 'work'), '--task', join(FIX, 'task'), '--variant', `a=${join(FIX, 'variant-a')}`, '--variant', `b=${join(FIX, 'variant-b')}`, '--prompt', p] });
+    assert.doesNotMatch(plain.stderr, /mistype/);
+  });
+
   test('a meta word inside a file only warns', () => {
     const task = join(scratch(), 'shop');
     mkdirSync(task, { recursive: true });
@@ -358,6 +375,12 @@ describe('run', () => {
     const r = runNode(SCRIPT, { args: ['run', lab], env: { SKILL_EVAL_CLAUDE: FAKE } });
     assert.equal(r.code, 2);
     assert.match(r.stderr, /--model/);
+  });
+
+  test('prints the calls a run had refused, so a blocked run is seen before blinding', () => {
+    const { lab } = setup();
+    const r = runFake(lab, { env: { FAKE_CLAUDE_DENY: '1' } });
+    assert.match(r.stdout, /refused by permissions: Bash: rm -rf build/);
   });
 
   test('runs every folder with its own HOME, no identity of this session, and saves each transcript in the lab', () => {
@@ -426,6 +449,7 @@ describe('blind, judge and unblind', () => {
       const md = readFileSync(join(out, `${l}.md`), 'utf8');
       assert.match(md, new RegExp(`^# Output ${l}`, 'm'));
       assert.match(md, /done\.txt/, 'the new file is in the diff');
+      assert.match(md, /^````+diff$/m, 'the diff fence is longer than any fence inside the diff');
       assert.match(md, /\+tidied/, 'the change to notes.txt is in the diff');
       assert.ok(md.indexOf('## What it changed') < md.indexOf('## What it said at the end'), 'the run\'s own words come last');
       assert.ok(!md.includes('INSTALLED VARIANT TEXT'), 'the installed skill never reaches the blind copy');
@@ -441,6 +465,16 @@ describe('blind, judge and unblind', () => {
     for (const l of ['A', 'B', 'C', 'D']) assert.match(bundle, new RegExp(`^# Output ${l}$`, 'm'));
     assert.ok(!bundle.includes('key.json') && !bundle.includes(s.lab), 'the bundle does not point at the key');
     assert.doesNotMatch(r.stdout, /alpha|bravo|\br\d+\b/);
+  });
+
+  test('the rubric guidance in an HTML comment never reaches the reviewer, and the template keeps it there', () => {
+    const s = ready();
+    assert.match(rubricTemplate(), /<!--[\s\S]*variant[\s\S]*-->/);
+    writeFileSync(join(s.lab, 'rubric.md'), `${GOOD_RUBRIC}\n<!-- note to self: variant two adds the copy -->\n`);
+    const out = join(scratch(), 'b');
+    assert.equal(runNode(SCRIPT, { args: ['blind', s.lab, '--out', out] }).code, 0);
+    assert.doesNotMatch(readFileSync(join(out, 'bundle.md'), 'utf8'), /note to self|variant two/);
+    assert.doesNotMatch(readFileSync(join(out, 'rubric.md'), 'utf8'), /note to self/);
   });
 
   test('blind refuses a second time while a key exists, and refuses an --out inside the lab or the root', () => {

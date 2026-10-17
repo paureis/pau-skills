@@ -6,7 +6,8 @@
 // variables reached it. A call with `--tools ""` acts as the reviewer: it prints one JSON result whose text gives every
 // "# Output <letter>" heading it read on standard input a 3 on every rubric criterion. Any other call acts as a worker: it
 // changes notes.txt, adds done.txt, touches the installed skill (which must never reach the blind copy) and prints
-// stream-json lines. FAKE_CLAUDE_FAIL=1 makes it exit 1 with nothing on standard output.
+// stream-json lines. FAKE_CLAUDE_FAIL=1 makes it exit 1 with nothing on standard output; FAKE_CLAUDE_DENY=1 reports one
+// refused tool call.
 import { writeFileSync, readFileSync, appendFileSync, existsSync, readdirSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -41,7 +42,7 @@ if (toolsAt >= 0 && argv[toolsAt + 1] === '') {
 }
 
 if (existsSync(join(cwd, 'notes.txt'))) appendFileSync(join(cwd, 'notes.txt'), 'tidied\n');
-writeFileSync(join(cwd, 'done.txt'), 'finished\n');
+writeFileSync(join(cwd, 'done.txt'), 'finished\n```\ninside a fence\n```\n');
 const skillsDir = join(cwd, '.claude', 'skills');
 const skills = existsSync(skillsDir) ? readdirSync(skillsDir) : [];
 for (const s of skills) appendFileSync(join(skillsDir, s, 'SKILL.md'), '\nINSTALLED VARIANT TEXT\n');
@@ -51,6 +52,7 @@ const out = [
   { type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'x1', content: 'milk', is_error: false }] }, parent_tool_use_id: null },
   { type: 'assistant', message: { role: 'assistant', content: [{ type: 'tool_use', id: 'x2', name: 'Bash', input: { command: `ls ${process.env.HOME}` } }] }, parent_tool_use_id: null },
   { type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'x2', content: '', is_error: false }] }, parent_tool_use_id: null },
-  { type: 'result', subtype: 'success', is_error: false, num_turns: 3, total_cost_usd: 0.05, result: `Tidied ${join(cwd, 'notes.txt')}.`, permission_denials: [] },
+  { type: 'result', subtype: 'success', is_error: false, num_turns: 3, total_cost_usd: 0.05, result: `Tidied ${join(cwd, 'notes.txt')}.`,
+    permission_denials: process.env.FAKE_CLAUDE_DENY === '1' ? [{ tool_name: 'Bash', tool_input: { command: 'rm -rf build' } }] : [] },
 ];
 process.stdout.write(out.map((o) => JSON.stringify(o)).join('\n') + '\n');
