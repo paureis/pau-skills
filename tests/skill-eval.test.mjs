@@ -406,10 +406,12 @@ describe('setup', () => {
     const lab = join(base, 'lab');
     mkdirSync(lab);
     const p = writePrompt(lab, '/tidy-notes clean notes.txt');
+    // An existing empty root is kept, so only the removal of each run folder can leave it empty.
     const root = join(base, 'work');
+    mkdirSync(root);
     const r = runNode(SCRIPT, { args: ['setup', lab, '--root', root, '--task', join(FIX, 'task'), '--variant', `a=${join(FIX, 'variant-a')}`, '--variant', `b=${join(FIX, 'variant-b')}`, '--prompt', p], env: { PATH: `${bin}:${process.env.PATH}` } });
     assert.equal(r.code, 1, r.stdout);
-    assert.ok(!existsSync(root) || readdirSync(root).length === 0, 'no run folder left');
+    assert.deepEqual(readdirSync(root), [], 'no run folder left');
     assert.deepEqual(readdirSync(lab), ['prompt.txt']);
   });
 
