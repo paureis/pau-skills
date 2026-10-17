@@ -64,7 +64,7 @@ less and spends less on review, and a generous budget delegates more and buys mo
 | | Tight | Normal | Generous |
 |---|---|---|---|
 | Delegate | Changes of 5 or more files; make smaller changes yourself | Any change in behaviour or tests, and any change of 3 or more files | Any change in behaviour or tests, and any change of 2 or more files |
-| Subagent model | The session's model; for mechanical work (renames, version bumps, docs, boilerplate), offer the user a smaller model once and use it only on a yes | The session's model | The session's model |
+| Subagent model | The session's model; for mechanical work (renames, version bumps, docs, boilerplate), offer the user a smaller model that is confirmed available, once, and use it only on a yes | The session's model | The session's model |
 | Subagent effort | Builder `medium` | Builder and plan checker `high` | Builder `high`; plan checker and reviewer `xhigh` |
 | Plan check before building | You, against the code, in a few minutes | A read-only subagent, for new behaviour | A read-only subagent, always |
 | Review round | Your verification is the review | Your verification, plus your own read of every risky file | Plus a separate reviewer subagent on risky files |
@@ -72,8 +72,9 @@ less and spends less on review, and a generous budget delegates more and buys mo
 
 **Model.** Leave the Agent tool's `model` field out, so the subagent runs on the session's model. Set it only when
 the user said yes to a model, and never name a model that has not been confirmed available in this session: the names
-the field accepts change between Claude Code versions. Never use a smaller model for work in a risky path, whatever
-the budget.
+the field accepts change between Claude Code versions. A model counts as confirmed only when the Agent tool's own
+`model` field lists it in this session, or the user named it. Only such a model may be offered. Never use a smaller
+model for work in a risky path, whatever the budget.
 
 **Effort.** Set it from the table with the Agent tool's `effort` field: `low`, `medium`, `high`, `xhigh` or `max` (the
 `claude` command line takes the same values as `--effort`). Left out, the subagent runs at its usual effort. Not every
@@ -108,19 +109,22 @@ send the next brief.
 
 **Do not launch a subagent while a field of its brief is empty.** Before launching, read the brief once more: no
 bracket placeholder and no guidance line in parentheses may be left outside the report-format block (that block keeps
-its brackets on purpose: they show the subagent the shape to fill). An optional field you do not need is deleted or
-filled with "none", never left in brackets. A field you cannot fill means the task is not scoped yet: plan it, or ask
-the owner. A task of one command (a version bump, a rename) may get the brief as one paragraph instead, as long as it
-still names the goal, the files, the command that must pass and the report format, and carries the standing orders.
+its brackets on purpose: they show the subagent the shape to fill). A field marked "optional:" that you do not need is
+deleted or filled with "none", never left in brackets. A required field (the goal, the files, the test command under
+"Done when", the stop conditions) is never "none". A required field you cannot fill means the task is not scoped yet:
+plan it, or ask the owner. A task of one command (a version bump, a rename) may get the brief as one paragraph
+instead, as long as it still names the goal, the files, the command that must pass and the report format, and
+carries the standing orders.
 
 Write down the commit the subagent starts from.
 
 **While it runs, judge it by its side effects.** A background subagent tells you when it finishes. Until then, look
 at what it leaves behind: commits in its worktree or branch (`git log <start commit>..`), the files it changed, the
-test output it wrote. Where your Claude Code version has `ListAgents`, it shows whether a subagent is busy or idle
-without waking it. Never send a running or finished subagent a message only to ask how it is going: a message resumes
-it from its transcript and spends usage on a status report. A message is for a fix round or a real question. The one fix
-round may go by message (step 6); a new task gets a fresh subagent with its own brief, never a resumed one.
+test output it wrote. `ListAgents` shows whether a subagent is busy or idle without waking it. Never send a subagent
+a message only to ask how it is going: a message to a running one lands in its current turn and pulls it off its
+work, and a message to a finished one resumes it from its transcript; either way it spends usage on a status report.
+A message is for a fix round or a real question. The one fix round may go by message (step 6); a new task gets a
+fresh subagent with its own brief, never a resumed one.
 
 ## 5. Check the work yourself
 
