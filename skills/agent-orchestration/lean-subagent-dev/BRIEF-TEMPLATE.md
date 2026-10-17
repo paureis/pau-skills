@@ -4,6 +4,16 @@ Copy this for each task, fill every bracket, and delete the guidance lines in pa
 this conversation, so anything it needs must be written here. Keep it to one screen; a longer brief usually means the
 task should be split.
 
+Before launching, check the filled brief: no bracket placeholder and no guidance line in parentheses is left anywhere
+above the report-format block. The report block keeps its brackets on purpose; they show the subagent the shape to
+fill. A field marked "optional:" inside its brackets that you do not need is deleted or says "none", never left in
+brackets. Every other field is required: the task name, the goal, the files you may change, the test command under
+"Done when" and the stop conditions are never "none". If you cannot fill a required field, the task is not scoped yet:
+do not launch it.
+
+A task of one command may get a single paragraph instead of this template, as long as the paragraph names the goal,
+the files, the command that must pass and the report format, and the standing orders follow it unchanged.
+
 ---
 
 ## Task: [name]
@@ -12,7 +22,7 @@ task should be split.
 
 [One to three sentences: what is different when this is done, from a user's or caller's point of view.]
 
-[Link or paste the issue, plan section or acceptance criteria.]
+[optional: link or paste the issue, plan section or acceptance criteria]
 
 ### Files
 
@@ -22,8 +32,8 @@ You may create, edit and delete these:
 
 Do not touch:
 
-- [paths that are out of scope, shared generated files such as lockfiles and snapshots, the changelog if the
-  orchestrator owns it]
+- [optional: paths that are out of scope, shared generated files such as lockfiles and snapshots, the changelog if
+  the orchestrator owns it]
 
 If you need a change outside the files above, stop and say so in your report instead of making it.
 
@@ -32,7 +42,7 @@ If you need a change outside the files above, stop and say so in your report ins
 (Quote the project rules that matter for this task, word for word, with where they come from. The subagent may see
 the project's instruction files, but it will not know which rules matter here.)
 
-- [rule] ([file, section])
+- [optional: rule] ([file, section])
 
 ### Done when
 
@@ -40,24 +50,28 @@ All of these pass, and you ran them yourself after your last change:
 
 ```
 [the exact test command for the affected area]
-[the lint or typecheck command, if the project has one]
+[optional: the lint or typecheck command]
 ```
 
-[Any extra observable check: this command prints X, this input is rejected with Y.]
+[optional: any extra observable check: this command prints X, this input is rejected with Y]
 
 ### Stop and report, instead of carrying on, if
 
 - the plan assumes something about the code or the environment that turns out to be false
 - the change needs files outside the list above
 - a check fails for a reason outside this task
-- [anything specific to this task]
+- [optional: anything specific to this task]
 
-### Rules for this task
+### Standing orders
+
+(The same block, word for word, in every brief and every fix-round message of the session. When you catch yourself
+repeating an instruction to a subagent, add it here.)
 
 - Commit your work in small, described commits. Leave nothing uncommitted.
 - **Commit, never push.** Do not push, open or merge a pull request, tag, or release.
 - Write the test before the code for any new behaviour, and watch it fail first.
 - Do not skip, disable or weaken a test or a check to make it pass.
+- [optional: the project's rules for every task, such as its style rules, quoted]
 
 ### Report back in exactly this format
 
