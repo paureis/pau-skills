@@ -26,9 +26,8 @@ test('creates the skill, the ORIGINS stub in its group and the README bullet in 
 
   const skill = readFileSync(join(dir, 'skills', 'guards', 'port-lock', 'SKILL.md'), 'utf8');
   assert.match(skill, /^---\nname: port-lock\ndescription: TODO\(new-skill\)/);
-  // New skills start in the typed tier (docs/ADDING-A-SKILL.md, step 2): only a deliberate edit adds one to the
-  // descriptions loaded into every session.
-  assert.match(skill, /^disable-model-invocation: true$/m);
+  // Every skill loads on its own (docs/ADDING-A-SKILL.md, step 2), so the scaffold never hides one from the model.
+  assert.doesNotMatch(skill, /disable-model-invocation/);
 
   const origins = readFileSync(join(dir, 'docs', 'ORIGINS.md'), 'utf8');
   const stub = origins.indexOf('### port-lock (');

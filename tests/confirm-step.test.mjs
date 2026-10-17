@@ -16,14 +16,14 @@ const CONFIRM_PARAGRAPH = 'If you started this skill on your own, without the us
 const CONFIRM_LIST = [
   // launches subagents or headless runs
   'agent-orchestration/arena', 'agent-orchestration/codebase-oracle', 'agent-orchestration/parallel-worktrees',
-  'planning/agent-friendly-audit', 'planning/brainstorm', 'verification/hillclimb', 'verification/skill-eval',
-  'verification/verify-app',
+  'planning/agent-friendly-audit', 'verification/hillclimb', 'verification/skill-eval', 'verification/verify-app',
   // takes over the session or sets a way of working
-  'agent-orchestration/lean-subagent-dev', 'agent-orchestration/methodology', 'planning/grill-me',
+  'agent-orchestration/lean-subagent-dev', 'agent-orchestration/methodology', 'planning/brainstorm', 'planning/grill-me',
   // writes, commits or files outside the conversation
-  'guards/dependency-upgrade', 'guards/rule-to-hook', 'planning/improve-codebase-architecture', 'planning/to-issues',
-  'session-discipline/handoff', 'session-discipline/instructions-audit', 'session-discipline/project-setup',
-  'session-discipline/retrospective', 'session-discipline/session-close', 'verification/ci-cost-and-cadence',
+  'guards/dependency-upgrade', 'guards/rule-to-hook', 'planning/architect', 'planning/improve-codebase-architecture',
+  'planning/to-issues', 'planning/to-prd', 'session-discipline/handoff', 'session-discipline/instructions-audit',
+  'session-discipline/project-setup', 'session-discipline/retrospective', 'session-discipline/session-close',
+  'verification/ci-cost-and-cadence',
 ];
 
 // The words every copy starts with: a paragraph that starts this way but differs is a copy that drifted.
