@@ -3,6 +3,13 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-17: tests clean up their temp folders
+
+- `tempDir()` in `tests/helpers.mjs` now deletes every folder it made when the test process exits, and
+  `removeAtExit()` does the same for a folder a script under test makes on its own (the arena `blind` test without
+  `--out`). A full `npm test` used to leave about 150 folders in the system temp folder per run, which filled the disk
+  of long cloud sessions; it now leaves none. Test-only change, no version bump.
+
 ## 2026-10-17: five more skills, and one command to zip skills for claude.ai
 
 - New typed skills. All five start only when you type them, so they add nothing to every session's context.
