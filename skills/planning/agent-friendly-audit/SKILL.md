@@ -70,9 +70,10 @@ Check what this session can reach, and write one line per source: where it is, h
 because ..." when it cannot be read.
 
 - **Review comments.** Use the GitHub MCP tools if the session has them, otherwise `gh api` REST routes:
-  `gh api --paginate repos/<owner>/<repo>/pulls/comments` (inline review comments),
-  `gh api --paginate repos/<owner>/<repo>/issues/comments` (conversation comments on pull requests), and
-  `gh api repos/<owner>/<repo>/pulls/<n>/reviews` for one pull request's reviews. `gh pr list` and `gh pr view` use
+  `gh api --paginate repos/<owner>/<repo>/pulls/comments` (inline review comments, every pull request),
+  `gh api --paginate repos/<owner>/<repo>/issues/comments` (conversation comments on pull requests and issues),
+  `gh api --paginate "repos/<owner>/<repo>/pulls?state=all"` (the pull request numbers), then
+  `gh api repos/<owner>/<repo>/pulls/<n>/reviews` for each one's review summaries. `gh pr list` and `gh pr view` use
   GraphQL and can fail where REST works, so try REST before giving up. On another host use its CLI or API
   (`glab api` for GitLab). With none of these, skip the slice and say so in the plan.
 - **Commit history.** `node ${CLAUDE_SKILL_DIR}/mine.mjs commits` (add `--since <date>` for a time range). A shallow
@@ -83,26 +84,34 @@ because ..." when it cannot be read.
   `<session>.jsonl` files, and `<session>/subagents/agent-*.jsonl` for subagents. Find the folder by listing, not by
   building the name yourself: a long path can be shortened. A `memory/` folder in it may not exist.
 - **Instruction files.** `CLAUDE.md` at every level, `CLAUDE.local.md`, `.claude/rules/`, `AGENTS.md`,
-  `.cursor/rules/`, `.cursorrules`, `.github/copilot-instructions.md`, `.windsurfrules`, `GEMINI.md`, and what they
-  import. Also the enforcement that already exists: lint configuration, CI workflows, git hooks, Claude Code hooks.
+  `.cursor/rules/`, `.cursorrules`, `.github/copilot-instructions.md`, `.windsurfrules`, `GEMINI.md`, and the files
+  they import or tell the reader to follow. A file that is a link to another (`AGENTS.md` to `CLAUDE.md`) is one
+  file. Also the enforcement that already exists: lint configuration, CI workflows, git hooks, Claude Code hooks.
 
 ## 3. Mine the slices in parallel
 
 Launch one read-only subagent per reachable slice, all in one message with the Agent tool. Use a read-only agent
 type (such as `Explore`) when the session has one. Give each the common part of `SLICE-BRIEF.md`, its own slice
 section, the focus, and the source line from step 2, with `<skill folder>` replaced by the real path of this
-skill's folder (a subagent does not have `${CLAUDE_SKILL_DIR}`). Each returns candidate classes with instances as pointers, no
-raw excerpts.
+skill's folder (a subagent does not have `${CLAUDE_SKILL_DIR}`). Each returns candidate classes with instances as
+pointers, no raw excerpts.
 
-While they run, read the instruction files yourself if that slice is small: every rule there was written because a
-mistake happened at least once.
+While they run, read the instruction files yourself if that slice is small.
 
 ## 4. Group into classes and count
 
 Merge the candidates across slices. A class is one kind of mistake with one fix, for example "reads configuration
 from the environment instead of the config loader", not "config problems".
 
-- **A class counts once it has happened twice.** Count instances per source.
+- **A class counts once it has happened twice.** Count instances per source. An instance is one place where the
+  mistake was made: a commit that corrects it in three skills is three instances in one source. A written rule
+  counts as one instance in the instruction files (it was written because the mistake happened at least once).
+- **Live instances.** Search the current code for the mistake. Copies that are still there count, and the fix must
+  cover them; a prototype that finds one is evidence.
+- **Not a class**: a habit of the process itself. A commit named "review fixes" or "fixes from the dry run" holds
+  several corrections; split it and count each one in its own class.
+- **Already enforced.** If a check already catches the class and no instance came after the check was added, list
+  the class as enforced, add its row to the rule table, and propose nothing for it.
 - **High confidence**: seen in two or more sources (a review comment and a fix commit, a transcript correction and
   an instruction rule). **Medium**: two or more instances in one source. A single instance is dropped; list it under
   "Seen once" so the user can see what was left out.

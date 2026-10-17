@@ -46,11 +46,14 @@ across pull requests; list those separately, marked as bot.
 
 Start from `node <skill folder>/mine.mjs commits`. A subject is a lead, not evidence: read each diff
 (`git show <sha>`) and say what was wrong before counting it. A commit that only adds new work is not a correction,
-whatever its subject says.
+whatever its subject says. The script finds only subjects with a fix word, so also skim `git log --oneline` for
+corrections phrased otherwise: "rename", "replace", "no longer", "instead", "that X accepts", "make ... work".
 
 Signals: reverts and what they reverted; fix commits that touch the same file or the same kind of line; the files
 ranked at the end of the output; a fix that repeats a fix made earlier somewhere else; commits named "review fixes"
-or "fixes from the dry run", whose diffs hold the corrections a reviewer asked for.
+or "fixes from the dry run", whose diffs hold the corrections a reviewer asked for (split them: each correction goes
+to its own class). When a fix corrected a mistake in one place, search the current code for the same mistake in
+other places, and list each copy that is still there as a live instance.
 
 ## Slice: transcripts and memory
 
@@ -67,7 +70,8 @@ was worth keeping.
 
 ## Slice: instruction files
 
-Read every instruction file you were given. For each rule, decide:
+Read every instruction file you were given, once each (a file that is a link to another is the same file). For each
+rule, decide:
 - what mistake it exists to prevent (a rule in capitals, or with "never", "always" or "do not", was written after
   that mistake happened at least once);
 - whether anything enforces it: search the lint configuration, CI workflows, git hooks, Claude Code hooks
