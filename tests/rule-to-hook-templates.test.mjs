@@ -185,4 +185,77 @@ describe('ratchet template', () => {
     assert.equal(ratchet(dir, ['--today', 'tomorrow']).code, 2);
     assert.equal(runNode(RATCHET, { cwd: tempDir('ratchet-nogit-'), args: ARGS }).code, 2);
   });
+
+  // ARGS with each given flag's value replaced (all --files values replaced by the given list).
+  const withArgs = ({ files, ...flags }) => {
+    const out = [];
+    for (let i = 0; i < ARGS.length; i += 2) {
+      const k = ARGS[i].slice(2);
+      if (k === 'files') continue;
+      out.push(ARGS[i], k in flags ? flags[k] : ARGS[i + 1]);
+    }
+    for (const f of files ?? ['**/*.py', 'src/**/*.js']) out.push('--files', f);
+    return out;
+  };
+  const exc = (tail) => `a = os.environ["A"]  # ${tail}\n`;
+
+  test('works from a subfolder: globs and --baseline are relative to the repository root', () => {
+    const dir = project({ 'sub dir/x.txt': 'nothing\n' });
+    const r = runNode(RATCHET, { cwd: join(dir, 'sub dir'), args: ARGS });
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stdout, /no-env-read: 3\b/);
+    const lowered = project({ 'sub dir/x.txt': 'nothing\n', 'src/b.js': '' });
+    assert.equal(runNode(RATCHET, { cwd: join(lowered, 'sub dir'), args: [...ARGS, '--update'] }).code, 0);
+    assert.equal(baseline(lowered), '2');
+  });
+  test('globs that match no file are a usage error, not a baseline of 0', () => {
+    const dir = project();
+    const r = runNode(RATCHET, { cwd: dir, args: [...withArgs({ files: ['*.rb'] }), '--update'] });
+    assert.equal(r.code, 2);
+    assert.match(r.stderr, /no file/i);
+    assert.equal(baseline(dir), '3');
+  });
+  test('the exception id has a left boundary: no-env-read does not excuse env-read', () => {
+    const dir = project({ 'app.py': exc('no-env-read: allowed until 2026-12-31, legacy, approved by @org/platform') });
+    const r = runNode(RATCHET, { cwd: dir, args: [...withArgs({ id: 'env-read' }), '--update'] });
+    assert.equal(r.code, 0, r.stderr);
+    assert.equal(baseline(dir), '2');
+  });
+  test('an approver must start with a letter, a digit or @', () => {
+    for (const who of ['*/', '-->', '#']) {
+      const dir = project({ 'app.py': exc(`no-env-read: allowed until 2026-12-31, legacy, approved by ${who}`), 'env-baseline.txt': '1\n' });
+      const r = ratchet(dir);
+      assert.equal(r.code, 1, who);
+      assert.match(r.stderr, /incomplete/, who);
+    }
+    const dir = project({ 'app.py': `x = 1  /* no-env-read: allowed until 2026-12-31, legacy, approved by @org/platform */\n`, 'env-baseline.txt': '1\n' });
+    assert.equal(ratchet(dir).code, 0);
+  });
+  test('--update creates the folder of a new baseline file', () => {
+    const dir = project();
+    const r = runNode(RATCHET, { cwd: dir, args: [...withArgs({ baseline: '.ratchet/no-env-read.txt' }), '--update'] });
+    assert.equal(r.code, 0, r.stderr);
+    assert.equal(readFileSync(join(dir, '.ratchet', 'no-env-read.txt'), 'utf8').trim(), '3');
+  });
+  test('a --files value that starts with :( is passed to git as it is, so a file can be excluded', () => {
+    const dir = project();
+    const r = runNode(RATCHET, { cwd: dir, args: [...withArgs({ files: ['**/*.py', 'src/**/*.js', ':(exclude)app.py'] }), '--update'] });
+    assert.equal(r.code, 0, r.stderr);
+    assert.equal(baseline(dir), '1');
+  });
+  test('every valid exception is listed on each run, for a reviewer to check the approval', () => {
+    const dir = project({ 'app.py': `import os\n${exc('no-env-read: allowed until 2026-12-31, legacy, approved by @org/platform')}`, 'env-baseline.txt': '1\n' });
+    const r = ratchet(dir);
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stdout, /app\.py:2[^\n]*2026-12-31[^\n]*@org\/platform/);
+  });
+  test('a baseline file that is not one whole number is a usage error', () => {
+    assert.equal(ratchet(project({ 'env-baseline.txt': '2 junk\n' })).code, 2);
+  });
+  test('an exception dated on a day that does not exist is incomplete', () => {
+    const dir = project({ 'app.py': exc('no-env-read: allowed until 2026-02-30, legacy, approved by @org/platform'), 'env-baseline.txt': '1\n' });
+    const r = ratchet(dir, ['--today', '2026-01-01']);
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /incomplete/);
+  });
 });
