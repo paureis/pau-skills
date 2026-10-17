@@ -1,7 +1,6 @@
 ---
 name: grill-me
-description: Interview the user relentlessly about a plan or design until reaching shared understanding, walking each branch of the decision tree, resolving dependencies between decisions one at a time, and recommending an answer for each question. Use when the user wants to stress-test or pressure-test a plan, get grilled on their design, poke holes in an approach, or work through design decisions before building (e.g. "grill me", "interrogate my plan", "stress-test this design", "poke holes in this"). Explores the codebase to answer questions the code can answer instead of asking. General-purpose; works on any plan in any project.
-disable-model-invocation: true
+description: "Interview the user one question at a time about a plan or design, with a recommended answer each and the code read for what it can answer, until every decision is settled. Use when the user says 'grill me', 'interrogate my plan', 'stress-test this design', 'poke holes in this', or wants to work through decisions before building."
 license: MIT (adapted from mattpocock/skills; see NOTICE)
 metadata:
   upstream: https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me
@@ -11,7 +10,9 @@ metadata:
 
 Interview the user relentlessly about every aspect of the plan or design until you reach a **shared understanding**: every open decision resolved, no ambiguity left.
 
-If there is no plan yet, only a goal, grilling would lock in the first idea before any alternative exists. Suggest the user run `/brainstorm`, or `/<plugin>:brainstorm` from a plugin, first, if it is installed, to widen the options. If it is not installed, ask the user for two or three ways to reach the goal (offer your own if they have none), then grill the one they pick. If the user would rather be grilled now, grill the idea they have, as they asked.
+If there is no plan yet, only a goal, grilling would lock in the first idea before any alternative exists. If `brainstorm` is installed, offer to run it first to widen the options. If it is not installed, ask the user for two or three ways to reach the goal (offer your own if they have none), then grill the one they pick. If the user would rather be grilled now, grill the idea they have, as they asked.
+
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
 
 ## How to run it
 
