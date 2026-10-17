@@ -6,6 +6,7 @@
 //   node scripts/pack-skills.mjs --since <git ref>      pack every skill with a committed change between <ref> and HEAD
 //   node scripts/pack-skills.mjs --all                  pack every skill
 //   options: --out <dir> (default: dist/ in the repository), --root <dir> (default: the repository this script is in)
+// `--help` prints the full usage (the HELP text below): what each option and status means, and the exit codes.
 //
 // What goes in: the files committed at HEAD, read with `git ls-tree` and `git cat-file`, never the files on disk. So
 // the zip is exactly what was reviewed and merged, untracked files (editor backups, test output) never leak in, and
@@ -14,8 +15,14 @@
 //
 // --since says for each skill whether it is new (no skill of that name had a SKILL.md at the ref) or changed (it
 // replaces a skill already uploaded; claude.ai knows skills by name, so a skill moved between plugins is changed). A
-// skill that existed at the ref and is gone now is listed as removed: delete it on claude.ai by hand. Files directly
-// under skills/<plugin>/, such as the plugin README.md, are not skills.
+// skill that existed at the ref and is gone now (its folder, or only its SKILL.md) is listed as removed: delete it on
+// claude.ai by hand. Files directly under skills/<plugin>/, such as the plugin README.md, are not skills, and neither
+// is a folder that has no SKILL.md at either end. A ref that is not an ancestor of HEAD gets a warning, not a refusal
+// (it may be the commit of the last upload), because the two trees are then compared across branches.
+//
+// Warnings, none of which stop the run: uncommitted changes in a packed skill, HEAD not on the default branch
+// (origin/HEAD, else main or master; the zips are meant to be built from main), and other zips already in --out. The
+// default dist/ is emptied of zips first, so it only ever holds the last run's; an --out folder is never emptied.
 //
 // Before writing anything, every skill is checked against the upload rules, and if one fails nothing is written. The
 // rules are from the platform docs (Agent Skills overview, and "Using Agent Skills with the API"):
@@ -28,11 +35,15 @@
 // tests/marketplace.test.mjs; tests/pack-skills.test.mjs fails if the copies drift apart.
 //
 // The zip is written by hand (deflate from node:zlib, a small central directory), so the same commit always gives the
-// same bytes: entries are sorted, and every timestamp is the time of the last commit that touched the skill, in UTC.
+// same bytes: entries are sorted, and every timestamp is the time of the last commit that touched the skill, in UTC
+// (in a shallow clone, where that commit may be missing, it is HEAD's time).
 //
-// Exit: 0 packed (or nothing to pack), 1 an upload rule failed, 2 usage error, unknown skill or bad ref.
+// Every git call runs with GIT_DIR, GIT_INDEX_FILE and GIT_WORK_TREE removed from its environment, so a run from
+// inside a git hook cannot read or touch the repository that runs the hook instead of --root.
+//
+// Exit: 0 packed (or nothing to pack), 1 an upload rule failed, 2 usage error, unknown skill, bad ref or bad --out.
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync, realpathSync } from 'node:fs';
+import { mkdirSync, writeFileSync, realpathSync, existsSync, statSync, readdirSync, unlinkSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
@@ -278,14 +289,42 @@ class Failure extends Error {
   }
 }
 
+const GIT_ENV = ['GIT_DIR', 'GIT_INDEX_FILE', 'GIT_WORK_TREE'];
+const gitEnv = () => Object.fromEntries(Object.entries(process.env).filter(([k]) => !GIT_ENV.includes(k)));
+
 function git(root, args, { input, buffer = false } = {}) {
   try {
     return execFileSync('git', ['-C', root, ...args], {
-      input, encoding: buffer ? undefined : 'utf8', maxBuffer: 1 << 30, stdio: ['pipe', 'pipe', 'pipe'],
+      input, encoding: buffer ? undefined : 'utf8', maxBuffer: 1 << 30, stdio: ['pipe', 'pipe', 'pipe'], env: gitEnv(),
     });
   } catch (e) {
     throw new Failure(`git ${args.join(' ')} failed: ${String(e.stderr || e.message).trim()}`, 2);
   }
+}
+
+/** The trimmed output of a git command, or null when it exits non-zero. */
+function gitTry(root, args) {
+  try {
+    return git(root, args).trim();
+  } catch {
+    return null;
+  }
+}
+
+/** A warning when HEAD is not the default branch (origin/HEAD, else main, else master), or null. */
+function branchWarning(root) {
+  let name = null;
+  const remote = gitTry(root, ['symbolic-ref', '--quiet', 'refs/remotes/origin/HEAD']);
+  if (remote) name = remote.replace(/^refs\/remotes\/origin\//, '');
+  else name = ['main', 'master'].find((n) => gitTry(root, ['rev-parse', '--verify', '--quiet', `refs/heads/${n}`]) !== null) || null;
+  if (!name) return null;
+  if (gitTry(root, ['symbolic-ref', '--quiet', '--short', 'HEAD']) === name) return null;
+  const head = gitTry(root, ['rev-parse', 'HEAD']);
+  for (const ref of [`refs/heads/${name}`, `refs/remotes/origin/${name}`]) {
+    if (head && gitTry(root, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]) === head) return null;
+  }
+  const at = gitTry(root, ['symbolic-ref', '--quiet', '--short', 'HEAD']) || 'a detached HEAD';
+  return `WARNING: HEAD (${at}) is not on the default branch (${name}). The zips are meant to be built from ${name} after the merge.`;
 }
 
 /** Every folder skills/<plugin>/<name>/ at `rev`, as a map from name to [{ plugin, name, dir, hasSkillMd, files }]. */
@@ -329,7 +368,7 @@ function readBlobs(root, shas) {
 }
 
 /** The upload-rule problems of one skill folder; an empty list means it may be uploaded. */
-export function uploadProblems(folder, files) {
+export function uploadProblems(folder, files, { maxBytes = MAX_UNCOMPRESSED } = {}) {
   const id = folder.dir;
   const problems = [];
   const name = folder.name;
@@ -342,9 +381,7 @@ export function uploadProblems(folder, files) {
     else if (f.type !== 'blob') problems.push(`${id}/${f.rel}: a ${f.type} (submodule), not a file`);
   }
   const total = files.reduce((n, f) => n + f.data.length, 0);
-  if (total >= MAX_UNCOMPRESSED) {
-    problems.push(`${id}: ${total} bytes uncompressed; an upload must be under ${MAX_UNCOMPRESSED} bytes (30 MB)`);
-  }
+  if (total >= maxBytes) problems.push(`${id}: ${total} bytes uncompressed; an upload must be under ${maxBytes} bytes`);
 
   const skillMd = files.find((f) => f.rel === 'SKILL.md');
   if (!skillMd) return [...problems, `${id}: no SKILL.md in the folder`];
@@ -374,6 +411,37 @@ export function uploadProblems(folder, files) {
 
 const USAGE = 'Usage: node scripts/pack-skills.mjs (<skill> [<skill>...] | --since <git ref> | --all) [--out <dir>] [--root <dir>]';
 
+const HELP = `${USAGE}
+       npm run pack-skills -- <the same arguments>
+
+Writes one zip per skill for upload to claude.ai (Customize, Skills, Upload a skill), with the skill's folder at the
+zip root. The zips hold the files committed at HEAD, not the files on disk, and are built only when every skill passes
+the upload rules.
+
+  <skill> [<skill>...]  pack these skills, by name (verify-app) or as <plugin>/<skill> (verification/verify-app)
+  --since <git ref>     pack every skill with a committed change between <ref> and HEAD (use the commit of the last
+                        upload, for example main before the batch)
+  --all                 pack every skill
+  --out <dir>           write the zips to <dir>, relative to the current folder, instead of dist/ in the repository;
+                        nothing in <dir> is deleted
+  --root <dir>          the repository to pack from, relative to the current folder (default: the repository this
+                        script is in)
+  --help                show this text
+
+Without --out the zips go to dist/ in the repository, and the zips already in dist/ are deleted first.
+
+Each zip is listed with its status:
+  new       (--since) no skill of that name existed at <ref>: upload it as a new skill
+  changed   (--since) it replaces the uploaded skill of the same name: open that skill on claude.ai and upload the zip
+  packed    (named skills or --all) there is no ref to compare with, so new or changed is not known
+and each skill that is gone with:
+  removed   (--since) it existed at <ref> and has no SKILL.md at HEAD: delete it on claude.ai by hand
+
+Exit codes:
+  0  zips written, or nothing to pack
+  1  an upload rule failed; no zip was written
+  2  usage error, unknown skill, bad ref, or --out is not a folder`;
+
 export function parseArgs(argv) {
   const opts = { names: [], since: null, all: false, out: null, root: null };
   for (let i = 0; i < argv.length; i++) {
@@ -386,7 +454,7 @@ export function parseArgs(argv) {
     else if (a === '--out') opts.out = value();
     else if (a === '--root') opts.root = value();
     else if (a === '--all') opts.all = true;
-    else if (a === '--help' || a === '-h') throw new Failure(USAGE, 0);
+    else if (a === '--help' || a === '-h') throw new Failure(HELP, 0);
     else if (a.startsWith('-')) throw new Failure(`unknown option ${a}\n${USAGE}`, 2);
     else opts.names.push(a);
   }
@@ -396,7 +464,7 @@ export function parseArgs(argv) {
 }
 
 /** Which skill folders to pack, each with a status, and which skills were removed. */
-function selectTargets(root, opts, head) {
+function selectTargets(root, opts, head, warn) {
   const pick = (list, label) => {
     if (list.length > 1) throw new Failure(`${label} is in more than one plugin: ${list.map((f) => f.dir).join(', ')}`, 2);
     return list[0];
@@ -424,6 +492,9 @@ function selectTargets(root, opts, head) {
   } catch {
     throw new Failure(`unknown git ref: ${ref}`, 2);
   }
+  if (gitTry(root, ['merge-base', '--is-ancestor', ref, 'HEAD']) === null) {
+    warn(`WARNING: ${ref} is not an ancestor of HEAD (it is on another branch, or HEAD was moved back). The lists below compare the two trees, so new and removed may be wrong: a skill that only ever existed on ${ref}'s side shows as removed.`);
+  }
   const before = skillFolders(root, ref);
   const hadSkill = (name) => (before.get(name) || []).some((f) => f.hasSkillMd);
   const touched = new Set();
@@ -435,28 +506,35 @@ function selectTargets(root, opts, head) {
   const targets = [];
   const removed = [];
   for (const name of [...touched].sort()) {
-    if (head.has(name)) targets.push({ folder: pick(head.get(name), name), status: hadSkill(name) ? 'changed' : 'new' });
+    const live = (head.get(name) || []).filter((f) => f.hasSkillMd);
+    if (live.length) targets.push({ folder: pick(live, name), status: hadSkill(name) ? 'changed' : 'new' });
     else if (hadSkill(name)) removed.push(before.get(name).find((f) => f.hasSkillMd));
+    // otherwise a folder with no SKILL.md at either end: not a skill
   }
   return { targets, removed };
 }
 
-export function main(argv, { cwd = process.cwd(), log = console.log, warn = console.error } = {}) {
+export function main(argv, { cwd = process.cwd(), log = console.log, warn = console.error, maxBytes = MAX_UNCOMPRESSED } = {}) {
   try {
     const opts = parseArgs(argv);
     const here = dirname(fileURLToPath(import.meta.url));
     const root = resolve(cwd, opts.root || join(here, '..'));
     git(root, ['rev-parse', '--verify', '--quiet', 'HEAD^{commit}']);
     const out = resolve(cwd, opts.out || join(root, 'dist'));
+    if (existsSync(out) && !statSync(out).isDirectory()) {
+      throw new Failure(`${opts.out ? '--out' : 'the default output'} ${out} is not a folder`, 2);
+    }
+    const branch = branchWarning(root);
+    if (branch) warn(branch);
     const head = skillFolders(root, 'HEAD');
-    const { targets, removed } = selectTargets(root, opts, head);
+    const { targets, removed } = selectTargets(root, opts, head, warn);
     targets.sort((a, b) => (a.folder.name < b.folder.name ? -1 : 1));
 
     const blobs = readBlobs(root, [...new Set(targets.flatMap((t) => t.folder.files.filter((f) => f.type === 'blob').map((f) => f.sha)))]);
     const problems = [];
     for (const t of targets) {
       t.files = t.folder.files.filter((f) => f.type === 'blob').map((f) => ({ ...f, data: blobs.get(f.sha) }));
-      problems.push(...uploadProblems(t.folder, t.files));
+      problems.push(...uploadProblems(t.folder, t.files, { maxBytes }));
       const dirty = git(root, ['status', '--porcelain', '--', t.folder.dir]).trimEnd();
       if (dirty) {
         warn(`WARNING: ${t.folder.dir} has uncommitted changes. The zip holds the committed files (HEAD), not these:\n${dirty}`);
@@ -469,11 +547,29 @@ export function main(argv, { cwd = process.cwd(), log = console.log, warn = cons
     }
 
     for (const r of removed) log(`removed  ${r.name}  (was ${r.dir}; delete it from claude.ai by hand)`);
+    if (removed.length && targets.some((t) => t.status === 'new')) {
+      log('hint: a removed skill and a new skill can be one skill renamed; upload the new one and delete the old one.');
+    }
     if (!targets.length) {
       log('nothing to pack');
       return 0;
     }
-    mkdirSync(out, { recursive: true });
+    try {
+      mkdirSync(out, { recursive: true });
+    } catch (e) {
+      throw new Failure(`cannot create the output folder ${out}: ${e.message}`, 2);
+    }
+    const zipsIn = () => readdirSync(out, { withFileTypes: true }).filter((d) => d.isFile() && d.name.endsWith('.zip')).map((d) => d.name).sort();
+    const shownOut = relative(cwd, out) && !relative(cwd, out).startsWith('..') ? relative(cwd, out) : out;
+    if (!opts.out) {
+      const stale = zipsIn();
+      for (const z of stale) unlinkSync(join(out, z));
+      if (stale.length) log(`removed ${stale.length} old zip${stale.length === 1 ? '' : 's'} from ${shownOut}`);
+    } else {
+      const ours = new Set(targets.map((t) => `${t.folder.name}.zip`));
+      const others = zipsIn().filter((z) => !ours.has(z));
+      if (others.length) warn(`WARNING: ${shownOut} already holds other zips, which this run did not write: ${others.join(', ')}`);
+    }
     const rows = [];
     for (const t of targets) {
       const seconds = Number(git(root, ['log', '-1', '--format=%ct', 'HEAD', '--', t.folder.dir]).trim()) || 0;
