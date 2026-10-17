@@ -1,7 +1,7 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 29](https://img.shields.io/badge/skills-29-informational)
+![Skills: 34](https://img.shields.io/badge/skills-34-informational)
 ![Hooks: 11](https://img.shields.io/badge/hooks-11-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
@@ -68,6 +68,8 @@ green by skipping the failing test.
 - `evaluator` has a fresh agent, which did not build the change, grade it against its acceptance criteria.
 - `verify-app` writes the project's own recipe for starting the real app and proving a change in it, with evidence.
 - `bug-fix` finds the actual cause of a bug from runtime evidence and ships only the change that evidence justifies.
+- `hillclimb` makes a number better (run time, size, memory, a score) one measured change at a time, on a harness
+  proven to notice a regression, and claims no win it did not measure.
 
 ### 2. Rules that are written down and still broken
 
@@ -78,6 +80,10 @@ green by skipping the failing test.
   written twice.
 - `instructions-audit` finds the size, duplicates, contradictions, stale references and vague rules in your instruction
   files.
+- `agent-friendly-audit` mines review comments, fix commits, transcripts and instruction files for the mistakes agents
+  repeat, and proposes a fix for each at the highest layer it can live in (architecture, types, a lint or CI check, a
+  test, then prose), proven on a past instance.
+- `skill-eval` checks whether a change to a skill or prompt changes what the agent actually does, with blind runs.
 
 ### 3. One command that cannot be undone
 
@@ -105,6 +111,9 @@ context was compacted.
 
 ### 5. Building before the plan is decided
 
+- `sharpen` restates a task in its own words, with the problem behind it and one outside check, and confirms before
+  starting.
+- `brainstorm` widens the options before `grill-me` narrows them, so the first idea is not the only one considered.
 - `grill-me` interviews you one question at a time until every branch of the plan is decided.
 - `to-prd` and `to-issues` turn the decided plan into a spec and vertical-slice issues.
 - `codebase-oracle` answers questions about the code from evidence in the code, and says when it cannot.
@@ -167,7 +176,7 @@ tells you which one to type.
 - **You type them** (`/pau-skills:<skill>` or `/<plugin>:<skill>`): `project-setup`, `session-close`, `handoff`,
   `retrospective`, `instructions-audit`, `lean-subagent-dev`, `methodology`, `parallel-worktrees`, `grill-me`, `to-prd`,
   `to-issues`, `improve-codebase-architecture`, `ci-cost-and-cadence`, `dependency-upgrade`, `rule-to-hook`, `arena`,
-  `architect`.
+  `architect`, `brainstorm`, `sharpen`, `agent-friendly-audit`, `hillclimb`, `skill-eval`.
 
 ## Reference
 
@@ -212,6 +221,14 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[verify-app](skills/verification/verify-app/SKILL.md)** (adapted): Generates a project skill, `.claude/skills/verify-<app>/`, that
   launches the real app, drives it like a user, keeps evidence that survives cleanup and cleans up only what it
   started, with a feature map; `check-map.mjs` checks it, and `maintain` keeps it in step with the app.
+- **[hillclimb](skills/verification/hillclimb/SKILL.md)** (adapted): Improves one metric (time, size, memory, a score)
+  step by step: a frozen harness proven sensitive with a deliberate regression, a stop predicate with a minimum number
+  of attempts, one change and one measurement per attempt (keep or revert), a commit per win, and an append-only
+  decision log outside the repository kept by `decisions.mjs`, with a checklist run before any number is reported.
+- **[skill-eval](skills/verification/skill-eval/SKILL.md)** (adapted): Checks whether a change to a skill or prompt
+  changes what an agent does: each variant runs several times as a headless `claude -p` session in a neutral folder
+  that holds only that variant, runs are graded on what they did, and a reviewer with no tools scores them blind next
+  to your own blind read; `skill-eval.mjs` sets up the folders, refuses leaks and makes the blind copy.
 - Hooks: [`test-tamper-guard`](hooks/verification/test-tamper-guard.mjs), [`verify-before-done`](hooks/verification/verify-before-done.mjs).
 
 ### agent-orchestration
@@ -245,6 +262,15 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[architect](skills/planning/architect/SKILL.md)** (adapted): Sketches types and signatures with not-implemented bodies before
   writing code, compares at least two shapes against red flags for agent contributors, then implements against the
   sketch test first and scraps it when deviations repeat.
+- **[brainstorm](skills/planning/brainstorm/SKILL.md)**: Widens the options before a decision is settled: frames the
+  goal in at most three questions, generates 10 to 20 options through named lenses, lets you keep, kill or combine
+  them, then converges on 3 to 5 rated without a score, with a premortem each, and a one-page summary for `grill-me`.
+- **[sharpen](skills/planning/sharpen/SKILL.md)** (adapted): Before a task, restates the goal and the problem behind
+  it, asks how an expert would check the result, and confirms in six lines before working.
+- **[agent-friendly-audit](skills/planning/agent-friendly-audit/SKILL.md)** (adapted): Mines review comments, fix and
+  revert commits, this project's transcripts and instruction files for the mistakes agents repeat, and proposes a fix
+  for each at the highest layer (architecture, types, lint, test, prose), proven on a past instance; `mine.mjs` does
+  the read-only mining, with redaction. Writes nothing without your yes.
 
 [docs/ORIGINS.md](docs/ORIGINS.md) records, for every piece, the problem that led to it and, for each adapted skill,
 the upstream version it was compared against and what this version changes, taken from a diff.
@@ -300,6 +326,7 @@ npm test                          # node --test, no dependencies
 npm run scrub                     # fails on private names, account ids, machine paths or untranslated text
 node scripts/build-marketplace.mjs  # regenerate marketplace.json after changing a hooks.json or a plugin folder
 claude plugin validate . --strict # the marketplace; add a plugin path to check one plugin
+npm run pack-skills -- <skill>    # dist/<skill>.zip for upload to claude.ai; --since <ref> or --all
 ```
 
 To bring a new skill into the repository, start with `node scripts/new-skill.mjs <plugin> <skill-name>` and follow
@@ -310,7 +337,8 @@ To bring a new skill into the repository, start with `node scripts/new-skill.mjs
 - The planning skills and `tdd` are adapted from [mattpocock/skills](https://github.com/mattpocock/skills) by Matt
   Pocock, under the MIT License. The upstream notice is in [NOTICE](NOTICE). The layout of this README, organised
   around the problems each piece fixes, also follows his.
-- `arena`, `architect`, `bug-fix` and `verify-app` are adapted from [pstack](https://github.com/cursor/plugins/tree/main/pstack)
+- `arena`, `architect`, `bug-fix`, `verify-app`, `hillclimb`, `skill-eval`, `agent-friendly-audit` and `sharpen` are
+  adapted from [pstack](https://github.com/cursor/plugins/tree/main/pstack)
   by Lauren Tan, under the MIT License. The upstream notice is in [NOTICE](NOTICE). The context budget and several
   rules in [docs/BACKLOG.md](docs/BACKLOG.md) also come from reading it.
 - Everything else is mine, under the MIT License ([LICENSE](LICENSE)).
