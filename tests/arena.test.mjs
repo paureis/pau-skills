@@ -1,11 +1,11 @@
 // The arena helper: label shuffling and rubric checks (pure), and the init and blind commands against real folders.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, existsSync, readdirSync, symlinkSync, lstatSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
-  mulberry32, shuffle, assignLabels, countCriteria, validateRubric, candidateOutputs, rubricTemplate,
+  mulberry32, shuffle, assignLabels, countCriteria, validateRubric, isExcluded, rubricTemplate,
   synthesisTemplate, parseArgs, main,
 } from '../skills/agent-orchestration/arena/arena.mjs';
 
@@ -83,12 +83,22 @@ describe('rubric', () => {
   });
 
   test('the template names the task', () => assert.match(rubricTemplate('pick a cache'), /pick a cache/));
+
+  test('the unfilled task line is an error even when the criteria are filled', () => {
+    const filled = rubricTemplate('').replace(/<criterion[^>]*>/g, 'a real criterion');
+    assert.match(validateRubric(filled).join(' '), /placeholder/);
+  });
+
+  test('numbered lines inside a fenced code block are not criteria', () => {
+    const text = ['1. one', '2. two', '```', '3. code', '4. code', '```', '~~~', '5. code', '~~~'].join('\n');
+    assert.equal(countCriteria(text), 2);
+    assert.match(validateRubric(text).join(' '), /3 to 6/);
+  });
 });
 
-describe('candidateOutputs', () => {
-  test('brief.md, hidden files and .git do not count as output', () => {
-    assert.deepEqual(candidateOutputs(['brief.md', '.DS_Store', '.git']), []);
-    assert.deepEqual(candidateOutputs(['brief.md', 'notes.md', 'change.patch']), ['notes.md', 'change.patch']);
+describe('isExcluded', () => {
+  test('only brief.md and .git are left out; other hidden names are output', () => {
+    assert.deepEqual(['brief.md', '.git', '.github', '.env', 'notes.md'].filter(isExcluded), ['brief.md', '.git']);
   });
 });
 
@@ -99,6 +109,7 @@ describe('synthesisTemplate', () => {
       assert.match(t, new RegExp(`## ${h}`), h);
     }
     assert.match(t, /a helper/);
+    assert.match(t, /Base commit:/);
   });
 });
 
@@ -108,11 +119,12 @@ describe('parseArgs', () => {
   });
   test('init defaults to 3 candidates', () => assert.equal(parseArgs(['init', 'x']).n, 3));
   test('blind with --out and --seed', () => {
-    assert.deepEqual(parseArgs(['blind', 'x', '--out', 'y', '--seed', '9']), { cmd: 'blind', dir: 'x', out: 'y', seed: 9 });
+    assert.deepEqual(parseArgs(['blind', 'x', '--out', 'y', '--seed', '9']), { cmd: 'blind', dir: 'x', out: 'y', seed: 9, force: false });
   });
+  test('blind --force', () => assert.equal(parseArgs(['blind', 'x', '--force']).force, true));
   test('bad input throws', () => {
     for (const bad of [[], ['nope', 'x'], ['init'], ['init', 'x', '--n', '1'], ['init', 'x', '--n', '27'], ['init', 'x', '--n', 'two'],
-      ['blind', 'x', '--seed', 'abc'], ['init', 'x', '--wat']]) {
+      ['blind', 'x', '--seed', 'abc'], ['init', 'x', '--wat'], ['init', 'x', '--force']]) {
       assert.throws(() => parseArgs(bad), undefined, JSON.stringify(bad));
     }
   });
@@ -242,5 +254,193 @@ describe('blind', () => {
 
   test('a missing arena folder exits 1', () => {
     assert.equal(main(['blind', join(tempDir('arena-'), 'nothing-here')], () => {}, () => {}), 1);
+  });
+});
+
+// Fix round: nothing the judge receives may name a candidate or lead back to a brief.
+describe('blind: what reaches the judge', () => {
+  const quiet = () => {};
+  /** An arena with two filled candidates; `setup(dir)` adds the case under test. Returns the arena folder. */
+  function make(setup = () => {}) {
+    const dir = join(tempDir('arena-'), 'run');
+    assert.equal(main(['init', dir, '--n', '2'], quiet, quiet), 0);
+    writeFileSync(join(dir, 'rubric.md'), GOOD_RUBRIC);
+    for (const k of [1, 2]) {
+      writeFileSync(join(dir, `candidate-${k}`, 'brief.md'), `secret brief ${k}`);
+      writeFileSync(join(dir, `candidate-${k}`, 'notes.md'), `notes ${k}`);
+    }
+    setup(dir);
+    return dir;
+  }
+  const run = (args) => {
+    const out = [];
+    const err = [];
+    const code = main(args, (s) => out.push(s), (s) => err.push(s));
+    return { code, out: out.join('\n'), err: err.join('\n') };
+  };
+  const walk = (d) => readdirSync(d).flatMap((e) => {
+    const f = join(d, e);
+    const st = lstatSync(f);
+    return st.isDirectory() ? [f, ...walk(f)] : [f];
+  });
+  const key = (dir) => JSON.parse(readFileSync(join(dir, 'blind-key.json'), 'utf8'));
+  const freshOut = () => join(tempDir('arena-blind-'), 'b');
+
+  test('a link to a file inside the same candidate is copied as a plain file with its content', () => {
+    const dir = make((d) => {
+      mkdirSync(join(d, 'candidate-1', 'src'));
+      writeFileSync(join(d, 'candidate-1', 'src', 'real.md'), 'the real content');
+      symlinkSync('src/real.md', join(d, 'candidate-1', 'alias.md'));
+    });
+    const out = freshOut();
+    const r = run(['blind', dir, '--out', out, '--seed', '1']);
+    assert.equal(r.code, 0, r.err);
+    const label = Object.entries(key(dir).labels).find(([, c]) => c === 'candidate-1')[0];
+    assert.equal(readFileSync(join(out, label, 'alias.md'), 'utf8'), 'the real content');
+    for (const f of walk(out)) assert.equal(lstatSync(f).isSymbolicLink(), false, `${f} is a link`);
+  });
+
+  for (const [name, target] of [
+    ['a sibling candidate\'s brief', (d) => join(d, 'candidate-2', 'brief.md')],
+    ['its own brief', () => 'brief.md'],
+    ['a file outside the arena', () => { const f = join(tempDir('arena-out-'), 'x.md'); writeFileSync(f, 'x'); return f; }],
+    ['a target that does not exist', () => 'missing.md'],
+  ]) {
+    test(`a link to ${name} is refused, naming the link, before anything is copied`, () => {
+      const dir = make((d) => symlinkSync(target(d), join(d, 'candidate-1', 'leak.md')));
+      const out = freshOut();
+      const r = run(['blind', dir, '--out', out]);
+      assert.equal(r.code, 1);
+      assert.match(r.err, /candidate-1\/leak\.md/);
+      assert.equal(existsSync(out), false);
+      assert.equal(existsSync(join(dir, 'blind-key.json')), false);
+    });
+  }
+
+  test('a candidate folder that is a link to a folder elsewhere is a candidate', () => {
+    const elsewhere = tempDir('arena-worktree-');
+    writeFileSync(join(elsewhere, 'change.patch'), 'diff --git a/x b/x');
+    const dir = make((d) => symlinkSync(elsewhere, join(d, 'candidate-3')));
+    const out = freshOut();
+    const r = run(['blind', dir, '--out', out, '--seed', '2']);
+    assert.equal(r.code, 0, r.err);
+    assert.deepEqual(Object.values(key(dir).labels).sort(), ['candidate-1', 'candidate-2', 'candidate-3']);
+    const label = Object.entries(key(dir).labels).find(([, c]) => c === 'candidate-3')[0];
+    assert.equal(readFileSync(join(out, label, 'change.patch'), 'utf8'), 'diff --git a/x b/x');
+  });
+
+  test('a candidate folder that is a broken link is refused, not dropped', () => {
+    const dir = make((d) => symlinkSync(join(d, 'gone'), join(d, 'candidate-3')));
+    const r = run(['blind', dir, '--out', freshOut()]);
+    assert.equal(r.code, 1);
+    assert.match(r.err, /candidate-3/);
+  });
+
+  test('hidden output at the top of a candidate counts and is copied', () => {
+    const dir = make((d) => {
+      writeFileSync(join(d, 'candidate-2', 'notes.md'), '');
+      mkdirSync(join(d, 'candidate-2', '.github', 'workflows'), { recursive: true });
+      writeFileSync(join(d, 'candidate-2', '.github', 'workflows', 'ci.yml'), 'on: push');
+    });
+    const out = freshOut();
+    assert.equal(run(['blind', dir, '--out', out, '--seed', '3']).code, 0);
+    assert.deepEqual(key(dir).dropouts, []);
+    const label = Object.entries(key(dir).labels).find(([, c]) => c === 'candidate-2')[0];
+    assert.equal(readFileSync(join(out, label, '.github', 'workflows', 'ci.yml'), 'utf8'), 'on: push');
+  });
+
+  test('a candidate whose output files are all empty is a dropout', () => {
+    const dir = make((d) => {
+      writeFileSync(join(d, 'candidate-2', 'notes.md'), '');
+      writeFileSync(join(d, 'candidate-2', 'change.patch'), '');
+      mkdirSync(join(d, 'candidate-3'));
+      writeFileSync(join(d, 'candidate-3', 'design.md'), 'design 3');
+    });
+    const r = run(['blind', dir, '--out', freshOut()]);
+    assert.equal(r.code, 0, r.err);
+    assert.deepEqual(key(dir).dropouts, ['candidate-2']);
+  });
+
+  test('.git is never copied, at the top or nested, as a folder or a file', () => {
+    const dir = make((d) => {
+      mkdirSync(join(d, 'candidate-1', '.git'));
+      writeFileSync(join(d, 'candidate-1', '.git', 'HEAD'), 'ref: refs/heads/par/arena/candidate-1');
+      mkdirSync(join(d, 'candidate-2', 'sub'));
+      writeFileSync(join(d, 'candidate-2', 'sub', '.git'), 'gitdir: /somewhere/candidate-2');
+      writeFileSync(join(d, 'candidate-2', 'sub', 'brief.md'), 'nested brief');
+    });
+    const out = freshOut();
+    assert.equal(run(['blind', dir, '--out', out]).code, 0);
+    const names = walk(out).map((f) => f.slice(out.length));
+    assert.deepEqual(names.filter((n) => /(^|\/)(\.git|brief\.md)$/.test(n)), []);
+  });
+
+  test('a second run is refused while a key exists, unless --force', () => {
+    const dir = make();
+    assert.equal(run(['blind', dir, '--out', freshOut()]).code, 0);
+    const first = readFileSync(join(dir, 'blind-key.json'), 'utf8');
+    const out2 = freshOut();
+    const r = run(['blind', dir, '--out', out2]);
+    assert.equal(r.code, 1);
+    assert.match(r.err, /--force/);
+    assert.equal(existsSync(out2), false);
+    assert.equal(readFileSync(join(dir, 'blind-key.json'), 'utf8'), first);
+    assert.equal(run(['blind', dir, '--out', out2, '--force']).code, 0);
+  });
+
+  test('--out inside the arena folder is refused before anything is copied', () => {
+    for (const inside of ['candidate-1/judge', 'judge', '.']) {
+      const dir = make();
+      const before = walk(dir).length;
+      const r = run(['blind', dir, '--out', join(dir, inside)]);
+      assert.equal(r.code, 1, inside);
+      assert.match(r.err, /inside the arena folder/);
+      assert.equal(walk(dir).length, before, `${inside}: something was written`);
+    }
+  });
+});
+
+describe('input errors give a message, not a stack trace', () => {
+  const noStack = (r) => assert.doesNotMatch(r.stderr, /^\s+at /m, r.stderr);
+
+  test('init on a path that is a file exits 1', () => {
+    const f = join(tempDir('arena-'), 'file');
+    writeFileSync(f, 'x');
+    const r = runNode(SCRIPT, { args: ['init', f] });
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /not a folder/);
+    noStack(r);
+  });
+
+  test('a rubric.md that is a folder exits 1', () => {
+    const dir = join(tempDir('arena-'), 'run');
+    assert.equal(main(['init', dir, '--n', '2'], () => {}, () => {}), 0);
+    rmSync(join(dir, 'rubric.md'));
+    mkdirSync(join(dir, 'rubric.md'));
+    const r = runNode(SCRIPT, { args: ['blind', dir, '--out', join(tempDir('arena-blind-'), 'b')] });
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /rubric\.md/);
+    noStack(r);
+  });
+
+  test('more than 26 candidate folders exits 1', () => {
+    const dir = join(tempDir('arena-'), 'run');
+    assert.equal(main(['init', dir, '--n', '26'], () => {}, () => {}), 0);
+    mkdirSync(join(dir, 'candidate-27'));
+    writeFileSync(join(dir, 'rubric.md'), GOOD_RUBRIC);
+    for (let k = 1; k <= 27; k++) writeFileSync(join(dir, `candidate-${k}`, 'out.md'), `out ${k}`);
+    const out = join(tempDir('arena-blind-'), 'b');
+    const r = runNode(SCRIPT, { args: ['blind', dir, '--out', out] });
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /26/);
+    assert.equal(existsSync(out), false);
+    noStack(r);
+  });
+
+  test('a usage error exits 2 with the usage line', () => {
+    const r = runNode(SCRIPT, { args: ['blind'] });
+    assert.equal(r.code, 2);
+    assert.match(r.stderr, /usage/);
+    noStack(r);
   });
 });
