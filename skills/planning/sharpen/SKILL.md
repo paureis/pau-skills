@@ -14,7 +14,7 @@ The task: $ARGUMENTS (if empty, the user's last message)
 
 Before starting:
 
-1. Restate in your own words what the user is after and the problem they are trying to solve.
+1. Restate in your own words what the user is after and the problem they are trying to solve: why they want it.
 2. Ask how a top expert would approach this task: their raw sources, their real methods, and an outside check that
    the result is right.
 3. Say whether the task is over- or under-specified. Loosen constraints that don't serve the goal as readily as you
@@ -22,9 +22,18 @@ Before starting:
 4. Check the task against the prompt checklist below and note what is missing.
 5. Fold in only what makes the work better, not bigger, but always keep one outside check that the result is right.
 
-Then confirm, in a few lines: the restatement, the outside check, and anything you would loosen, add or ask. Ask
-with AskUserQuestion (or a plain question) whether that is the task. Do not hand back a rewritten prompt. On a yes,
-do the work; on a correction, restate again.
+Then confirm, in this shape and no longer, and ask with AskUserQuestion (or a plain question) whether that is the
+task:
+
+```
+Goal: <what the user is after, in your words>
+Why: <the problem behind it>
+Outside check: <how the result will be shown to be right>
+Loosen or add: <constraints you would drop or add, or "none">
+Your call: <choices left to the user, as a question, or "none">
+```
+
+Do not hand back a rewritten prompt. On a yes, do the work; on a correction, restate again.
 
 **Prompt checklist.** Put in: the goal (what is wrong or what the user wants); the done check, which can pass or
 fail; the proof to show (real command output, the stored value, a before and after number); what the user already
