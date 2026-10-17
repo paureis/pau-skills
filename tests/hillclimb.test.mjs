@@ -3,7 +3,7 @@
 // tree, a file edited by hand), the append-only guarantee, measure against small node commands, and summary.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync, mkdirSync, existsSync, symlinkSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, existsSync, symlinkSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
@@ -334,7 +334,8 @@ describe('append', () => {
   });
 
   test('refuses a log path that is a link into a git work tree, existing or not', () => {
-    const dir = tempDir('hillclimb-repo-');
+    // Resolved, because the temporary folder can itself be a link (on macOS /var is a link to /private/var).
+    const dir = realpathSync(tempDir('hillclimb-repo-'));
     mkdirSync(join(dir, '.git'));
     const inside = join(dir, 'decision.tsv');
     const outside = tempDir('hillclimb-');

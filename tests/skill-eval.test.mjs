@@ -2,8 +2,8 @@
 // judge and unblind commands against real folders, with a stand-in for the `claude` command so no model is called.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync, mkdirSync, existsSync, readdirSync, symlinkSync, utimesSync, chmodSync } from 'node:fs';
-import { join, sep } from 'node:path';
+import { writeFileSync, readFileSync, mkdirSync, existsSync, readdirSync, symlinkSync, utimesSync, chmodSync, realpathSync } from 'node:fs';
+import { join, sep, dirname, basename } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { repo, runNode, tempDir } from './helpers.mjs';
@@ -555,7 +555,8 @@ describe('run', () => {
     assert.equal(r.code, 0, r.stderr);
     assert.equal(r.calls.length, 4);
     for (const run of p.runs) {
-      const call = r.calls.find((c) => c.cwd === run.dir);
+      // Compared resolved: a run reports its real working folder, and the temporary folder can be a link (macOS).
+      const call = r.calls.find((c) => realpathSync(c.cwd) === realpathSync(run.dir));
       assert.ok(call, `a call ran in ${run.dir}`);
       assert.equal(call.home, run.home);
       const extra = call.names.filter((n) => !ALLOWED_ENV.includes(n) && !/^LC_/.test(n) && !['HOME', 'FAKE_CLAUDE_LOG'].includes(n));
@@ -771,8 +772,10 @@ describe('blind, judge and unblind', () => {
     assert.ok(c.argv.includes('judge-model'));
     assert.ok(!c.names.includes('CLAUDECODE'));
     assert.ok(r.auth.length >= 1, 'the login was checked first');
-    for (const d of [c.cwd, c.home]) {
-      assert.ok(!d.startsWith(s.lab) && !d.startsWith(s.root) && !d.startsWith(out), d);
+    // Resolved (the temporary folder can be a link, as on macOS); the judge's own folders are gone by now.
+    const real = (p) => (existsSync(p) ? realpathSync(p) : join(realpathSync(dirname(p)), basename(p)));
+    for (const d of [real(c.cwd), real(c.home)]) {
+      assert.ok(!d.startsWith(real(s.lab)) && !d.startsWith(real(s.root)) && !d.startsWith(real(out)), d);
     }
     assert.match(readFileSync(join(s.lab, 'verdict.md'), 'utf8'), /Criterion 1/);
   });
