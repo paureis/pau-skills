@@ -1,0 +1,2 @@
+{"type":"user","isSidechain":false,"timestamp":"2026-03-05T09:00:00.000Z","uuid":"v1","message":{"role":"user","content":"Stop.\n\nRun the tests before you say done."}}
+{"type":"assistant","isSidechain":false,"timestamp":"2026-03-05T09:00:03.000Z","uuid":"v2","message":{"role":"assistant","content":[{"type":"text","text":"Running them now."}]}}
