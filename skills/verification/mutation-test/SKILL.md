@@ -1,6 +1,6 @@
 ---
 name: mutation-test
-description: Prove that a test or guard can fail, by introducing the exact defect it claims to catch, running it, and restoring the file, with the three steps that silently lie (the mutation applied, behaviour changed, the restore worked) asserted by a script. Use when the user says "mutation test", "mutate this", "can this test fail", "prove the test catches it", "is this guard real", after writing a test for a bug or a security rule, or before reporting a guard as working.
+description: "Prove a test or guard can fail by introducing the exact defect it claims to catch, running it and restoring the file, with a script checking each step. Use after writing a test for a bug or a security rule, before reporting a guard as working, or when the user says 'mutation test', 'can this test fail', 'prove the test catches it', 'is this guard real'."
 argument-hint: "<file> <test command>"
 ---
 

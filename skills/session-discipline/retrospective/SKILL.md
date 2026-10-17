@@ -1,6 +1,7 @@
 ---
 name: retrospective
 description: Analyze the current session to extract reusable learnings and apply them to the right durable store (CLAUDE.md, the memory system, or a specific skill file), gated so the rule stores do not grow by restating themselves. Use when the user asks for a retrospective, "what did we learn", "what should we improve", or "how should skills be updated". Suggest it proactively after a multi-step task with repeated corrections, work redone 3+ times, or improvised steps. Improves how you work, which is distinct from documenting what was built.
+disable-model-invocation: true
 ---
 
 # Retrospective

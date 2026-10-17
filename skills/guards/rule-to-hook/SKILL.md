@@ -1,6 +1,7 @@
 ---
 name: rule-to-hook
 description: Turn a written rule that keeps getting broken (in CLAUDE.md, AGENTS.md, a style guide, or a correction the user keeps repeating) into an enforced mechanism, usually a Claude Code hook, otherwise a git hook, linter rule, CI check or test; pins the rule down with real violations and near-misses, picks the mechanism, writes a small tested guard, proves the test can fail, registers it and marks the rule as enforced. Use when the user says "this rule keeps getting broken", "I keep telling Claude not to", "make this a hook", "enforce this rule", "turn this into a guard", "block this command", "stop the agent from doing X", "why does it ignore CLAUDE.md", or when the same correction has come up three times.
+disable-model-invocation: true
 argument-hint: "[the rule, or where it is written, e.g. 'CLAUDE.md: never git add -A']"
 ---
 

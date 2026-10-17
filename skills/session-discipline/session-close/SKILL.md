@@ -1,6 +1,7 @@
 ---
 name: session-close
 description: Close a working session in a fixed order (clean tree, retrospective with the rules audit and the stale-reference check, roadmap and log updated, detailed handoff, commit and push) so the next session starts from files instead of memory. Use when the user says "close the session", "wrap up", "session close", "/session-close", when a CONTEXT WARNING appears in a tool result, or when a roadmap item meets its definition of done and the next one will not fit in what is left of the session.
+disable-model-invocation: true
 argument-hint: "[optional: what the next session should focus on]"
 ---
 
@@ -44,10 +45,11 @@ This skill carries its own copy of the rules audit, `${CLAUDE_SKILL_DIR}/audit.m
 `retrospective` skill uses, so this step works whether or not that skill is installed. Run it with `node` from the
 project root.
 
-- If the `retrospective` skill is installed, run it in full. If not, run the short version here: list the
-  corrections the user made and the work that was redone; write each lesson that will happen again as a proposed
-  line in a scratch file; score it with `node "${CLAUDE_SKILL_DIR}/audit.mjs" --check <file>`; and apply only the
-  lines that are not already there and that the user approves.
+- Run the short version here: list the corrections the user made and the work that was redone; write each lesson
+  that will happen again as a proposed line in a scratch file; score it with
+  `node "${CLAUDE_SKILL_DIR}/audit.mjs" --check <file>`; and apply only the lines that are not already there and that
+  the user approves. If the `retrospective` skill is installed and the user wants the full version, suggest they run
+  `/retrospective` now, and continue with the next step when it is done.
 - Either way, run `node "${CLAUDE_SKILL_DIR}/audit.mjs" --stale` from the project root: every path, command or script
   cited in `CLAUDE.md` and memory that no longer exists is fixed or deleted in the same session.
 - Bar for adding anything: it will happen again, it names the failure it prevents, and it fits in 8 lines. If a rule
@@ -68,9 +70,9 @@ project root.
 
 ## 4. Handoff
 
-If the `handoff` skill is installed, use it in park mode. If not, write the handoff file yourself with these
-sections: what the work is (two or three sentences), what was done, key learnings, the current state, the next
-steps (the user's priority first), and reference material (paths and decisions, not copies). Start the file with
+Write the handoff file yourself (the same file `/handoff` writes in park mode, if the `handoff` skill is installed)
+with these sections: what the work is (two or three sentences), what was done, key learnings, the current state, the
+next steps (the user's priority first), and reference material (paths and decisions, not copies). Start the file with
 an instruction to the next session: say what you understand was done and your proposed next steps, then wait for
 approval before changing anything.
 

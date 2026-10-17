@@ -1,6 +1,7 @@
 ---
 name: handoff
 description: "Transfer full working context from this session to a future one so work resumes cleanly after a pause. Use when the user says \"handoff\", \"hand off\", \"wrap up for now\", \"pause here\", \"let's continue this later\", when a session is getting long and context may be degrading (suggest it proactively then), or when switching focus within the same project. This is about pausing/resuming a SESSION, not shipping finished work. Two modes: park (default: write a handoff file the next session reads) or immediate (print the handoff inline to copy into a new chat or another tool). General-purpose; works in any project."
+disable-model-invocation: true
 ---
 
 # Handoff
@@ -21,10 +22,11 @@ off, even when a written rule requires it. Before Step 1, state one of these to 
 
 - **"Retrospective already ran this session"**, and say what it produced (including "nothing
   worth adding", which is a legitimate result).
-- **"Running the retrospective now"**: if the `retrospective` skill is installed, invoke it, finish it, then come back
-  and write the handoff. If it is not, run this short version: list the corrections the user made and the work that
+- **"Running the retrospective now"**: run this short version: list the corrections the user made and the work that
   was redone; for each one that will happen again, propose one line for `CLAUDE.md` or memory, after checking that
-  no existing line already says it; show the exact lines and apply only the ones the user approves.
+  no existing line already says it; show the exact lines and apply only the ones the user approves. If the
+  `retrospective` skill is installed and the user wants the full version, suggest they run `/retrospective` first,
+  then come back and write the handoff.
 - **"Skipping the retrospective because <reason>"**, only for a genuinely trivial session
   (a one-line fix, a pure question). If corrections were made, work was redone, or a phase
   closed, it is not trivial.

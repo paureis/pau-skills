@@ -1,6 +1,6 @@
 ---
 name: evaluator
-description: Run an independent, hostile evaluation of an increment in a forked context that has not seen how it was built, grading each contract assertion PASS, FAIL or UNVERIFIED with reproducible evidence and mutation-verifying every test it relies on. Use after an increment is built and before calling it done, or when the user says "evaluate this", "run the evaluator", "attack this build", "independent review", "is this really done".
+description: "Run a hostile, independent evaluation of an increment in a forked context that has not seen the build, grading each contract assertion PASS, FAIL or UNVERIFIED with reproducible evidence. Use after an increment is built and before calling it done, or when the user says 'evaluate this', 'run the evaluator', 'attack this build', 'independent review', 'is this really done'."
 argument-hint: "<repo path> <contract path> <assertion ids, e.g. SEC-1..SEC-10>"
 context: fork
 agent: general-purpose

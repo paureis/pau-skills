@@ -1,6 +1,7 @@
 ---
 name: improve-codebase-architecture
 description: "Find deepening opportunities in a codebase: refactors that turn shallow modules into deep ones for better testability and AI-navigability. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, reduce complexity, make the codebase more testable, or says 'improve architecture', 'find refactoring opportunities', 'the code is getting messy', 'architecture review', 'zoom out on the codebase'. Recommended to run every few days on active codebases."
+disable-model-invocation: true
 license: MIT (adapted from mattpocock/skills; see NOTICE)
 metadata:
   upstream: https://github.com/mattpocock/skills/tree/main/skills/engineering/improve-codebase-architecture

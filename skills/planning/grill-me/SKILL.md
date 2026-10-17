@@ -1,6 +1,7 @@
 ---
 name: grill-me
 description: Interview the user relentlessly about a plan or design until reaching shared understanding, walking each branch of the decision tree, resolving dependencies between decisions one at a time, and recommending an answer for each question. Use when the user wants to stress-test or pressure-test a plan, get grilled on their design, poke holes in an approach, or work through design decisions before building (e.g. "grill me", "interrogate my plan", "stress-test this design", "poke holes in this"). Explores the codebase to answer questions the code can answer instead of asking. General-purpose; works on any plan in any project.
+disable-model-invocation: true
 license: MIT (adapted from mattpocock/skills; see NOTICE)
 metadata:
   upstream: https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me

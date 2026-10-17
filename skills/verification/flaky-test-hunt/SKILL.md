@@ -1,6 +1,6 @@
 ---
 name: flaky-test-hunt
-description: Find out why a test or CI job fails only sometimes, instead of labelling it "flaky" and moving on. Captures the evidence, reproduces the failure by repetition with a measured failure rate (isolated, with its file, full suite, shuffled, parallel), classifies the cause against a taxonomy, fixes the root cause, and proves the fix with enough clean runs to mean something. Works in any language or test runner. Use when the user says "this test is flaky", "fails intermittently", "passes locally but fails in CI", "random test failure", "fails one run in ten", "CI is red again for no reason", "can we just retry it", "quarantine this test", or "why does this test sometimes fail".
+description: "Find the root cause of a test or CI job that fails only sometimes instead of retrying it: reproduce it with a measured failure rate, classify the cause, fix it, and prove the fix with enough clean runs. Any language or runner. Use when the user says 'this test is flaky', 'fails intermittently', 'passes locally but fails in CI', 'can we just retry it', 'quarantine this test'."
 argument-hint: "<test id, failing CI job or run link, and anything known about how often it fails>"
 ---
 

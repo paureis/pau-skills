@@ -1,6 +1,7 @@
 ---
 name: ci-cost-and-cadence
 description: Decide how much CI to run and when, weighing CI minutes, money and waiting time against what each check has actually caught; ask, measure, lay out options with numbers, recommend, then build with safeguards. Use when GitHub Actions minutes or the CI bill are running out or growing, agents push many times per PR, developers wait 20 minutes per push, slow PR feedback, someone asks "do we need the full test suite on every push", "should E2E run nightly", "run tests once per PR", "move tests to a nightly run", or when setting up CI for a new project.
+disable-model-invocation: true
 argument-hint: "[what prompted it, e.g. 'minutes run out by day 12']"
 ---
 
