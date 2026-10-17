@@ -20,7 +20,9 @@ claude plugin marketplace add paureis/pau-skills
 claude plugin install pau-skills@pau-skills
 ```
 
-That installs everything. To take only part of it, install individual plugins instead (`session-discipline`,
+That installs everything. If your skills come from your claude.ai account instead (they then sync to the terminal,
+the desktop app and the web), install only the hooks: `claude plugin install pau-skills-hooks@pau-skills`
+([docs/INSTALL.md](docs/INSTALL.md) explains both). To take only part of it, install individual plugins instead (`session-discipline`,
 `verification`, `agent-orchestration`, `guards`, `planning`), or copy a single skill's folder: every skill works on its
 own, without the plugin or any other skill. For Codex, Cursor and other agents, the skills alone
 install with `npx skills@latest add paureis/pau-skills`.

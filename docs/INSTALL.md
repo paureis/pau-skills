@@ -51,6 +51,26 @@ A newly installed plugin loads in your next session, or after `/reload-plugins`.
 
 The scripts need Node.js 20 or later and no packages. `mutate.sh` needs bash (Git Bash on Windows).
 
+## Skills from your claude.ai account, hooks from here
+
+Claude Code on the web does not load plugins, but it does load the skills uploaded to your claude.ai account, and so
+do the terminal and the desktop app (signed in with that account). To have every skill everywhere:
+
+1. Upload each skill to claude.ai (Customize, Skills, Upload a skill) as a zip of its folder, for example a zip of
+   `skills/verification/verify-app/` with the `verify-app/` folder at its root. Bundled files come along. Synced
+   skills appear as `/anthropic-skills:<name>` (or `/<name>` when nothing else uses the name). When a skill changes
+   here, upload its new zip.
+2. On each computer, install only the hooks, which a skill upload cannot carry:
+
+   ```bash
+   claude plugin marketplace add paureis/pau-skills
+   claude plugin install pau-skills-hooks@pau-skills
+   ```
+
+`pau-skills-hooks` has every hook and no skills, so nothing loads twice. Do not install it next to `pau-skills` or
+the individual plugins, which carry the same hooks; and do not install those next to uploaded skills, which would load
+every skill twice. Hooks run only on your own machine; cloud sessions on the web get the skills but not the hooks.
+
 ## Other agents (Codex, Cursor, OpenCode and others)
 
 The skills are plain `SKILL.md` folders, so the [skills](https://skills.sh) installer can copy them into any project:

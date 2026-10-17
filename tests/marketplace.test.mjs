@@ -5,11 +5,12 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT } from './helpers.mjs';
-import { build, BUNDLE } from '../scripts/build-marketplace.mjs';
+import { build, BUNDLE, HOOKS_BUNDLE } from '../scripts/build-marketplace.mjs';
 
 const market = JSON.parse(readFileSync(join(ROOT, '.claude-plugin', 'marketplace.json'), 'utf8'));
 const bundle = market.plugins.find((p) => p.name === BUNDLE);
-const plugins = market.plugins.filter((p) => p.name !== BUNDLE);
+const hooksBundle = market.plugins.find((p) => p.name === HOOKS_BUNDLE);
+const plugins = market.plugins.filter((p) => p.name !== BUNDLE && p.name !== HOOKS_BUNDLE);
 const commandsOf = (entry) => Object.values(entry.hooks || {}).flat().flatMap((g) => g.hooks.map((h) => h.command));
 
 test('marketplace.json is up to date with the folders (run node scripts/build-marketplace.mjs)', () => {
@@ -42,6 +43,15 @@ test('every hook command points at a script that exists, and the bundle runs eve
     assert.ok(m && existsSync(join(ROOT, m[1])), `missing script for: ${c}`);
   }
   assert.deepEqual(commandsOf(bundle).sort(), all.sort());
+});
+
+test('the hooks-only plugin runs every hook and carries no skills', () => {
+  // For people who get the skills another way (uploaded to their claude.ai account): installing it next to them gives
+  // the hooks without loading every skill a second time.
+  assert.ok(hooksBundle, `marketplace.json has no "${HOOKS_BUNDLE}" entry`);
+  assert.deepEqual(commandsOf(hooksBundle).sort(), plugins.flatMap(commandsOf).sort());
+  assert.equal('skills' in hooksBundle, false, 'the hooks-only plugin must not list skills');
+  assert.deepEqual(hooksBundle.hooks, bundle.hooks);
 });
 
 test('every skill has a SKILL.md whose name equals its folder, and a description', () => {
