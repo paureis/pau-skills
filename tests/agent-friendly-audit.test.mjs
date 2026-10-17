@@ -172,7 +172,7 @@ describe('commits', () => {
     assert.doesNotMatch(r.stdout, /@/);
     assert.doesNotMatch(r.stdout, /bug-fix|Side work|Merge branch/);
     assert.match(r.stdout, /\n\tsrc\/cache\.py\n/);
-    assert.match(r.stdout, /# 3 fix, 1 revert, 1 fixup in 9 commits \(merges skipped\)/);
+    assert.match(r.stdout, /# 3 fix, 1 revert, 1 fixup in 9 commits on main \(merges skipped\)/);
     assert.match(r.stdout, /# 3\tsrc\/parser\.py/);
     assert.doesNotMatch(r.stdout, /# 1\t/, 'a file touched once is not a hot spot');
   });
@@ -189,6 +189,18 @@ describe('commits', () => {
     assert.deepEqual(revert.files, ['src/cache.py']);
     assert.deepEqual(data.hotFiles, [{ file: 'src/parser.py', count: 3 }]);
     assert.doesNotMatch(r.stdout, /@/);
+  });
+
+  test('--rev mines the branch given, not the one checked out', () => {
+    const { dir } = history();
+    git(dir, 'checkout', '-q', '-b', 'topic');
+    commit(dir, 'Fix a bug only on topic', { 'src/topic.py': 't\n' });
+    const onTopic = runNode(SCRIPT, { args: ['commits', '--repo', dir] });
+    assert.match(onTopic.stdout, /only on topic/);
+    const onMain = runNode(SCRIPT, { args: ['commits', '--repo', dir, '--rev', 'main'] });
+    assert.equal(onMain.code, 0, onMain.stderr);
+    assert.doesNotMatch(onMain.stdout, /only on topic/);
+    assert.match(onMain.stdout, /# 3 fix, 1 revert, 1 fixup in 9 commits on main \(merges skipped\)/);
   });
 
   test('a folder that is not a git repository is refused', () => {

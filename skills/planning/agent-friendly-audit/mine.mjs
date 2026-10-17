@@ -3,15 +3,15 @@
  * Read-only evidence miner for an agent-friendly audit. It never writes a file, never prints an email address, hides
  * common secret shapes, and shows paths under the home folder as ~.
  *
- *   node mine.mjs commits [--repo <dir>] [--since <date>] [--json]
- *       Lists the non-merge commits that look like corrections: fixes (a fix word on its own in the subject: "fix",
- *       "fixes", "fixed", "hotfix", "bugfix", "Hotfix-1.2.3"; a compound at the start, "Bug-fix:", "hot-fix",
- *       "quick-fix:"; or new work that is a fix, "Add fix for ..."), reverts (a subject starting "Revert" or
- *       "Reverted", or a body saying "This reverts commit"), and "fixup!", "squash!" or "amend!" commits. Not fixes:
- *       a longer word ("prefix", "fixture", "fix_typo"), a hyphenated name later in the subject ("Add bug-fix
- *       skill"), and a subject that adds something new with "fix" only as its topic. Each comes with the files it
- *       touched, and the summary ranks the files touched by two or more of them. Only subjects are printed, never
- *       bodies or authors.
+ *   node mine.mjs commits [--repo <dir>] [--rev <branch or commit>] [--since <date>] [--json]
+ *       On the branch given (default: the one checked out), lists the non-merge commits that look like
+ *       corrections: fixes (a fix word on its own in the subject: "fix", "fixes", "fixed", "hotfix", "bugfix",
+ *       "Hotfix-1.2.3"; a compound at the start, "Bug-fix:", "hot-fix", "quick-fix:"; or new work that is a fix,
+ *       "Add fix for ..."), reverts (a subject starting "Revert" or "Reverted", or a body saying "This reverts
+ *       commit"), and "fixup!", "squash!" or "amend!" commits. Not fixes: a longer word ("prefix", "fixture",
+ *       "fix_typo"), a hyphenated name later in the subject ("Add bug-fix skill"), and a subject that adds something
+ *       new with "fix" only as its topic. Each comes with the files it touched, and the summary ranks the files
+ *       touched by two or more of them. Only subjects are printed, never bodies or authors.
  *       A subject is a lead, not evidence: read the diff before counting it.
  *
  *   node mine.mjs transcripts [<project folder>...] [--repo <dir>] [--projects <dir>] [--skip <session id>]...
@@ -116,16 +116,25 @@ function gitRoot(dir) {
   }
 }
 
-export function mineCommits({ repo = '.', since } = {}) {
+export function mineCommits({ repo = '.', since, rev } = {}) {
   const root = gitRoot(resolve(repo));
   if (!root) throw new Refusal(`${redact(resolve(repo))} is not a git repository`);
   const args = ['-C', root, 'log', '--no-merges', '--name-only', '--format=%x1e%H%x1f%cI%x1f%s%x1f%b%x1f'];
   if (since) args.push(`--since=${since}`);
+  if (rev !== undefined && (!rev || rev.startsWith('-'))) throw new Refusal(`--rev must name a branch or commit, not ${JSON.stringify(rev)}`);
+  let label = rev;
+  if (rev) args.push(rev, '--');
+  else {
+    try {
+      label = execFileSync('git', ['-C', root, 'rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    } catch { label = 'HEAD'; }
+  }
   let raw;
   try {
     raw = execFileSync('git', args, { encoding: 'utf8', maxBuffer: 1 << 30, stdio: ['ignore', 'pipe', 'pipe'] });
   } catch (e) {
     if (/does not have any commits/.test(String(e.stderr))) raw = '';
+    else if (rev) throw new Refusal(`no branch or commit named ${JSON.stringify(rev)}`);
     else throw e;
   }
   const records = raw.split('\x1e').filter((r) => r.trim());
@@ -142,7 +151,7 @@ export function mineCommits({ repo = '.', since } = {}) {
   }
   const hotFiles = [...touched].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, 15).map(([file, count]) => ({ file: redact(file), count }));
-  return { scanned: records.length, commits, hotFiles };
+  return { rev: label, scanned: records.length, commits, hotFiles };
 }
 
 function printCommits(res, out) {
@@ -151,7 +160,7 @@ function printCommits(res, out) {
     for (const f of c.files) out(`\t${f}`);
   }
   const n = (k) => res.commits.filter((c) => c.kind === k).length;
-  out(`# ${n('fix')} fix, ${n('revert')} revert, ${n('fixup')} fixup in ${res.scanned} commits (merges skipped)`);
+  out(`# ${n('fix')} fix, ${n('revert')} revert, ${n('fixup')} fixup in ${res.scanned} commits on ${res.rev} (merges skipped)`);
   if (res.hotFiles.length) {
     out('# Files touched by two or more of these commits:');
     for (const h of res.hotFiles) out(`# ${h.count}\t${h.file}`);
@@ -363,7 +372,7 @@ function printFolders(res, out) {
 class Refusal extends Error {}
 class Usage extends Error {}
 
-const USAGE = 'usage: mine.mjs commits [--repo <dir>] [--since <date>] [--json]\n'
+const USAGE = 'usage: mine.mjs commits [--repo <dir>] [--rev <branch>] [--since <date>] [--json]\n'
   + '       mine.mjs transcripts [<project folder>...] [--repo <dir>] [--projects <dir>] [--skip <session>]...\n'
   + '                            [--keep-recent] [--max-chars <n>] [--json]\n'
   + '       mine.mjs folders [--repo <dir>] [--projects <dir>]';
@@ -372,7 +381,7 @@ export function parseArgs(argv) {
   const [cmd, ...rest] = argv;
   if (!['commits', 'transcripts', 'folders'].includes(cmd)) throw new Usage(USAGE);
   const opts = { cmd, folders: [], json: false, skip: [], keepRecent: false };
-  const takes = { commits: ['--repo', '--since'], transcripts: ['--max-chars', '--repo', '--projects'], folders: ['--repo', '--projects'] }[cmd];
+  const takes = { commits: ['--repo', '--since', '--rev'], transcripts: ['--max-chars', '--repo', '--projects'], folders: ['--repo', '--projects'] }[cmd];
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
     if (a === '--json' && cmd !== 'folders') opts.json = true;
