@@ -14,7 +14,8 @@
  *   node mine.mjs transcripts <project folder>... [--max-chars <n, default 400>] [--json]
  *       Prints only what the user typed in each session transcript (<folder>/<session>.jsonl): typed messages,
  *       slash commands with their arguments, "!" shell commands and interrupts. Tool results, command output, system
- *       reminders, compaction summaries and subagent transcripts are left out. Each row is "<line>\t<date>\t<text>",
+ *       reminders, hook output, messages from other agents and task notifications (an `origin` other than human),
+ *       compaction summaries and subagent transcripts are left out. Each row is "<line>\t<date>\t<text>",
  *       under a "## <file>" header, so the full context can be found again. Give one project folder per argument; the
  *       folder that holds every project is refused, so other projects are never read.
  *
@@ -144,11 +145,13 @@ function printCommits(res, out) {
 
 // ---------- transcripts ----------
 
-const DROP_BLOCKS = /<(system-reminder|local-command-stdout|local-command-stderr|bash-stdout|bash-stderr|command-message|command-stdout)>[\s\S]*?<\/\1>/g;
+const DROP_BLOCKS = /<(system-reminder|user-prompt-submit-hook|task-notification|local-command-stdout|local-command-stderr|bash-stdout|bash-stderr|command-message|command-stdout)>[\s\S]*?<\/\1>/g;
 
 /** The text the user typed in one transcript entry, or null when the entry is not a typed user message. */
 export function userText(entry) {
   if (!entry || entry.type !== 'user' || entry.isMeta || entry.isSidechain || entry.isCompactSummary || entry.isVisibleInTranscriptOnly) return null;
+  // A message from a peer agent, a task notification or anything else not typed by a person carries another origin.
+  if (entry.origin && entry.origin.kind !== 'human') return null;
   const msg = entry.message;
   if (!msg || msg.role !== 'user') return null;
   let text;

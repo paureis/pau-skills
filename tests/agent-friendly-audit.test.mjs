@@ -204,9 +204,10 @@ describe('transcripts', () => {
       '14\t2026-03-02\t[image] Again: the config loader. This is the third time.',
       '1\t2026-03-05\tStop. Run the tests before you say done.',
       '4\t2026-03-05\t[Request interrupted by user for tool use]',
+      '7\t2026-03-05\tKeep the changelog short',
     ]);
     assert.match(r.stdout, /^## 0a1b2c3d-0000-4000-8000-000000000001\.jsonl$/m);
-    assert.match(r.stdout, /# 8 user messages in 2 sessions; skipped 1 subagent transcript and 1 unreadable line/);
+    assert.match(r.stdout, /# 9 user messages in 2 sessions; skipped 1 subagent transcript and 1 unreadable line/);
   });
 
   test('refuses the folder that holds every project, so other projects are never read', () => {
