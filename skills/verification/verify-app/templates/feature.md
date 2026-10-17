@@ -16,8 +16,10 @@ Preconditions:
 
 - TODO(verify-app): the state the app must be in, and the doctor result that confirms it.
 
+Steps:
+
 - **TODO(verify-app) step name.** The user action. Run `TODO(verify-app) exact command`. The observable result.
-- **Proof.** Run `TODO(verify-app) exact command` to save the evidence to `$EV/<feature>/`. What the evidence shows.
+- **Proof.** Run `TODO(verify-app) exact command` to save the evidence to `$EV/<feature>/` as numbered step files. What the evidence shows.
 
 ## Gotchas
 

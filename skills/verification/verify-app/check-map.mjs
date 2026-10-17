@@ -9,23 +9,28 @@
  *
  * Checks:
  *   - SKILL.md has frontmatter with a name equal to the folder name and a description (without them the skill never
- *     registers), the five sections Launch, Doctor, Drive, Evidence and Cleanup, and a line
- *     "Evidence folder: `<path>`".
+ *     registers); the five required sections Launch, Doctor, Drive, Evidence and Cleanup, none of them empty, and
+ *     Launch, Doctor and Cleanup each with a command in a fenced code block; a line "Evidence folder: `<path>`"; no
+ *     template token (<app>, <surface>, <harness>) left in.
  *   - features/README.md exists, and its links match the feature files on disk: no dead entry, no unlisted file, no
- *     duplicate.
+ *     duplicate. Every .md file under features/, in subfolders too, is a feature file, except features/README.md.
  *   - Every feature file has exactly four second-level headings, in this order, each with content under it:
  *     Sub-features, How to get to it (...), Driving it (...), Gotchas.
- *   - No line still carries the template marker TODO(verify-app).
+ *   - No line in SKILL.md or features/ still carries the template marker TODO(verify-app).
  *   - The evidence folder is ignored by git and has no tracked files in it. --evidence <path> overrides the folder
  *     named in SKILL.md; a relative path is relative to the repository root. A folder outside the repository, or a
  *     project that is not a git repository, is reported as a note, not a problem.
  *
- * Exit codes: 0 clean, 1 problems found, 2 usage (bad arguments, no such folder, no SKILL.md, or no single folder to
- * pick). Needs Node 20+; git on PATH for the evidence check.
+ * Markdown is read the CommonMark way where it matters here: ATX and Setext headings, fenced code blocks (a fence
+ * closes only on a bare fence of the same character and at least the same length), inline links with <...> targets
+ * and titles, and reference definitions. A byte order mark and CRLF line endings are accepted.
+ *
+ * Exit codes: 0 clean, 1 problems found, 2 usage (bad arguments, no such folder, no SKILL.md, no single folder to
+ * pick, or git missing from PATH when the evidence check needs it). Needs Node 20+.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync, statSync, realpathSync } from 'node:fs';
-import { join, resolve, relative, isAbsolute, basename, posix } from 'node:path';
+import { join, resolve, relative, isAbsolute, basename, dirname, posix } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -33,6 +38,7 @@ import { pathToFileURL } from 'node:url';
 // ---------------------------------------------------------------------------------------------------------------
 
 export const MARKER = 'TODO(verify-app)';
+export const TEMPLATE_TOKENS = ['<app>', '<surface>', '<harness>'];
 
 export const FEATURE_HEADINGS = [
   { label: 'Sub-features', test: (t) => /^sub-features$/i.test(t) },
@@ -41,45 +47,102 @@ export const FEATURE_HEADINGS = [
   { label: 'Gotchas', test: (t) => /^gotchas$/i.test(t) },
 ];
 
-export const SKILL_SECTIONS = ['Launch', 'Doctor', 'Drive', 'Evidence', 'Cleanup'];
+/** Required sections of the generated SKILL.md, and whether each needs a command in a fenced code block. */
+export const SKILL_SECTIONS = [
+  { name: 'Launch', command: true },
+  { name: 'Doctor', command: true },
+  { name: 'Drive', command: false },
+  { name: 'Evidence', command: false },
+  { name: 'Cleanup', command: true },
+];
 
-/** Split Markdown into lines, marking the ones inside a fenced code block. */
-function lines(text) {
+const FRONTMATTER = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+
+/**
+ * Split Markdown into lines: [{ line, code, fence, front }]. `code` marks lines inside a fenced block and its fence
+ * lines, `fence` the fence lines themselves, `front` the frontmatter block at the top.
+ */
+export function lines(text) {
+  const src = String(text).replace(/^﻿/, '');
+  const raw = src.split(/\r?\n/);
+  const fm = FRONTMATTER.exec(src);
+  const frontCount = fm ? fm[0].replace(/\r?\n$/, '').split(/\r?\n/).length : 0;
   const out = [];
-  let fence = null;
-  for (const line of String(text).split(/\r?\n/)) {
-    const m = /^\s{0,3}(`{3,}|~{3,})/.exec(line);
-    if (m) {
-      if (!fence) fence = m[1][0];
-      else if (m[1][0] === fence) { out.push({ line, code: true }); fence = null; continue; }
+  let open = null; // { ch, len }
+  raw.forEach((line, i) => {
+    if (i < frontCount) { out.push({ line, code: false, fence: false, front: true }); return; }
+    if (open) {
+      const close = /^ {0,3}(`+|~+)[ \t]*$/.exec(line);
+      if (close && close[1][0] === open.ch && close[1].length >= open.len) { out.push({ line, code: true, fence: true, front: false }); open = null; return; }
+      out.push({ line, code: true, fence: false, front: false });
+      return;
     }
-    out.push({ line, code: Boolean(fence) });
-  }
-  return out;
-}
-
-/** ATX headings outside fenced code: [{ level, text, line }] with 1-based line numbers. */
-export function headings(text) {
-  const out = [];
-  lines(text).forEach(({ line, code }, i) => {
-    if (code) return;
-    const m = /^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line);
-    if (m) out.push({ level: m[1].length, text: m[2], line: i + 1 });
+    const start = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    if (start && !(start[1][0] === '`' && start[2].includes('`'))) {
+      open = { ch: start[1][0], len: start[1].length };
+      out.push({ line, code: true, fence: true, front: false });
+      return;
+    }
+    out.push({ line, code: false, fence: false, front: false });
   });
   return out;
 }
 
+const ATX = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?[ \t]*$/;
+const SETEXT = /^ {0,3}(=+|-+)[ \t]*$/;
+const NOT_PARAGRAPH = /^\s*$|^ {4}|^\t|^ {0,3}(>|[-+*](\s|$)|\d{1,9}[.)](\s|$)|#{1,6}(\s|$))/;
+
+/**
+ * Headings outside fenced code and frontmatter: [{ level, text, line, end }], 1-based. `line` is the heading text,
+ * `end` its last line (the underline of a Setext heading).
+ */
+export function headings(text) {
+  const all = lines(text);
+  const out = [];
+  const used = new Set();
+  all.forEach(({ line, code, front }, i) => {
+    if (code || front) return;
+    const atx = ATX.exec(line);
+    if (atx) {
+      const t = (atx[2] || '').replace(/(^|[ \t]+)#+$/, '').trim();
+      out.push({ level: atx[1].length, text: t, line: i + 1, end: i + 1 });
+      used.add(i);
+      return;
+    }
+    const st = SETEXT.exec(line);
+    if (st && i > 0) {
+      const prev = all[i - 1];
+      if (!prev.code && !prev.front && !used.has(i - 1) && !NOT_PARAGRAPH.test(prev.line) && !SETEXT.test(prev.line)) {
+        out.push({ level: st[1][0] === '=' ? 1 : 2, text: prev.line.trim(), line: i, end: i + 1 });
+        used.add(i);
+      }
+    }
+  });
+  return out;
+}
+
+/** Second-level sections: [{ h, body }], body being the lines up to the next heading of level 1 or 2. */
+function sections(text) {
+  const all = lines(text);
+  const hs = headings(text);
+  return hs.filter((h) => h.level === 2).map((h) => {
+    const next = hs.find((x) => x.line > h.end && x.level <= 2);
+    return { h, body: all.slice(h.end, next ? next.line - 1 : all.length) };
+  });
+}
+
+const isEmpty = (body) => body.every((l) => l.line.trim() === '');
+const hasCommand = (body) => body.some((l) => l.code && !l.fence && l.line.trim() !== '');
+
 /** Problems with one feature file, as messages. */
 export function checkFeature(text) {
-  const all = lines(text);
-  const h2 = headings(text).filter((h) => h.level === 2);
   const problems = [];
   const found = [];
-  for (const h of h2) {
-    const idx = FEATURE_HEADINGS.findIndex((r) => r.test(h.text));
-    if (idx < 0) { problems.push(`unexpected heading "## ${h.text}" (line ${h.line}): a feature file has exactly the four headings`); continue; }
-    if (found.some((f) => f.idx === idx)) { problems.push(`heading "${FEATURE_HEADINGS[idx].label}" appears more than once (line ${h.line})`); continue; }
-    found.push({ idx, h });
+  for (const s of sections(text)) {
+    const idx = FEATURE_HEADINGS.findIndex((r) => r.test(s.h.text));
+    if (idx < 0) { problems.push(`unexpected heading "## ${s.h.text}" (line ${s.h.line}): a feature file has exactly the four headings`); continue; }
+    if (found.some((f) => f.idx === idx)) { problems.push(`heading "${FEATURE_HEADINGS[idx].label}" appears more than once (line ${s.h.line})`); continue; }
+    found.push({ idx, s });
   }
   for (const [idx, r] of FEATURE_HEADINGS.entries()) {
     if (!found.some((f) => f.idx === idx)) problems.push(`missing heading "## ${r.label}"`);
@@ -88,34 +151,49 @@ export function checkFeature(text) {
   if (order.some((v, i) => i > 0 && v < order[i - 1])) {
     problems.push(`headings out of order: use ${FEATURE_HEADINGS.map((r) => r.label).join(', ')}`);
   }
-  // A section is empty when nothing but blank lines sits between its heading and the next heading of level 1 or 2.
-  for (const { idx, h } of found) {
-    const next = headings(text).find((x) => x.line > h.line && x.level <= 2);
-    const body = all.slice(h.line, next ? next.line - 1 : all.length).map((l) => l.line.trim()).filter(Boolean);
-    if (body.length === 0) problems.push(`"## ${FEATURE_HEADINGS[idx].label}" is empty`);
+  for (const { idx, s } of found) {
+    if (isEmpty(s.body)) problems.push(`"## ${FEATURE_HEADINGS[idx].label}" is empty`);
   }
   return problems;
 }
 
-/** Local Markdown link targets in an index, normalized to paths inside its folder (anchors dropped). */
+function decode(target) {
+  try { return decodeURIComponent(target); } catch { return target; }
+}
+
+/** Normalize a link target to a path inside the index's folder, or null when it is not a local Markdown file. */
+function localTarget(raw) {
+  let target = raw.split('#')[0].split('?')[0];
+  if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith('/')) return null;
+  target = posix.normalize(decode(target).replace(/\\/g, '/'));
+  if (!/\.md$/i.test(target) || target.startsWith('..')) return null;
+  return target;
+}
+
+const INLINE = /\]\(\s*(?:<([^>\n]*)>|([^\s)]+))(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*\)/g;
+const REFDEF = /^ {0,3}\[[^\]]+\]:\s*(?:<([^>]*)>|(\S+))/;
+
+/** Local Markdown link targets in an index (inline links and reference definitions), normalized, anchors dropped. */
 export function indexLinks(text) {
   const out = [];
-  for (const { line, code } of lines(text)) {
-    if (code) continue;
+  for (const { line, code, front } of lines(text)) {
+    if (code || front) continue;
+    const ref = REFDEF.exec(line);
+    if (ref) {
+      const t = localTarget(ref[1] ?? ref[2]);
+      if (t) out.push(t);
+      continue;
+    }
     const prose = line.replace(/`[^`]*`/g, '');
-    for (const m of prose.matchAll(/\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g)) {
-      let target = m[1].split('#')[0].split('?')[0];
-      if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith('/')) continue;
-      if (!/\.md$/i.test(target)) continue;
-      target = posix.normalize(decodeURIComponent(target).replace(/\\/g, '/'));
-      if (target.startsWith('..')) continue;
-      out.push(target);
+    for (const m of prose.matchAll(INLINE)) {
+      const t = localTarget(m[1] ?? m[2]);
+      if (t) out.push(t);
     }
   }
   return out;
 }
 
-/** Compare index links with the .md files in the folder. README.md is the index itself and never an entry. */
+/** Compare index links with the .md files in the folder. The top-level README.md is the index and never an entry. */
 export function compareIndex(links, files) {
   const isIndex = (f) => /^readme\.md$/i.test(f);
   const entries = links.filter((l) => !isIndex(l));
@@ -135,7 +213,7 @@ export function compareIndex(links, files) {
 
 /** The name and description from YAML frontmatter, or null when there is no frontmatter. Simple keys only. */
 export function parseFrontmatter(text) {
-  const m = /^---\r?\n([\s\S]*?)\r?\n---\r?(\n|$)/.exec(String(text));
+  const m = FRONTMATTER.exec(String(text).replace(/^﻿/, ''));
   if (!m) return null;
   const out = {};
   for (const line of m[1].split(/\r?\n/)) {
@@ -158,6 +236,17 @@ export function evidenceFolder(text) {
   return p || null;
 }
 
+/** Template tokens left in a text, as messages with line numbers. */
+export function tokenProblems(text) {
+  const out = [];
+  for (const tok of TEMPLATE_TOKENS) {
+    const at = [];
+    String(text).split(/\r?\n/).forEach((l, i) => { if (l.includes(tok)) at.push(i + 1); });
+    if (at.length) out.push(`template token ${tok} left in, line ${at.slice(0, 5).join(', ')}${at.length > 5 ? ', ...' : ''}`);
+  }
+  return out;
+}
+
 /** Problems with the generated SKILL.md, as messages. */
 export function checkSkill(text, folderName) {
   const problems = [];
@@ -168,13 +257,16 @@ export function checkSkill(text, folderName) {
     else if (fm.name !== folderName) problems.push(`frontmatter name "${fm.name}" is not the folder name "${folderName}"`);
     if (!fm.description) problems.push('frontmatter has no description');
   }
-  const h2 = headings(text).filter((h) => h.level === 2).map((h) => h.text.toLowerCase());
-  for (const s of SKILL_SECTIONS) {
-    if (!h2.some((t) => t === s.toLowerCase() || t.startsWith(`${s.toLowerCase()} `) || t.startsWith(`${s.toLowerCase()}:`))) {
-      problems.push(`missing section "## ${s}"`);
-    }
+  const secs = sections(text);
+  for (const req of SKILL_SECTIONS) {
+    const low = req.name.toLowerCase();
+    const s = secs.find(({ h }) => { const t = h.text.toLowerCase(); return t === low || t.startsWith(`${low} `) || t.startsWith(`${low}:`); });
+    if (!s) { problems.push(`missing section "## ${req.name}"`); continue; }
+    if (isEmpty(s.body)) problems.push(`"## ${req.name}" is empty`);
+    else if (req.command && !hasCommand(s.body)) problems.push(`"## ${req.name}" has no command in a fenced code block`);
   }
   if (!evidenceFolder(text)) problems.push('no line "Evidence folder: `<path>`" naming where proof is kept');
+  problems.push(...tokenProblems(text));
   return problems;
 }
 
@@ -205,13 +297,36 @@ export function parseArgs(argv) {
 // Disk and git
 // ---------------------------------------------------------------------------------------------------------------
 
+export class GitMissing extends Error {}
+
 function git(cwd, args) {
-  return execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  try {
+    return execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (e) {
+    if (e.code === 'ENOENT') throw new GitMissing('git is not on PATH: the evidence check needs it');
+    throw e;
+  }
 }
 
-/** The repository root that holds dir, or null. */
+/** The repository root that holds dir, or null when dir is not in a git repository. */
 function repoRoot(dir) {
-  try { return realpathSync.native(git(dir, ['rev-parse', '--show-toplevel']).trim()); } catch { return null; }
+  try { return realpathSync.native(git(dir, ['rev-parse', '--show-toplevel']).trim()); } catch (e) {
+    if (e instanceof GitMissing) throw e;
+    return null;
+  }
+}
+
+/** The real path of p, resolving symlinks through its nearest existing ancestor when p does not exist yet. */
+export function realPathOf(p) {
+  let cur = resolve(p);
+  const rest = [];
+  while (!existsSync(cur)) {
+    const up = dirname(cur);
+    if (up === cur) break;
+    rest.unshift(basename(cur));
+    cur = up;
+  }
+  return join(existsSync(cur) ? realpathSync.native(cur) : cur, ...rest);
 }
 
 /** Problems and notes for the evidence folder. */
@@ -220,13 +335,13 @@ export function checkEvidence(skillDir, folder) {
   const notes = [];
   const root = repoRoot(skillDir);
   if (!root) { notes.push('not inside a git repository: the evidence folder was not checked'); return { problems, notes }; }
-  const abs = isAbsolute(folder) ? resolve(folder) : resolve(root, folder);
-  const absReal = existsSync(abs) ? realpathSync.native(abs) : abs;
-  const rel = relative(root, absReal).replace(/\\/g, '/');
-  if (rel === '' ) { problems.push({ file: '.gitignore', message: 'the evidence folder is the repository root' }); return { problems, notes }; }
+  const abs = realPathOf(isAbsolute(folder) ? folder : resolve(root, folder));
+  const rel = relative(root, abs).replace(/\\/g, '/');
+  if (rel === '') { problems.push({ file: '.gitignore', message: 'the evidence folder is the repository root: use a folder inside it' }); return { problems, notes }; }
   if (rel.startsWith('..') || isAbsolute(rel)) { notes.push(`evidence folder ${folder} is outside the repository; git does not see it`); return { problems, notes }; }
   let ignored;
   try { git(root, ['check-ignore', '-q', `${rel}/.check-map-probe`]); ignored = true; } catch (e) {
+    if (e instanceof GitMissing) throw e;
     if (e.status === 1) ignored = false;
     else { problems.push({ file: '.gitignore', message: `git check-ignore failed for ${rel}: ${String(e.stderr || e.message).trim()}` }); return { problems, notes }; }
   }
@@ -234,6 +349,18 @@ export function checkEvidence(skillDir, folder) {
   const tracked = git(root, ['ls-files', '--', rel]).split('\n').filter(Boolean);
   if (tracked.length) problems.push({ file: '.gitignore', message: `${tracked.length} file(s) in ${rel}/ are tracked by git (for example ${tracked[0]}): git rm --cached them` });
   return { problems, notes };
+}
+
+/** Every .md file under dir, in subfolders too, as sorted paths relative to dir with forward slashes. */
+export function featureFiles(dir, prefix = '') {
+  const out = [];
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) return out;
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefix ? `${prefix}/${e.name}` : e.name;
+    if (e.isDirectory()) out.push(...featureFiles(join(dir, e.name), rel));
+    else if (e.isFile() && /\.md$/i.test(e.name)) out.push(rel);
+  }
+  return prefix ? out : out.sort();
 }
 
 /** Run every check on a verify skill folder. Returns { dir, evidence, problems: [{ file, message }], notes }. */
@@ -246,7 +373,7 @@ export function checkMap(dir, { evidence = null } = {}) {
   for (const n of placeholders(skillText)) add(`SKILL.md:${n}`, `still marked ${MARKER}`);
 
   const fdir = join(dir, 'features');
-  const files = existsSync(fdir) && statSync(fdir).isDirectory() ? readdirSync(fdir).filter((f) => /\.md$/i.test(f)).sort() : [];
+  const files = featureFiles(fdir);
   const readme = files.find((f) => /^readme\.md$/i.test(f));
   if (!readme) add('features/README.md', 'missing: the feature map needs an index');
   else {
@@ -313,7 +440,11 @@ export function main(argv, cwd = process.cwd()) {
     dir = found[0];
   }
   if (!existsSync(join(dir, 'SKILL.md'))) { console.error(`no SKILL.md in ${dir}\n${USAGE}`); return 2; }
-  const result = checkMap(dir, { evidence: opts.evidence });
+  let result;
+  try { result = checkMap(dir, { evidence: opts.evidence }); } catch (e) {
+    if (e instanceof GitMissing) { console.error(e.message); return 2; }
+    throw e;
+  }
   console.log(opts.json ? JSON.stringify(result, null, 2) : format(result));
   return result.problems.length ? 1 : 0;
 }

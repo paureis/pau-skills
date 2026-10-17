@@ -3,13 +3,13 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { writeFileSync, mkdirSync, readFileSync, readdirSync, cpSync, realpathSync, existsSync, rmSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync, readdirSync, cpSync, realpathSync, existsSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { once } from 'node:events';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
   headings, checkFeature, indexLinks, compareIndex, parseFrontmatter, checkSkill, evidenceFolder, placeholders,
-  parseArgs, checkMap,
+  parseArgs, checkMap, featureFiles,
 } from '../skills/verification/verify-app/check-map.mjs';
 
 const SKILL_DIR = repo('skills', 'verification', 'verify-app');
@@ -45,15 +45,19 @@ description: "Drive the Shelf HTTP service and prove behaviour with evidence. Us
 
 ## Launch
 
-Run it.
+\`\`\`bash
+node server.mjs &
+\`\`\`
 
 ## Doctor
 
-Check it.
+\`\`\`bash
+curl -sS "$URL/health"
+\`\`\`
 
 ## Drive
 
-Drive it.
+Run \`curl -sS "$URL/bookmarks"\`.
 
 ## Evidence
 
@@ -61,7 +65,9 @@ Evidence folder: \`.verify-evidence/<run-id>/\`
 
 ## Cleanup
 
-Stop what you started.
+\`\`\`bash
+kill "$PID"
+\`\`\`
 `;
 
 describe('headings', () => {
@@ -181,6 +187,97 @@ describe('parseArgs', () => {
     assert.ok(parseArgs(['--nope']).error);
     assert.ok(parseArgs(['--evidence']).error);
     assert.ok(parseArgs(['a', 'b']).error);
+  });
+});
+
+describe('Markdown details', () => {
+  test('a fence closes only on a bare fence of the same character, at least as long', () => {
+    const body = (inner) => `${FEATURE.replace('## Gotchas\n\n- Titles are trimmed.\n', '')}\n${inner}\n`;
+    // Each code block hides a "## Gotchas", so the heading must still be missing.
+    for (const inner of ['```\n~~~\n## Gotchas\n```', '````\n```\n## Gotchas\n````', '```\n```sh\n## Gotchas\n```']) {
+      assert.ok(checkFeature(body(inner)).some((m) => /missing.*Gotchas/.test(m)), inner);
+    }
+    // A longer closing fence closes, so the heading after it counts.
+    assert.deepEqual(checkFeature(`${FEATURE.replace('## Gotchas\n\n- Titles are trimmed.\n', '')}\n\`\`\`\nx\n\`\`\`\`\n\n## Gotchas\n\n- y\n`), []);
+  });
+
+  test('a file with CRLF line endings and a code block is read like one with LF', () => {
+    const text = FEATURE.replace('- Titles are trimmed.\n', '```\ncode\n```\n\n- Titles are trimmed.\n').replace(/\n/g, '\r\n');
+    assert.deepEqual(checkFeature(text), []);
+  });
+
+  test('Setext headings count', () => {
+    const text = FEATURE.replace('# Add a bookmark\n', 'Add a bookmark\n==============\n').replace('## Gotchas\n', 'Gotchas\n-------\n');
+    assert.deepEqual(checkFeature(text), []);
+    assert.deepEqual(headings('Title\n=====\n\ntext\n\nSub\n---\n').map((h) => [h.level, h.text]), [[1, 'Title'], [2, 'Sub']]);
+  });
+
+  test('a "---" after a blank line or a list item is a rule, not a heading', () => {
+    assert.deepEqual(headings('text\n\n---\n- item\n---\n'), []);
+  });
+
+  test('a third-level heading inside a section is part of the section', () => {
+    const text = FEATURE.replace("- `add-ok` saves a link.\n", '### Saving\n\n- `add-ok` saves a link.\n');
+    assert.deepEqual(checkFeature(text), []);
+  });
+
+  test('frontmatter with a byte order mark or trailing spaces on its fences is read', () => {
+    assert.equal(parseFrontmatter(`\uFEFF${SKILL}`).name, 'verify-shelf');
+    assert.equal(parseFrontmatter(SKILL.replace('---\n', '---  \n').replace('\n---\n', '\n--- \n')).name, 'verify-shelf');
+    assert.equal(parseFrontmatter(SKILL.replace(/\n/g, '\r\n')).name, 'verify-shelf');
+  });
+});
+
+describe('index links, more forms', () => {
+  test('angle brackets, single-quoted titles, reference definitions and percent escapes', () => {
+    const text = "- [My](<my feature.md>)\n- [Add](add.md 'Add')\n- [Pay](billing/pay.md \"Pay\")\n- [Sp](two%20words.md)\n\n[ref]: ref.md\n[url]: https://example.com/x.md\n";
+    assert.deepEqual(indexLinks(text), ['my feature.md', 'add.md', 'billing/pay.md', 'two words.md', 'ref.md']);
+  });
+
+  test('a malformed percent escape does not throw', () => {
+    assert.deepEqual(indexLinks('- [x](100%.md)\n'), ['100%.md']);
+  });
+});
+
+describe('the generated SKILL.md, fill spots', () => {
+  test('a leftover template token is reported', () => {
+    for (const tok of ['<app>', '<surface>', '<harness>']) {
+      const p = checkSkill(SKILL.replace('# Verify Shelf', `# Verify ${tok}`), 'verify-shelf');
+      assert.ok(p.some((m) => m.includes(tok)), tok);
+    }
+  });
+
+  test('a required section with nothing under it is reported', () => {
+    const empty = checkSkill(SKILL.replace("Run `curl -sS \"$URL/bookmarks\"`.\n", ''), 'verify-shelf');
+    assert.ok(empty.some((m) => /Drive.*empty/.test(m)), empty.join('; '));
+  });
+
+  test('Launch, Doctor and Cleanup need a command in a code block, not only prose', () => {
+    for (const s of ['Launch', 'Doctor', 'Cleanup']) {
+      const re = new RegExp(`(## ${s}\\n\\n)\`\`\`bash\\n[^\`]*\`\`\`\\n`);
+      const text = SKILL.replace(re, '$1Do the usual thing.\n');
+      assert.notEqual(text, SKILL, s);
+      assert.ok(checkSkill(text, 'verify-shelf').some((m) => m.includes(s) && /command/.test(m)), s);
+    }
+  });
+
+  test('an empty code block is not a command', () => {
+    const text = SKILL.replace('```bash\nkill "$PID"\n```', '```bash\n\n```');
+    assert.ok(checkSkill(text, 'verify-shelf').some((m) => /Cleanup.*command/.test(m)));
+  });
+});
+
+describe('featureFiles', () => {
+  test('lists .md files in subfolders as relative paths and skips folders, even one named like a file', () => {
+    const d = tempDir('verify-app-ff-');
+    mkdirSync(join(d, 'billing'));
+    mkdirSync(join(d, 'old.md'));
+    writeFileSync(join(d, 'README.md'), '#');
+    writeFileSync(join(d, 'add.md'), '#');
+    writeFileSync(join(d, 'billing', 'pay.md'), '#');
+    writeFileSync(join(d, 'old.md', 'inner.md'), '#');
+    writeFileSync(join(d, 'notes.txt'), 'x');
+    assert.deepEqual(featureFiles(d), ['README.md', 'add.md', 'billing/pay.md', 'old.md/inner.md']);
   });
 });
 
@@ -320,6 +417,81 @@ describe('check-map.mjs on a real project', () => {
     assert.ok(files.includes('SKILL.md') || files.includes('.gitignore'));
   });
 
+  test('a feature in a subfolder that the index links is found', () => {
+    const { dir } = makeProject();
+    mkdirSync(join(dir, 'features', 'billing'));
+    writeFileSync(join(dir, 'features', 'billing', 'pay.md'), FEATURE);
+    writeFileSync(join(dir, 'features', 'README.md'), '# Map\n\n- [Add](./add.md)\n- [Search](./search.md)\n- [Pay](billing/pay.md)\n');
+    const r = run([dir]);
+    assert.equal(r.code, 0, r.stdout);
+  });
+
+  test('a feature whose file name needs %20 in the link is found', () => {
+    const { dir } = makeProject();
+    writeFileSync(join(dir, 'features', 'my feature.md'), FEATURE);
+    writeFileSync(join(dir, 'features', 'README.md'), '# Map\n\n- [Add](./add.md)\n- [Search](./search.md)\n- [Mine](my%20feature.md)\n');
+    assert.equal(run([dir]).code, 0);
+  });
+
+  test('a folder named like a feature file does not crash the checker', () => {
+    const { dir } = makeProject();
+    mkdirSync(join(dir, 'features', 'old.md'));
+    const r = run([dir]);
+    assert.equal(r.code, 0, r.stdout + r.stderr);
+  });
+
+  test('a malformed percent escape in the index is a problem, not a crash', () => {
+    const { dir } = makeProject();
+    writeFileSync(join(dir, 'features', 'README.md'), '# Map\n\n- [Add](./add.md)\n- [Search](./search.md)\n- [x](100%.md)\n');
+    const r = run([dir]);
+    assert.equal(r.code, 1, r.stderr);
+    assert.match(r.stdout, /100%\.md/);
+    assert.equal(r.stderr, '');
+  });
+
+  test('an index with no feature files at all is a problem', () => {
+    const { dir } = makeProject();
+    rmSync(join(dir, 'features', 'add.md'));
+    rmSync(join(dir, 'features', 'search.md'));
+    writeFileSync(join(dir, 'features', 'README.md'), '# Map\n');
+    const r = run([dir]);
+    assert.equal(r.code, 1);
+    assert.match(r.stdout, /no feature files/);
+  });
+
+  test('the repository root as the evidence folder is a problem', () => {
+    const { dir } = makeProject();
+    const r = run([dir, '--evidence', '.']);
+    assert.equal(r.code, 1);
+    assert.match(r.stdout, /repository root/);
+  });
+
+  test('an absolute evidence path through a symlink, to a folder not made yet, is checked inside the repository', () => {
+    const { root, dir } = makeProject({ ignore: '' });
+    const link = join(realpathSync.native(tempDir('verify-app-link-')), 'repo');
+    symlinkSync(root, link);
+    const r = run([dir, '--evidence', join(link, 'proof', 'later')]);
+    assert.equal(r.code, 1, r.stdout);
+    assert.match(r.stdout, /proof\/later.*not ignored/);
+  });
+
+  test('an existing evidence folder reached through a symlink is checked inside the repository', () => {
+    const { root, dir } = makeProject({ ignore: '' });
+    mkdirSync(join(root, 'proof'));
+    const link = join(realpathSync.native(tempDir('verify-app-link-')), 'repo');
+    symlinkSync(root, link);
+    const r = run([dir, '--evidence', join(link, 'proof')]);
+    assert.equal(r.code, 1, r.stdout);
+    assert.match(r.stdout, /proof.*not ignored/);
+  });
+
+  test('git missing from PATH is a usage error, not a skipped check', () => {
+    const { dir } = makeProject();
+    const r = runNode(SCRIPT, { args: [dir], env: { PATH: tempDir('verify-app-nopath-') } });
+    assert.equal(r.code, 2, r.stdout + r.stderr);
+    assert.match(r.stderr, /git/);
+  });
+
   test('checkMap returns the same result as the command', () => {
     const { dir } = makeProject();
     assert.deepEqual(checkMap(dir).problems, []);
@@ -337,11 +509,25 @@ describe('the bundled template and example', () => {
     mkdirSync(dir, { recursive: true });
     const template = readFileSync(join(SKILL_DIR, 'templates', 'verify-skill.md'), 'utf8');
     assert.ok(placeholders(template).length > 0, 'the template marks what to fill in');
-    const filled = template.replace(/verify-<app>/g, 'verify-notes').replace(/TODO\(verify-app\)/g, 'filled in');
+    const filled = template.replace(/<app>/g, 'notes').replace(/<surface>/g, 'web UI').replace(/<harness>/g, 'Playwright').replace(/TODO\(verify-app\)/g, 'filled in');
     writeFileSync(join(dir, 'SKILL.md'), filled);
     cpSync(join(SKILL_DIR, 'references', 'feature-map-example'), join(dir, 'features'), { recursive: true });
     const r = run([dir]);
     assert.equal(r.code, 0, r.stdout + r.stderr);
+  });
+
+  test('the template with its markers deleted and nothing filled in is not clean', () => {
+    const { root } = makeProject();
+    const dir = join(root, '.claude', 'skills', 'verify-notes');
+    mkdirSync(dir, { recursive: true });
+    const template = readFileSync(join(SKILL_DIR, 'templates', 'verify-skill.md'), 'utf8');
+    const stripped = template.split('\n').filter((l) => !l.includes('TODO(verify-app)')).join('\n').replace(/verify-<app>/g, 'verify-notes');
+    writeFileSync(join(dir, 'SKILL.md'), stripped);
+    cpSync(join(SKILL_DIR, 'references', 'feature-map-example'), join(dir, 'features'), { recursive: true });
+    const out = JSON.parse(run([dir, '--json']).stdout);
+    const msgs = out.problems.map((p) => `${p.file}: ${p.message}`).join('\n');
+    assert.match(msgs, /<app>/, 'a leftover <app> is reported');
+    for (const s of ['Launch', 'Doctor', 'Cleanup']) assert.match(msgs, new RegExp(`${s}.*(empty|no command)`), `${s} with nothing filled in is reported:\n${msgs}`);
   });
 
   test('the feature template has the four headings', () => {

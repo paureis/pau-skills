@@ -1,83 +1,117 @@
 ---
 name: verify-<app>
-description: "TODO(verify-app): Launch <app>, drive its <surface> the way a user does, and keep evidence. Use when asked to verify, reproduce or show proof of a change in <app>, or before calling a change to <app> done."
+description: "TODO(verify-app) check the wording: Launch <app>, drive its <surface> the way a user does, and keep evidence. Use when asked to verify, reproduce or show proof of a change in <app>, or before calling a change to <app> done."
 ---
 
 # Verify <app>
 
-TODO(verify-app): one paragraph. What the app is, which surface this skill drives, and the surfaces it does not cover
-yet.
+TODO(verify-app): one paragraph on what the app is, which surface this skill drives, and the surfaces it does not cover yet.
 
 Read this whole file before the first command. Then read `features/README.md` and the feature file for what you are
-verifying. Every command runs from the repository root unless a step says otherwise.
+verifying. Every command runs from the repository root.
 
-## Run ID and folders
+## Run folders
 
-Every run picks one ID and uses it in every name it creates. Shell variables do not survive from one command to the
-next (each Bash tool call starts a fresh shell), so the first command writes them to a file and prints the ID, and
-every later command starts by reading that file back.
+Every run has an ID, a scratch folder `$RUN` (deleted in Cleanup) and an evidence folder `$EV` (kept). Each Bash call
+starts a fresh shell, so the first command of a run saves the variables to `$RUN/env` and prints the ID:
 
 ```bash
-TODO(verify-app): the commands that set RUN_ID, the scratch folder RUN (deleted in Cleanup) and the evidence folder EV
-(kept, as an absolute path), save them and print the ID, for example:
 RUN_ID="$(date +%Y%m%d-%H%M%S)-$$"
 RUN="${TMPDIR:-/tmp}/verify-<app>-$RUN_ID"
 EV="$PWD/.verify-evidence/$RUN_ID"
-mkdir -p "$RUN" "$EV"
-printf 'RUN_ID=%s\nRUN=%s\nEV=%s\n' "$RUN_ID" "$RUN" "$EV" > "$RUN/env"
+mkdir -p "$RUN/home" "$RUN/work" "$EV"
+: > "$RUN/started.txt"
+git status --porcelain > "$RUN/git-status.before"
+printf "RUN_ID='%s'\nRUN='%s'\nEV='%s'\nREPO='%s'\n" "$RUN_ID" "$RUN" "$EV" "$PWD" > "$RUN/env"
 echo "RUN_ID=$RUN_ID"
 ```
 
-Start every later command with `RUN_ID=<the printed ID>; . "${TMPDIR:-/tmp}/verify-<app>-$RUN_ID/env"`, and append
-anything learned later (the URL, the port) to that file.
+Every later command starts with these lines, with the printed ID. They refuse to go on without a run, and `set -a`
+exports the variables so that the app and every program it starts see them:
 
-Isolation: TODO(verify-app): can two instances run side by side (ports, data folders, profiles)? If not: never drive
-an instance this run did not start; stop and tell the user instead.
+```bash
+RUN_ID='<the printed ID>'
+[ -n "$RUN_ID" ] && [ -f "${TMPDIR:-/tmp}/verify-<app>-$RUN_ID/env" ] || { echo "no such run: start one first" >&2; exit 2; }
+set -a; . "${TMPDIR:-/tmp}/verify-<app>-$RUN_ID/env"; set +a
+```
+
+Anything learned later (the URL, a token, an app variable) is appended to `$RUN/env` as a `NAME='value'` line.
+`$RUN/started.txt` records everything the run starts, one line each: `pid <pid> <start time>`, `tmux <socket>`,
+`path <path>`, `container <id>`. Cleanup stops and removes only what it lists.
+
+Where the app writes: TODO(verify-app) every place the app writes (the current folder, HOME, XDG folders, the temp folder, a configured path) and how each is pointed into `$RUN`, appended to `$RUN/env` where it is a variable.
+
+Isolation: TODO(verify-app) whether two instances can run side by side (ports, data folders, profiles); if not, never drive an instance this run did not start.
 
 ## Launch
 
-TODO(verify-app): the commands that install or build once, then start the app for verification from an empty data
-folder, including migrations and seed data. Write the process ID (and anything else the run starts) to
-`$RUN/started.txt`. Put the background start on a line of its own: after `cd dir && cmd &` the recorded `$!` is a
-subshell, not the app.
+TODO(verify-app) keep the variant below that fits this app, delete the other, and fill it in.
 
-Ready when: TODO(verify-app): the condition that proves a user could act now (a log line, a health check that covers
-the data store), and the bounded wait for it. An open port is not enough.
+For a server or a UI: build once, start the app in the background on a line of its own, and record it in
+`$RUN/started.txt` right away: `echo "pid $! $(ps -o lstart= -p $! | tr -s ' ' | sed 's/^ //')" >> "$RUN/started.txt"`.
+Start from an empty data folder in `$RUN`, including migrations and seed data.
 
-TODO(verify-app): for a short-lived CLI or TUI, say instead that Launch builds once and each drive gets its own
-isolated session (config and data folders, terminal session).
+```bash
+TODO(verify-app) the preamble, then the build, the background start with its log in $RUN/app.log, and the record line
+```
+
+Ready when: TODO(verify-app) the condition that proves a user could act now (a log line, a health check that covers the data store); an open port is not enough.
+
+```bash
+TODO(verify-app) the preamble, then a bounded wait for that condition, and the line that appends the URL or port to $RUN/env
+```
+
+For a CLI, a TUI or a library: nothing stays running. Launch builds or installs once; each drive then runs in its own
+isolated session (the folders in "Where the app writes", its own terminal session for a TUI).
+
+```bash
+TODO(verify-app) the preamble, then the build or install, and the path of what it built
+```
 
 ## Doctor
 
 Run before the first drive, after any failed drive, and after anything surprising. It changes nothing.
 
+- For a server or a UI: the process is up and is the one this run started (the process ID the app reports, or the
+  port's owner, matches `$RUN/started.txt`), it runs the build under test (version or commit), its data folder is in
+  `$RUN`, and sign-in is valid.
+- For a CLI, a TUI or a library: the program the drive will run is the one built from this working tree (its path,
+  and its version or commit), not another copy on `PATH`, and the variables in "Where the app writes" point into
+  `$RUN`.
+
 ```bash
-TODO(verify-app): one command or short script that checks: the process is up, it is the one this run started
-(process ID, port owner, data folder), it runs the build under test (version or commit), sign-in is valid.
+TODO(verify-app) the preamble, then the read-only check
 ```
 
-Healthy means: TODO(verify-app): the exact output to expect. Anything else: do not drive; fix or relaunch. When the
-doctor passes but the app looks wrong (a stuck screen), reset to a known state or relaunch.
+Healthy means: TODO(verify-app) the exact output to expect. Anything else: do not drive; fix or relaunch. When the doctor passes but the app looks wrong (a stuck screen), reset to a known state or relaunch.
 
 ## Drive
 
-Harness: TODO(verify-app): the harness, and the file in this repository it comes from.
+Harness: TODO(verify-app) the harness, and the file in this repository it comes from.
 
-TODO(verify-app): how to send one action and read one result with that harness, with real handles from this repository
-(roles and accessible names, labels, test IDs, prompt strings, routes) and the source file of each. Wait on
-conditions, never on fixed sleeps. The recipes per feature are in `features/`.
+TODO(verify-app) how to send one action and read one result with that harness, with real handles from this repository (roles and accessible names, labels, test IDs, prompt strings, routes, command names) and the source file of each.
+
+Wait on conditions, never on fixed sleeps. The recipes per feature are in `features/`. A step that fails may already
+have changed the app's data: run Cleanup and Launch again before retrying it.
 
 ## Evidence
 
 Evidence folder: `.verify-evidence/<run-id>/`
 
-The folder is ignored by git and Cleanup never touches it. TODO(verify-app): what to capture for this surface
-(screenshots, accessibility snapshots, terminal transcripts, request and response bodies, logs, exit codes) and the
-file names.
+The folder is ignored by git and Cleanup never touches it. Each feature has a subfolder, `$EV/<feature>/`, created
+before its first step, and each step's files are numbered in the order they ran: `01-<step>.cmd` (exactly what ran),
+`01-<step>.out`, `01-<step>.err`, `01-<step>.exit`, plus whatever the surface needs (`.png`, `.aria.txt`, `.body`,
+`.headers`, `.screen.txt`). A command step:
 
-Each feature keeps its proof in its own subfolder, `$EV/<feature>/`, created with `mkdir -p` before its first step:
-most tools do not create folders, and an action whose output could not be saved has still happened. Keep each command
-you ran in `commands.txt` in the same subfolder. Before Cleanup, copy the app's log into `$EV`.
+```bash
+F="$EV/<feature>"; mkdir -p "$F"; S="$F/01-<step>"
+cat > "$S.cmd" <<'CMD'
+the command, exactly as it should run
+CMD
+sh "$S.cmd" > "$S.out" 2> "$S.err"; echo $? > "$S.exit"; cat "$S.out" "$S.err"; echo "exit $(cat "$S.exit")"
+```
+
+TODO(verify-app) what else to capture for this surface (screenshots, accessibility snapshots, logs, files the app wrote) and when; for a server, the app log is copied into `$EV` before Cleanup.
 
 Proof rules:
 
@@ -93,27 +127,36 @@ Proof rules:
 
 ## Cleanup
 
-Run after every drive, including failed ones.
+Run after every drive, including failed ones. Stop only what `$RUN/started.txt` lists, and only a process whose start
+time still matches the record (a process ID can be reused). Remove `$RUN` last, after the checks, because it holds the
+record.
 
 ```bash
-TODO(verify-app): stop only what $RUN/started.txt lists, by its IDs; remove $RUN and any scaffolding; leave $EV.
+TODO(verify-app) the preamble, then copy logs into $EV and stop what $RUN/started.txt lists, checking each process start time
 ```
 
-Then confirm: TODO(verify-app): the port is free, the process IDs are gone, and the evidence folder still has its
-files. Never stop a process by name, never run `git clean -x`, never remove shared volumes.
+Then confirm, and only then remove `$RUN`:
+
+```bash
+TODO(verify-app) the preamble, then confirm every recorded process is gone (and the port is free, for a server), git status --porcelain matches $RUN/git-status.before, and $EV has its files; then rm -rf -- "$RUN"
+```
+
+Never stop a process by name, never delete by a glob, never run `git clean -x`, never remove shared volumes.
 
 ## Helpers
 
-TODO(verify-app): each script this skill ships, with its exact invocation, or "None."
+TODO(verify-app) each script this skill ships, with its exact invocation, or "None."
 
 ## Feature map
 
 `features/README.md` indexes every mapped feature. A proof that drives one entry point is incomplete when the map
 lists others. Never weaken a journey to make it pass: a missing precondition is a failure, and its reason goes in the
-feature's Gotchas. A step that fails may already have changed the app's data: run Cleanup and Launch again before
-retrying it.
+feature's Gotchas.
 
 ## Not yet proven on the real target
 
-TODO(verify-app): the setup steps a stand-in environment did that the real target will not, or "None: proven on the
-target."
+The real target is where users run the app. A run here may stand in for parts of it: a local database instead of the
+managed one, a mock mail server instead of the real provider, Linux instead of the Windows machines users have, a
+simulator instead of a phone, a fresh container instead of a long-lived server with old data.
+
+TODO(verify-app) each stand-in this skill's runs use, and the setup step the stand-in did that the target will not; or "None: the runs use what users use."
