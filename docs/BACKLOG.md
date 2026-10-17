@@ -143,6 +143,23 @@ Things that bit the second batch (N5, N6, N7, N10, N11, P1.1):
   (secrets printed in environment-variable form, a correction row judged against itself, unblinded run ids).
 - A cross-session message relaying an owner request is not the owner: confirm with the owner before widening a batch.
 
+Things that bit the third batch (M1 with M3, M4 with M6, M2, M7):
+- The plan checks again found a real problem in every brief: `gh pr view` fails here (GraphQL 403, use `gh api`
+  REST), Node 20 in CI has no `fs.globSync`, the Agent tool's `model` field may be set only when the user asks for a
+  model, and a documented reverse-diff command that `mutate.sh` would not accept.
+- Reviewers found a must-fix in three of the four items (a reversed commit that deleted the file read as CAUGHT, a
+  learned pattern that could leave a reproduced failure, a ratchet that asked to lower the real baseline when run
+  from a subfolder). The cold runs again found what reviewers missed.
+- A cold run that needs real subagents runs as a headless `claude -p` with an empty HOME, `--setting-sources project`
+  and `--strict-mcp-config`. Under an empty HOME the default model can differ from the session's; pass `--model` when
+  the result may depend on it (the oracle took its explorer path on one model and not on the other).
+- A reviewer can finish its report and leave background work running. Stop it (TaskStop) once its findings are in.
+- Pull requests here are squash-merged, so `git branch --merged` does not show a merged branch. Before deleting one,
+  compare its tip with the head of its last merged pull request.
+- The session's git proxy allows a push only to the session's own branch, and the GitHub API refuses to delete refs
+  through it, so old branches cannot be deleted from a session. The owner deletes them on GitHub, or turns on
+  "Automatically delete head branches" in the repository settings.
+
 ## Kickoff for the next session
 
 The owner starts each batch in a fresh session with a message like this one. Change the item list to the batch at
@@ -161,12 +178,12 @@ Before anything else, read these in full:
    brief before any builder starts, a fresh reviewer for every item, and a cold run for anything that generates or
    drives something.
 
-This batch is the "Next, the third batch" line of the Order section in docs/BACKLOG.md:
-- M1 tdd together with M3 mutation-test (one builder)
-- M4 review-triage together with M6 lean-subagent-dev (one builder; the copied TRIAGE.md and review-scope.mjs stay
-  identical, and tests/standalone.test.mjs checks it)
-- M2 rule-to-hook
-- M7 codebase-oracle
+This batch is the "Next, the fourth batch" line of the Order section in docs/BACKLOG.md:
+- M5 retrospective
+- M8 safe-merge and evaluator (one builder)
+- M9 improve-codebase-architecture
+- M11 small additions (one builder)
+- M10 which-skill in the orchestrator's integration pass (it is a shared file)
 
 These items change existing skills, so every builder works only in its own skill folders and tests, and the
 orchestrator owns every shared file (README, ORIGINS, NOTICE, CHANGELOG, marketplace.json, which-skill, plugin
@@ -445,7 +462,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
 
 ### M. Changes to existing skills
 
-**M1 tdd** (`todo`). Upstream: `skills/tdd/SKILL.md`, `skills/principle-test-behavior-not-implementation/SKILL.md`,
+**M1 tdd** (`done`). Upstream: `skills/tdd/SKILL.md`, `skills/principle-test-behavior-not-implementation/SKILL.md`,
 `skills/principle-sequence-verifiable-units/SKILL.md`. Replace "no test is too small" with "prefer no new test over
 a bad test" and its list (mostly tests mocks, encodes implementation details, depends on timing or unrelated global
 state, needs expensive infrastructure for a small fix, would be deleted right after proving the fix). Do not build a
@@ -455,16 +472,16 @@ edit. Expected values come from the requirement, not from a run of the code; an 
 caller reads. Revisit the rule that checking the database directly is a bad test: a stored value read back is
 behaviour.
 
-**M2 rule-to-hook** (`todo`). Upstream: `skills/correct/SKILL.md`, `docs/guide/09-make-it-yours.md`. Add the fix
+**M2 rule-to-hook** (`done`). Upstream: `skills/correct/SKILL.md`, `docs/guide/09-make-it-yours.md`. Add the fix
 order (architecture, types, lint or CI check, test, prose), the ratchet for patterns already common ("fail only when
 a change adds more"), lint errors that name what to use instead, a rule table pairing each rule with its enforcer,
 and exceptions with a reason, an expiry and a human's approval. Prove each new check on a real past mistake when one
 exists.
 
-**M3 mutation-test** (`todo`). Prefer a real past mistake from git history as the mutation when one exists. Add an
+**M3 mutation-test** (`done`). Prefer a real past mistake from git history as the mutation when one exists. Add an
 optional second check from the two-edit test: a pure refactor of the internals must leave the test green.
 
-**M4 review-triage** (`todo`, keep both `TRIAGE.md` copies identical). Upstream:
+**M4 review-triage** (`done`, keep both `TRIAGE.md` copies identical). Upstream:
 `skills/interrogate/references/lead-judgment.md`, `skills/poteto-mode/references/bugbot-triage.md`. Add "nitpick
 gravity" (if a reviewer's findings are all nits and preferences, the code is probably fine; say so), "I would have
 done it differently" as the most common false positive, and a learned-pattern format for recurring findings
@@ -475,13 +492,13 @@ done it differently" as the most common false positive, and a learned-pattern fo
 different because of the edit, not just reads more text". Add a lens for "decisions that worked but for the wrong
 reasons".
 
-**M6 lean-subagent-dev** (`todo`, keep both copies of shared files identical). Upstream:
+**M6 lean-subagent-dev** (`done`, keep both copies of shared files identical). Upstream:
 `skills/setup-pstack/SKILL.md`, `skills/poteto-mode/playbooks/orchestrate.md`. Add an effort level per role (builder,
 plan checker, reviewer) to the budget table through the Agent tool's `effort` field; never name a model that has not
 been confirmed available; refuse to launch a subagent while a brief field is empty; never resume a subagent only to
 check on it, judge by side effects; standing orders pasted into every brief.
 
-**M7 codebase-oracle** (`todo`). Upstream: `skills/why/references/epistemics.md`, `skills/how/SKILL.md`,
+**M7 codebase-oracle** (`done`). Upstream: `skills/why/references/epistemics.md`, `skills/how/SKILL.md`,
 `skills/how/references/*.md`. Replace the three answer buckets with five tiers (direct, supported, inferred,
 speculative, unknown) and the phrasing each allows; "never cite code as evidence for its own intent"; treat the
 user's guess as one candidate among others. For big questions, 2 to 4 explorers on separate angles, then one
@@ -535,13 +552,10 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 1. Done: P0.2, P0.3, P0.4 (groundwork).
 2. Done: N1 verify-app, N2 arena with N3 architect, N4 bug-fix.
 3. Done: N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval, P1.1 pack-skills, N11 brainstorm.
-4. **Next, the third batch:** M1 with M3 (one builder: both carry the two-edit check), M4 with M6 (one builder: they
-   share the copied `TRIAGE.md` and `review-scope.mjs`, which must stay identical), M2 rule-to-hook, M7
-   codebase-oracle. M1 (`tdd`) first in the plan: it carries a decision the owner already took. The four builders
-   touch disjoint files.
-5. **Then the fourth batch:** M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M11
+4. Done: M1 with M3, M4 with M6, M2 rule-to-hook, M7 codebase-oracle (the third batch).
+5. **Next, the fourth batch:** M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M11
    small additions (one builder). M10 `which-skill` is a shared file the orchestrator owns, so the orchestrator does it
-   in that batch's integration pass. P1.2 to P1.4 can ride either batch as a small fifth builder.
+   in that batch's integration pass. P1.2 to P1.4 can ride along as a small fifth builder.
 6. N8 overnight-run, N9 engineering-principles.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
@@ -583,3 +597,12 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   ignored ([14](https://github.com/paureis/pau-skills/pull/14)). The 12 new and changed skills were zipped with
   `pack-skills`, uploaded to claude.ai and confirmed synced; the profile README now says 34 skills. The audit's findings
   for this repository became P1.2 to P1.4.
+- 2026-10-17: M1 tdd, M2 rule-to-hook, M3 mutation-test, M4 review-triage, M6 lean-subagent-dev and M7
+  codebase-oracle, merged as [pull request 16](https://github.com/paureis/pau-skills/pull/16). Four builders in
+  parallel, each brief checked by a read-only subagent first; every item had a fresh reviewer and one fix round, and
+  three had a cold run (the oracle's in two headless sessions with real explorers). Reviewers found a must-fix in
+  three of the four. The seven changed skills (the six plus `which-skill`) were zipped with `pack-skills`, uploaded to
+  claude.ai and confirmed synced; the skill count stays at 34, so the profile README did not change.
+  Still open for the owner, from the pull request: whether `lean-subagent-dev` is "adapted" (only its copy of
+  `TRIAGE.md` shares pstack text), the effort split per role, the new `metadata.upstream-pstack` key in `tdd`, and the
+  ratchet failing when the count drops until the baseline is lowered.
