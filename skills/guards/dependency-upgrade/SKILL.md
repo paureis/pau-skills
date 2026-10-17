@@ -1,7 +1,6 @@
 ---
 name: dependency-upgrade
-description: Plan and carry out dependency upgrades safely in any ecosystem (npm, pnpm, Yarn, Bun, pip, uv, Poetry, Go modules, Cargo, Maven, Gradle, Bundler, Composer, NuGet, Mix, Swift PM), including runtime and toolchain versions and Docker base images. Covers one major upgrade of a key framework or a batch pass of minor and patch updates, from inventory and a green baseline through changelog research, a bisectable plan, one commit per step, and a report of what was upgraded, skipped or blocked. Use when the user says "upgrade dependencies", "bump packages", "update deps", "upgrade to React 19", "move to Django 5", "upgrade Spring Boot", "bump the Go version", "update the Node version", "update the base image", "we are way behind on versions", "Dependabot has 30 PRs open", or "what breaks if we upgrade X".
-disable-model-invocation: true
+description: "Upgrade dependencies, runtimes and base images in any ecosystem, one major at a time or as a batch of minor and patch updates, each step tested and committed. Use when the user says 'upgrade dependencies', 'bump packages', 'upgrade to React 19', 'bump the Go version', 'update the base image', 'we are way behind on versions', 'Dependabot has 30 PRs open', 'what breaks if we upgrade X'."
 argument-hint: "[package and target version, e.g. 'next 15', or 'hygiene' for a minor/patch pass]"
 ---
 
@@ -17,6 +16,9 @@ Reference files, read when you reach their phase:
   package, move to a new major, regenerate the lockfile, audit, explain why a package is present, where changelogs
   live), plus runtimes, toolchains and Docker images.
 - `${CLAUDE_SKILL_DIR}/RESEARCH.md`: the checklist for researching one major bump.
+
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
 
 ## Pick the mode
 

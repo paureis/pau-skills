@@ -1,7 +1,6 @@
 ---
 name: rule-to-hook
-description: Turn a written rule that keeps getting broken (in CLAUDE.md, AGENTS.md, a style guide, or a correction the user keeps repeating) into an enforced mechanism at the highest layer that holds it (architecture, types, a lint or CI check with a ratchet when the pattern is already common, a test) or a Claude Code hook when the rule is about what the agent does; pins the rule down with real violations and near-misses, writes a small tested check whose error names what to use instead, proves it fails on a mutation and on a real past mistake, registers it, and records it in a rule table with expiring, approved exceptions. Use when the user says "this rule keeps getting broken", "I keep telling Claude not to", "make this a hook", "enforce this rule", "turn this into a guard", "block this command", "stop the agent from doing X", "why does it ignore CLAUDE.md", or when the same correction has come up three times.
-disable-model-invocation: true
+description: "Turn a rule that keeps getting broken, not a new automation, into an enforced check (types, lint, CI, a test or a Claude Code hook) proven on a past mistake. Use when the user says 'this rule keeps getting broken', 'I keep telling Claude not to', 'enforce this rule', 'make this a hook', 'block this command', 'stop the agent from doing X', 'why does it ignore CLAUDE.md'."
 argument-hint: "[the rule, or where it is written, e.g. 'CLAUDE.md: never git add -A']"
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
@@ -15,9 +14,8 @@ does that conversion in a fixed order, so the result lives at the highest layer 
 violation, leaves the near-misses alone, and has a test that has been seen to fail.
 
 This skill implements one rule. To find which rules a project needs, from its review comments, fix commits and
-transcripts, suggest the user run `/agent-friendly-audit` (or `/planning:agent-friendly-audit` from a plugin) if it
-is installed; it uses the same fix order and asks for the same exception fields. Without it, start from the rule
-the user names.
+transcripts, run the `agent-friendly-audit` skill if it is installed; it uses the same fix order and asks for the
+same exception fields. Without it, start from the rule the user names.
 
 The rule, or where to find it: $ARGUMENTS
 
@@ -35,6 +33,9 @@ pau-skills repository (no-verify, merge, destructive, secret and inline-backtick
 `tests/` folder. With the pau-skills plugin installed they are at `${CLAUDE_PLUGIN_ROOT}/hooks/guards/`; otherwise
 they are at https://github.com/paureis/pau-skills/tree/main/hooks/guards. Each has a pure decision function, a
 fail-open main block, and a table of commands to deny and to pass.
+
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
 
 ## 1. Pin the rule down
 
