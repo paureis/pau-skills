@@ -92,6 +92,20 @@ nothing itself except the integration.
 9. **Clean up** the worktrees and `par/` branches after checking each is clean and fully merged
    (`git worktree remove`, `git branch -d`). After the owner merges, update the skill count on the profile README in
    `paureis/paureis` (the `pau-skills` line).
+10. **Ship to the owner's account.** The owner gets every skill through their claude.ai account (it syncs to the
+    terminal, the desktop app and the web) and the hooks through the `pau-skills-hooks` plugin, never the full
+    plugin. So a batch is not finished at the merge:
+    - Build one zip per new or changed skill from main, with the skill's folder at the zip root (`<name>/SKILL.md`
+      and every bundled file). Use `scripts/pack-skills.mjs` once item P1.1 exists. Send the zips to the owner and say
+      which are new and which replace an existing skill.
+    - Before sending, the upload rules must hold; the tests enforce both: no XML-like tag in a description (claude.ai
+      refuses `<word>`), and no "claude" or "anthropic" in a name.
+    - The owner uploads them on claude.ai (Customize, Skills; open an existing skill to replace it). Then, in a new
+      session, check that each one synced with all its files: `ls ~/.claude/skills/synced/*/<name>/`. A session only
+      sees skills uploaded before it started.
+    - When any hook changed, bump `pau-skills-hooks` too, and tell the owner to run
+      `claude plugin marketplace update pau-skills` and `claude plugin update pau-skills-hooks@pau-skills` on each
+      computer.
 
 Things that bit the first batch:
 - Subagents cannot launch subagents. A builder that needs "a fresh agent" for a dry run uses a separate `claude -p`
@@ -433,7 +447,8 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 
 1. Done: P0.2, P0.3, P0.4 (groundwork).
 2. Done: N1 verify-app, N2 arena with N3 architect, N4 bug-fix.
-3. **Next:** N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval (three builders in parallel).
+3. **Next:** N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval, and P1.1 pack-skills (four
+   builders in parallel; P1.1 is small and its script makes step 10 of "How to run a batch" one command).
 4. M1 to M11 (edits to existing skills; one at a time, or in disjoint groups, because they touch shared files).
    M1 (`tdd`) first: it carries a decision the owner already took.
 5. N8 overnight-run, N9 engineering-principles.

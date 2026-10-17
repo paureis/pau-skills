@@ -29,7 +29,10 @@ This is a Claude Code plugin marketplace. Read this before changing anything.
 - Skills are language-neutral: never assume JavaScript; cover the common ecosystems or detect the project's tooling.
 - Writing style: plain, direct English. No em or en dashes (a test enforces this), no marketing words.
 - Bump the version of every plugin whose files changed, and the `pau-skills` bundle, in `marketplace.json`, and add a
-  line to `CHANGELOG.md`.
+  line to `CHANGELOG.md`. When a hook changes, bump `pau-skills-hooks` as well.
+- The owner installs skills by uploading them to claude.ai (zips, one per skill, folder at the root) and hooks through
+  `pau-skills-hooks`. After a merge that adds or changes a skill, hand over the zips for those skills; see step 10 of
+  "How to run a batch" in docs/BACKLOG.md.
 
 ## Checks before every commit
 
