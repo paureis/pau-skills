@@ -117,7 +117,8 @@ is correct (it exits non-zero when it is not), and prints a count of the work do
 
 Pick the run count: at least 5 for anything timed, 10 or more when one run takes under a second, and enough that the
 spread is small next to the gain you hope for. A metric that comes out the same every time (a size) needs 3 runs to
-show that it does. Use the same command and run count for every measurement in the run.
+show that it does. Use the same command and run count for every measurement in the run, except the longer
+re-measure of a close call (step 6).
 
 Then vet the harness with `${CLAUDE_SKILL_DIR}/BENCHMARK-CHECKLIST.md`, all of it: name the limiter (question 1), and
 check that it is tuned, counts errors, and did the work (questions 2, 4 and 7). Fix what it finds before freezing.
@@ -182,11 +183,12 @@ expected gain over cost. Write the list in the task list.
 For each attempt:
 1. Run `DECIDE summary <log>` and read it, so you do not retry a refuted idea or forget the best kept number.
 2. Write the hypothesis and its prediction.
-3. Make the one change yourself. If the gate in the next step fails because your code for the idea is wrong (a typo,
-   a wrong pattern), fix that code and run the gate again; it is still the same one change, and the note says so. If
-   the idea itself breaks behaviour, revert. (Optional: for a large change, hand it to a subagent with the Agent tool and
-   `isolation: "worktree"`, review its diff, and bring it into your tree. Several independent hypotheses can be built
-   in parallel worktrees, but measure them one at a time in the same tree: two benchmarks at once slow each other.)
+3. Make the one change yourself. If the gate in the next step fails because your code for the idea is wrong (a
+   typo, a wrong pattern), fix that code and run the gate again; it is still the same one change, and the note says
+   so. If the idea itself breaks behaviour, revert. (Optional: for a large change, hand it to a subagent with the
+   Agent tool and `isolation: "worktree"`, review its diff, and bring it into your tree. Several independent
+   hypotheses can be built in parallel worktrees, but measure them one at a time in the same tree: two benchmarks
+   at once slow each other.)
 4. Run the regression gate (the test command from step 2).
 5. Check that the harness is unchanged and that `uptime` is close to the baseline's, then measure with the same
    command and run count. If the gap to the best kept number is less than twice the larger spread, measure again with
@@ -229,9 +231,10 @@ After each keep, profile again: the limiter often moves, and the next hypothesis
   timing inside the process), which is a harness change: tell the user, and redo step 4 with a new baseline row.
 - **Stop** when the log shows the predicate met: the target reached and at least the minimum number of attempts
   made. Check it against `DECIDE summary`, not memory: it prints the best kept number, the attempt count (each
-  attempt once, the sensitivity check left out) and the first baseline's note with the predicate. Also stop when the budget is spent, or when every remaining
-  idea has an Amdahl ceiling below the gap to the target, and say the predicate was not met. Do not stop while cheap
-  untried hypotheses remain and the predicate is not met. If you are stuck, tell the user instead of spinning.
+  attempt once, the sensitivity check left out) and the first baseline's note with the predicate. Also stop when the
+  budget is spent, or when every remaining idea has an Amdahl ceiling below the gap to the target, and say the
+  predicate was not met. Do not stop while cheap untried hypotheses remain and the predicate is not met. If you are
+  stuck, tell the user instead of spinning.
 
 ## Step 8. Check the result and report
 
