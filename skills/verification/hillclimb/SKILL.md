@@ -1,8 +1,7 @@
 ---
 name: hillclimb
-description: "Improve one measurable thing (run time, size, memory, a score) in proven steps. Freezes a harness and proves it sensitive with a deliberate regression, fixes a stop predicate that pairs a target with a minimum number of attempts, then makes one change and one measurement per attempt, keeps or reverts it, commits each kept win, and logs every attempt in a decision.tsv outside the repository. Use when the user types /hillclimb or says 'make this faster until', 'get the bundle under 200 KB', 'push the score up', 'optimize this metric'. Not for a single bug."
+description: "Improve one number of the project (run time, bundle size, memory, a score) in measured steps: one change per attempt, kept only when it beats the noise, each kept win committed. Use when the user says 'make this faster until', 'get the bundle under 200 KB', 'push the score up', 'optimize this metric'."
 argument-hint: "[the metric, the target and the case, for example: wall time of the import on the 60k-row file, 50% faster, at least 8 attempts]"
-disable-model-invocation: true
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
