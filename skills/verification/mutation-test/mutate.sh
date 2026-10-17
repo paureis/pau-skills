@@ -112,6 +112,18 @@ else
   if sed --version >/dev/null 2>&1; then inplace=(-i); else inplace=(-i ''); fi
   sed "${inplace[@]}" -f "$mutation" "$file" || { echo "${tag}${stop}: sed failed." >&2; git checkout -- "$file"; exit 2; }
 fi
+# A deleted or emptied file fails any command (a missing module, an empty import), so its CAUGHT would prove nothing.
+# Reversing the commit that added or renamed the file gives exactly that patch.
+if [ ! -f "$file" ]; then
+  echo "${tag}${stop}: the $what deletes $file (a reversed commit that added or renamed it?): a missing file proves nothing." >&2
+  git checkout -- "$file"
+  exit 2
+fi
+if [ ! -s "$file" ]; then
+  echo "${tag}${stop}: the $what leaves $file empty: an empty file proves nothing." >&2
+  git checkout -- "$file"
+  exit 2
+fi
 after="$(content_hash "$file")"
 if [ "$before" = "$after" ]; then
   echo "${tag}${stop}: the $what did not change the content of $file (does the pattern match?)." >&2
