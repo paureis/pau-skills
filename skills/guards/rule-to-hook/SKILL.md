@@ -16,8 +16,8 @@ violation, leaves the near-misses alone, and has a test that has been seen to fa
 
 This skill implements one rule. To find which rules a project needs, from its review comments, fix commits and
 transcripts, suggest the user run `/agent-friendly-audit` (or `/planning:agent-friendly-audit` from a plugin) if it
-is installed; it uses the same fix order and the same exception format. Without it, start from the rule the user
-names.
+is installed; it uses the same fix order and asks for the same exception fields. Without it, start from the rule
+the user names.
 
 The rule, or where to find it: $ARGUMENTS
 
@@ -47,8 +47,8 @@ a script could check, and collect evidence.
       transcripts if the user can point you to them, `git log -p`, review comments, and the repository itself
       (`grep -rn` for the forbidden pattern). Ask the user for the cases they remember. For each violation that a
       later commit fixed, note the commit and the file: step 4 runs the new check on the version before the fix.
-- [ ] Count the **live instances**: the places in the current code that break the rule today. A handful can be
-      fixed in the same change; many mean the check needs a ratchet (step 2).
+- [ ] Count the **live instances**: the places in the current code that break the rule today. If you can fix them
+      all in this change, do. If there are more than that, the check needs a ratchet (step 2).
 - [ ] Collect **near-misses**: things that look like the violation and must stay allowed. A quoted mention in a
       commit message, a flag with the same letter on another program, the safe form of the same command. These are
       what turn a guard from useful into something people switch off.
@@ -109,8 +109,8 @@ which file, function or command to use: "use `config.load()` from `app/config`, 
 no-env-read, see CLAUDE.md)", not "forbidden call". An agent that reads only "denied" tries variations until one gets
 through. Linters take the message in the rule's configuration: ESLint `no-restricted-syntax` and
 `no-restricted-imports` take a `message` per entry, Ruff's `lint.flake8-tidy-imports.banned-api` a `msg`, Clippy's
-`disallowed-methods` in `clippy.toml` a `reason` and a `replacement`, golangci-lint `forbidigo` a `msg` per pattern. A grep step in
-CI prints the replacement itself.
+`disallowed-methods` in `clippy.toml` a `reason` and a `replacement`, golangci-lint `forbidigo` a `msg` per
+pattern. A grep step in CI prints the replacement itself.
 
 **A ratchet, for a pattern that is already common.** When the live count from step 1 is too large to fix in this
 change, the check counts the instances against a committed baseline and fails only when a change adds more. When
@@ -128,30 +128,59 @@ one:
   issues in code the change touched. This is a diff ratchet, not a count: an old instance moved into a touched line
   reappears.
 - Anything else, in any language: `${CLAUDE_SKILL_DIR}/templates/ratchet.mjs` counts the lines matching a regular
-  expression in the files chosen by git globs and compares the count with a baseline file. Copy it into the project
-  (for example `scripts/ratchet.mjs`), run it once with `--update` to write the baseline, commit both, then run the
-  same command locally and in CI. Its usage is at the top of the file, and its error names the replacement you pass
-  with `--instead`.
+  expression in the files chosen by git globs and compares the count with a baseline file. It needs Node.js 20 or
+  later wherever it runs, locally and in CI, whatever the project's language. Copy it into the project (for example
+  `scripts/ratchet.mjs`), run it once with `--update` to write the baseline, commit both, then run the same command
+  locally and in CI. Its usage is at the top of the file, and its error names the replacement you pass with
+  `--instead`. `--files` and `--baseline` are relative to the repository root, whatever folder it runs from. Each
+  `--files` value is a git glob: `*.py` matches top-level files only, `**/*.py` matches every folder. A value that
+  starts with `:(` goes to git unchanged, so `:(exclude)app/config.py` leaves out the one file that is allowed to
+  do it. Globs that match no file are an error, not a baseline of 0.
+
+Prefer a linter rule that parses the code when one exists (Ruff `banned-api`, TID251; ESLint `no-restricted-imports`
+or `no-restricted-syntax`; Clippy `disallowed-methods`; golangci-lint `forbidigo`). A regular expression counts the
+pattern inside strings, comments and docstrings, and misses aliases such as `import os as o` or
+`from os import environ`. Use `ratchet.mjs` for plain text patterns, or as the count over a linter that has no
+baseline of its own: silence today's instances with the linter's suppression comment and point `ratchet.mjs` at that
+comment (for example `--pattern 'allow\(clippy::disallowed_methods\)'`), so the linter catches every new instance,
+aliases included, and the number of suppressions can only fall.
+
+Two changes merged one after the other that each lower the baseline can leave the main branch red, because the
+second still holds the first one's number; the fix is one more `--update`. ESLint's suppressions file behaves the
+same way. When the project has no CI, add the check to the command it already runs (its test or lint script), and
+tell the user that nothing enforces the rule on merge.
 
 **Exceptions go on the offending line**, with a reason, an expiry date and who approved it:
 `<comment marker> <check id>: allowed until <date>, <reason>, approved by <role or handle>`, for example
 `# no-env-read: allowed until 2026-12-31, read before the config loader exists, approved by @org/platform-owners`.
 Record the approver the way the project records approvals (a code owner team, a reviewer handle), never a person's
-name. An agent may propose an exception; a human approves it. The check reads the date and fails on an expired or
-incomplete exception (`ratchet.mjs` does). When the tool has its own suppression comment, put the same fields in the
-text it allows after the codes (`# noqa: T201 <fields>`, `// eslint-disable-next-line <rule> -- <fields>`), and add
-a small CI step that fails on an expired date.
+name. An agent may propose an exception; a human approves it. A script cannot tell who wrote "approved by", so code
+review is the human gate: a CODEOWNERS entry on the files, or a reviewer who checks each new exception line.
+`ratchet.mjs` lists every valid exception (file and line, expiry, approver) on each run so the reviewer sees them, and
+fails on an expired or incomplete one. An exception on a counted line takes it out of the count, so the baseline is
+lowered in the same change. When the tool has its own suppression comment, put the same fields in the text it allows
+after the codes, on the same line (`# noqa: T201 <fields>`, `// eslint-disable-line <rule> -- <fields>`), and add a
+small CI step that fails on an expired date.
 
 Done when you have named the layer and why the layers above it did not work, the mechanism, the event and matcher
 (for a hook), the output style, whether it needs a ratchet, and the reason.
 
 ## 3. Write the guard and its test table
 
-For an architecture or type fix, make the change and keep one of the step 1 violations as a small case that must
-now fail to build (or, for an interpreted language, fail to load or run). For a lint rule, CI check or test, the
-discipline below still holds: the decision in one place, every violation from step 1 as a case that must fail,
-every near-miss as a case that must pass, using the tool's own rule tester where it has one, and a message that
-names what to use instead. The rest of this step is written for a hook.
+Each layer has its own test:
+- **Architecture or types.** Make the change and keep one of the step 1 violations as a small case that must now
+  fail to build (or, for an interpreted language, fail to load or run), or that can no longer be written because
+  the thing it used is gone.
+- **Lint rule, CI check or test.** The decision in one place, every violation from step 1 as a case that must fail,
+  every near-miss as a case that must pass, using the tool's own rule tester where it has one, and a message that
+  names what to use instead.
+- **Ratchet.** A test table of sample lines and the baseline cases. Lines that must count: the violations from step
+  1. Lines that must not: the near-misses (the name in a comment or a string when the pattern can tell them apart,
+  the sanctioned file left out with `:(exclude)`, a line with a valid exception). Baseline cases: it passes at the
+  baseline, fails with one more instance, asks for a lower baseline with one fewer, and fails on an expired or
+  incomplete exception. Run them in a scratch git repository (`git init` in a temporary folder) or on a scratch
+  branch of the project.
+- **Hook.** The rest of this step.
 
 Copy the template that matches the project's language (Node.js or Python; both use only the standard library), into
 `.claude/hooks/<rule-id>.mjs` or `.py` for a project hook. Then:
@@ -179,8 +208,17 @@ Done when the guard file and its test exist and every test passes.
 
 ## 4. Prove the test can fail
 
-A test you have never seen fail proves nothing. Break the decision function on purpose and watch the suite go red,
-then run the check on a real past mistake.
+A test you have never seen fail proves nothing. Break the check on purpose and watch it go red, then run it on a real
+past mistake. What to break depends on the layer:
+- **Hook, lint rule with its own code, CI script:** the decision function, as below.
+- **Ratchet:** the comparison (in `ratchet.mjs`, `count > base` to `count > base + 1`) or the pattern (a regex that
+  no longer matches the violation), and see the baseline cases from step 3 fail. With a linter's own baseline
+  (ESLint suppressions, Ruff `noqa`), there is no code of yours to break: add one instance to a scratch copy and see
+  it fail.
+- **Architecture or types:** nothing to mutate. The proof is the step 3 case that no longer builds, or the old way
+  that no longer exists. Skip to the past mistake.
+
+Any mutation, on the guard or on whichever file you break:
 
 1. **Commit** the guard and its test first (or, if the user does not want a commit yet, copy the guard to a scratch
    file to restore from). Restoring with `git checkout --` erases uncommitted work, and does nothing on an untracked
@@ -197,15 +235,18 @@ step checked by the script; its usage is at the top of the file. With any pau-sk
 `${CLAUDE_PLUGIN_ROOT}/skills/verification/mutation-test/mutate.sh` (every plugin ships the whole repository); with
 the skill installed on its own, it is in that skill's folder.
 
-Then the real past mistake, when step 1 found a commit that fixed a violation: get the version before the fix, either
-the file (`git show <sha>^:<path>` into a scratch folder) or the whole tree
-(`git archive <sha>^ | tar -x -C <tmp>`), run the new check on it, and see it fail with its message naming what to
-use instead. Run it on the current code and see it pass. For a ratchet, also see it pass at the baseline count, fail
-with one more instance added to a scratch copy, and fail on an exception whose date has passed. With no fixed
-violation in history, say "no past mistake" in the report; the mutation is then the only proof.
+Then the real past mistake, when step 1 found a commit that fixed a violation. With a clean tree, put the version
+of that one file from before the fix into the current tree, `git show <sha>^:<path> > <path>`, run the check (or
+the build, for a type fix), see it fail with its message naming what to use instead, then restore with
+`git checkout -- <path>` (or delete the file if it no longer exists) and check that `git diff --exit-code` prints
+nothing. One file in today's tree keeps git, today's baseline and today's configuration in place; a whole old tree
+(`git archive <sha>^ | tar -x -C <tmp>`) suits only a check that needs none of them, such as a linter run on a
+folder, because it is not a git repository and the old tree's count is not today's. With no fixed violation in
+history, say "no past mistake" in the report; the mutation (or, for architecture and types, the case that no longer
+builds) is then the only proof.
 
-Done when you have seen the suite fail on the mutation and pass again after the restore, and the check fail on the
-past mistake (or noted that there is none).
+Done when you have seen the check fail on the mutation (or the old case fail to build) and pass again after the
+restore, and fail on the past mistake (or noted that there is none).
 
 ## 5. Register it, test it live, record the rule
 
@@ -217,9 +258,9 @@ past mistake (or noted that there is none).
       that matches the rule (the template's example denies `git add --all --dry-run`, which changes nothing even if
       it got through) and confirm the block and the reason. Then run one near-miss and confirm it passes. If the live
       run disagrees with the tests, the registration is wrong (matcher, path, interpreter name), not the tests. For a
-      lint rule, CI check or test, run the same command locally and in CI, and see the violation fail in CI too (a
-      throwaway branch or pull request that adds one violation). A check that runs only on one machine enforces
-      nothing.
+      lint rule, CI check, ratchet or test, run the same command locally and in CI, and see the violation fail in CI
+      too (a throwaway branch or pull request that adds one violation). A check that runs only on one machine
+      enforces nothing. For architecture or types, the CI build is the live check: it passes on the change.
 - [ ] Update the original rule text. Add a line such as
       `Enforced by: .claude/hooks/no-blanket-git-add.mjs (PreToolUse, Bash)`, so the next reader knows the rule is
       mechanical and where to change it. Keep the sentence while an enforcer exists: it explains why. Drop the
@@ -234,10 +275,15 @@ past mistake (or noted that there is none).
       | Rule | Enforced by (file, layer) | Exceptions |
       |---|---|---|
       | Never `git add -A` or `git add .` | `.claude/hooks/no-blanket-git-add.mjs`, hook (PreToolUse, Bash) | none |
-      | Read configuration through `config.load()` | `scripts/ratchet.mjs --id no-env-read`, CI check (ratchet, baseline 14) | on the line, expiring |
+      | Read configuration through `config.load()` | `scripts/ratchet.mjs --id no-env-read`, CI check (ratchet, baseline in `.ratchet/no-env-read.txt`) | on the line, expiring, listed on each run |
+
+      Point at the baseline file rather than writing its number in the row; the number changes with every
+      lowering. An architecture or type fix that makes the mistake impossible gets no row: drop the sentence and
+      any old row in the same change.
 
 Done when the check is registered, one live deny and one live pass were observed (or the CI failure, for a check),
-the rule text points at it, and the rule table has its row.
+the rule text points at it, and the rule table has its row; or, for architecture and types, when the CI build passes
+and the rule text and row are gone.
 
 ## Do not
 
@@ -261,10 +307,11 @@ Layer:       <architecture | types | lint or CI check | test | hook | prose>
 Mechanism:   <hook event + matcher | git hook | linter rule | CI check | test>, output <exit 2 | ask | context>
              Ratchet: <none | baseline n in <file>>   Why: <one line>
 Files:       <guard path>, <test path>, <settings or config path>
-Tests:       <n> DENY, <n> PASS, subprocess checks; all green
-Mutation:    <what you broke> -> <n> tests red; restored, clean diff, green again
+Tests:       <n> DENY, <n> PASS, subprocess checks | ratchet: <n> counted, <n> not, baseline cases | the case that
+             no longer builds; all green
+Mutation:    <what you broke> -> <n> tests red; restored, clean diff, green again | none (architecture or types)
 Past mistake: <sha>^: fails with "<message>" | no past mistake in history
 Live check:  denied: <harmless command> | passed: <near-miss> | CI: <run that failed on the violation>
-Rule text:   updated with "Enforced by: ..." at <file:line>; rule table row at <file:line>
+Rule text:   updated with "Enforced by: ..." at <file:line>; rule table row at <file:line> | dropped, mistake impossible
 Not covered: <variants the guard knowingly misses, and why; or "none known">
 ```
