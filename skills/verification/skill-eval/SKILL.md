@@ -74,9 +74,10 @@ of every transcript lists the skills, plugins and MCP servers the run got, and `
   (`/tmp/x/-home-user-project/...`), a run mistyped its own working folder, its read was refused as outside the
   project, and it gave up: the run measured the path, not the skill. `setup` warns about such a path.
 - A run sees its working folder's path in its system prompt, which is why `setup` refuses a meta word in any part
-  of it. A read outside its folder is refused in `-p` mode, so a run cannot open the lab folder. Run folders sit
-  side by side under the root as `tmp.XXXXXX/<project>`; a run that lists two levels up could see that other folders
-  exist. That is rare; note it if a transcript shows it.
+  of it. In the dry run the Read tool refused a path outside the run's folder. Shell commands that only read were
+  not checked against outside paths, so a run that went looking could perhaps list other folders. The lab folder is
+  apart from the root and no run is told it exists; run folders sit side by side under the root as
+  `tmp.XXXXXX/<project>`. Look for any step that leaves the project folder when you read the actions, and note it.
 - A subagent started with the Agent tool is not used for the runs: it inherits this session's skills (including any
   installed copy of the skill under test), CLAUDE.md files and MCP servers, and returns only its last message, not a
   transcript. A prompt only change runs headless too, with `--variant <name>=none`.
