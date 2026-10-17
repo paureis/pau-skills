@@ -424,6 +424,12 @@ the skill, measures the wrong thing.
   with no tools on standard input; and unblinds with per-variant means and every disagreement.
 - The "different model family" judge becomes a fresh `claude -p` reviewer with a hostile brief. The orchestrator
   scores blind first, and the script refuses to start the reviewer until it has.
+- Runs get random ids in a shuffled order, so nothing printed before the orchestrator's own read gives the variants
+  away; `run --force` rebuilds every run folder from the lab's pristine copies; scores use one strict `n/5` format.
+- The login is checked under the empty HOME before any run; `--real-home` is the fallback, and SKILL.md says what it
+  loses. Windows is refused for the real command rather than quoted half right.
+- `--grade-reply` covers a skill whose reply is the work product (an interview skill such as `grill-me`), and the
+  report says that a headless run shows only the first turn.
 - Cost first, with the budget variable; at least 2 runs per variant.
 - The meta-word list adds upstream's experiment, score, compare and arena to the backlog's words.
 
