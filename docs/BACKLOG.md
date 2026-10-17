@@ -281,7 +281,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
   always-on signal that would have shown the bug at first look.
 - Overlaps: `flaky-test-hunt` for intermittent failures (point to it), `evaluator`.
 
-**N5 hillclimb** (`in progress`, verification, typed tier).
+**N5 hillclimb** (`done`, verification, typed tier).
 - Upstream: `skills/poteto-mode/playbooks/hillclimb.md`, `playbooks/perf-issue.md`,
   `skills/benchmark-checklist/SKILL.md`, `skills/principle-explain-the-number/SKILL.md`.
 - What it does: improves one metric scientifically. A frozen harness, proven sensitive before the loop starts (a
@@ -296,7 +296,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
   limiter is not ready.
 - Optional script: `decisions.mjs` appends a row and refuses a "keep" without a measurement.
 
-**N6 agent-friendly-audit** (`in progress`, planning, typed tier).
+**N6 agent-friendly-audit** (`done`, planning, typed tier).
 - Upstream: the author's post on X from mid-October 2026 (summarized below), `skills/correct/SKILL.md`, `skills/automate-me/SKILL.md`,
   `docs/guide/09-make-it-yours.md`, `skills/architect/references/design-red-flags.md`.
 - The post, in short: to trust agents' work more, put effort into an inverse pyramid. Most effort goes to the
@@ -318,7 +318,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
 - Overlaps: `retrospective` (one session; this is the whole history), `rule-to-hook` (implements one rule; this finds
   them), `instructions-audit`.
 
-**N7 skill-eval** (`in progress`, verification, typed tier).
+**N7 skill-eval** (`done`, verification, typed tier).
 - Upstream: `skills/poteto-mode/playbooks/eval.md`; this repository's `evals/project-setup/` as the local model.
 - What it does: tests whether a change to a skill or prompt changes agent behaviour, blinded. No meta words (eval,
   test, judge, rubric, benchmark, candidate) anywhere the candidate can see; an organic prompt that states the goal;
@@ -363,7 +363,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
   `migration-review`), foundational thinking. Five upstream bodies look cut short at this commit; check the generated
   `harness/pstack/` tree for complete text.
 
-**N10 sharpen** (`in progress`, planning, typed tier).
+**N10 sharpen** (`done`, planning, typed tier).
 - Upstream: `skills/sharpen/SKILL.md`, `skills/in-your-own-words/SKILL.md`, `skills/poteto-help/references/prompting.md`.
 - What it does: before starting a task, restate in your own words what the user is after and the problem behind it;
   ask how a top expert would approach it (their sources, their methods, an outside check that the result is right);
@@ -372,7 +372,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
   work. Includes the prompt checklist (goal, done check, proof, known facts, constraints; leave out the how, a list of
   skills, and your own theory of the cause).
 
-**N11 brainstorm** (`in progress`, planning, typed tier). Asked for by the owner during the second batch.
+**N11 brainstorm** (`done`, planning, typed tier). Asked for by the owner during the second batch.
 - Original. Ideas only from pstack: "loosen constraints as readily as you add them" (`skills/sharpen/SKILL.md`) and
   settling an empirical fork by trying it (`skills/poteto-mode/playbooks/prototype.md`).
 - What it does: a creative partner that works with `grill-me`: brainstorm first to widen, `grill-me` second to settle.
@@ -476,17 +476,16 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 
 1. Done: P0.2, P0.3, P0.4 (groundwork).
 2. Done: N1 verify-app, N2 arena with N3 architect, N4 bug-fix.
-3. **In review:** N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval, P1.1 pack-skills, and N11
-   brainstorm (five builders in parallel).
-4. M1 to M11 (edits to existing skills; one at a time, or in disjoint groups, because they touch shared files).
-   M1 (`tdd`) first: it carries a decision the owner already took.
+3. Done: N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval, P1.1 pack-skills, N11 brainstorm.
+4. **Next:** M1 to M11 (edits to existing skills; one at a time, or in disjoint groups, because they touch shared
+   files). M1 (`tdd`) first: it carries a decision the owner already took.
 5. N8 overnight-run, N9 engineering-principles.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
 
 ### P1. Small tooling ideas
 
-- **P1.1 pack-skills** (`in progress`). The owner gets every skill through the claude.ai account (Customize, Skills, Upload
+- **P1.1 pack-skills** (`done`). The owner gets every skill through the claude.ai account (Customize, Skills, Upload
   a skill), so each changed skill has to be re-uploaded as a zip of its folder. A `scripts/pack-skills.mjs` (Node
   standard library; zip written with `zlib.deflateRawSync` and a small central directory) that writes
   `dist/<skill>.zip` for named skills, or for every skill changed since a git ref, would make that one command. Check
@@ -502,3 +501,14 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   `project-setup` offer to generate a verification skill, because `project-setup` promises not to send beginners to
   other skills; decide whether to make an exception. The auto tier is now full (12 skills, about 50 characters left),
   so a new auto skill needs a description trimmed elsewhere.
+- 2026-10-17: N5 hillclimb, N6 agent-friendly-audit, N7 skill-eval, N10 sharpen, N11 brainstorm and P1.1
+  pack-skills, merged as [pull request 13](https://github.com/paureis/pau-skills/pull/13). Five builders in parallel,
+  each brief checked by a read-only subagent first; every item had a fresh reviewer, a cold run and one fix round, and
+  reviewers found must-fix bugs in four of the five. Three bugs the batch found in existing code were fixed in their
+  own pull requests and merged after it: nested code fences in `arena` and `instructions-audit`
+  ([11](https://github.com/paureis/pau-skills/pull/11)), test suites that left their temporary folders behind
+  ([12](https://github.com/paureis/pau-skills/pull/12)), and config files with a byte order mark that were silently
+  ignored ([14](https://github.com/paureis/pau-skills/pull/14)). The 12 new and changed skills were zipped with
+  `pack-skills`, uploaded to claude.ai and confirmed synced; the profile README now says 34 skills. Not done, for the
+  owner: the audit's findings for this repository (typed skills named without the `/<plugin>:<name>` form, no
+  `claude plugin validate` in CI, no check for version bumps).
