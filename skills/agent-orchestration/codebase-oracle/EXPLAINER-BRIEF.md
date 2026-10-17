@@ -14,7 +14,7 @@ explorers did the tracing: do not explore again from scratch.
 
 ## Question
 
-<The user's question, word for word.>
+<The user's question, word for word, or the list of questions.>
 
 ## Explorer reports
 
@@ -22,8 +22,7 @@ explorers did the tracing: do not explore again from scratch.
 
 ## Evidence tiers
 
-<Paste Step 6 of the skill, "Label each answer with its evidence tier", word for word: the five tiers, the rules
-that go with them and the list of things never to do.>
+<Paste the whole of TIERS.md from the skill folder, examples included, without shortening it.>
 
 ## Instructions
 
@@ -38,7 +37,8 @@ that go with them and the list of things never to do.>
 
 ## Format
 
-Use these sections, in this order, and drop any that does not apply to the question.
+For one question, use these sections in this order. Drop a section only when it would be empty. Where things live
+applies whenever the answer names more than one file or place.
 
 ### Overview
 One or two paragraphs: what this is, what it does, and why it exists (with the tier of that "why"). A reader should
@@ -60,5 +60,33 @@ A short map of the files and directories someone needs to start working here.
 Surprising behaviour, pitfalls, history that explains an odd shape, and the open questions.
 
 ### Summary
-`Direct: N | Supported: N | Inferred: N | Speculative: N | Unknown: N`, counting the tagged claims, then what is
-still open and how to settle it (who to ask, which pull request to open, what to run).
+`Direct: N | Supported: N | Inferred: N | Speculative: N | Unknown: N`, then what is still open and how to settle it
+(who to ask, which pull request to open, what to run). The counts are of tier labels in the finished text, so anyone
+can recount them: each answer's Tier line and each bracketed tier tag on a claim or evidence line counts once. Count
+after the text is written, not from memory.
+
+## Format for a list of questions
+
+When the question is a list, do not use the sections above. Answer each question in this format, then end with the
+same Summary:
+
+```markdown
+## Q[N]: [The question, restated in one line]
+
+**Answer:** [Direct answer in one to three sentences, worded for its tier]
+
+**Tier:** [Direct | Supported | Inferred | Speculative | Unknown]
+
+**Evidence:**
+- `path/to/file.ext` (lines X-Y): [what this shows]
+- `abc1234` or pull request #N: [what the author wrote, quoted when it states the reason]
+
+**Other candidates:** [When the question carried a guess or the answer is speculative: the other possibilities and
+what the evidence says about each]
+
+**Implication:** [One or two sentences on how this affects the decision being made]
+```
+
+Drop the implication line when the question has no bearing on a pending decision, and the other candidates line when
+there were none to weigh. When parts of one answer sit at different tiers, tag each evidence line with its tier in
+brackets, for example `[inferred]`.

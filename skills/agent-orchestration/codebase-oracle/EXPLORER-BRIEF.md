@@ -31,8 +31,7 @@ files, or run any git command that changes the repository.
 
 ## Evidence tiers
 
-<Paste Step 6 of the skill, "Label each answer with its evidence tier", word for word: the five tiers, the rules
-that go with them and the list of things never to do.>
+<Paste the whole of TIERS.md from the skill folder, examples included, without shortening it.>
 
 ## How to work
 
