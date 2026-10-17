@@ -133,9 +133,10 @@ one:
   `scripts/ratchet.mjs`), run it once with `--update` to write the baseline, commit both, then run the same command
   locally and in CI. Its usage is at the top of the file, and its error names the replacement you pass with
   `--instead`. `--files` and `--baseline` are relative to the repository root, whatever folder it runs from. Each
-  `--files` value is a git glob: `*.py` matches top-level files only, `**/*.py` matches every folder. A value that
-  starts with `:(` goes to git unchanged, so `:(exclude)app/config.py` leaves out the one file that is allowed to
-  do it. Globs that match no file are an error, not a baseline of 0.
+  `--files` value is a git glob, quoted so the shell does not expand it: `*.py` matches top-level files only,
+  `**/*.py` matches every folder. A value that starts with `:(` goes to git unchanged, so
+  `:(exclude)app/config.py` leaves out the one file that is allowed to do it. Globs that match no file are an
+  error, not a baseline of 0.
 
 Prefer a linter rule that parses the code when one exists (Ruff `banned-api`, TID251; ESLint `no-restricted-imports`
 or `no-restricted-syntax`; Clippy `disallowed-methods`; golangci-lint `forbidigo`). A regular expression counts the
