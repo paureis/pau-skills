@@ -1,0 +1,237 @@
+---
+name: skill-eval
+description: "Check whether a change to a skill or a prompt changes what an agent does, with the comparison blinded. Runs each variant several times as headless claude -p sessions in neutral folders that hold one variant each, reduces every transcript to what the run did, has a reviewer with no tools score all runs in one pass under shuffled letters, compares that with your own blind read, and recommends whether to keep the change. Use when the user types /skill-eval or says 'did this skill change help', 'A/B this prompt', 'does the new version behave differently'. Costs one full agent run per variant per repeat plus one review; 3 runs per variant by default."
+argument-hint: "[the skill or prompt change to check] [--n <runs per variant, default 3>]"
+disable-model-invocation: true
+allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
+license: MIT (adapted from cursor/plugins pstack; see NOTICE)
+metadata:
+  upstream: https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/playbooks/eval.md
+---
+
+# Skill eval
+
+The change to check: $ARGUMENTS
+
+Run the same organic task several times with each variant of a skill or prompt, in folders where nothing tells the
+agent it is being measured, then grade what each run actually did (the files it opened, the commands it ran, the
+edits it made), never what it says it did. A reviewer scores every run in one pass without knowing which variant
+produced which. You read every run too, blind, before the reviewer, and every disagreement between you is a finding.
+
+Use it before you keep a change to a skill, a prompt or an instruction file, when the question is "does the agent
+now behave differently". Do not use it for a change that cannot show up in what a run does (a typo, a reworded
+description nobody sees), or when one careful read of a single run answers the question.
+
+Bundled files:
+- `${CLAUDE_SKILL_DIR}/skill-eval.mjs`: `setup` makes the run folders and refuses a leak, `run` starts the headless
+  sessions, `actions` reduces one transcript, `blind` makes the anonymous copies and the reviewer's input, `judge`
+  runs the reviewer, `unblind` maps the letters back and lists the disagreements (Node 20+, no dependencies; run
+  `node "${CLAUDE_SKILL_DIR}/skill-eval.mjs"` with no arguments for the usage)
+- `${CLAUDE_SKILL_DIR}/JUDGE-BRIEF.md`: the reviewer's prompt; `blind` copies it into the reviewer's input
+
+Make a task list with one entry per phase (Cost, Frame, Set up, Run, Read blind, Review, Unblind, Report) before
+starting anything.
+
+## Cost first
+
+N is the number of runs per variant: 3 unless the user gave `--n`. Find the usage budget: the `LEAN_SUBAGENT_BUDGET`
+environment variable (`echo "$LEAN_SUBAGENT_BUDGET"`), else `delegation.budget` in `.claude/review-rules.json`, else
+`normal`. Before starting, always say the count: "This runs V variants x N = R headless agent sessions plus one
+review, so about R + 1 times the cost of doing the task once, plus my reading of every run." When the budget is
+`tight`, suggest N = 2. Never go below 2: with one run per variant, a difference can be the change or plain run to run
+variation, and nothing tells them apart. Wait for the answer.
+
+For scale: a dry run of a two line skill on an eight line text file cost about 0.05 to 0.10 US dollars per run and
+0.03 for the review on a mid-size model (October 2026). A real task costs what doing it once costs, per run.
+
+## What a run sees, and how it is kept clean
+
+Checked on Claude Code 2.1.302 in October 2026. Check again with one run when the version changes: the first line
+of every transcript lists the skills, plugins and MCP servers the run got, and `actions` prints the skills.
+
+- A headless `claude -p` with your real HOME loads every user skill under `~/.claude/skills/`, skills synced from
+  claude.ai included (`~/.claude/skills/synced/`), your plugins, your MCP servers and `~/.claude/CLAUDE.md`. On the
+  machine checked that was 213 skills, 21 plugins and 78 MCP servers, a second copy of the skill under test among
+  them. A comparison run like that is not clean.
+- `run` starts every session with HOME set to an empty folder of its own, `--setting-sources project` (only the
+  project's settings and skills), `--strict-mcp-config` (no MCP server) and this session's identity variables removed
+  (`CLAUDECODE`, `CLAUDE_CODE_SESSION_ID`, `CLAUDE_CODE_CHILD_SESSION`, `CLAUDE_CODE_REMOTE_SESSION_ID`,
+  `CLAUDE_ADDITIONAL_DIRECTORIES`, `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD`; without them a nested run reuses
+  this session's id and extra folders). The login still works. The run then sees the one variant in its project's
+  `.claude/skills/` plus Claude Code's built-in skills and plugins. `--setting-sources project` alone, with the real
+  HOME, also hid the user and synced skills, but it leaves the home folder's files in reach; keep both.
+- Built-in skills always remain: `verify`, `debug`, `code-review`, `simplify`, `run`, `deep-research`, `design`,
+  `loop`, `batch` and a few more (the full list is in each transcript). When the skill under test does the same job
+  as one of them, a run may pick the built-in one: name that confound in the report.
+- Do not use `--bare` (it accepts only an `ANTHROPIC_API_KEY`, not a normal login) or `--disable-slash-commands` (it
+  turns off every skill, the variant too).
+- Claude Code reads `CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md` and `.claude/` from the working folder and every
+  folder above it, so `setup` refuses a root that has any of them in it or above it. A folder under your home folder
+  has `~/.claude` above it; use `mktemp -d`.
+- A run sees its working folder's path in its system prompt, which is why `setup` refuses a meta word in any part
+  of it. Run folders sit side by side under the root as `tmp.XXXXXX/<project>`; a run that lists two levels up could
+  see that other folders exist. That is rare; note it if a transcript shows it.
+- A subagent started with the Agent tool is not used for the runs: it inherits this session's skills (including any
+  installed copy of the skill under test), CLAUDE.md files and MCP servers, and returns only its last message, not a
+  transcript. A prompt only change runs headless too, with `--variant <name>=none`.
+
+## Phase 1: Frame
+
+1. **The variants.** Name each one and what differs: usually `before` (the current version) and `after` (the
+   change), each a folder with a `SKILL.md`. Take the current version from git into a temporary folder, for example
+   `git -C <repo> archive HEAD <path to the skill> | tar -x -C <tmp>`. Both must have the same `name`. To check a
+   prompt change instead, use `none` for the skill and give each variant its own prompt file. `diff -r` the two
+   folders and keep the diff for the report.
+2. **The behaviour.** Say what a run with the change should do differently, in terms the transcript shows: a file
+   it opens or writes, a command it runs, an edit it makes, a step it skips. If the change cannot show up in what a
+   run does, this skill cannot measure it: say so and stop.
+3. **The task.** A small project folder in which that behaviour would come up on its own: a project skeleton, the
+   files the skill would read, a bug or a request that calls for it. Use names a user would pick. Leave out notes
+   about the comparison, expected results and anything named after the rubric.
+4. **The prompt.** What a user would type: it states the goal, not the purpose of the run. For a skill users type,
+   it starts with `/<skill name>`. The same prompt goes to every variant unless the prompt is what changes. Never ask
+   the run which skills, rules or files it used (that cues it to follow the chain), and never mention other runs.
+5. **The rubric**, for the reviewer only: 3 to 6 criteria checkable from the actions and the diff, specific to this
+   task. At least one is the behaviour from step 2 and at least one is that the task itself still got done well (a
+   change that adds the behaviour and breaks the work is not an improvement). It must not say which variant is which
+   or what changed between them: a reviewer told what is new looks for it.
+
+The words a run must never see, in the prompt, a folder or a file name: "eval", "test", "judge", "rubric",
+"benchmark", "candidate", "experiment", "score", "compare" and "arena", in any form ("evaluate", "tests", "scoring").
+`setup` checks this. When one of them belongs to the task itself (a testing skill, a project with a `tests/`
+folder), pass `--allow-word <word>`; it is never allowed in the working folder's path. Words inside files only warn.
+
+**Done when** you can name the variants, the behaviour, the task folder, the prompt and the rubric.
+
+## Phase 2: Set up
+
+```bash
+LAB=$(mktemp -d)    # only you read this folder: the plan, the rubric, the transcripts and the key
+ROOT=$(mktemp -d)   # the runs live here
+printf '%s\n' "<the prompt>" > "$LAB/prompt.txt"
+node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" setup "$LAB" --root "$ROOT" --task <task folder> \
+  --slug <project-name> --variant before=<folder> --variant after=<folder> --prompt "$LAB/prompt.txt" --n <N>
+```
+
+`setup` refuses, before writing anything: a meta word in a prompt, in the working folder's path or in a file or
+folder name of the task or a variant; variants with different skill names; a typed prompt (`/<name>`) for a variant
+with no skill; a lab folder and root that are not apart; a root under Claude Code files. For each variant it makes N
+folders, each a copy of the task (without `.git`) with that variant in `.claude/skills/<name>/`, a fresh git
+repository with one commit by a neutral author, and an empty HOME beside it. It prints the run count: say it again
+if it differs from what the user agreed.
+
+Then write the rubric into `$LAB/rubric.md` (the template is there), with a `Task:` line that fits every variant.
+
+**Done when** `setup` exited 0, every warning it printed is understood, and the rubric is written.
+
+## Phase 3: Run
+
+```bash
+node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" run "$LAB" --model <model> --allow-tool '<rule>' ...
+```
+
+- `--model` is required. Headless runs default to a different model than this session; pass the one the skill is
+  meant for (usually the model you run on) and record it.
+- Every run uses `--permission-mode acceptEdits`, so it can edit files in its folder. A command needs an
+  `--allow-tool` rule (`'Bash(npm test)'`, `'Bash(pytest *)'`, `'Bash(go test ./...)'`, `'Bash(cargo test *)'`, `'Bash(git *)'`):
+  a refused command shows up as a failed step, and a run blocked by permissions measures the permissions, not the
+  skill. `Skill(<name>)` is added for you, since a skill with `allowed-tools` asks permission when it loads and `-p`
+  cannot answer.
+- The runs go in parallel (`--parallel <k>` to limit), each up to 30 minutes (`--timeout-min`). Transcripts are saved
+  in `$LAB/runs/`, never in a run folder.
+
+Read every line it prints: a run that did not finish, a warning that the skill was not offered to a run (or reached
+a run that should have none), and refused tool calls. A run that failed outright is a dropout; with fewer than two
+runs left per variant, fix the cause and run again with `--force`.
+
+## Phase 4: Read blind
+
+```bash
+node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" blind "$LAB"
+```
+
+It checks the rubric (3 to 6 numbered criteria, no placeholder), then writes, in a new temporary folder, one file
+per run under shuffled letters (`A.md`, `B.md`, ...): every tool call in order with what it touched and whether it
+failed, the diff of everything the run changed since its first commit (the installed skill left out), the commits it
+made, and last its own final message, marked as not evidence. Paths are replaced with `<project>`, `<home>` and
+`<tmp>`. It also writes `bundle.md`, the reviewer's whole input, and the key in `$LAB/key.json`.
+
+Read every letter file in full. Do not open `plan.json`, `key.json` or `runs/` before your scores are written: they
+name the variants. Look for anything other than behaviour that would tell a reader which setup a run had (a path or
+a name the run printed); replace it with `[removed]` in `bundle.md`. Then write `$LAB/my-read.md` in the reviewer's
+format, one block per criterion:
+
+```
+Criterion 1: <the criterion>
+  A: 4  <evidence: a step number or a diff line>
+  B: 2  <evidence>
+```
+
+and, below the scores, two or three sentences per letter: what the run did and its most serious flaw.
+
+## Phase 5: Review
+
+```bash
+node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" judge "$LAB" --model <model>
+```
+
+One reviewer scores every run, all variants, in one pass on one scale. It runs as `claude -p` with no tools at all,
+no saved session, an empty HOME and an empty working folder, with `bundle.md` on standard input, so it can read only
+what it is sent and never the key. It refuses until `my-read.md` has scores: a verdict read first anchors your own.
+Use the same model as the runs unless the user asked for another, and record it. The reply goes to
+`$LAB/verdict.md`.
+
+## Phase 6: Unblind and compare
+
+```bash
+node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" unblind "$LAB"
+```
+
+It prints which letter was which run and variant, the mean score per criterion per variant from the reviewer and
+from you, every score where the two of you are 2 or more apart, and the total cost (from the `total_cost_usd` of
+each run and the review).
+
+1. **Read the verdict in full**, not only the numbers: its flaws and patterns.
+2. **Explain each disagreement.** Open that run's transcript (`node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" actions
+   "$LAB/runs/<id>.jsonl"`) and decide: the reviewer misread, you misread, or the criterion has two fair readings.
+   Each one goes in the report. Many disagreements on one criterion mean the rubric was unclear: say that the
+   result on that criterion is unreliable.
+3. **Count the behaviour.** For the behaviour from Frame step 2, count the runs per variant that show it in their
+   actions or diff ("3 of 3 after runs copied the file first; 0 of 3 before runs did"). Counts say more than means
+   at these sizes.
+4. **Check the cost of the change**: the other criteria, the number of tool calls, the cost per run. A change that
+   adds the behaviour and makes the work worse is a trade, not a win.
+5. **Decide.** The change works when the behaviour separates the variants in your read and in the reviewer's, for
+   most runs, with no criterion worse. The result is unclear when the counts overlap or you and the reviewer
+   disagree on the behaviour: run more (N of 5) or sharpen the task so the behaviour has a clear chance to show.
+
+Clean up: delete the root and the blind folder (`rm -rf "$ROOT" <blind folder>`). Keep `$LAB` while the user may
+want the transcripts, and say where it is.
+
+## Do not
+
+- Put a meta word where a run can see it, ask a run which skills or files it used, or tell it other runs exist.
+- Grade from a run's final message. The actions and the diff are the evidence.
+- Give the reviewer the plan, the key, the variants, the diff between them or your opinion.
+- Open `key.json` or `plan.json` before `my-read.md` is written.
+- Run with your real HOME, or as subagents of this session, and call the comparison clean.
+- Run a single run per variant, or average away a disagreement instead of explaining it.
+
+## Report
+
+```
+Variant under test: <skill or prompt, and what changed: before vs after, from the diff>
+Runs: <V> variants x <N> + 1 review   Models: runs <model>, reviewer <model>   Cost: $<total>
+Isolation: <what each run saw: its variant plus built-in skills; overlap with a built-in skill, or none; dropouts>
+Rubric:
+  1. <criterion>
+  ...
+Per run:
+  A (<variant>, <run id>): <what it did, from its actions and diff; its most serious flaw>
+  ...
+Reviewer's verdict: <means per variant per criterion; its main finding>
+My read: <means per variant per criterion>   Disagreements: <each one and what it turned out to be, or none>
+Synthesis: <what the change did to behaviour, with counts; what it cost>
+Recommendation: <keep the change | do not keep it | run again with <what changes>>, because <...>
+Lab folder: <path>
+```
