@@ -78,7 +78,9 @@ Keep a test only when it passes both of these edits:
 1. **Break the behavior.** Make the code return a wrong value, skip an effect, or do it twice. The test must fail. If it still passes, it proves nothing: the usual causes are an assertion looser than the promise, an expected value computed by the code under test, or an assertion on data the test built itself.
 2. **Change only the internals.** Restructure the code underneath (rename a private helper, inline a variable, reorder independent steps) while every observable result stays the same. The test must still pass. If it fails, it is pinned to the implementation: it will need a rewrite on every refactor and still catches no bug.
 
-Rewrite or delete a test that fails either edit. If the `mutation-test` skill is installed, run the first edit through its harness, and the second through its refactor mode; for a bug fix, the fix commit reversed is a ready-made first edit. If it is not installed, do both by hand: commit first, make the edit, run the test, look at the result, then restore the file with `git checkout -- <file>` and confirm `git status` is clean.
+Rewrite or delete a test that fails either edit. If the `mutation-test` skill is installed, run the first edit through its harness, and the second through its refactor mode; for a bug fix, the fix commit reversed is a ready-made first edit. The harness needs the test and the code committed first, changes one file per edit, and takes the file path relative to the repository root (run it, and any `git show -R` that feeds it, from the root; the test command runs there too). If it is not installed, or the edit spans several files, do both by hand: commit first, make the edit, run the test, look at the result, then restore with `git checkout -- <file>` and confirm `git status` is clean.
+
+For the second edit, run all the tests that cover the code, not only the new one. Read any failure before blaming the test: a build error, a syntax error or a missing import means the refactor was wrong, not the test.
 
 ## Mocking Guidelines
 
