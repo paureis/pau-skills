@@ -1,6 +1,7 @@
 # agent-orchestration
 
-Skills: `methodology` (the method document, two adoption prompts and templates), `codebase-oracle`,
+Skills: `methodology` (the method document, two adoption prompts and templates), `codebase-oracle` (with
+`TIERS.md` and the explorer and explainer briefs),
 `parallel-worktrees` (with `worktrees.mjs`), `lean-subagent-dev` (with a brief template, `TRIAGE.md` and
 `review-scope.mjs`, identical copies of the ones in `review-triage`), `arena` (with `arena.mjs` and the candidate
 and judge briefs). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
@@ -16,11 +17,11 @@ person more than to the project; set it once in the `env` block of your user `se
 { "env": { "LEAN_SUBAGENT_BUDGET": "tight" } }
 ```
 
-| Budget | Delegate | Subagent model | Review |
-|---|---|---|---|
-| tight | changes of 5+ files | smaller for mechanical work, same for risky paths | the orchestrator's own checks |
-| normal | any change in behaviour or tests, and changes of 3+ files | same | checks plus a read of every risky file |
-| generous | any change in behaviour or tests, and changes of 2+ files | same | plus a reviewer subagent on risky files |
+| Budget | Delegate | Subagent model | Subagent effort | Review |
+|---|---|---|---|---|
+| tight | changes of 5+ files | the session's; a smaller one for mechanical work only on your yes, never for risky paths | builder `medium` | the orchestrator's own checks |
+| normal | any change in behaviour or tests, and changes of 3+ files | the session's | builder and plan checker `high` | checks plus a read of every risky file |
+| generous | any change in behaviour or tests, and changes of 2+ files | the session's | builder `high`, plan checker and reviewer `xhigh` | plus a reviewer subagent on risky files |
 
 The rest of `.claude/review-rules.json` (must-fix list, risky paths, checks, and `delegation.minFiles` and
 `delegation.log`) is described in [the verification README](../verification/README.md#review-triage-configuration).

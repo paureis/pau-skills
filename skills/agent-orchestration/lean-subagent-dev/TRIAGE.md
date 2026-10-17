@@ -14,6 +14,13 @@ For each finding, write down the failure it claims: this input or state, this wr
 empty cart, `total()` returns None and the page shows 'None items'".
 
 - A finding that names no failure is a **preference**. It goes to Leave, and the change does not wait for it.
+- **"I would have done it differently"** is the most common false positive in review: another structure, another
+  library, another pattern, a refactor. It names no failure until it shows a concrete problem with the approach the
+  change took, such as an input that breaks it or a requirement it misses. Without one it is a preference: leave it,
+  and write why in the table ("another approach, no failure shown") so it is not argued again. With one, the problem
+  is the finding; check and rate it like any other. A security concern dressed as an alternative (for example "use a
+  parameterized query instead of string formatting") is a security finding: it goes by the security rule below, never
+  by this one.
 - A failing test, build, typecheck or lint is a failure in itself.
 - A **security finding** that describes a risk but shows no failure yet is not dropped. Trace it (step 2). If you
   cannot settle it either way, it goes to the maintainer.
@@ -70,6 +77,15 @@ anything outside the change. A real bug outside the change gets its own issue, n
 | Real failure, medium or high effort | Issue | Issue |
 | No failure named | Leave | Leave |
 
+**Nitpick gravity.** Reviewers fill the space they are given, AI reviewers and reviewers told to be hostile most of
+all: with nothing serious to report, they inflate nits. When every finding, after steps 1 and 2, turned out to be a
+preference or a low-value nit, say so about the whole review: the change is probably fine. Do not read a long list of
+nits as a sign of a bad change, and do not ask for another review to be sure. This is a conclusion about the review,
+reached after each finding was checked; it is never a reason to skip step 2, and it is not a bucket (the nits still go
+to Leave, or to fix if cheap when they name a small real failure). It does not apply while any finding that names a
+failure is still open: not yet reproduced or disproved, or waiting on the maintainer. It does not apply when any
+finding is a must-fix.
+
 ## 5. Write it down
 
 One line per finding, including the ones left, so the decision can be seen and is not argued again:
@@ -81,7 +97,10 @@ One line per finding, including the ones left, so the decision can be seen and i
 | 2 | src/core/pick.py:40 | none (prefers a dict) | | | | leave | preference |
 | 3 | src/sync.py:12 | retry on 409 could double-write | high | medium | high | must fix | fixed in <commit>, control run |
 | 4 | src/cli.py:200 | wrong exit code on --help, outside this change | low | low | low | leave | issue to open |
+| 5 | src/api.py:30 | none (would split it into a class) | | | | leave | another approach, no failure shown |
 ```
+
+When a learned pattern (section 9) decided a finding, name it in the Action column.
 
 Put the table in the pull request description, or in the session when there is no pull request.
 
@@ -121,6 +140,51 @@ behaviour, have someone check the plan against the real environment before anyth
 the runtime and the deploy target actually have, and which of the plan's assumptions are false. The bar for acting on
 a plan finding is lower: fix anything real.
 
+## 9. Recurring findings: learned patterns
+
+When the same kind of finding is left again and again for the same reason (a review tool that always flags something
+that keeps turning out to be fine here), write it down once, so the next triage reaches the same answer faster and
+with the same limits. A pattern can also point the other way: findings of this kind have always been real here, so
+fix by default.
+
+Keep the patterns where the project can find them again: a file the maintainer agrees to, for example
+`.claude/review-patterns.md`, or a section of the project's review notes. Ask before creating the file. One entry per
+pattern:
+
+```markdown
+### <short pattern name>
+
+- Confidence: candidate | recurring | strong
+- Skip when: <conditions that must all be true>
+- Do not skip when: <the risk boundaries>
+- Example signal: <phrases or code context that identify the pattern>
+- Source: <the pull request, review or commit where it was seen>
+```
+
+- **candidate**: one or two examples. You may add a candidate yourself, with its source.
+- **recurring**: several real reviews left a finding of this kind, each listed as a source.
+- **strong**: narrow, checked again and again, and low risk.
+
+Moving a pattern to recurring or strong needs the maintainer's yes: show the entry and its sources, and write it only
+on a yes.
+
+A pattern does not replace step 2: the finding is still checked, and the pattern says what to look at and why it
+usually comes out fine. A recurring or strong pattern may send a finding to Leave, with the pattern's name as the
+reason, only when step 2 did not reproduce or trace the failure, every "skip when" condition holds and no "do not skip
+when" one does. A failure that step 2 reproduced or traced takes its bucket from section 4, whatever the pattern says.
+A "fix by default" pattern goes through section 4's table too: a real failure with medium or high effort or fix risk
+is still an Issue, unless it is on the must-fix list. A candidate is a hint, not a skip.
+
+No pattern ever skips these, whatever earlier reviews did with something similar:
+
+- a finding on the must-fix list. A learned pattern never turns a must-fix into a leave.
+- security, privacy, access, billing, data retention and permission findings
+- migration, schema, idempotency, concurrency and cross-system findings, and any finding of high value
+- a finding whose fix is small and clearly lowers risk without changing what the code is meant to do
+
+A person who once dismissed a security finding made an owner's call on that change. It is not a skip rule for
+everyone; do not write it up as a pattern.
+
 ## Where this fits with other checks
 
 An evaluator that grades an increment against a contract keeps going until two rounds in a row are clean. That is a
@@ -138,6 +202,7 @@ For every finding, give:
 - the wrong result it produces
 - how you know: ran it, traced it in the code, or suspect it
 A finding without a wrong result is a preference: label it "preference" and keep it short.
+If you find nothing serious, say so. Do not fill the list with nits.
 Review only the change, not the code around it, unless the change breaks that code.
 End with anything you were unsure about.
 ```

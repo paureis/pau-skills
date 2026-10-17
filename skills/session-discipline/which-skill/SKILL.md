@@ -78,7 +78,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | Review comments to work through, "which of these should I fix", a review loop that keeps going | `review-triage` (verification) | |
 | A bug: wrong output, a crash, "this is broken", "fix this bug" (happens every time) | `bug-fix` (verification) | `evaluator` to attack the fix |
 | "Verify it in the app", "how can an agent test this app", no scripted way to drive the app | `verify-app` (verification) | `evaluator` cites its drives as evidence |
-| A question about how the codebase works | `codebase-oracle` (agent-orchestration) | `grill-me` if it leads to a change |
+| A question about how the codebase works, or why it is built that way | `codebase-oracle` (agent-orchestration) | `grill-me` if it leads to a change |
 | "The code is getting messy", hard-to-test modules | `improve-codebase-architecture` (planning) | `grill-me` on the candidate picked |
 | A task about to start, "make sure you understand this", "restate this first", a vague or over-constrained request | `sharpen` (planning, typed: `/sharpen`) | the skill that fits the task |
 | "Make it faster", "make it smaller", improve a number (run time, bundle size, memory, a score) over many attempts with proof for each step | `hillclimb` (verification, typed: `/hillclimb`) | `bug-fix` if a step uncovers a bug |
@@ -92,7 +92,8 @@ These change how future sessions go, not the product code.
   edits, with a gate that stops the rule files from repeating themselves.
 - **`instructions-audit`** (session-discipline): review CLAUDE.md, AGENTS.md and similar files for size, duplicates,
   contradictions, stale references and vague rules.
-- **`rule-to-hook`** (guards): a rule that keeps being broken becomes a hook with tests, instead of another sentence.
+- **`rule-to-hook`** (guards): a rule that keeps being broken becomes a tested check at the highest layer that holds it
+  (types, lint or CI with a ratchet, a test, or a hook for what the agent does), instead of another sentence.
   The natural next step when `retrospective` or `instructions-audit` finds a rule that is already written down and
   still ignored.
 - **`agent-friendly-audit`** (planning, typed: `/agent-friendly-audit`): mine the whole history (review comments, fix
@@ -125,7 +126,7 @@ Hooks act on every session where their plugin is installed. Each can be turned o
 - **`hillclimb` or `bug-fix`?** `bug-fix` makes a wrong result right. `hillclimb` makes a correct result better on a
   number, one measured change at a time.
 - **`grill-me` or `codebase-oracle`?** `grill-me` settles decisions that need the user's judgment.
-  `codebase-oracle` answers questions the code can answer. When a plan has both kinds, run the oracle first so the
+  `codebase-oracle` answers questions the code and its history can answer. When a plan has both kinds, run the oracle first so the
   interview only asks what the code cannot tell.
 - **`evaluator` or `mutation-test`?** `mutation-test` checks one test or guard can fail. `evaluator` checks the
   whole change against its acceptance criteria. Use both on anything that guards security or money.

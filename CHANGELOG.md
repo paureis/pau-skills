@@ -3,6 +3,33 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-17: the third pstack batch (tdd, mutation-test, review-triage, lean-subagent-dev, rule-to-hook, codebase-oracle)
+
+- `tdd`: "prefer no new test over a bad test" replaces "no test is too small" for fixes and small changes with no cheap
+  test path; a two-edit check (break the behaviour: the test fails; change only the internals: it still passes) decides
+  which tests to keep; expected values come from the requirement; a stored value read back counts as behaviour.
+- `mutation-test`: `mutate.sh --refactor` checks that a pure refactor leaves the test green (KEPT or BROKE); the skill
+  prefers a real past mistake from git history as the mutation, fed in with `git show -R`. The harness refuses an edit
+  that deletes or empties the file (such as a reversed commit that added it), and BROKE says to read the failure
+  before blaming the test.
+- `review-triage`: "I would have done it differently" is treated as the usual false positive, nitpick gravity says when
+  a review is only nits, and recurring findings can be recorded as learned patterns (candidate, recurring, strong) that
+  never leave a reproduced failure, a must-fix or a security finding.
+- `lean-subagent-dev`: an effort level per role in the budget table, no unconfirmed model names (a smaller model only
+  on the user's yes), standing orders in every brief, no launch while a required brief field is empty, and no messages
+  to a subagent just to check on it. Shares the new `TRIAGE.md`.
+- `rule-to-hook`: picks the highest layer first (architecture, types, lint or CI check, test, prose) and keeps hooks
+  for rules about what the agent does; every check names what to use instead; a ratchet for patterns already common,
+  with a new `templates/ratchet.mjs` that runs from the repository root and lists exceptions for review; exceptions on
+  the line with a reason, an expiry and an approver; each check proven on a real past mistake; a rule table pairing
+  rules with enforcers.
+- `codebase-oracle`: grades every answer with one of five evidence tiers (in a bundled `TIERS.md`), never takes the
+  code as proof of its own intent, treats a guess in the question as one candidate, answers history questions from git
+  and the pull request record first, and runs 2 to 4 read-only explorers for big questions.
+- All six take ideas or text from pstack; NOTICE and `docs/ORIGINS.md` say what. The dash test now says what to use
+  instead of a dash.
+- Versions: pau-skills 0.10.0, verification 0.8.0, agent-orchestration 0.6.0, guards 0.5.0.
+
 ## 2026-10-17: config files with a byte order mark are honoured
 
 - `hooks/lib/config.mjs` ignored a `.claude/pau-skills.json` that starts with a UTF-8 byte order mark (some Windows

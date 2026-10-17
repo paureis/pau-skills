@@ -1,6 +1,7 @@
 // The mutation harness, run for real in a throwaway git repository: argument handling, the refusals that protect
 // work (dirty tree, failing control, mutation that does not apply, patch touching another file), CAUGHT and SURVIVED,
-// and that every path leaves the file restored.
+// the refactor mode (KEPT and BROKE), a mutation taken from a real fix in git history, and that every path leaves the
+// file restored.
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync, execFileSync } from 'node:child_process';
@@ -101,4 +102,74 @@ test('a patch is applied when it touches only the file, refused when it touches 
   assert.equal(bad.code, 2, bad.out);
   assert.match(bad.out, /must touch only lib\.mjs/);
   assertRestored();
+});
+
+test('refactor mode, KEPT: a pure refactor leaves the check green, exits 0 and restores', () => {
+  const r = harness(['--refactor', '--label', 'swap', '--sed', 's/user.id === doc.ownerId/doc.ownerId === user.id/', 'lib.mjs', 'node', 'check.mjs']);
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /REFACTOR APPLIED/);
+  assert.match(r.out, /\[swap\] RESULT: KEPT/);
+  assertRestored();
+});
+
+test('refactor mode, BROKE: an edit that breaks the checked behaviour exits 1, prints the changed lines, restores', () => {
+  const r = harness(['--refactor', 'lib.mjs', 'node', 'check.mjs'], 's/user.id === doc.ownerId/true/\n');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /RESULT: BROKE/);
+  assert.doesNotMatch(r.out, /CAUGHT/);
+  assert.match(r.out, /RESULT: BROKE[\s\S]*\+export const isOwner = \(user, doc\) => true;/);
+  // A crash is not a coupled test: the verdict tells the agent to read the failure first.
+  assert.match(r.out, /build error, syntax error or missing import means the refactor was wrong, not the test/);
+  assertRestored();
+});
+
+test('refactor mode keeps the refusals: a refactor that changes nothing exits 2', () => {
+  const r = harness(['--refactor', '--sed', 's/does-not-occur/x/', 'lib.mjs', 'node', 'check.mjs']);
+  assert.equal(r.code, 2, r.out);
+  assert.match(r.out, /did not change the content/);
+  assertRestored();
+});
+
+test('a real past fix, reversed with git show -R, is fed to the harness as the mutation', () => {
+  // History: the bug, then the fix that brings back SOURCE. Reversing the fix reintroduces the bug.
+  writeFileSync(join(repo, 'lib.mjs'), SOURCE.replace('user.id === doc.ownerId', 'user.id == doc.owner'));
+  git('commit', '-q', '-am', 'owner check');
+  writeFileSync(join(repo, 'lib.mjs'), SOURCE);
+  git('commit', '-q', '-am', 'fix: compare against ownerId');
+  const patch = git('show', '-R', '--format=', '--no-color', 'HEAD', '--', 'lib.mjs');
+  const r = harness(['--label', 'real-fix', 'lib.mjs', 'node', 'check.mjs'], patch);
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /\[real-fix\] RESULT: CAUGHT/);
+  assertRestored();
+});
+
+test('refactor mode refuses (exit 2) when the command already fails without the refactor', () => {
+  const r = harness(['--refactor', 'lib.mjs', 'node', 'missing-test.mjs'], 's/a + b/b + a/\n');
+  assert.equal(r.code, 2, r.out);
+  assert.match(r.out, /NOT REFACTORED: the command fails without the refactor/);
+  assert.doesNotMatch(r.out, /REFACTOR APPLIED|RESULT/);
+  assertRestored();
+});
+
+test('an edit that deletes or empties the file is refused (exit 2) in both modes, not read as CAUGHT', () => {
+  // Reversing the commit that created a file gives a whole-file deletion; a missing module proves nothing.
+  writeFileSync(join(repo, 'extra.mjs'), 'export const y = 2;\n');
+  writeFileSync(join(repo, 'check-extra.mjs'), "import { y } from './extra.mjs';\nif (y !== 2) process.exit(1);\n");
+  git('add', 'extra.mjs', 'check-extra.mjs');
+  git('commit', '-q', '-m', 'add extra');
+  const deletion = git('show', '-R', '--format=', '--no-color', 'HEAD', '--', 'extra.mjs');
+  assert.match(deletion, /deleted file mode/);
+  for (const mode of [[], ['--refactor']]) {
+    const r = harness([...mode, 'extra.mjs', 'node', 'check-extra.mjs'], deletion);
+    assert.equal(r.code, 2, r.out);
+    assert.match(r.out, /deletes extra\.mjs/);
+    assert.doesNotMatch(r.out, /RESULT/);
+    assert.equal(readFileSync(join(repo, 'extra.mjs'), 'utf8'), 'export const y = 2;\n');
+    assert.equal(git('status', '--porcelain'), '');
+    const empty = harness([...mode, '--sed', '1,$d', 'lib.mjs', 'node', 'check.mjs']);
+    assert.equal(empty.code, 2, empty.out);
+    assert.match(empty.out, /leaves lib\.mjs empty/);
+    assert.doesNotMatch(empty.out, /RESULT/);
+    assertRestored();
+  }
 });
