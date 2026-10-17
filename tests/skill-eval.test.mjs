@@ -559,7 +559,8 @@ describe('run', () => {
       const call = r.calls.find((c) => realpathSync(c.cwd) === realpathSync(run.dir));
       assert.ok(call, `a call ran in ${run.dir}`);
       assert.equal(call.home, run.home);
-      const extra = call.names.filter((n) => !ALLOWED_ENV.includes(n) && !/^LC_/.test(n) && !['HOME', 'FAKE_CLAUDE_LOG'].includes(n));
+      // macOS adds __CF_USER_TEXT_ENCODING to every process it starts, whatever the parent passes.
+      const extra = call.names.filter((n) => !ALLOWED_ENV.includes(n) && !/^LC_/.test(n) && !['HOME', 'FAKE_CLAUDE_LOG', '__CF_USER_TEXT_ENCODING'].includes(n));
       assert.deepEqual(extra, [], 'only the allowlist and the passed names reach a run');
       for (const n of ['PATH', 'HOME', 'HTTPS_PROXY', 'LANG', 'FAKE_CLAUDE_LOG']) assert.ok(call.names.includes(n), n);
       assert.equal(call.argv[1], p.prompts[run.variant]);
