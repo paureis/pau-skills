@@ -29,11 +29,14 @@ Bundled files, open them when you reach their phase:
 Make a task list with one entry per phase (Frame, Fan out, Score, Judge, Pick, Graft, Verify) before launching
 anything.
 
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
+
 ## Cost first
 
 The number of candidates N is 3 unless the user gave `--n`. Find the usage budget: the `LEAN_SUBAGENT_BUDGET`
 environment variable (`echo "$LEAN_SUBAGENT_BUDGET"`), else `delegation.budget` in `.claude/review-rules.json`, else
-`normal`. When it is `tight`, say the cost before starting and suggest 2: "An arena runs N candidate subagents and one
+`normal`. When it is `tight`, whoever started the skill, say the cost before starting and suggest 2: "An arena runs N candidate subagents and one
 judge, so it costs roughly N + 1 times one attempt, plus my reading of every candidate. With a tight budget I suggest
 2 candidates." Wait for the answer.
 

@@ -22,6 +22,9 @@ Why worktrees and not one checkout: two agents in one folder share one index and
 branch switch pulls the floor out from under everyone. A worktree shares the repository's history but has its own
 files, index and checked-out branch, so none of that can happen.
 
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
+
 ## Phase 1: decide whether to parallelize at all
 
 Parallel work pays only when the pieces are truly independent. Two agents editing the same file produce a merge

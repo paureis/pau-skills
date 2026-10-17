@@ -17,6 +17,9 @@ Reference files, read when you reach their phase:
   live), plus runtimes, toolchains and Docker images.
 - `${CLAUDE_SKILL_DIR}/RESEARCH.md`: the checklist for researching one major bump.
 
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
+
 ## Pick the mode
 
 - **Major mode**: one key package or framework moves across a major version (or a runtime moves to a new major).
