@@ -14,6 +14,8 @@ Harness: `bash "${CLAUDE_SKILL_DIR}/mutate.sh"`. On Windows run it from Git Bash
 ## Steps
 
 1. **Commit first.** The harness refuses a dirty tree, because restoring the file erases any uncommitted edit in it.
+   Caches the test run leaves behind (`__pycache__`, `.pytest_cache`, coverage files) count as dirty on the next run:
+   add them to `.gitignore`.
 2. **Choose the defect the test claims to catch**, the one a real regression would introduce: drop the tenant filter,
    invert the permission check, remove the `await`, return early. Not a random edit: a mutation that breaks the
    build or crashes the import proves only that the file is imported.
