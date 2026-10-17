@@ -36,7 +36,7 @@
 # --refactor turns the check around, for the second edit of the two-edit test: the edit is a pure refactor of the
 # internals and the command is expected to STAY GREEN. Every step above is the same; only the verdict flips.
 # Exit: 0 KEPT (the command still passes after the refactor), 1 BROKE (the command failed: the test is coupled to the
-# internals, or the edit was not a pure refactor; the changed lines are printed), 2 as above.
+# internals, or the edit was not a pure refactor, or it broke the build; the changed lines are printed), 2 as above.
 set -u
 
 usage() { echo "Usage: mutate.sh [--refactor] [--label <name>] [--sed '<expression>'] <file> <command...>   (edit on stdin unless --sed)" >&2; exit 2; }
@@ -156,7 +156,7 @@ if [ -n "$refactor" ]; then
     echo "=== ${tag}RESULT: KEPT (the command still passes after the refactor: the test does not depend on what it changed)."
     exit 0
   fi
-  echo "=== ${tag}RESULT: BROKE (the command failed with exit $code after the refactor: either the test is coupled to the internals or the edit changed behaviour). Lines that changed:"
+  echo "=== ${tag}RESULT: BROKE (the command failed with exit $code after the refactor). Read the failure first: a build error, syntax error or missing import means the refactor was wrong, not the test. A failing assertion means the test is coupled to the internals or the edit changed behaviour. Lines that changed:"
   printf '%s\n' "$verdict_lines" | sed 's/^/    /'
   exit 1
 fi
