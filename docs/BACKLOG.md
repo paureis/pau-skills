@@ -440,6 +440,15 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
 
+### P1. Small tooling ideas
+
+- **P1.1 pack-skills** (`todo`). The owner gets every skill through the claude.ai account (Customize, Skills, Upload
+  a skill), so each changed skill has to be re-uploaded as a zip of its folder. A `scripts/pack-skills.mjs` (Node
+  standard library; zip written with `zlib.deflateRawSync` and a small central directory) that writes
+  `dist/<skill>.zip` for named skills, or for every skill changed since a git ref, would make that one command. Check
+  the upload rules claude.ai enforces before writing: no XML-like tag in a description, no "claude" or "anthropic" in
+  a name (both already tested).
+
 ## Done
 
 - 2026-10-17: P0.1 this backlog.

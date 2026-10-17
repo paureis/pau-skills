@@ -3,6 +3,14 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-17: pau-skills-hooks, the hooks without the skills
+
+- New plugin `pau-skills-hooks`: every hook in the marketplace and no skills, about zero tokens of always-on context.
+  It is for people whose skills come from their claude.ai account (which syncs them to the terminal, the desktop app
+  and the web) and who still want the guards and session hooks on their machine. `docs/INSTALL.md` has a section on
+  this setup. `scripts/build-marketplace.mjs` fills in its hooks; a test checks it runs every hook and lists no skills.
+- Versions: pau-skills-hooks 0.1.0.
+
 ## 2026-10-17: every skill uploads to claude.ai
 
 - `verify-app`'s description wrote `verify-<app>`, which claude.ai reads as an XML tag and refuses to upload. It now

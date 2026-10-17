@@ -8,7 +8,9 @@
 // hooks/<plugin>/hooks.json, commands written as ${CLAUDE_PLUGIN_ROOT}/hooks/<plugin>/<script>). Every plugin entry is
 // rooted at the repository ("source": "./", "strict": false), so its paths reach skills/ and hooks/ directly and the
 // hooks can share hooks/lib/. Claude Code only accepts hooks inline in a marketplace entry, so this script copies each
-// hooks.json into its entry. The "pau-skills" entry gets every skill folder and every hook.
+// hooks.json into its entry. The "pau-skills" entry gets every skill folder and every hook. The "pau-skills-hooks" entry gets
+// every hook and no skills, for people who get the skills another way (for example uploaded to their claude.ai
+// account, which syncs them to every surface) and still want the hooks on their machine.
 //
 // Names, descriptions, versions and keywords are edited by hand in marketplace.json; this script never touches them.
 import { readFileSync, writeFileSync, existsSync, realpathSync } from 'node:fs';
@@ -16,6 +18,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const BUNDLE = 'pau-skills';
+export const HOOKS_BUNDLE = 'pau-skills-hooks';
 
 const hooksOf = (root, name) => {
   const file = join(root, 'hooks', name, 'hooks.json');
@@ -28,7 +31,7 @@ export function build(root) {
   const allSkills = [];
   const allHooks = {};
   for (const entry of market.plugins) {
-    if (entry.name === BUNDLE) continue;
+    if (entry.name === BUNDLE || entry.name === HOOKS_BUNDLE) continue;
     if (!existsSync(join(root, 'skills', entry.name))) throw new Error(`plugin ${entry.name} has no skills/${entry.name} folder`);
     const skills = [`./skills/${entry.name}/`];
     const hooks = hooksOf(root, entry.name);
@@ -40,6 +43,11 @@ export function build(root) {
   const bundle = market.plugins.find((p) => p.name === BUNDLE);
   if (!bundle) throw new Error(`marketplace.json has no "${BUNDLE}" entry`);
   Object.assign(bundle, { source: './', strict: false, skills: allSkills, hooks: allHooks });
+  const hooksOnly = market.plugins.find((p) => p.name === HOOKS_BUNDLE);
+  if (hooksOnly) {
+    Object.assign(hooksOnly, { source: './', strict: false, hooks: allHooks });
+    delete hooksOnly.skills;
+  }
   return JSON.stringify(market, null, 2) + '\n';
 }
 
