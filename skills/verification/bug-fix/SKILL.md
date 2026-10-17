@@ -101,7 +101,8 @@ Two more checks:
 
 ## Step 5. After two failed fixes, attack the premise
 
-When two fixes that rest on the same belief have both failed the same check, suspect the belief, not the fixes.
+This step starts when a fix fails step 8 for the second time. When two fixes that rest on the same belief have both
+failed the same check, suspect the belief, not the fixes.
 
 1. Write the premise down: the one sentence every failed fix assumed ("the config is loaded before the handler
    runs", "this function only receives sorted input").
@@ -123,9 +124,10 @@ is to break it on purpose and watch the check go red. `EVIDENCE.md` has the list
 ## Step 6. Commit the failing repro first
 
 Write the automated check from step 2 as a test that fails now, for the reported reason (its failure message shows
-the discriminating observation, not a setup error). Run it, watch it fail, and commit it on its own, before the fix,
-so the history shows the bug and then its fix. `tdd` covers writing the test, if it is installed; without it, match
-the project's test layout and assert behaviour through the public interface.
+the discriminating observation, not a setup error). Run it, watch it fail, and commit the test file on its own (no
+build output, no instrumentation), before the fix, so the history shows the bug and then its fix. `tdd` covers
+writing the test, if it is installed; without it, match the project's test layout and assert behaviour through the
+public interface.
 
 If the project does not accept a red commit, mark the test as expected to fail in the runner's own way and remove the
 marker in the fix commit (`EVIDENCE.md`). If an automated test would be expensive or unclear (a visual glitch, a
@@ -139,8 +141,9 @@ does not trace to a confirmed row in the hypothesis log: instrumentation, trial 
 
 ## Step 8. Prove it, and prove what it cannot break
 
-1. The failing test from step 6 now passes. Undo the fix once and watch it fail again, then restore it.
-   `mutation-test` does this with each step checked, if it is installed.
+1. The failing test from step 6 now passes. Its failing run at the step 6 commit is the run with the fix undone; if
+   the test changed after that commit, undo the fix once and watch it fail again, then restore it. `mutation-test`
+   does this with each step checked, if it is installed.
 2. The surface repro from step 2, from a clean state, twice: the discriminating observation now shows the expected
    result. Unit tests show what one branch does, not that the bug is gone. A run on a different surface, or one that
    could not show the observation, is **inconclusive**, not a pass.
@@ -155,7 +158,11 @@ does not trace to a confirmed row in the hypothesis log: instrumentation, trial 
    5. you reproduced it in the running app.
 
    Look where a text search stops: data already stored in the old shape, a wire format or file another program
-   reads, another language reading the same bytes, a feature flag, a caller three hops away.
+   reads, another language reading the same bytes, a feature flag, a caller three hops away. Note what the change
+   leaves as it was (other bad inputs that behaved wrongly before and still do) under "Not done".
+
+If the fix fails 1, 2 or 3, revert it (it was a refuted hypothesis) and go back to step 3. If this is the second
+failed fix on the same belief, go to step 5 first.
 
 For an independent check, `evaluator` attacks the fix from a fresh context, if it is installed. Without it, ask a
 fresh subagent (Agent tool) that has not seen your work to break the fix, given only the bug report, the repro and
@@ -166,7 +173,7 @@ the diff.
 ```
 ## Bug fix: <one line>
 
-Verdict:      fixed | not reproduced | inconclusive
+Verdict:      fixed | not reproduced | inconclusive | not fixed (an existing fix, see below)
 Symptom:      <discriminating observation, expected vs actual>
 Repro:        <surface, command or steps>; reproduced <2/2> before the fix
 Root cause:   <file:line, the first wrong decision, and why the state was or was not legitimate>
