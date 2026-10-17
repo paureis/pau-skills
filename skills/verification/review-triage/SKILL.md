@@ -40,7 +40,8 @@ the files a change touches, and the flags for a fix round.
    bucket. Then write the table from section 5, and decide whether nitpick gravity (section 4) applies to the whole
    review. Show the table to the user before fixing anything when a finding is a must-fix you could not reproduce, a
    security finding you could not settle, or a call that is the maintainer's. When a kind of finding keeps coming
-   back, propose a learned pattern (section 9): you may add a candidate; a move to recurring or strong waits for a yes.
+   back, propose a learned pattern (section 9): you may add a candidate, but ask before creating the patterns file; a
+   move to recurring or strong waits for a yes.
 
 5. **Fix round**, section 6: commit the reviewed state, write a failing test for each fix first, fix, then run
    `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" fix --since <reviewed commit>` (add `--base <start commit>` when the
@@ -73,7 +74,7 @@ error, so a typo cannot switch a rule off without anyone noticing.
 Review triage: <change or pull request>
 Findings: <n> (must fix <a>, fix if cheap <b>, leave <c>)
 <the table from TRIAGE.md section 5>
-Nitpick gravity: <applied: every finding was a preference or a nit, the change is probably fine | not applied>
+Nitpick gravity: <applied: every finding was a preference or a low-value nit, the change is probably fine | not applied>
 Learned patterns: <used: names | added as candidate: names | waiting on a yes: names | none>
 Fix round: <commits>; fix check flags: <none | each flag and how it was answered>
 Second look: <clean | what it found, and where it went: maintainer or issue>

@@ -18,7 +18,9 @@ empty cart, `total()` returns None and the page shows 'None items'".
   library, another pattern, a refactor. It names no failure until it shows a concrete problem with the approach the
   change took, such as an input that breaks it or a requirement it misses. Without one it is a preference: leave it,
   and write why in the table ("another approach, no failure shown") so it is not argued again. With one, the problem
-  is the finding; check and rate it like any other.
+  is the finding; check and rate it like any other. A security concern dressed as an alternative (for example "use a
+  parameterized query instead of string formatting") is a security finding: it goes by the security rule below, never
+  by this one.
 - A failing test, build, typecheck or lint is a failure in itself.
 - A **security finding** that describes a risk but shows no failure yet is not dropped. Trace it (step 2). If you
   cannot settle it either way, it goes to the maintainer.
@@ -79,9 +81,10 @@ anything outside the change. A real bug outside the change gets its own issue, n
 all: with nothing serious to report, they inflate nits. When every finding, after steps 1 and 2, turned out to be a
 preference or a low-value nit, say so about the whole review: the change is probably fine. Do not read a long list of
 nits as a sign of a bad change, and do not ask for another review to be sure. This is a conclusion about the review,
-reached after each finding was checked; it is never a reason to skip step 2, it is not a bucket (the nits still go to
-Leave, or to fix if cheap when they name a small real failure), and it does not apply when any finding is a must-fix
-or a security finding you could not settle.
+reached after each finding was checked; it is never a reason to skip step 2, and it is not a bucket (the nits still go
+to Leave, or to fix if cheap when they name a small real failure). It does not apply while any finding that names a
+failure is still open: not yet reproduced or disproved, or waiting on the maintainer. It does not apply when any
+finding is a must-fix.
 
 ## 5. Write it down
 
@@ -165,9 +168,12 @@ pattern:
 Moving a pattern to recurring or strong needs the maintainer's yes: show the entry and its sources, and write it only
 on a yes.
 
-A pattern does not replace step 2: the finding is still checked, and the pattern says what to look at. When every
-"skip when" condition holds and no "do not skip when" one does, a recurring or strong pattern sends the finding to
-Leave with the pattern's name as the reason. A candidate is a hint, not a skip.
+A pattern does not replace step 2: the finding is still checked, and the pattern says what to look at and why it
+usually comes out fine. A recurring or strong pattern may send a finding to Leave, with the pattern's name as the
+reason, only when step 2 did not reproduce or trace the failure, every "skip when" condition holds and no "do not skip
+when" one does. A failure that step 2 reproduced or traced takes its bucket from section 4, whatever the pattern says.
+A "fix by default" pattern goes through section 4's table too: a real failure with medium or high effort or fix risk
+is still an Issue, unless it is on the must-fix list. A candidate is a hint, not a skip.
 
 No pattern ever skips these, whatever earlier reviews did with something similar:
 
