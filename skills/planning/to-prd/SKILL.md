@@ -1,7 +1,6 @@
 ---
 name: to-prd
-description: "Turn the current conversation context into a PRD. Use when the user wants to create a PRD from what's been discussed, says 'create a PRD', 'write a PRD', 'make this into a PRD', 'to-prd', or has finished a grilling/planning session and needs the output captured as a structured product requirements document. No interview: just synthesizes what's already been discussed."
-disable-model-invocation: true
+description: "Write a PRD from what the conversation already decided, without interviewing, and save it as a markdown file. Use when the user says 'write a PRD', 'create a PRD', 'make this into a PRD', 'to-prd', or wants a finished grilling or planning session captured as a spec."
 license: MIT (adapted from mattpocock/skills; see NOTICE)
 metadata:
   upstream: https://github.com/mattpocock/skills/tree/main/skills/engineering/to-prd
@@ -10,6 +9,8 @@ metadata:
 # To PRD
 
 This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user. Just synthesize what you already know.
+
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
 
 ## Process
 
@@ -73,7 +74,7 @@ Any further notes about the feature.
 
 ## Rules
 
-- **No interviewing.** This skill synthesizes: it doesn't interrogate. If the plan is not decided yet, settle the open decisions with the user first (suggest the user run `/grill-me`, or `/<plugin>:grill-me` from a plugin, for this, if it is installed), then run this one.
+- **No interviewing.** This skill synthesizes: it doesn't interrogate. If the plan is not decided yet, settle the open decisions with the user first (use `grill-me` for this if it is installed), then run this one.
 - **Module depth matters.** When sketching modules, flag shallow modules (interface nearly as complex as implementation) and suggest deepening them.
 - **No file paths or code snippets in the PRD.** These go stale immediately. Describe modules by what they do, not where they live.
 - **User stories should be exhaustive.** If you can think of 10, write 20. Cover happy paths, error states, edge cases, and accessibility.
