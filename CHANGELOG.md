@@ -3,6 +3,20 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-17: every skill loads on its own (P0.5)
+
+- All 34 skills can now be started by the agent from your own words; `disable-model-invocation` is gone from every
+  skill, and typing `/name` still works. Each description is a short list of the phrases that should start it: at
+  most 400 characters, 12,000 for all of them (they were 18,298; now about 11,300).
+- 23 skills that launch subagents or headless runs, take over the session, or write outside the conversation ask
+  first when the agent started them on its own, with the same paragraph in each. `tests/confirm-step.test.mjs` keeps
+  the list, the skills, the README and `which-skill` in step.
+- A skill can start another one directly where the step is part of the work you asked for, and offers it where it is
+  a next step or the current skill is still read-only.
+- `which-skill` drops its typed and automatic lists; `scripts/new-skill.mjs` no longer writes the flag;
+  `docs/ADDING-A-SKILL.md` step 2 describes the new rule.
+- Minor bump for every skill plugin and the bundle; the hooks did not change.
+
 ## 2026-10-17: the third pstack batch (tdd, mutation-test, review-triage, lean-subagent-dev, rule-to-hook, codebase-oracle)
 
 - `tdd`: "prefer no new test over a bad test" replaces "no test is too small" for fixes and small changes with no cheap

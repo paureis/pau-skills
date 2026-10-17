@@ -41,7 +41,8 @@ Read "How to work an item" first.
      diff against the upstream file, and "(adapted)" in the README.
    A skill that only takes an idea, with no shared text or structure, is Original; say in ORIGINS which upstream idea
    it came from.
-5. **Set its invocation tier** from "Context budget" below, and keep its description inside the limits there.
+5. **Write its description as a trigger list** within the limits in "Context budget" below, and add the confirm
+   paragraph if the skill spends, takes over the session or writes outside the conversation.
 6. **Prove it.** `npm test`, `npm run scrub`, `node scripts/build-marketplace.mjs --check`,
    `claude plugin validate . --strict`, and a mutation run through `mutate.sh` for every new script test. Where the
    skill is a process with no script, run it once on a real or fixture repository and keep the transcript summary for
@@ -244,25 +245,22 @@ Facts (Claude Code documentation, skills page, checked 2026-10-17):
 - On 2026-10-17 the 25 skills here were all model-invocable and their descriptions totalled about 15,000
   characters, already over the budget of a 200k window.
 
-**Policy until P0.5 lands** (P0.5 replaces it; see "Policy after P0.5" in that item).
-- **Auto tier** (the model may start it): skills an agent should reach for without being asked, because the user
-  would not know to type them at that moment. At most 12 skills, each description at most 400 characters, all auto
-  descriptions together at most 4,500 characters.
-  The auto tier: `which-skill`, `tdd`, `bug-fix`, `verify-app`, `review-triage`, `evaluator`, `mutation-test`,
-  `codebase-oracle`, `migration-review`, `flaky-test-hunt`, `dependency-security-audit`, `safe-merge`
-  (`merge-guard` sends the agent to it).
-- **Typed tier** (`disable-model-invocation: true`): modes, rituals and heavy workflows the user starts on purpose.
-  Everything else, including `project-setup`, `session-close`, `handoff`, `retrospective`, `instructions-audit`,
-  `lean-subagent-dev`, `methodology`, `parallel-worktrees`, `grill-me`, `to-prd`, `to-issues`,
-  `improve-codebase-architecture`, `ci-cost-and-cadence`, `dependency-upgrade`, `rule-to-hook`, and every new skill
-  not named in the auto tier.
-- A skill in the typed tier cannot be started by another skill. Where a skill says "run X if it is installed" and X is
-  typed, it says "suggest the user run `/X`" instead, or reads X's bundled file directly when it carries a copy.
-- The README says which skills load on their own and which you type.
+**Policy since P0.5** (decision 7; this replaces the two tiers of decision 4).
+- Every skill is model-invocable. No skill sets `disable-model-invocation`; `tests/context-budget.test.mjs` fails on
+  it.
+- Each description is a trigger list: one sentence on what the skill does, then the phrases a person would say, and
+  what makes it different where another installed skill could be picked. At most 400 characters each and 12,000 in
+  total (the owner runs a 1M window, where the listing gets about 40,000 characters shared with every other plugin).
+- Skills that launch subagents or headless runs, take over the session, or write outside the conversation carry the
+  confirm paragraph word for word; `CONFIRM_LIST` in `tests/confirm-step.test.mjs` is the list, and the README and
+  `which-skill` must name the same skills.
+- A skill starts another one directly ("use `x` if it is installed") for a step inside the work the user asked for,
+  and offers it ("offer to run `x` if it is installed") for a next step or while the current skill is read-only.
+- After each upload, a new session measures the listing with `/context`.
 
 ## Work items
 
-Status: `todo`, `in progress`, `done`. Plugin and tier are where the skill goes. "Upstream" lists the files to read.
+Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in the items below is history (P0.5 removed the tiers). "Upstream" lists the files to read.
 
 ### P0. Groundwork (do first)
 
@@ -284,7 +282,7 @@ section with the MIT text, copyright 2026 Lauren Tan, listing adapted files as t
 "not just X but Y"; chatbot phrases; filler), skipping code blocks and inline code. Check `evals/project-setup/grade.mjs`
 for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the new rules find.
 
-**P0.5 Every skill loads on its own** (`todo`, orchestrator plus builders, touches every skill). Decision 7.
+**P0.5 Every skill loads on its own** (`in progress`, orchestrator plus builders, touches every skill). Decision 7.
 
 Why. Typed skills cost the owner effort: they must remember each skill's name and what it does. A skill the agent can
 start from the user's own words ("help me brainstorm", "close the session") is used more. The tier limits came from
@@ -651,7 +649,7 @@ read its frontmatter and route by its description; the prompt checklist (or poin
    under the new rule. Part B, trimming the owner's plugins, runs in the same session.
 6. **Then the fourth batch:** M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M11
    small additions (one builder). M10 `which-skill` is a shared file the orchestrator owns, so the orchestrator does it
-   in that batch's integration pass. P1.2 to P1.4 can ride along as a small fifth builder.
+   in that batch's integration pass. P1.2 and P1.3 can ride along as a small fifth builder.
 7. N8 overnight-run, N9 engineering-principles.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
@@ -670,9 +668,9 @@ When the batch is merged, update the skill count on the author's GitHub profile 
 - **P1.3 version-bump check** (`todo`). Nothing checks that a change to a plugin's files bumps that plugin's version
   and the bundle's, though CLAUDE.md requires it. A test or script that compares against the merge base and names the
   plugin to bump. Found by the same cold run; the owner decides whether it is worth its code.
-- **P1.4 typed-skill names** (`todo`, made moot by P0.5; close it there). Some skills name a typed skill as `/<name>` without the
-  `/<plugin>:<name>` form the rest of the repository uses (the cold run found three live instances, for example in
-  `architect` and `which-skill`). A test that fails on the bare form, as a ratchet at the current count.
+- **P1.4 typed-skill names** (`closed`: P0.5 removed every `/<plugin>:<name>` mention, so there is nothing left to
+  ratchet). Some skills named a typed skill as `/<name>` without the `/<plugin>:<name>` form; the cold run of the
+  second batch found three live instances, for example in `architect` and `which-skill`.
 
 ## Done
 
