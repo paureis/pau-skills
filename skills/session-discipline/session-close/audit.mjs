@@ -123,7 +123,7 @@ function main(args) {
     const localSkills = join(cwd, '.claude', 'skills');
     if (existsSync(localSkills)) for (const d of readdirSync(localSkills)) { const p = join(localSkills, d, 'SKILL.md'); if (existsSync(p)) projectStores.push({ label: `project skill ${d}`, text: readFileSync(p, 'utf8') }); }
     let scripts = {};
-    try { scripts = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf8')).scripts || {}; } catch {}
+    try { scripts = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf8').replace(/^\uFEFF/, '')).scripts || {}; } catch {}
     const missing = findStale(projectStores, cwd, scripts);
     for (const m of missing) console.log(m.kind === 'path' ? `  MISSING PATH   ${m.ref}   <- ${m.store}` : `  MISSING SCRIPT npm run ${m.ref}   <- ${m.store}`);
     console.log(missing.length ? `\n${missing.length} stale reference(s): fix or delete the sentence that cites each one.` : 'No stale references in project CLAUDE.md, memory or project skills.');

@@ -8,7 +8,8 @@ the plugin they installed is bumped.
 - `hooks/lib/config.mjs` ignored a `.claude/pau-skills.json` that starts with a UTF-8 byte order mark (some Windows
   editors write one), so a hook could not be turned off. It now drops the mark before parsing. The same fix applies to
   `instructions-audit`, where the mark hid a rules file's `paths:` frontmatter and a `package.json`'s scripts, and to
-  the plan file of `parallel-worktrees`.
+  the plan file of `parallel-worktrees`, and to the `package.json` read by `audit.mjs --stale` in `retrospective` and
+  `session-close`, which reported every `npm run` script as missing.
 - Versions: pau-skills 0.8.1, pau-skills-hooks 0.1.1, session-discipline 0.6.1, verification 0.6.2,
   agent-orchestration 0.5.1, guards 0.4.1.
 
