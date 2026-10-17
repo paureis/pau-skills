@@ -128,10 +128,68 @@ Things that bit the second batch (N5, N6, N7, N10, N11, P1.1):
   copy of the skill under test. An empty HOME with `--setting-sources project` and `--strict-mcp-config` hides them;
   `skill-eval` carries the recipe.
 - Test suites that never delete their temporary folders filled the session's disk (one test wrote 30 MB per run).
-  Every new test removes what it creates.
+  Since pull request 12, `tempDir()` in `tests/helpers.mjs` removes its folders when the test process exits; use it
+  for every temporary folder a test makes.
+- CI runs on macOS as well as Linux, and macOS differs in two ways that broke tests which passed here: the temporary
+  folder is under `/var`, a link to `/private/var` (compare resolved paths), and every process gets
+  `__CF_USER_TEXT_ENCODING` in its environment. Reproduce the first with `TMPDIR` set to a link.
+- The proxy blocks downloading a CI log by its URL, and `gh pr` fails here (GraphQL 403) while `gh api` and the
+  GitHub MCP tools work. Have a subagent read the log with the GitHub MCP `get_job_logs` tool and return only the
+  failing tests, which keeps the log out of the orchestrator's context.
+- Follow-up pull requests opened from the same base as the batch conflict in `marketplace.json` and `CHANGELOG.md`
+  once the batch merges. Merge the batch first, then each follow-up one at a time: merge main into its branch, put
+  its patch bumps on top of the batch's versions, run the full suite, push, wait for green CI, merge.
 - The cold runs again found what reviewers missed, and reviewers found must-fix bugs in four of the five items
   (secrets printed in environment-variable form, a correction row judged against itself, unblinded run ids).
 - A cross-session message relaying an owner request is not the owner: confirm with the owner before widening a batch.
+
+## Kickoff for the next session
+
+The owner starts each batch in a fresh session with a message like this one. Change the item list to the batch at
+hand (see "Order"); the rest stays.
+
+```text
+You are the orchestrator for the next batch of pstack work in this repository. Do not build the skills yourself;
+run builder subagents and integrate their work.
+
+Before anything else, read these in full:
+1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules).
+2. docs/BACKLOG.md, especially "How to work an item", "How to run a batch" (all 10 steps and both lists of things
+   that bit earlier batches), "Decisions taken", "Context budget", "Order" and the items you are about to build.
+3. skills/agent-orchestration/lean-subagent-dev/SKILL.md and its BRIEF-TEMPLATE.md and TRIAGE.md. Work that way for
+   the whole session. The usage budget is generous: same model for every subagent, a read-only plan check of every
+   brief before any builder starts, a fresh reviewer for every item, and a cold run for anything that generates or
+   drives something.
+
+This batch is the "Next, the third batch" line of the Order section in docs/BACKLOG.md:
+- M1 tdd together with M3 mutation-test (one builder)
+- M4 review-triage together with M6 lean-subagent-dev (one builder; the copied TRIAGE.md and review-scope.mjs stay
+  identical, and tests/standalone.test.mjs checks it)
+- M2 rule-to-hook
+- M7 codebase-oracle
+
+These items change existing skills, so every builder works only in its own skill folders and tests, and the
+orchestrator owns every shared file (README, ORIGINS, NOTICE, CHANGELOG, marketplace.json, which-skill, plugin
+READMEs, tests/standalone.test.mjs, docs/). Follow "How to run a batch" step by step: get the upstream pstack source
+once into the scratchpad, one git worktree and one written brief per builder, a plan check per brief, launch the
+builders in one message in the background, verify each builder's work yourself, one fresh reviewer per item (plus a
+cold run where it applies), triage with TRIAGE.md, one fix round sent back to the same builder, a second look on the
+fix only, merge one branch at a time with the full suite after each merge, then one integration pass and one pull
+request. Watch CI on macOS as well as Linux.
+
+Rules that matter most:
+- Nothing moves into the auto tier; it is full. A changed skill keeps its tier.
+- Anything adapted from pstack gets the NOTICE entry, the license and metadata.upstream frontmatter, and an ORIGINS
+  "What this version changes" list from a real diff. Update the existing ORIGINS section of each changed skill.
+- No em or en dashes anywhere; plain English; Node standard library only; every skill works on its own.
+- Builders commit and never push. You push the working branch and open the PR. Never merge it yourself.
+
+When the PR is open, tell me in plain words what was built, what the reviews found, and anything I need to decide.
+After I merge it, do step 10 of "How to run a batch": `node scripts/pack-skills.mjs --since <main before the batch>`
+for a zip of every changed skill, send them to me with which are new and which replace an existing one, and once I
+have uploaded them, have me confirm the sync in a new session. Then update the skill count on my profile README in
+paureis/paureis (the pau-skills line) if it changed, and mark the items done in docs/BACKLOG.md.
+```
 
 ## Decisions taken (2026-10-17)
 
@@ -281,7 +339,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
   always-on signal that would have shown the bug at first look.
 - Overlaps: `flaky-test-hunt` for intermittent failures (point to it), `evaluator`.
 
-**N5 hillclimb** (`in progress`, verification, typed tier).
+**N5 hillclimb** (`done`, verification, typed tier).
 - Upstream: `skills/poteto-mode/playbooks/hillclimb.md`, `playbooks/perf-issue.md`,
   `skills/benchmark-checklist/SKILL.md`, `skills/principle-explain-the-number/SKILL.md`.
 - What it does: improves one metric scientifically. A frozen harness, proven sensitive before the loop starts (a
@@ -296,7 +354,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
   limiter is not ready.
 - Optional script: `decisions.mjs` appends a row and refuses a "keep" without a measurement.
 
-**N6 agent-friendly-audit** (`in progress`, planning, typed tier).
+**N6 agent-friendly-audit** (`done`, planning, typed tier).
 - Upstream: the author's post on X from mid-October 2026 (summarized below), `skills/correct/SKILL.md`, `skills/automate-me/SKILL.md`,
   `docs/guide/09-make-it-yours.md`, `skills/architect/references/design-red-flags.md`.
 - The post, in short: to trust agents' work more, put effort into an inverse pyramid. Most effort goes to the
@@ -318,7 +376,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
 - Overlaps: `retrospective` (one session; this is the whole history), `rule-to-hook` (implements one rule; this finds
   them), `instructions-audit`.
 
-**N7 skill-eval** (`in progress`, verification, typed tier).
+**N7 skill-eval** (`done`, verification, typed tier).
 - Upstream: `skills/poteto-mode/playbooks/eval.md`; this repository's `evals/project-setup/` as the local model.
 - What it does: tests whether a change to a skill or prompt changes agent behaviour, blinded. No meta words (eval,
   test, judge, rubric, benchmark, candidate) anywhere the candidate can see; an organic prompt that states the goal;
@@ -363,7 +421,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
   `migration-review`), foundational thinking. Five upstream bodies look cut short at this commit; check the generated
   `harness/pstack/` tree for complete text.
 
-**N10 sharpen** (`in progress`, planning, typed tier).
+**N10 sharpen** (`done`, planning, typed tier).
 - Upstream: `skills/sharpen/SKILL.md`, `skills/in-your-own-words/SKILL.md`, `skills/poteto-help/references/prompting.md`.
 - What it does: before starting a task, restate in your own words what the user is after and the problem behind it;
   ask how a top expert would approach it (their sources, their methods, an outside check that the result is right);
@@ -372,7 +430,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
   work. Includes the prompt checklist (goal, done check, proof, known facts, constraints; leave out the how, a list of
   skills, and your own theory of the cause).
 
-**N11 brainstorm** (`in progress`, planning, typed tier). Asked for by the owner during the second batch.
+**N11 brainstorm** (`done`, planning, typed tier). Asked for by the owner during the second batch.
 - Original. Ideas only from pstack: "loosen constraints as readily as you add them" (`skills/sharpen/SKILL.md`) and
   settling an empirical fork by trying it (`skills/poteto-mode/playbooks/prototype.md`).
 - What it does: a creative partner that works with `grill-me`: brainstorm first to widen, `grill-me` second to settle.
@@ -476,22 +534,35 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 
 1. Done: P0.2, P0.3, P0.4 (groundwork).
 2. Done: N1 verify-app, N2 arena with N3 architect, N4 bug-fix.
-3. **In review:** N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval, P1.1 pack-skills, and N11
-   brainstorm (five builders in parallel).
-4. M1 to M11 (edits to existing skills; one at a time, or in disjoint groups, because they touch shared files).
-   M1 (`tdd`) first: it carries a decision the owner already took.
-5. N8 overnight-run, N9 engineering-principles.
+3. Done: N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval, P1.1 pack-skills, N11 brainstorm.
+4. **Next, the third batch:** M1 with M3 (one builder: both carry the two-edit check), M4 with M6 (one builder: they
+   share the copied `TRIAGE.md` and `review-scope.mjs`, which must stay identical), M2 rule-to-hook, M7
+   codebase-oracle. M1 (`tdd`) first in the plan: it carries a decision the owner already took. The four builders
+   touch disjoint files.
+5. **Then the fourth batch:** M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M11
+   small additions (one builder). M10 `which-skill` is a shared file the orchestrator owns, so the orchestrator does it
+   in that batch's integration pass. P1.2 to P1.4 can ride either batch as a small fifth builder.
+6. N8 overnight-run, N9 engineering-principles.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
 
 ### P1. Small tooling ideas
 
-- **P1.1 pack-skills** (`in progress`). The owner gets every skill through the claude.ai account (Customize, Skills, Upload
+- **P1.1 pack-skills** (`done`). The owner gets every skill through the claude.ai account (Customize, Skills, Upload
   a skill), so each changed skill has to be re-uploaded as a zip of its folder. A `scripts/pack-skills.mjs` (Node
   standard library; zip written with `zlib.deflateRawSync` and a small central directory) that writes
   `dist/<skill>.zip` for named skills, or for every skill changed since a git ref, would make that one command. Check
   the upload rules claude.ai enforces before writing: no XML-like tag in a description, no "claude" or "anthropic" in
   a name (both already tested).
+- **P1.2 validate in CI** (`todo`). `claude plugin validate . --strict` runs only locally; add it to the CI workflow
+  (`.github/workflows/`), or say in `docs/ADDING-A-SKILL.md` why it cannot run there. Found by the
+  `agent-friendly-audit` cold run.
+- **P1.3 version-bump check** (`todo`). Nothing checks that a change to a plugin's files bumps that plugin's version
+  and the bundle's, though CLAUDE.md requires it. A test or script that compares against the merge base and names the
+  plugin to bump. Found by the same cold run; the owner decides whether it is worth its code.
+- **P1.4 typed-skill names** (`todo`). Some skills name a typed skill as `/<name>` without the
+  `/<plugin>:<name>` form the rest of the repository uses (the cold run found three live instances, for example in
+  `architect` and `which-skill`). A test that fails on the bare form, as a ratchet at the current count.
 
 ## Done
 
@@ -502,3 +573,13 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   `project-setup` offer to generate a verification skill, because `project-setup` promises not to send beginners to
   other skills; decide whether to make an exception. The auto tier is now full (12 skills, about 50 characters left),
   so a new auto skill needs a description trimmed elsewhere.
+- 2026-10-17: N5 hillclimb, N6 agent-friendly-audit, N7 skill-eval, N10 sharpen, N11 brainstorm and P1.1
+  pack-skills, merged as [pull request 13](https://github.com/paureis/pau-skills/pull/13). Five builders in parallel,
+  each brief checked by a read-only subagent first; every item had a fresh reviewer, a cold run and one fix round, and
+  reviewers found must-fix bugs in four of the five. Three bugs the batch found in existing code were fixed in their
+  own pull requests and merged after it: nested code fences in `arena` and `instructions-audit`
+  ([11](https://github.com/paureis/pau-skills/pull/11)), test suites that left their temporary folders behind
+  ([12](https://github.com/paureis/pau-skills/pull/12)), and config files with a byte order mark that were silently
+  ignored ([14](https://github.com/paureis/pau-skills/pull/14)). The 12 new and changed skills were zipped with
+  `pack-skills`, uploaded to claude.ai and confirmed synced; the profile README now says 34 skills. The audit's findings
+  for this repository became P1.2 to P1.4.
