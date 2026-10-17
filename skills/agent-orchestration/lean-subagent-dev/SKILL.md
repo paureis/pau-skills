@@ -1,7 +1,6 @@
 ---
 name: lean-subagent-dev
-description: "A way of working for a whole session. The main session plans, talks to the owner and does every push, pull request, merge and tag; code and test work goes to one subagent at a time with a written brief; the main session checks the result itself (reads the diff, reruns the checks, runs a control) and triages the review with one review round and one fix round. Adjusts to the usage budget (tight, normal or generous): how much to delegate, the subagent's model and effort, and how much review to buy. Use at the start of a session, or when the user says \"lean subagent\", \"work lean\", \"delegate this to a subagent\", \"one subagent per task\", \"brief a subagent\", \"how much should I delegate\", \"I am low on usage\", or asks how to split work between the main session and subagents."
-disable-model-invocation: true
+description: "A way of working for a whole session: one subagent at a time builds from a written brief, you check its work and keep every push and merge, scaled to the usage budget. Use when the user says 'work lean', 'lean subagent', 'delegate this to a subagent', 'brief a subagent', 'how much should I delegate', 'I am low on usage'."
 argument-hint: "[the work for this session, or a path to a plan]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)

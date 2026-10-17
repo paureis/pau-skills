@@ -1,6 +1,6 @@
 ---
 name: safe-merge
-description: Merge a GitHub pull request without closing the pull requests stacked on it, by merging without branch deletion and deleting the head branch only if no open PR uses it as its base. Use whenever a PR is to be merged with gh, when the merge guard denied a gh pr merge, or when the user says "merge PR", "merge this", "land it", "merge the stack".
+description: "Merge a GitHub pull request without closing the pull requests stacked on it, by merging without branch deletion and deleting the head branch only if no open PR uses it as its base. Use whenever a PR is to be merged with gh, when the merge guard denied a gh pr merge, or when the user says 'merge PR', 'merge this', 'land it', 'merge the stack'."
 argument-hint: "<pr number> [--dry-run]"
 ---
 

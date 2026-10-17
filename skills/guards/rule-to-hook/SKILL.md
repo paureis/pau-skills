@@ -1,7 +1,6 @@
 ---
 name: rule-to-hook
-description: Turn a written rule that keeps getting broken (in CLAUDE.md, AGENTS.md, a style guide, or a correction the user keeps repeating) into an enforced mechanism at the highest layer that holds it (architecture, types, a lint or CI check with a ratchet when the pattern is already common, a test) or a Claude Code hook when the rule is about what the agent does; pins the rule down with real violations and near-misses, writes a small tested check whose error names what to use instead, proves it fails on a mutation and on a real past mistake, registers it, and records it in a rule table with expiring, approved exceptions. Use when the user says "this rule keeps getting broken", "I keep telling Claude not to", "make this a hook", "enforce this rule", "turn this into a guard", "block this command", "stop the agent from doing X", "why does it ignore CLAUDE.md", or when the same correction has come up three times.
-disable-model-invocation: true
+description: "Turn a rule that keeps getting broken, not a new automation, into an enforced check (types, lint, CI, a test or a Claude Code hook) proven on a past mistake. Use when the user says 'this rule keeps getting broken', 'I keep telling Claude not to', 'enforce this rule', 'make this a hook', 'block this command', 'stop the agent from doing X', 'why does it ignore CLAUDE.md'."
 argument-hint: "[the rule, or where it is written, e.g. 'CLAUDE.md: never git add -A']"
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:

@@ -1,6 +1,6 @@
 ---
 name: dependency-security-audit
-description: "Audit dependencies for known vulnerabilities, fresh disclosures and supply-chain risk in any ecosystem, container images included, and rank what to do. Use when the user says 'security audit', 'are we vulnerable', 'scan dependencies', 'CVE check', 'is this package safe', 'npm audit', 'pip audit', 'Dependabot alerts', or mentions a supply-chain attack or a CVE in a library the project uses."
+description: "Audit third-party dependencies and container images in any ecosystem for known vulnerabilities, fresh disclosures and supply-chain risk, and rank what to do. Use when the user says 'security audit', 'are we vulnerable', 'scan dependencies', 'CVE check', 'is this package safe', 'npm audit', 'pip audit', 'Dependabot alerts', or mentions a supply-chain attack or a CVE in a library."
 ---
 
 # Dependency security audit
