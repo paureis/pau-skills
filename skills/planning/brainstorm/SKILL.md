@@ -23,8 +23,8 @@ Make a task list with one entry per phase (Frame, Diverge, React, Converge, Deci
 
 1. **Look before asking.** Read just enough of the project to know what already exists around the question: the
    files, scripts, docs or configuration it touches. A quick read, not a study. Do not ask what the code can tell.
-2. **Restate the goal** in your own words, in one or two sentences, and show it to the user. A restatement that
-   surprises them is the most useful thing this phase can produce.
+2. **Restate the goal** in your own words, in one or two sentences, and show it with your first question. A
+   restatement that surprises the user is the most useful thing this phase can produce.
 3. **Ask at most three questions, one at a time**, and only ones whose answer changes which ideas are worth having.
    The usual three: what the user is really after (the goal behind the ask), which constraints are hard, and what a
    great outcome would look like. Skip any the user has already answered. Recommend nothing yet.
@@ -55,7 +55,7 @@ Generate 10 to 20 options, spread on purpose through these lenses. Every lens gi
 |---|---|
 | Baseline | The obvious answer most people would give first. The user's idea goes here if it is the obvious one. |
 | Invert | List what would guarantee failure, then flip the strongest item into an option. |
-| Remove the biggest constraint | Take the assumed constraint that limits the options most and drop it. What becomes possible? |
+| Remove the biggest constraint | Take the assumed constraint that limits the options most and drop it. What becomes possible? If every constraint is hard, drop the biggest hard one anyway and say so: it shows what that constraint costs. |
 | 10x bigger | The version for ten times the scale, users or ambition. |
 | 10x cheaper | The version at a tenth of the effort or cost. Often the one that ships. |
 | Borrow | How another field or another kind of system solves the same shape of problem (a library, a factory, a game, an operating system, a different language ecosystem). |
@@ -99,10 +99,11 @@ Merge their options with yours, remove duplicates, then do Combine.
    Number every option across all clusters and show each on one line with its lens tag.
 2. **Ask the user to mark them**: keep, kill or combine, for example "keep 3, 7; kill 1, 4; combine 2 and 9". An
    unmarked option is neither kept nor killed; it goes into the summary as "not taken up".
-3. **Build on the keepers.** For each kept or combined option, write one variant that makes it stronger: removes
-   its biggest cost, fixes the weakness the Invert lens would find in it, or merges it with another keeper.
-4. **Second round, smaller**: 3 to 6 new options around the keepers, again one line each, again without judging.
-   Show them and ask for one more round of marks. Then stop diverging.
+3. **Second round, smaller: build on the keepers.** Write 3 to 6 new options, one line each, without judging. Each
+   one makes a keeper stronger (removes its biggest cost, fixes the weakness the Invert lens would find in it), merges
+   two keepers, or carries out a "combine" mark.
+4. **Show the round-one keepers again with the new options**, numbered as one list, and ask for one more round of
+   marks. These marks are final: what the user keeps here is the pool for the shortlist. Then stop diverging.
 
 If the user kills everything in round one, the frame was wrong. Ask what all the options got wrong, rewrite the
 frame, and diverge again once.
@@ -111,8 +112,10 @@ frame, and diverge again once.
 
 ## Phase 4: Converge
 
-1. **Shortlist 3 to 5** from the keepers and the second round. If fewer than three survive, add the baseline or "do
-   nothing" so there is always something to beat. Say in one line why each option outside the shortlist is out.
+1. **Shortlist 3 to 5** from the options kept in the second round. If fewer than three survive, add the baseline or
+   "do nothing" so there is always something to beat. Say in one line why each option outside the shortlist is out.
+   Then check the shortlist against "A great outcome" from the frame. If no finalist reaches it, say so plainly and
+   offer to bring back the killed or unmarked option that came closest; the user decides.
 2. **Weigh each finalist** on value, effort, risk and reversibility, unless the user picked other criteria. Rate each
    low, medium or high, with a one-line reason. For value and reversibility, high is good; for effort and risk, low
    is good. Never add the ratings into a score: they are not on one scale, and a total hides the tradeoff the user
