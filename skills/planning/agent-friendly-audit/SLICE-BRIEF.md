@@ -44,8 +44,10 @@ across pull requests; list those separately, marked as bot.
 
 ## Slice: commit history
 
-Start from `node <skill folder>/mine.mjs commits`. A subject is a lead, not evidence: read each diff
-(`git show <sha>`) and say what was wrong before counting it. A commit that only adds new work is not a correction,
+Start from `node <skill folder>/mine.mjs commits --rev <branch>` with the branch you were given. A subject is a
+lead, not evidence: say what was wrong before counting it. With many commits, start from the message body
+(`git log -1 --format=%B <sha>`) and the files touched (`git show --stat <sha>`), then read the diff only for the
+files that matter (`git show <sha> -- <path>`). A commit that only adds new work is not a correction,
 whatever its subject says. The script finds only subjects with a fix word, so also skim `git log --oneline` for
 corrections phrased otherwise: "rename", "replace", "no longer", "instead", "that X accepts", "make ... work".
 
@@ -57,7 +59,8 @@ other places, and list each copy that is still there as a live instance.
 
 ## Slice: transcripts and memory
 
-Start from `node <skill folder>/mine.mjs transcripts <folder>` for each folder you were given, and only those. It
+Start from `node <skill folder>/mine.mjs transcripts --repo <checkout>` with the checkout you were given; it reads
+this repository's transcript folders and no others, and leaves out the session running the audit. It
 prints what the user typed, one row per message with its line number. Open the transcript file at a line only when
 you need the context of a correction, and copy nothing out of it.
 
