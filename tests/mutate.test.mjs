@@ -1,6 +1,7 @@
 // The mutation harness, run for real in a throwaway git repository: argument handling, the refusals that protect
 // work (dirty tree, failing control, mutation that does not apply, patch touching another file), CAUGHT and SURVIVED,
-// and that every path leaves the file restored.
+// the refactor mode (KEPT and BROKE), a mutation taken from a real fix in git history, and that every path leaves the
+// file restored.
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync, execFileSync } from 'node:child_process';
@@ -100,5 +101,42 @@ test('a patch is applied when it touches only the file, refused when it touches 
   const bad = harness(['lib.mjs', 'node', 'check.mjs'], other);
   assert.equal(bad.code, 2, bad.out);
   assert.match(bad.out, /must touch only lib\.mjs/);
+  assertRestored();
+});
+
+test('refactor mode, KEPT: a pure refactor leaves the check green, exits 0 and restores', () => {
+  const r = harness(['--refactor', '--label', 'swap', '--sed', 's/user.id === doc.ownerId/doc.ownerId === user.id/', 'lib.mjs', 'node', 'check.mjs']);
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /REFACTOR APPLIED/);
+  assert.match(r.out, /\[swap\] RESULT: KEPT/);
+  assertRestored();
+});
+
+test('refactor mode, BROKE: an edit that breaks the checked behaviour exits 1, prints the changed lines, restores', () => {
+  const r = harness(['--refactor', 'lib.mjs', 'node', 'check.mjs'], 's/user.id === doc.ownerId/true/\n');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /RESULT: BROKE/);
+  assert.doesNotMatch(r.out, /CAUGHT/);
+  assert.match(r.out, /RESULT: BROKE[\s\S]*\+export const isOwner = \(user, doc\) => true;/);
+  assertRestored();
+});
+
+test('refactor mode keeps the refusals: a refactor that changes nothing exits 2', () => {
+  const r = harness(['--refactor', '--sed', 's/does-not-occur/x/', 'lib.mjs', 'node', 'check.mjs']);
+  assert.equal(r.code, 2, r.out);
+  assert.match(r.out, /did not change the content/);
+  assertRestored();
+});
+
+test('a real past fix, reversed with git show -R, is fed to the harness as the mutation', () => {
+  // History: the bug, then the fix that brings back SOURCE. Reversing the fix reintroduces the bug.
+  writeFileSync(join(repo, 'lib.mjs'), SOURCE.replace('user.id === doc.ownerId', 'user.id == doc.owner'));
+  git('commit', '-q', '-am', 'owner check');
+  writeFileSync(join(repo, 'lib.mjs'), SOURCE);
+  git('commit', '-q', '-am', 'fix: compare against ownerId');
+  const patch = git('show', '-R', '--format=', '--no-color', 'HEAD', '--', 'lib.mjs');
+  const r = harness(['--label', 'real-fix', 'lib.mjs', 'node', 'check.mjs'], patch);
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /\[real-fix\] RESULT: CAUGHT/);
   assertRestored();
 });
