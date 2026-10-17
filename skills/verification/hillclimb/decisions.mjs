@@ -7,8 +7,9 @@
  *        [--better lower|higher] [--note <text>]
  *       Appends one row to <log> (a decision.tsv), creating it and its folder with the header when it is missing.
  *       Columns: time, attempt, hypothesis, change, measurement, delta, tests, decision, note. The time is now, in
- *       UTC; the attempt defaults to the number of rows already in the log (the first row is 0); the delta is
- *       computed against the best kept so far, which is the latest baseline or keep row.
+ *       UTC; the attempt defaults to "baseline" on a baseline row and otherwise to one more than the highest numbered
+ *       attempt so far (the first is 1); the delta is computed against the best kept so far, which is the latest
+ *       baseline or keep row.
  *
  *   node decisions.mjs measure [--runs 5] [--warmup 1] [--value time|stdout] [--shell] -- <command> [args...]
  *       Runs the command --warmup times unrecorded, then --runs times, and prints one line in the measurement format.
@@ -18,7 +19,9 @@
  *       --shell runs the command through the system shell (pipes, &&, or npm and similar on Windows).
  *
  *   node decisions.mjs summary <log>
- *       Prints the log as a Markdown table, then the baseline, the best kept number and the attempt counts.
+ *       Prints the log as a Markdown table, then the baseline, the best kept number, the attempt counts and the first
+ *       baseline's note (where the stop predicate is written). An attempt is counted once, by its latest row, and the
+ *       row with attempt id "sensitivity" (the deliberate regression) is not counted.
  *
  * The measurement format: `median=<number><unit> runs=<count> spread=<number><unit>`, keys in any order, the same
  * unit (or none) on median and spread, extra `key=value` pairs allowed (for example `errors=0 work=1000`). The spread
@@ -47,6 +50,7 @@ export const HEADER = ['time', 'attempt', 'hypothesis', 'change', 'measurement',
 export const DECISIONS = ['baseline', 'keep', 'revert'];
 export const TESTS = ['pass', 'fail'];
 export const MIN_RUNS = 3;
+export const SENSITIVITY = 'sensitivity';
 const REFERENCE = /^reference \((lower|higher) is better\)$/;
 const NUMBER = /^([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)([A-Za-z%/]*)$/;
 
@@ -254,7 +258,8 @@ function buildRow(log, fields, now) {
       }
     }
   }
-  const attempt = fields.id ?? String(rows.length);
+  const numbers = rows.map((r) => at(r, 'attempt')).filter((id) => /^\d+$/.test(id)).map(Number);
+  const attempt = fields.id ?? (decision === 'baseline' ? 'baseline' : String(Math.max(0, ...numbers) + 1));
   return { row: [now.toISOString(), attempt, hypothesis, change, fields.measurement ?? '', delta, tests, decision, fields.note ?? ''], created: !rows.length && !existsSync(log) };
 }
 
@@ -310,8 +315,11 @@ function summary(log, out) {
   for (const r of rows) out(`| ${r.map(cell).join(' | ')} |`);
   out('');
   const first = rows.find((r) => at(r, 'decision') === 'baseline');
-  const kept = rows.filter((r) => at(r, 'decision') === 'keep');
-  const reverted = rows.filter((r) => at(r, 'decision') === 'revert');
+  const latest = new Map();
+  for (const r of rows) {
+    if (['keep', 'revert'].includes(at(r, 'decision')) && at(r, 'attempt') !== SENSITIVITY) latest.set(at(r, 'attempt'), at(r, 'decision'));
+  }
+  const kept = [...latest.values()].filter((d) => d === 'keep').length;
   if (first) {
     const b = parseMeasurement(at(first, 'measurement'));
     const best = [...rows].reverse().find((r) => ['baseline', 'keep'].includes(at(r, 'decision')));
@@ -319,7 +327,8 @@ function summary(log, out) {
     const pct = b.median === 0 ? '' : `${m.median - b.median > 0 ? '+' : m.median < b.median ? '-' : ''}${Math.abs(((m.median - b.median) / Math.abs(b.median)) * 100).toFixed(1)}%, `;
     out(`baseline ${formatNumber(b.median)}${b.unit}, best ${formatNumber(m.median)}${m.unit} (${pct}attempt ${at(best, 'attempt')})`);
   }
-  out(`rows ${rows.length}: kept ${kept.length}, reverted ${reverted.length}`);
+  out(`attempts ${latest.size} (kept ${kept}, reverted ${latest.size - kept}), not counting the sensitivity check`);
+  if (first && at(first, 'note')) out(`first baseline note: ${at(first, 'note')}`);
   return 0;
 }
 

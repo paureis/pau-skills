@@ -22,14 +22,19 @@ on it.
    then map the hot spot to source. Profile in a run you do not report, because profilers slow the work down. Tools,
    by ecosystem:
    - any process: CPU per process (`top`, `pidstat`), I/O wait, syscall counts (`strace -c -f <command>` on Linux,
-     `dtruss -c` on macOS), peak memory (`/usr/bin/time -v` on Linux, `/usr/bin/time -l` on macOS), `perf record` and
-     `perf report` on Linux;
+     `dtruss -c` on macOS), peak memory (`/usr/bin/time -v` on Linux, `/usr/bin/time -l` on macOS; GNU time is often
+     not installed, and the shell's `time` keyword gives wall and CPU time only), `perf record` and `perf report` on
+     Linux;
    - Python: `python -m cProfile -s cumulative <script>`, or `py-spy record` if it is installed;
    - Go: `go test -cpuprofile cpu.out -bench .` then `go tool pprof cpu.out`;
    - Rust: `cargo flamegraph` if it is installed, or `perf`;
    - JVM: async-profiler or JDK Flight Recorder (`-XX:+FlightRecorder`);
    - .NET: `dotnet-trace` and `dotnet-counters`;
    - JavaScript: `node --cpu-prof`, or the browser's performance panel.
+
+   A tracing profiler (such as `cProfile`) adds a cost to every call, so code that makes many small calls looks
+   bigger than it is. Read its shares as a guide to where to look, and for the arithmetic in question 3, time the
+   piece without the profiler (time it alone, or skip it in a scratch run).
 
    If a change did not move the number, the limiter explains why, so find it before you call the change useless. If
    you cannot say why the number is not twice as good, you do not know what you measured.

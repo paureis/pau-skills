@@ -129,13 +129,17 @@ or the hashes match.
 
 ## Step 4. Baseline, then prove the harness sensitive
 
-1. Run `uptime` and note the load. Measure the unchanged code, and log it with the predicate in the note:
+1. Run `uptime` and note the load. Measure the unchanged code, and log it with the predicate and the load in the
+   note:
    ```bash
    DECIDE measure --runs 7 -- <harness command>
-   DECIDE append <log> --id baseline --decision baseline --tests pass --better lower \
+   DECIDE append <log> --decision baseline --tests pass --better lower \
      --measurement "<the line measure printed>" --hypothesis "baseline" \
-     --change "harness: <command>, frozen at <commit or hashes>" --note "stop: <the predicate>; budget: <n> attempts"
+     --change "harness: <command>, frozen at <commit or hashes>; code at <git rev-parse --short HEAD>" \
+     --note "stop: <the predicate>; budget: <n> attempts; load <uptime's first figure> on <cores> cores"
    ```
+   If the harness prints error and work counts, add them to the measurement line by hand (`median=... runs=...
+   spread=... errors=0 work=40000`), from one run you read yourself; `measure` keeps only the time.
 2. **Deliberate regression.** In the code the case runs (not the harness), make one change that must make the number
    clearly worse: call the hot function twice, add a sleep of about a third of the median on the measured path, add
    a large unused dependency to the bundle, break a part the score depends on. Measure with the same command, then
@@ -145,7 +149,7 @@ or the hashes match.
      --hypothesis "a deliberate regression must make it worse" --change "<what you broke>"
    ```
    Use `--tests fail` if the regression broke a test; that is fine here. The delta it prints must say
-   "worse, beyond noise".
+   "worse, beyond noise". The id `sensitivity` keeps this row out of the attempt count.
 3. Revert the regression (`git restore -- <files>`, or `git checkout -- <files>` on older git) and check that
    `git status --short` prints nothing.
 4. If the regression did not move the number beyond noise, the harness does not measure the code you will change.
@@ -178,7 +182,9 @@ expected gain over cost. Write the list in the task list.
 For each attempt:
 1. Run `DECIDE summary <log>` and read it, so you do not retry a refuted idea or forget the best kept number.
 2. Write the hypothesis and its prediction.
-3. Make the one change yourself. (Optional: for a large change, hand it to a subagent with the Agent tool and
+3. Make the one change yourself. If the gate in the next step fails because your code for the idea is wrong (a typo,
+   a wrong pattern), fix that code and run the gate again; it is still the same one change, and the note says so. If
+   the idea itself breaks behaviour, revert. (Optional: for a large change, hand it to a subagent with the Agent tool and
    `isolation: "worktree"`, review its diff, and bring it into your tree. Several independent hypotheses can be built
    in parallel worktrees, but measure them one at a time in the same tree: two benchmarks at once slow each other.)
 4. Run the regression gate (the test command from step 2).
@@ -187,13 +193,15 @@ For each attempt:
    twice the runs and use that line.
 6. Decide, and log the row before you commit (`append` refuses a keep that is not one, so a refusal means revert):
    - **Keep** when the tests pass and the delta says "better, beyond noise". Run the checklist's questions 3, 4 and 7
-     on the number. Then:
+     on the number: run the harness once and read its error and work counts, and check the gain against the Amdahl
+     ceiling of the piece you changed. Then:
      ```bash
      DECIDE append <log> --decision keep --tests pass --measurement "<line>" --hypothesis "<why>" --change "<what>"
      git add <the files you changed>
      git commit -m "<change>: <metric> <old median> to <new median> (attempt <id>)"
      ```
-     Stage only the files you changed, never `git add -A` or `git add .`. One commit per kept win.
+     `append` prints the attempt id (the first attempt is 1); use it in the commit message. Stage only the files you
+     changed, never `git add -A` or `git add .`. One commit per kept win.
    - **Keep as a simplification** when the number is within noise and the change removes code or complexity: append
      with `--note "simplification: <what got simpler>"`, then commit as above.
    - **Revert** everything else: no gain, a gain within noise, a worse number, failing tests, a change that does not
@@ -216,16 +224,21 @@ After each keep, profile again: the limiter often moves, and the next hypothesis
   climbed.
 - Correctness and simplicity outrank the number. Revert a win that breaks behaviour; keep a simplification that
   holds the number.
+- **The noise floor.** When the spread is as large as the gains left (fixed costs such as startup or data setup now
+  dominate the run), further attempts cannot be judged. Say so. The remedy is a different harness (a larger case,
+  timing inside the process), which is a harness change: tell the user, and redo step 4 with a new baseline row.
 - **Stop** when the log shows the predicate met: the target reached and at least the minimum number of attempts
-  made. Check it against `DECIDE summary`, not memory. Also stop when the budget is spent, or when every remaining
+  made. Check it against `DECIDE summary`, not memory: it prints the best kept number, the attempt count (each
+  attempt once, the sensitivity check left out) and the first baseline's note with the predicate. Also stop when the budget is spent, or when every remaining
   idea has an Amdahl ceiling below the gap to the target, and say the predicate was not met. Do not stop while cheap
   untried hypotheses remain and the predicate is not met. If you are stuck, tell the user instead of spinning.
 
 ## Step 8. Check the result and report
 
 1. Measure the final commit once more with the frozen harness. If the run was long or the load changed, also check
-   out the baseline commit in a temporary worktree (`git worktree add <temp folder> <baseline commit>`) and measure
-   the two alternately, twice each, then remove the worktree. Report those numbers.
+   out the baseline commit (the "code at" commit in the baseline row) in a temporary worktree
+   (`git worktree add <temp folder> <commit>`, outside the repository) and measure the two alternately, twice each,
+   then remove the worktree (`git worktree remove <temp folder>`). Report those numbers.
 2. Run the whole checklist on the final number. Run the full test suite once more.
 3. Leave the kept commits on the branch in the order they landed. Do not push or open a pull request unless the user
    asks.

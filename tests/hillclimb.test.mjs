@@ -111,7 +111,7 @@ describe('append', () => {
     const [row] = rows(log);
     assert.equal(row.length, HEADER.length);
     assert.match(row[col('time')], /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}/);
-    assert.equal(row[col('attempt')], '0');
+    assert.equal(row[col('attempt')], 'baseline');
     assert.equal(row[col('delta')], 'reference (lower is better)');
     assert.equal(row[col('decision')], 'baseline');
     assert.equal(row[col('note')], 'stop: 50% faster and at least 3 attempts');
@@ -120,7 +120,7 @@ describe('append', () => {
     assert.equal(r.code, 0, r.err);
     const two = rows(log);
     assert.equal(two.length, 2);
-    assert.equal(two[1][col('attempt')], '1');
+    assert.equal(two[1][col('attempt')], '1', 'the first attempt is 1');
     assert.equal(two[1][col('delta')], '-0.5s -25.0% better, beyond noise');
     assert.ok(text.length > 0 && readFileSync(log, 'utf8').startsWith(text), 'the first row was not rewritten');
   });
@@ -263,6 +263,21 @@ describe('append', () => {
     assert.equal(insideGitTree(newLog()), null);
   });
 
+  test('attempt ids: a baseline is "baseline", attempts count up from 1, a given id is kept and later ids follow it', () => {
+    const log = newLog();
+    baseline(log);
+    const revert = (extra = {}) => append(log, { decision: 'revert', tests: 'pass', hypothesis: 'h', change: 'c', ...extra });
+    revert({ id: 'sensitivity' });
+    revert();
+    revert();
+    revert({ id: '2', note: 'corrects: the tests value was wrong' });
+    revert({ id: '10' });
+    revert();
+    baseline(log, { note: 're-baseline' });
+    revert();
+    assert.deepEqual(rows(log).map((r) => r[col('attempt')]), ['baseline', 'sensitivity', '1', '2', '2', '10', '11', 'baseline', '12']);
+  });
+
   test('creates the parent folder when it is missing', () => {
     const log = join(tempDir('hillclimb-'), 'a', 'b', 'decision.tsv');
     assert.equal(baseline(log).code, 0);
@@ -321,7 +336,7 @@ describe('measure', () => {
 describe('summary', () => {
   test('prints the table and the baseline to best line', () => {
     const log = newLog();
-    baseline(log);
+    baseline(log, { note: 'stop: half the baseline and at least 2 attempts' });
     append(log, { decision: 'revert', tests: 'pass', id: 'sensitivity', measurement: 'median=3.00s runs=5 spread=0.05s', hypothesis: 'a sleep must move it', change: 'sleep 1s' });
     append(log, { decision: 'keep', tests: 'pass', measurement: 'median=1.00s runs=5 spread=0.05s', hypothesis: 'h|pipe', change: 'c' });
     append(log, { decision: 'revert', tests: 'pass', measurement: 'median=0.98s runs=5 spread=0.05s', hypothesis: 'h2', change: 'c2' });
@@ -329,8 +344,21 @@ describe('summary', () => {
     assert.equal(r.code, 0, r.err);
     assert.match(r.out, /^\| time \| attempt \|/m);
     assert.match(r.out, /h\\\|pipe/, 'a pipe in a cell is escaped');
-    assert.match(r.out, /baseline 2s, best 1s \(-50\.0%, attempt 2\)/);
-    assert.match(r.out, /kept 1, reverted 2/);
+    assert.match(r.out, /baseline 2s, best 1s \(-50\.0%, attempt 1\)/);
+    assert.match(r.out, /attempts 2 \(kept 1, reverted 1\), not counting the sensitivity check/);
+    assert.match(r.out, /first baseline note: stop: half the baseline and at least 2 attempts/);
+  });
+
+  test('summary counts each attempt once, by its latest row, and leaves out the sensitivity check', () => {
+    const log = newLog();
+    baseline(log);
+    const m = 'median=1.00s runs=5 spread=0.05s';
+    append(log, { decision: 'revert', tests: 'pass', id: 'sensitivity', measurement: 'median=3.00s runs=5 spread=0.05s', hypothesis: 'h', change: 'c' });
+    append(log, { decision: 'keep', tests: 'pass', measurement: m, hypothesis: 'h', change: 'c' });
+    append(log, { decision: 'revert', tests: 'pass', hypothesis: 'h', change: 'c' });
+    append(log, { decision: 'revert', tests: 'fail', id: '2', hypothesis: 'h', change: 'c', note: 'corrects: tests failed' });
+    const r = run(['summary', log]);
+    assert.match(r.out, /attempts 2 \(kept 1, reverted 1\)/);
   });
 
   test('a missing log is an error', () => {
