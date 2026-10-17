@@ -63,8 +63,10 @@ green by skipping the failing test.
 
 - `verify-before-done` (hook) sends the agent back once if it changed code and ran no test, build or check afterwards.
 - `test-tamper-guard` (hook) asks you before a test is skipped, focused or stripped of assertions.
-- `tdd` builds one behaviour at a time, test first.
-- `mutation-test` breaks the code on purpose to prove a test catches it.
+- `tdd` builds one behaviour at a time, test first, and keeps a test only when it fails if the behaviour breaks and
+  still passes after a pure refactor.
+- `mutation-test` breaks the code on purpose to prove a test catches it, preferring a real past mistake from git
+  history, and checks that a pure refactor leaves the test green.
 - `evaluator` has a fresh agent, which did not build the change, grade it against its acceptance criteria.
 - `verify-app` writes the project's own recipe for starting the real app and proving a change in it, with evidence.
 - `bug-fix` finds the actual cause of a bug from runtime evidence and ships only the change that evidence justifies.
@@ -75,7 +77,8 @@ green by skipping the failing test.
 
 `CLAUDE.md` grows by restating itself, and the rules that matter most are the ones broken under pressure.
 
-- `rule-to-hook` turns a rule that keeps being broken into a hook with tests, step by step.
+- `rule-to-hook` turns a rule that keeps being broken into a tested check at the highest layer that holds it, often a
+  hook, step by step, with a ratchet when the pattern is already common.
 - `retrospective` turns a session's corrections into rule, memory or skill edits, gated by a script so nothing gets
   written twice.
 - `instructions-audit` finds the size, duplicates, contradictions, stale references and vague rules in your instruction
@@ -116,7 +119,8 @@ context was compacted.
 - `brainstorm` widens the options before `grill-me` narrows them, so the first idea is not the only one considered.
 - `grill-me` interviews you one question at a time until every branch of the plan is decided.
 - `to-prd` and `to-issues` turn the decided plan into a spec and vertical-slice issues.
-- `codebase-oracle` answers questions about the code from evidence in the code, and says when it cannot.
+- `codebase-oracle` answers questions about the code from the code and its history, and labels how strong the
+  evidence is for each answer.
 - `improve-codebase-architecture` finds refactors that make modules deeper and easier to test.
 - `architect` sketches the types and signatures in two different shapes before any code is written, and builds
   against the one that survives the red flags.
@@ -130,7 +134,8 @@ context was compacted.
   results.
 - `lean-subagent-dev` is the light version for a whole session: one subagent at a time with a written brief, and the
   main session checks its work itself. It asks how much usage room you have and delegates less when it is tight,
-  because a subagent costs more usage in total, not less.
+  because a subagent costs more usage in total, not less. Every brief carries the same standing orders, and no
+  subagent starts while a field of its brief is empty.
 - `no-idle` (hook) stops subagents from ending their turn waiting for something that will never wake them.
 
 ### 7. A review that never ends
@@ -140,7 +145,8 @@ by itself. Half the findings are preferences, and the fix for a minor one lands 
 
 - `review-triage` keeps only findings that name a failure, weighs the risk of each fix as well as the problem, and
   sorts them into must fix, fix if cheap, or leave. Every fix gets a test that fails without it, the second look covers
-  only the fix, and there is one review round and one fix round. It works for any review, human or AI.
+  only the fix, and there is one review round and one fix round. It works for any review, human or AI. When a review
+  is only nits, it says the change is probably fine instead of asking for another round.
 - `lean-subagent-dev` uses the same method for the review of each subagent's work.
 
 ### 8. The careful work nobody wants to do
@@ -202,9 +208,11 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 
 ### verification
 
-- **[tdd](skills/verification/tdd/SKILL.md)** (adapted): Red-green-refactor in vertical slices, with mocking and refactoring rules.
-- **[mutation-test](skills/verification/mutation-test/SKILL.md)**: `mutate.sh` applies one mutation and checks by script that it applied, changed behaviour, and
-  was restored.
+- **[tdd](skills/verification/tdd/SKILL.md)** (adapted): Red-green-refactor in vertical slices, with mocking and refactoring rules, a
+  two-edit check for which tests to keep, and "prefer no new test over a bad test" for small fixes.
+- **[mutation-test](skills/verification/mutation-test/SKILL.md)**: `mutate.sh` applies one mutation (a real past fix reversed, when there
+  is one) and checks by script that it applied, changed behaviour, and was restored; `--refactor` checks that a pure
+  refactor leaves the test green.
 - **[evaluator](skills/verification/evaluator/SKILL.md)**: A hostile evaluator in a forked context grades each contract assertion with reproducible evidence.
 - **[flaky-test-hunt](skills/verification/flaky-test-hunt/SKILL.md)**: Reproduces an intermittent failure with `repeat.mjs`, classifies the cause, and proves the
   fix with a measured failure rate.
@@ -212,9 +220,10 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   and reversibility, for any migration tool.
 - **[ci-cost-and-cadence](skills/verification/ci-cost-and-cadence/SKILL.md)**: Measures where CI minutes go, compares five options with numbers, and builds the chosen
   one.
-- **[review-triage](skills/verification/review-triage/SKILL.md)**: Decides which review findings are worth fixing (must fix, fix if cheap, leave), with a test per
-  fix and one review round and one fix round; `review-scope.mjs` flags a fix with no test, in risky code or outside
-  the change.
+- **[review-triage](skills/verification/review-triage/SKILL.md)** (adapted): Decides which review findings are worth fixing (must
+  fix, fix if cheap, leave), with a test per fix and one review round and one fix round, says when a review is only
+  nits, and records recurring findings as learned patterns; `review-scope.mjs` flags a fix with no test, in risky code
+  or outside the change.
 - **[bug-fix](skills/verification/bug-fix/SKILL.md)** (adapted): Reproduces a bug twice on the real surface, tests hypotheses with
   runtime evidence, fixes the first wrong decision instead of guarding the symptom, commits the failing repro before
   the fix, and proves what the change cannot break.
@@ -234,11 +243,14 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 ### agent-orchestration
 
 - **[methodology](skills/agent-orchestration/methodology/SKILL.md)**: Contracts, an evidence standard, an evaluator, convergence and two-file state, with templates.
-- **[codebase-oracle](skills/agent-orchestration/codebase-oracle/SKILL.md)**: Answers questions about a codebase from evidence in it only; never guesses.
+- **[codebase-oracle](skills/agent-orchestration/codebase-oracle/SKILL.md)** (adapted): Answers questions about a codebase from the
+  code and its history, grading each answer's evidence in five tiers, with read-only explorers for big questions;
+  never presents a guess as a finding.
 - **[parallel-worktrees](skills/agent-orchestration/parallel-worktrees/SKILL.md)**: Runs independent pieces of work in separate git worktrees, with `worktrees.mjs` to check a
   plan for overlapping files and report every worktree's state.
-- **[lean-subagent-dev](skills/agent-orchestration/lean-subagent-dev/SKILL.md)**: A way of working for a whole session: one subagent at a time with a written brief, the main
-  session checks the work itself and triages the review, and the usage budget sets how much to delegate.
+- **[lean-subagent-dev](skills/agent-orchestration/lean-subagent-dev/SKILL.md)** (adapted): A way of working for a whole session:
+  one subagent at a time with a written brief and standing orders, the main session checks the work itself and triages
+  the review, and the usage budget sets how much to delegate and each role's effort.
 - **[arena](skills/agent-orchestration/arena/SKILL.md)** (adapted): Runs several candidate subagents at one task, each with a
   different brief, has a fresh judge score them blind against a rubric they never saw, then picks a base and grafts
   the best parts by hand; `arena.mjs` scaffolds the folders and makes the blind copy.
@@ -246,7 +258,10 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 
 ### guards
 
-- **[rule-to-hook](skills/guards/rule-to-hook/SKILL.md)**: Turns a rule that keeps being broken into a tested hook, with templates in JavaScript and Python.
+- **[rule-to-hook](skills/guards/rule-to-hook/SKILL.md)** (adapted): Turns a rule that keeps being broken into a check at the
+  highest layer that holds it (architecture, types, lint or CI with a ratchet, a test, or a hook for what the agent
+  does), tested, proven on a past mistake and recorded in a rule table, with hook templates in JavaScript and Python
+  and `ratchet.mjs` for patterns already common.
 - **[safe-merge](skills/guards/safe-merge/SKILL.md)**: Merges a PR pinned to its head commit and deletes the branch only if no open PR is based on it.
 - **[dependency-upgrade](skills/guards/dependency-upgrade/SKILL.md)**: Plans and applies dependency and toolchain upgrades in any ecosystem, step by step.
 - **[dependency-security-audit](skills/guards/dependency-security-audit/SKILL.md)**: A ranked vulnerability, reachability and supply-chain audit for any ecosystem and
@@ -337,8 +352,9 @@ To bring a new skill into the repository, start with `node scripts/new-skill.mjs
 - The planning skills and `tdd` are adapted from [mattpocock/skills](https://github.com/mattpocock/skills) by Matt
   Pocock, under the MIT License. The upstream notice is in [NOTICE](NOTICE). The layout of this README, organised
   around the problems each piece fixes, also follows his.
-- `arena`, `architect`, `bug-fix`, `verify-app`, `hillclimb`, `skill-eval`, `agent-friendly-audit` and `sharpen` are
-  adapted from [pstack](https://github.com/cursor/plugins/tree/main/pstack)
-  by Lauren Tan, under the MIT License. The upstream notice is in [NOTICE](NOTICE). The context budget and several
+- `arena`, `architect`, `bug-fix`, `verify-app`, `hillclimb`, `skill-eval`, `agent-friendly-audit`, `sharpen`,
+  `codebase-oracle` and `rule-to-hook` are adapted from [pstack](https://github.com/cursor/plugins/tree/main/pstack)
+  by Lauren Tan, under the MIT License, and `tdd`, `review-triage` and `lean-subagent-dev` take parts of their text
+  from it. The upstream notice is in [NOTICE](NOTICE). The context budget and several
   rules in [docs/BACKLOG.md](docs/BACKLOG.md) also come from reading it.
 - Everything else is mine, under the MIT License ([LICENSE](LICENSE)).

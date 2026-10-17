@@ -75,7 +75,7 @@ test('no Markdown file uses an em dash or an en dash', () => {
   for (const f of files) {
     readFileSync(join(ROOT, f), 'utf8').split(/\r?\n/).forEach((line, i) => { if (DASHES.test(line)) hits.push(`${f}:${i + 1}`); });
   }
-  assert.deepEqual(hits, [], `dashes found at:\n${hits.join('\n')}`);
+  assert.deepEqual(hits, [], `dashes found at the lines below; use a comma, colon, period or parentheses instead:\n${hits.join('\n')}`);
 });
 
 test('no Markdown file uses words and phrases typical of AI-written text', () => {

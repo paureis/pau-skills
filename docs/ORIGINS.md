@@ -24,7 +24,7 @@ dashes with commas, colons, periods or parentheses. It changed no instructions, 
 lists below still hold.
 
 The skills adapted from [pstack](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack)
-(`arena`, `architect`, `bug-fix`, `verify-app`) were compared the same way, file by file, against that commit of
+(`arena`, `architect`, `bug-fix`, `verify-app`, and the later ones named in their sections) were compared the same way, file by file, against that commit of
 Cursor's plugin repository. pstack is a single snapshot, so there is no history to search.
 
 ---
@@ -161,6 +161,17 @@ file. From the second: the content-hash "applied" check with carriage returns st
 changed lines on SURVIVED. New here: `--sed` as an argument, running from any directory inside the repository,
 refusing untracked files, and BSD `sed` support for macOS.
 
+**Later changes (2026-10-17).** Ideas from pstack, no shared text (0 of 1,358 word 6-grams): the two-edit check in
+`skills/principle-test-behavior-not-implementation/SKILL.md`, and backlog decision 1. `mutate.sh` gained `--refactor`,
+the second edit: a pure refactor must leave the command green (KEPT, exit 0; BROKE, exit 1, with the changed lines;
+exit 2 as before), with the same dirty-tree, control, applied, one-file and restore checks. The skill now prefers a
+real past mistake as the mutation: find the fix commit with `git log --grep`, `-S` or `-G`, and feed it reversed with
+`git show -R --format= --no-color <sha> -- <file>`. The harness refuses an edit that deletes or empties the file, which
+a reversed commit that added or renamed it produces; a review found that such a patch read as CAUGHT. BROKE says to
+read the failure first, since a build error means the refactor was wrong. The skill says paths are relative to the
+repository root, how to keep one bug's hunks, how to handle a fix spread over several files and runner caches, and
+when a runtime error counts as a catch.
+
 ### evaluator (Original)
 
 From the methodology kit's evaluator prompt (see `methodology` below).
@@ -173,10 +184,13 @@ it runs with `context: fork`, so it starts without the builder's conversation by
 **Changes for this release.** Converted from a paste-in prompt to a forked skill with `$ARGUMENTS` for the scope; it
 points at `mutate.sh` for mutation checks; the notes for the human running it moved to the end.
 
-### tdd (Adapted from [mattpocock/skills `tdd`](https://github.com/mattpocock/skills/tree/main/skills/engineering/tdd))
+### tdd (Adapted from [mattpocock/skills `tdd`](https://github.com/mattpocock/skills/tree/main/skills/engineering/tdd) and [pstack](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/principle-test-behavior-not-implementation/SKILL.md))
 
-Closest upstream: `skills/engineering/tdd`, versions from 2026-02-04 to 2026-04-28. About 16% of my `SKILL.md`
-6-grams are upstream text; `tests.md` is about 70% upstream; `mocking.md` shares none.
+Closest upstream: `skills/engineering/tdd`, versions from 2026-02-04 to 2026-04-28. Before the pstack changes, about
+16% of my `SKILL.md` 6-grams were upstream text; with the added text that is now about 9% (scaled, not recomputed).
+`tests.md` is about 70% upstream; `mocking.md` shares none. pstack: `skills/principle-test-behavior-not-implementation/SKILL.md`
+and `skills/tdd/SKILL.md`, with one idea from `skills/principle-sequence-verifiable-units/SKILL.md`. 57 of my 1,694
+word 6-grams (3.4%) appear in those files: 48 from principle-test-behavior-not-implementation, 9 from tdd.
 
 **What this version changes.**
 - `SKILL.md` keeps upstream's Philosophy section and the horizontal-slices anti-pattern, and replaces the rest:
@@ -195,8 +209,32 @@ Closest upstream: `skills/engineering/tdd`, versions from 2026-02-04 to 2026-04-
   are not included.
 - `tests.md` is upstream's, with the "bypasses the interface" database example replaced by a naming-convention section.
 
+**What this version changes (from pstack, 2026-10-17).**
+- "No test is too small" is replaced by pstack's "prefer no new test over a bad test", with its list: mostly tests
+  mocks, encodes implementation details, depends on timing or unrelated global state, needs expensive infrastructure
+  for a small fix, would be deleted right after proving the fix. For a fix or a small change with only such a test on
+  offer, the closest executable check replaces it, shown failing before and passing after, and the report says which
+  check and why. A feature built test first still starts every slice with RED.
+- "Before You Start" no longer sets up test infrastructure for a small fix in a project with no test path.
+- The two-edit check from principle-test-behavior-not-implementation: break the behaviour (the test must fail),
+  change only the internals (the test must still pass). It points at `mutation-test` if it is installed (its harness
+  and `--refactor` mode) and gives the steps by hand. The harness pointer says it needs committed work, one file per
+  edit, and paths from the repository root; the refactor edit runs every covering test, and a build error blames the
+  refactor.
+- "Take the expected value from the requirement, not from a run of the code" and "an exact error message pins wording
+  no caller reads" join "What to test".
+- The "querying a database directly" example of a bad test is gone: state a caller can read back, such as a stored
+  row, is behaviour.
+- From principle-sequence-verifiable-units, an idea only: a bug fix commits the failing test before the fix, so red
+  then green can be replayed.
+- The refactoring rule now says a test that breaks on a refactor either caught a behaviour change or is pinned to the
+  implementation.
+- Not taken: pstack tdd's bug-fix-only scope, its "Guardrails" and "Final Response" sections, and
+  principle-test-behavior-not-implementation's paragraphs on mocked-service payloads and invariants.
+
 **Why.** I wanted the skill to work from the first message in an unfamiliar repository (find the runner, match the
-patterns) and to carry the mocking rules in the main file, where they are read.
+patterns) and to carry the mocking rules in the main file, where they are read. The pstack changes stop it from pushing agents to add
+brittle tests to every small fix, and give a check for whether a test is worth keeping.
 
 ### ci-cost-and-cadence and `measure-minutes.mjs` (Original)
 
@@ -258,7 +296,7 @@ the summary: edits since the user's last message with no check after the last on
 **Changes for this release.** None; written for this release.
 
 
-### review-triage and `review-scope.mjs` (Original)
+### review-triage and `review-scope.mjs` (Original; learned patterns and two triage rules adapted from [pstack `bugbot-triage.md`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/references/bugbot-triage.md))
 
 Written in one of my projects on 2026-10-15, as that project's rules for reviewing a change. The rating idea came from
 a "value against effort" chart in a post I read: each candidate change placed by value and effort, shaded by risk, and
@@ -286,6 +324,33 @@ rule that an unsettled security finding goes to the maintainer, the rule that a 
 reviewer prompt, and `review-scope.mjs`, which prints the rules, scopes the change and flags a fix round with no test,
 in risky code, or outside the change. `TRIAGE.md` and the script are shared with `lean-subagent-dev`, which carries
 identical copies.
+
+**pstack additions (2026-10-17).** Closest upstream: `skills/poteto-mode/references/bugbot-triage.md` and
+`skills/interrogate/references/lead-judgment.md`. The whole `TRIAGE.md` shares about 1% of its word 6-grams with them
+(24 of 2,094), all in the added text: the field labels of the pattern template and two phrases. `SKILL.md` shares
+none. What this version changes:
+- "I would have done it differently" (lead-judgment) becomes a bullet in section 1: it names no failure until it shows
+  a concrete problem, and goes to Leave with the reason written down. With a problem shown, that problem is the
+  finding. A security concern dressed as an alternative goes by the security rule.
+- Nitpick gravity (lead-judgment) is placed after the bucket table as a conclusion about the whole review, reached
+  only after every finding went through step 2. It is not a bucket, and it does not apply while any finding that names
+  a failure is still open, or when any finding is a must-fix. Upstream's "Hypothetical vs. Actual", "Premature
+  abstraction" and "Missing context" were already covered by steps 1, 2 and 4, so they were not taken.
+- The learned-pattern format (bugbot-triage) keeps its five fields and three levels. Bugbot and pull request threads
+  go away: patterns live in a file the maintainer agrees to (for example `.claude/review-patterns.md`), the agent may
+  add a candidate, and recurring or strong needs the maintainer's yes. A pattern does not replace checking the claim:
+  a recurring or strong pattern sends a finding to Leave only when step 2 did not reproduce or trace the failure
+  (upstream: dismiss only when the current code or context proves no change is needed). A reproduced or traced
+  failure, and a "fix by default" pattern, take their bucket from section 4; a candidate is a hint, not a skip.
+  Upstream's fix, dismiss and ask classes are not taken; the three buckets stay.
+- The "ask by default" list becomes "no pattern ever skips these", with the must-fix list added on top: a learned
+  pattern never turns a must-fix into a leave. A person's dismissal of a security finding is an owner's call, not a
+  pattern. Upstream's example patterns (UI changes, stacked pull requests, browser behaviour) are not taken.
+- The reviewer prompt asks the reviewer to say so when it finds nothing serious, instead of filling the list with
+  nits. The report gains "Nitpick gravity" and "Learned patterns" lines.
+
+The review of this change found that a learned pattern could send a reproduced failure to Leave; the rule above is the
+fix.
 
 
 ### bug-fix (Adapted from [pstack bug-fix playbook](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/playbooks/bug-fix.md))
@@ -471,15 +536,56 @@ contexts, convergence by adversary, mutation verification, falsified premises, t
 **Changes for this release.** The source project's name, a file name and a run ID in the examples were replaced with
 generic descriptions; a `SKILL.md` routes to the right door and the templates.
 
-### codebase-oracle (Original)
+### codebase-oracle (Adapted from [pstack `how`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/how) and [`why`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/why))
 
-0 of 1215 word 6-grams appear in any upstream version.
+Written as an Original skill: 0 of 1215 word 6-grams appeared in any upstream version. This version takes the evidence
+tiers from pstack's `why` (`skills/why/references/epistemics.md`) and the explorer and explainer pattern from pstack's
+`how` (`skills/how`). 58 of the 4,847 distinct word 6-grams in `SKILL.md`, `TIERS.md`, `EXPLORER-BRIEF.md` and
+`EXPLAINER-BRIEF.md` appear in those upstream files: 40 in `how` and 18 in `why`.
 
 **Problem.** Planning and grilling sessions produce lists of questions about the code ("does the middleware already
 handle X?"), and a model answering from framework knowledge guesses plausibly and wrongly. The oracle answers only from
-evidence in the repository, says where it looked when the answer is not there, and never guesses.
+evidence: the code for what it does, the commit and pull request record for why. It labels how strong the evidence is
+for every answer and never presents a guess as a finding.
 
-**Changes for this release.** None.
+**Changes for the first release.** None.
+
+**What this version changes (2026-10-17)**, from a `git diff --no-index` against each upstream file:
+- From epistemics.md: the five tiers (direct, supported, inferred, speculative, unknown) and the wording each allows;
+  confidence words that need a citation next to them; never treating code as evidence for its own intent; the user's
+  guess as one candidate among others; showing both sides when sources disagree; absence of evidence is not evidence;
+  no tidy reasons fitted to messy history. The tiers live in a bundled `TIERS.md` that is pasted whole into each
+  subagent brief. Upstream's tiers cover intent only. Here they also cover behaviour: code read along the whole path,
+  or a run, is direct, and a thorough search that proves something is absent is direct. Upstream's output sections
+  (What We Found, Competing Hypotheses and the rest) and its list of words to avoid are not taken; the oracle keeps its
+  per-question format and adds Tier and Other candidates lines.
+- Added here, not upstream: a stated reason must be about the exact thing asked; a documented link you cannot see is
+  Inferred; documentation of a process is a claim about what people do; platform knowledge is Speculative until vendor
+  docs or an experiment settle it; intent is Unknown only after the record lookup; an API error is not evidence; the
+  tier count is of labels in the finished text.
+- From how/SKILL.md and its two reference prompts: 2 to 4 explorers on separate angles, launched together, then one
+  explanation in the format Overview, Key concepts, How it works, Where things live, Gotchas. The explorer report
+  sections (Components, Flow, Boundaries, non-obvious things as Gotchas, Files read, Open questions) and parts of the
+  explainer's instructions come across. Cursor's `Task` with model slugs from a rules file becomes the Agent tool: the
+  `Explore` type where it exists, with its `model` field to raise a deep angle, and no model named. Upstream's simple
+  path, one explainer subagent, becomes the existing single-agent flow. Every claim carries a tier and the summary
+  counts them. Each question in a list is classified on its own; the cost line is the first step; with no Agent or Task
+  tool the angles run in sequence; an explainer's tier may be lowered, never raised; a section is dropped only when it
+  would be empty.
+- From why/SKILL.md and why/references/sources/code-archaeology.md: the git commands (log --follow, -S, -G, blame -L,
+  show) and reading pull request numbers from merge or squash commit subjects. `gh pr view --json` becomes the GitHub
+  MCP tools or `gh api` REST routes (pulls/<n>, pulls/<n>/reviews, pulls/<n>/comments, issues/<n>/comments,
+  commits/<sha>/pulls, with `--paginate`), because `gh pr view` needs GraphQL, which some environments block. New: what
+  to do when the record cannot be reached, and shallow clones.
+- Not taken: why's MCP discovery, the seven investigators (one per evidence category), the synthesizer and the
+  Preserve / Change / Avoid / Risk list.
+- The description now reads "from code and history, grading the evidence for each answer" instead of "from the code
+  itself, with verified evidence for each answer". It is 348 characters, one fewer than before.
+
+**Why.** Backlog item M7. A cold run with real explorers on this repository, in two headless sessions, found that the
+cheaper model kept a big question on the single-agent path and called an intent question Unknown without looking at
+the pull request record, and that the explorer brief invited trimming the tiers; the rules on classifying each
+question, on Unknown, and the separate `TIERS.md` came from it.
 
 
 ### parallel-worktrees and `worktrees.mjs` (Original)
@@ -493,7 +599,7 @@ changes broke the build.
 **Changes for this release.** None; written for this release.
 
 
-### lean-subagent-dev (Original)
+### lean-subagent-dev (Original; `TRIAGE.md` adapted, ideas from [pstack poteto-mode](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode))
 
 Written in one of my projects on 2026-10-15, as that project's rules for how work runs: who does what, the brief, the
 orchestrator's checks and the review. It was tried there before being generalised.
@@ -518,6 +624,33 @@ generous, from `LEAN_SUBAGENT_BUDGET` or the project file), which sets the deleg
 the plan check and how much review to run, because a subagent costs more usage in total, not less; the plan check
 before building; the brief template with its "stop and report if" section; the delegation log, so the way of working
 can be judged after a week; and "when to step up" to the heavier methods.
+
+**pstack additions (2026-10-17).** Ideas from `skills/poteto-mode/playbooks/orchestrate.md` and
+`skills/setup-pstack/SKILL.md`, no shared text: `SKILL.md` and `BRIEF-TEMPLATE.md` share 0 word 6-grams with them. The
+adapted text is in `TRIAGE.md`, the identical copy of review-triage's (see there). What this version changes:
+- The budget table gets a "Subagent effort" row, set through the Agent tool's `effort` field. setup-pstack gives every
+  role one level per budget (medium, high, xhigh, max) and never uses low. Here the builder gets medium, high and
+  high, the plan checker high then xhigh, and the reviewer xhigh. The split is this skill's choice: the builder's work
+  goes through the orchestrator's four checks, while the plan checker and reviewer are the check. low and max are not
+  used. Effort is left out when unsure, on a smaller model, or for a fork.
+- "Never write a slug you have not confirmed" (setup-pstack) becomes "never name a model that has not been confirmed
+  available in this session": a model counts as confirmed when the Agent tool's own `model` field lists it or the user
+  named it. The tight budget's smaller model is now offered to the user once and used only on a yes, because the Agent
+  tool sets `model` only when the user asks.
+- The standing-orders register (orchestrate: `preferences.md`, pasted into every spawn and resume) becomes a "Standing
+  orders" block in the brief template (formerly "Rules for this task"), pasted unchanged into every brief and
+  fix-round message. When an instruction gets repeated, it is added to the block.
+- "Missing fields are a refuse-to-spawn condition" becomes a concrete check: no bracket placeholder and no guidance
+  line in parentheses outside the report-format block; optional fields are marked "optional:" in their brackets and
+  only they may be "none". The short form for a one-command task is kept.
+- "Never resume an agent to check on it" becomes judging by side effects (commits in the worktree, files, test
+  output), with `ListAgents`. A message is for a fix round or a real question. "Never resume-chain a brief" becomes:
+  one fix round by message, a new task gets a fresh subagent. Cursor's dashboard, cloud agents, the `orch` CLI, ledger
+  and frontier go away.
+- The delegation log and the owner report name the effort.
+
+This batch was run with the new version: every brief had a read-only plan check, every item a fresh reviewer and one
+fix round, and the triage of every review used the new `TRIAGE.md`.
 
 
 ### arena and `arena.mjs` (Adapted from [pstack `arena`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/arena))
