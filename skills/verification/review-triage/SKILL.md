@@ -2,6 +2,7 @@
 name: review-triage
 description: "Decide which review findings are worth fixing, and stop the review and fix loop. Each finding must name a failure (this input, this wrong result); it is rated by the value of fixing it, the effort, and the risk the fix itself carries, and lands in must fix, fix if cheap, or leave. Every fix comes with a test that fails without it, the second look covers only the fix, and there is one review round and one fix round. Works for any review: a person, an AI review tool, a review bot or a subagent. Use when the user says \"triage these review comments\", \"which of these findings should I fix\", \"is this worth fixing\", \"the review keeps finding things\", \"stop the review loop\", \"what blocks the merge\", or pastes review findings."
 argument-hint: "[the findings: a pull request, a review file, or pasted comments]"
+allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 ---
 
 # Review triage
@@ -25,7 +26,8 @@ the files a change touches, and the flags for a fix round.
 
 2. **Scope the change.**
    `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" change --base <base branch>`
-   It lists every file the change touches, which of them are risky, and whether any test changed.
+   It lists every file the change touches, which of them are risky, and whether any test changed. When the work is
+   committed on the base branch itself, pass the commit it started from as `--base`.
 
 3. **Collect the findings.** From the arguments, the pull request's review comments, or a review file. If there are
    none and the user wants a review, run one first, and give the reviewer the prompt at the end of `TRIAGE.md`.
@@ -35,9 +37,11 @@ the files a change touches, and the flags for a fix round.
    must-fix you could not reproduce, a security finding you could not settle, or a call that is the maintainer's.
 
 5. **Fix round**, section 6: commit the reviewed state, write a failing test for each fix first, fix, then run
-   `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" fix --since <reviewed commit>` and answer every flag.
+   `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" fix --since <reviewed commit>` (add `--base <start commit>` when the
+   work is on the base branch itself) and answer every flag.
 
-6. **Second look on the fix only**, with the `git diff` command the script prints. Then stop, by section 7.
+6. **Second look on the fix only**, with the `git diff` command the script prints and any new files it lists. Then
+   stop, by section 7.
 
 ## Configuration
 

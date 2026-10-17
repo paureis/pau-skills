@@ -15,11 +15,11 @@ person more than to the project; set it once in the `env` block of your user `se
 { "env": { "LEAN_SUBAGENT_BUDGET": "tight" } }
 ```
 
-| Budget | Delegate at | Subagent model | Review |
+| Budget | Delegate | Subagent model | Review |
 |---|---|---|---|
-| tight | 5 files | smaller for mechanical work, same for risky paths | the orchestrator's own checks |
-| normal | 3 files | same | checks plus a read of every risky file |
-| generous | 2 files | same | plus a reviewer subagent on risky files |
+| tight | changes of 5+ files | smaller for mechanical work, same for risky paths | the orchestrator's own checks |
+| normal | any change in behaviour or tests, and changes of 3+ files | same | checks plus a read of every risky file |
+| generous | any change in behaviour or tests, and changes of 2+ files | same | plus a reviewer subagent on risky files |
 
 The rest of `.claude/review-rules.json` (must-fix list, risky paths, checks, and `delegation.minFiles` and
 `delegation.log`) is described in [the verification README](../verification/README.md#review-triage-configuration).

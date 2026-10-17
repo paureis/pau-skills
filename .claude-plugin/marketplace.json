@@ -226,7 +226,7 @@
     },
     {
       "name": "verification",
-      "description": "Prove work is correct: a mutation harness, a hostile evaluator, test-driven development, flaky-test diagnosis, database migration review, a CI cost method, and hooks that stop tests being weakened and \"done\" being claimed without a check.",
+      "description": "Prove work is correct: a mutation harness, a hostile evaluator, test-driven development, flaky-test diagnosis, database migration review, a CI cost method, review triage that decides which findings are worth fixing, and hooks that stop tests being weakened and \"done\" being claimed without a check.",
       "version": "0.5.0",
       "author": {
         "name": "Alvaro Reis",
@@ -279,7 +279,7 @@
     },
     {
       "name": "agent-orchestration",
-      "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, an evidence-only codebase oracle, and parallel work in separate git worktrees.",
+      "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, an evidence-only codebase oracle, parallel work in separate git worktrees, and a lean one-subagent-at-a-time way of working that adjusts to your usage budget.",
       "version": "0.4.0",
       "author": {
         "name": "Alvaro Reis",

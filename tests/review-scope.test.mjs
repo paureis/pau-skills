@@ -110,6 +110,14 @@ describe('fixFlags', () => {
     assert.deepEqual(fixFlags(f('src/msg.py', 'tests/test_new.py'), reviewed), []);
   });
   test('code without a test raises NO_TEST', () => assert.deepEqual(ids(fixFlags(f('src/msg.py'), reviewed)), ['NO_TEST']));
+  test('a deleted test does not count as the fix\'s test', () => {
+    const files = f('src/msg.py', 'tests/test_msg.py').map((x) => (x.test ? { ...x, deleted: true } : x));
+    assert.deepEqual(ids(fixFlags(files, reviewed)), ['NO_TEST']);
+  });
+  test('build and dependency files are code, not docs', () => {
+    assert.deepEqual(ids(fixFlags(f('src/msg.py', 'tests/test_msg.py', 'CMakeLists.txt', 'requirements.txt'), [...reviewed, 'CMakeLists.txt'])), ['OUTSIDE']);
+    assert.deepEqual(fixFlags(f('requirements.txt'), ['requirements.txt']).map((x) => x.id), ['NO_TEST']);
+  });
   test('a doc-only fix needs no test and is never outside the change', () => {
     assert.deepEqual(fixFlags(f('docs/usage.md', 'README.md'), reviewed), []);
   });
@@ -176,7 +184,7 @@ describe('against a real repository', () => {
     const r = run(dir, 'fix', '--since', reviewed);
     assert.equal(r.code, 0, r.stdout + r.stderr);
     assert.match(r.stdout, /Flags: none/);
-    assert.match(r.stdout, new RegExp(`git diff ${reviewed.slice(0, 12)} -- src/msg.py tests/test_msg.py\\n?$`));
+    assert.match(r.stdout, new RegExp(` diff ${reviewed.slice(0, 12)} -- src/msg.py tests/test_msg.py\\n?$`));
   });
 
   test('a fix in risky code, outside the change, without a test exits 1 with all three flags', () => {
@@ -185,6 +193,64 @@ describe('against a real repository', () => {
     const r = run(dir, 'fix', '--since', reviewed, '--json');
     assert.equal(r.code, 1, r.stderr);
     assert.deepEqual(JSON.parse(r.stdout).flags.map((x) => x.id), ['NO_TEST', 'RISKY', 'OUTSIDE']);
+  });
+
+  test('the second-look command works from any folder and names new untracked files', () => {
+    const { dir, reviewed } = setup();
+    put(dir, 'src/msg.py', 'MSG = "Done."\n');
+    put(dir, 'tests/test_new.py', 'def test_new():\n    assert True\n');
+    const r = run(dir, 'fix', '--since', reviewed);
+    assert.equal(r.code, 0, r.stdout + r.stderr);
+    const top = g(dir, 'rev-parse', '--show-toplevel');
+    assert.ok(r.stdout.includes(`git -C ${top.includes(' ') ? `'${top}'` : top} diff ${reviewed.slice(0, 12)} --`), r.stdout);
+    assert.match(r.stdout, /New files, not in git yet, read them whole: tests\/test_new\.py/);
+    assert.doesNotMatch(r.stdout.split('\n').find((l) => l.includes(' diff ')), /test_new/);
+  });
+
+  test('a reviewed commit on the base branch asks for --base instead of flagging every file', () => {
+    const { dir } = setup();
+    g(dir, 'switch', '-q', 'main');
+    const start = g(dir, 'rev-parse', 'HEAD');
+    put(dir, 'src/msg.py', 'MSG = "main"\n');
+    put(dir, 'tests/test_msg.py', 'def test_msg():\n    assert True\n');
+    const reviewed = commit(dir, 'work on main');
+    put(dir, 'src/msg.py', 'MSG = "main!"\n');
+    put(dir, 'tests/test_msg.py', 'def test_msg():\n    assert MSG\n');
+    const bare = run(dir, 'fix', '--since', reviewed);
+    assert.equal(bare.code, 2);
+    assert.match(bare.stderr, /--base <the commit the change started from>/);
+    const r = run(dir, 'fix', '--since', reviewed, '--base', start);
+    assert.equal(r.code, 0, r.stdout + r.stderr);
+    const c = run(dir, 'change');
+    assert.equal(c.code, 2);
+    assert.match(c.stderr, /--base/);
+  });
+
+  test('a new branch with only uncommitted edits is a change, not an error', () => {
+    const { dir } = setup();
+    g(dir, 'switch', '-q', '-c', 'fresh', 'main');
+    put(dir, 'src/msg.py', 'MSG = "fresh"\n');
+    const r = run(dir, 'change', '--json');
+    assert.equal(r.code, 0, r.stderr);
+    assert.deepEqual(JSON.parse(r.stdout).files.map((x) => x.path), ['src/msg.py']);
+  });
+
+  test('a base with no shared history says so', () => {
+    const { dir } = setup();
+    g(dir, 'switch', '-q', '--orphan', 'other');
+    put(dir, 'x.py', 'x = 1\n');
+    commit(dir, 'orphan');
+    const r = run(dir, 'change', '--base', 'feature');
+    assert.equal(r.code, 2);
+    assert.match(r.stderr, /no history in common/);
+  });
+
+  test('a config file with a byte order mark is read', () => {
+    const { dir } = setup();
+    put(dir, '.claude/review-rules.json', '\uFEFF' + JSON.stringify({ riskyPaths: ['core/**'] }));
+    const r = run(dir, 'config');
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stdout, /Risky paths: core\/\*\*/);
   });
 
   test('an invalid config file stops every command with exit 2', () => {

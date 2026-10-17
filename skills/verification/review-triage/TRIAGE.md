@@ -52,10 +52,13 @@ problem is minor and the fix is risky, open an issue instead.
 written to the wrong place, a wrong result on the main path, a broken build, install, test run, typecheck or lint, and
 a failed contract or acceptance criterion. Each project adds its own (see the configuration in SKILL.md). A must-fix
 is fixed whatever the effort. When its fix is risky, it gets a control and a closer second look; it is not skipped.
+A control is a run that would fail if the fix were wrong, and does: the old code fails the new test, or the wrong
+input is rejected while the right one passes.
 
 **Fix if cheap**: a real failure that is not on the list, with low effort and low fix risk. Typical cases: a false
 positive, a wrong or misleading message, new behaviour without a test, a doc the change made untrue. Fix it in this
-change when the fix is small and stays in the files the change already touches. Otherwise open an issue.
+change when the fix is small and stays in the files the change already touches. Otherwise open an issue. A fix that
+needs a new file, other than a test, is not small.
 
 **Leave**: preferences (style, naming, a refactor someone would like), checks for states shown to be impossible, and
 anything outside the change. A real bug outside the change gets its own issue, not a fix here.
@@ -88,12 +91,14 @@ Put the table in the pull request description, or in the session when there is n
    hash down.
 2. **Test first.** Each fix comes with a test that fails without it. Write the test, run it, and watch it fail for
    the reason the finding names. Then fix, and watch it pass. A fix to documentation needs no test.
-3. **Check the fix's scope**: `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" fix --since <reviewed commit>`. Answer
-   each flag before the second look:
+3. **Check the fix's scope** with the `fix` command of `review-scope.mjs` (SKILL.md has the full command):
+   `fix --since <reviewed commit>`, plus `--base <the commit the change started from>` when the work is committed on
+   the base branch itself. Answer each flag before the second look:
    - `NO_TEST`: add the missing test.
    - `RISKY`: confirm the fix is for a must-fix. If it is not, revert it and open an issue.
-   - `OUTSIDE`: revert that code and open an issue, unless it is part of a must-fix.
-4. **The second look covers only the fix**: the diff the script prints, read against the finding it fixes. It does
+   - `OUTSIDE`: revert that code and open an issue, unless it is part of a must-fix. A new file counts as outside.
+4. **The second look covers only the fix**: the diff the script prints, plus any new files it lists, read against
+   the finding it fixes. It does
    not review the whole change again. It asks two things: does the fix remove the named failure (the new test failed
    before and passes now), and did it break anything near it (the project's checks pass)?
 

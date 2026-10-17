@@ -5,12 +5,14 @@
  *   node review-scope.mjs change [--base <ref>] [--repo <dir>] [--json]
  *       What the change under review touches: every file changed since the merge base with the base branch
  *       (committed, staged, unstaged and untracked), lines added and removed, which files match `riskyPaths`, and
- *       which are tests. Without --base it uses origin/HEAD, then main, then master, whichever exists first.
+ *       which are tests. Without --base it uses origin/HEAD, then main, master, origin/main and origin/master,
+ *       whichever exists first. When the work is committed on the base branch itself, pass --base <start commit>.
  *
  *   node review-scope.mjs fix --since <commit> [--base <ref>] [--repo <dir>] [--json]
  *       The fix round: what changed after <commit>, the commit the review looked at. Raises a flag when the fix
  *       changes code but no test, touches a risky file, or changes code in a file the reviewed change did not.
- *       Tests and docs are not code here. Prints the command that shows the second look the fix and nothing else.
+ *       Tests and docs are not code here, and a deleted test does not count as a test. Prints the command that shows
+ *       the second look the fix and nothing else, plus any new files git does not track yet.
  *
  *   node review-scope.mjs config [--repo <dir>] [--json]
  *       The effective configuration: `.claude/review-rules.json` in the repository merged over the defaults, with
@@ -59,7 +61,7 @@ export const DEFAULTS = {
     '**/test/**', '**/tests/**', '**/__tests__/**', '**/spec/**', '**/specs/**',
     '**/*.test.*', '**/*.spec.*', '**/*_test.*', '**/*_spec.*', '**/test_*', '**/*Test.*', '**/*Tests.*',
   ],
-  docPaths: ['docs/**', 'doc/**', '**/*.md', '**/*.mdx', '**/*.rst', '**/*.adoc', '**/*.txt', '**/LICENSE*', '**/CHANGELOG*'],
+  docPaths: ['docs/**', 'doc/**', '**/*.md', '**/*.mdx', '**/*.rst', '**/*.adoc', '**/LICENSE*', '**/CHANGELOG*'],
   checks: [],
   delegation: { budget: 'normal', minFiles: null, log: null },
 };
@@ -196,7 +198,7 @@ export function fixFlags(fix, reviewed) {
   if (fix.length === 0) return flags;
   const inReview = new Set(reviewed);
   const code = fix.filter((f) => !f.test && !f.doc);
-  if (code.length > 0 && !fix.some((f) => f.test)) {
+  if (code.length > 0 && !fix.some((f) => f.test && !f.deleted)) {
     flags.push({ id: 'NO_TEST', paths: code.map((f) => f.path), message: 'the fix changes code and no test. Every fix comes with a test that fails without it.' });
   }
   const risky = fix.filter((f) => f.risky).map((f) => f.path);
@@ -238,14 +240,19 @@ export function formatFix(r) {
     lines.push('Flags:');
     for (const fl of r.flags) lines.push(`  ${fl.id}: ${fl.paths.join(', ')}: ${fl.message}`);
   } else lines.push('Flags: none');
-  lines.push(`Second look, the fix only: git diff ${r.since.slice(0, 12)} -- ${r.files.map((f) => shQuote(f.path)).join(' ')}`);
+  const tracked = r.files.filter((f) => !f.untracked).map((f) => shQuote(f.path));
+  const untracked = r.files.filter((f) => f.untracked).map((f) => f.path);
+  if (tracked.length) lines.push(`Second look, the fix only: git -C ${shQuote(r.repo)} diff ${r.since.slice(0, 12)} -- ${tracked.join(' ')}`);
+  if (untracked.length) lines.push(`New files, not in git yet, read them whole: ${untracked.join(', ')}`);
   return lines.join('\n');
 }
 
 export function formatConfig(c) {
   const d = c.delegation;
   return [
-    `Budget: ${d.budget} (from ${d.budgetFrom}); delegate at ${d.minFiles}+ files`,
+    `Budget: ${d.budget} (from ${d.budgetFrom}); ${d.budget === 'tight'
+      ? `delegate changes of ${d.minFiles}+ files, make smaller changes yourself`
+      : `delegate any change in behaviour or tests, and any change of ${d.minFiles}+ files`}`,
     `Delegation log: ${d.log || 'off'}`,
     'Must fix:', ...c.mustFix.map((m) => `  - ${m}`),
     `Risky paths: ${c.riskyPaths.length ? c.riskyPaths.join(', ') : 'none set'}`,
@@ -272,7 +279,7 @@ export function loadConfig(repo, env = process.env) {
   const path = join(repo, CONFIG_FILE);
   let project = {};
   if (existsSync(path)) {
-    try { project = JSON.parse(readFileSync(path, 'utf8')); } catch (e) { return { errors: [`${CONFIG_FILE} is not valid JSON: ${e.message}`] }; }
+    try { project = JSON.parse(readFileSync(path, 'utf8').replace(/^\uFEFF/, '')); } catch (e) { return { errors: [`${CONFIG_FILE} is not valid JSON: ${e.message}`] }; }
   }
   return { ...resolveConfig(project, env), found: existsSync(path) };
 }
@@ -281,7 +288,31 @@ export function loadConfig(repo, env = process.env) {
 export function resolveBase(repo, base) {
   const candidates = base ? [base] : ['origin/HEAD', 'main', 'master', 'origin/main', 'origin/master'];
   for (const c of candidates) if (tryGit(repo, ['rev-parse', '--verify', '--quiet', `${c}^{commit}`])) return c;
-  throw new Error(base ? `not a commit: ${base}` : 'no base branch found (tried origin/HEAD, main, master); pass --base');
+  throw new Error(base ? `not a commit: ${base}` : `no base branch found (tried ${candidates.join(', ')}); pass --base`);
+}
+
+const NEED_START = 'pass --base <the commit the change started from>';
+
+/** True when the checked-out branch is the base branch itself (locally or as a remote-tracking ref). */
+function onBaseBranch(repo, base) {
+  const cur = tryGit(repo, ['symbolic-ref', '--quiet', '--short', 'HEAD']);
+  if (!cur) return false;
+  const full = tryGit(repo, ['rev-parse', '--abbrev-ref', base]) || base; // origin/HEAD becomes origin/main
+  const remotes = (tryGit(repo, ['remote']) || '').split('\n').filter(Boolean);
+  return full === cur || remotes.some((r) => full === `${r}/${cur}`);
+}
+
+/** The merge base of the base ref and `ref`. Throws a readable error when there is none, or when the base was guessed
+ * and the work sits on the base branch itself, which leaves the change without a start the script can find: for
+ * `fix`, the reviewed commit is already on the base; for `change`, HEAD is the base branch. */
+function startOf(repo, base, explicit, ref) {
+  const mb = tryGit(repo, ['merge-base', base, ref]);
+  if (!mb) throw new Error(`${base} and ${ref} have no history in common; ${NEED_START}`);
+  const onBase = ref === 'HEAD' ? onBaseBranch(repo, base) : true;
+  if (!explicit && onBase && mb === git(repo, ['rev-parse', ref]).trim()) {
+    throw new Error(`${ref} is already on ${base}, so the change has no start to compare with; ${NEED_START}`);
+  }
+  return mb;
 }
 
 function countLines(path) {
@@ -295,17 +326,18 @@ function countLines(path) {
 
 /** Every file that differs from `ref` in the working tree (staged or not), plus untracked files. */
 export function changedSince(repo, ref) {
-  const files = parseNumstat(git(repo, ['diff', '--numstat', '-z', '--no-renames', ref]));
+  const files = parseNumstat(git(repo, ['diff', '--numstat', '-z', '--no-renames', ref]))
+    .map((f) => ({ ...f, deleted: !existsSync(join(repo, f.path)), untracked: false }));
   const seen = new Set(files.map((f) => f.path));
   for (const p of git(repo, ['ls-files', '-o', '--exclude-standard', '-z']).split('\0').filter(Boolean)) {
-    if (!seen.has(p)) files.push({ path: p, added: countLines(join(repo, p)), removed: 0 });
+    if (!seen.has(p)) files.push({ path: p, added: countLines(join(repo, p)), removed: 0, deleted: false, untracked: true });
   }
   return files.sort((a, b) => a.path.localeCompare(b.path));
 }
 
 export function collectChange(repo, base, config) {
   const b = resolveBase(repo, base);
-  const mergeBase = git(repo, ['merge-base', b, 'HEAD']).trim();
+  const mergeBase = startOf(repo, b, !!base, 'HEAD');
   const files = classify(changedSince(repo, mergeBase), config);
   return { base: b, mergeBase, files, summary: summarizeChange(files), riskyConfigured: config.riskyPaths.length > 0 };
 }
@@ -314,10 +346,10 @@ export function collectFix(repo, since, base, config) {
   const sinceSha = tryGit(repo, ['rev-parse', '--verify', '--quiet', `${since}^{commit}`]);
   if (!sinceSha) throw new Error(`not a commit: ${since}`);
   const b = resolveBase(repo, base);
-  const mergeBase = git(repo, ['merge-base', b, sinceSha]).trim();
+  const mergeBase = startOf(repo, b, !!base, sinceSha);
   const reviewed = git(repo, ['diff', '--name-only', '-z', '--no-renames', mergeBase, sinceSha]).split('\0').filter(Boolean);
   const files = classify(changedSince(repo, sinceSha), config);
-  return { since: sinceSha, base: b, reviewed, files, flags: fixFlags(files, reviewed) };
+  return { repo, since: sinceSha, base: b, reviewed, files, flags: fixFlags(files, reviewed) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------

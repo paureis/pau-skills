@@ -2,6 +2,7 @@
 name: lean-subagent-dev
 description: "A way of working for a whole session. The main session plans, talks to the owner and does every push, pull request, merge and tag; code and test work goes to one subagent at a time with a written brief; the main session checks the result itself (reads the diff, reruns the checks, runs a control) and triages the review with one review round and one fix round. Adjusts to the usage budget (tight, normal or generous): how much to delegate, which model the subagent uses, and how much review to buy. Use at the start of a session, or when the user says \"lean subagent\", \"work lean\", \"delegate this to a subagent\", \"one subagent per task\", \"brief a subagent\", \"how much should I delegate\", \"I am low on usage\", or asks how to split work between the main session and subagents."
 argument-hint: "[the work for this session, or a path to a plan]"
+allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 ---
 
 # Lean subagent development
@@ -22,8 +23,8 @@ where a defect costs money, credentials or data, step up (see "When to step up")
 
 ## 1. At the start of the session
 
-1. Run `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" config`. It prints the budget, the file count at which work
-   goes to a subagent, the must-fix list, the risky paths, the checks, and the delegation log.
+1. Run `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" config`. It prints the budget, what goes to a subagent at that
+   budget, the must-fix list, the risky paths, the checks, and the delegation log.
 2. If the budget says `(from default)` and the user has not told you, ask once:
    "How much usage room do you have for this session? Tight (you often hit your limit, or you pay per token and
    cost matters), normal, or generous?" Use the answer for the rest of the session. To skip the question next time,
@@ -38,14 +39,14 @@ where a defect costs money, credentials or data, step up (see "When to step up")
 **You, the orchestrator:**
 - talk to the owner, and ask the questions only the owner can answer
 - plan the work and write the briefs
-- make trivial edits yourself: below the delegation threshold and no new behaviour (a typo, a version string, a
-  config value, a one-line doc fix)
+- make trivial edits yourself: edits that change no behaviour and stay below the file threshold (a typo, a version
+  string, a config value, a one-line doc fix)
 - do every write outside the local repository: push, pull request, merge, tag, release, issue, comment. These are
   never delegated.
 - verify every subagent's work and triage every review
 
 **One subagent at a time:**
-- the work the "Delegate at" row of the budget table names; the file count is `delegate at` in the config output
+- the work the "Delegate" row of the budget table names for the session's budget; `config` prints the same rule
 - in sequence, never two in one checkout. For independent pieces in parallel, use `parallel-worktrees` if it is
   installed; without it, run the pieces one after another.
 
@@ -57,7 +58,7 @@ less and spends less on review, and a generous budget delegates more and buys mo
 
 | | Tight | Normal | Generous |
 |---|---|---|---|
-| Delegate at | 5 or more files, or long test work | 3 or more files, or any code or test work | 2 or more files, or any code or test work |
+| Delegate | Changes of 5 or more files; make smaller changes yourself | Any change in behaviour or tests, and any change of 3 or more files | Any change in behaviour or tests, and any change of 2 or more files |
 | Subagent model | A smaller model for mechanical work (renames, version bumps, docs, boilerplate); the same model for anything in a risky path | The same model | The same model |
 | Plan check before building | You, against the code, in a few minutes | A read-only subagent, for new behaviour | A read-only subagent, always |
 | Review round | Your verification is the review | Your verification, plus your own read of every risky file | Plus a separate reviewer subagent on risky files |
@@ -105,10 +106,11 @@ Run the review round the budget table says, then triage every finding, your own 
 `${CLAUDE_SKILL_DIR}/TRIAGE.md`. If the `review-triage` skill is also installed, it is the same method; there is no
 need to load it as well.
 
-- Must fix and fix if cheap go back to the same subagent (resume it, so it keeps its context) in one fix round, test
-  first, or are fixed inline when the budget says so.
-- Then run `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" fix --since <reviewed commit>`, answer every flag, and give
-  the fix its second look: the fix only, not the whole change.
+- Must fix and fix if cheap go back to the subagent in one fix round, test first, or are fixed inline when the budget
+  says so. If your Claude Code version can continue a finished subagent (for example by sending it a message), do
+  that, so it keeps its context; otherwise brief a new one with the findings, the failing behaviour and the diff.
+- Then run `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" fix --since <reviewed commit> --base <start commit>`, answer
+  every flag, and give the fix its second look: the fix only, not the whole change.
 - One review round and one fix round. What the second look finds goes to the owner (a must-fix) or to an issue
   (anything else).
 
