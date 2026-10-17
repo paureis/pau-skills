@@ -73,7 +73,7 @@ Any further notes about the feature.
 
 ## Rules
 
-- **No interviewing.** This skill synthesizes: it doesn't interrogate. If the plan is not decided yet, settle the open decisions with the user first (suggest the user run `/grill-me` for this, if it is installed), then run this one.
+- **No interviewing.** This skill synthesizes: it doesn't interrogate. If the plan is not decided yet, settle the open decisions with the user first (suggest the user run `/grill-me`, or `/<plugin>:grill-me` from a plugin, for this, if it is installed), then run this one.
 - **Module depth matters.** When sketching modules, flag shallow modules (interface nearly as complex as implementation) and suggest deepening them.
 - **No file paths or code snippets in the PRD.** These go stale immediately. Describe modules by what they do, not where they live.
 - **User stories should be exhaustive.** If you can think of 10, write 20. Cover happy paths, error states, edge cases, and accessibility.

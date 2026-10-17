@@ -1,6 +1,6 @@
 ---
 name: session-close
-description: Close a working session in a fixed order (clean tree, retrospective with the rules audit and the stale-reference check, roadmap and log updated, detailed handoff, commit and push) so the next session starts from files instead of memory. Use when the user says "close the session", "wrap up", "session close", "/session-close", when a CONTEXT WARNING appears in a tool result, or when a roadmap item meets its definition of done and the next one will not fit in what is left of the session.
+description: Close a working session in a fixed order (clean tree, retrospective with the rules audit and the stale-reference check, roadmap and log updated, detailed handoff, commit and push) so the next session starts from files instead of memory. Type it to end a session, when the context is nearly full, or when a roadmap item meets its definition of done and the next one will not fit in what is left of the session.
 disable-model-invocation: true
 argument-hint: "[optional: what the next session should focus on]"
 ---
@@ -24,10 +24,17 @@ The project's definition of done (which suites must pass before something counts
 
 ## 0. When
 
-- The user asks for it.
-- `CONTEXT WARNING` or `CONTEXT CRITICAL` appears in a tool result: bring the current action to a clean point and
-  start the close without waiting. Do not estimate context use yourself; the injected figure is authoritative.
-- A roadmap item meets its definition of done and the next one does not fit in what is left of the session.
+The user starts this skill by typing it; the agent cannot start it. It fits when:
+
+- the user wants to end the session;
+- the context is nearly full (a `CONTEXT WARNING` or `CONTEXT CRITICAL` in a tool result, if the project has a hook
+  that reports it);
+- a roadmap item meets its definition of done and the next one does not fit in what is left of the session.
+
+If `CONTEXT WARNING` or `CONTEXT CRITICAL` appears during the close, keep going and keep each step short. Do not
+estimate context use yourself; the injected figure is authoritative. For the agent to ask for a close on its own at a
+warning, the project's `CLAUDE.md` needs a line saying so, for example "At a CONTEXT WARNING, finish the current
+action and ask the user to run /session-close".
 
 ## 1. Clean state
 
@@ -49,7 +56,7 @@ project root.
   that will happen again as a proposed line in a scratch file; score it with
   `node "${CLAUDE_SKILL_DIR}/audit.mjs" --check <file>`; and apply only the lines that are not already there and that
   the user approves. If the `retrospective` skill is installed and the user wants the full version, suggest they run
-  `/retrospective` now, and continue with the next step when it is done.
+  `/retrospective` (or `/<plugin>:retrospective` from a plugin) now, and continue with the next step when it is done.
 - Either way, run `node "${CLAUDE_SKILL_DIR}/audit.mjs" --stale` from the project root: every path, command or script
   cited in `CLAUDE.md` and memory that no longer exists is fixed or deleted in the same session.
 - Bar for adding anything: it will happen again, it names the failure it prevents, and it fits in 8 lines. If a rule
@@ -70,13 +77,13 @@ project root.
 
 ## 4. Handoff
 
-Write the handoff file yourself (the same file `/handoff` writes in park mode, if the `handoff` skill is installed)
-with these sections: what the work is (two or three sentences), what was done, key learnings, the current state, the
+Write the handoff file yourself (the same file the `handoff` skill writes in park mode, if it is installed) with these
+sections: what the work is (two or three sentences), what was done, key learnings, the current state, the
 next steps (the user's priority first), and reference material (paths and decisions, not copies). Start the file with
 an instruction to the next session: say what you understand was done and your proposed next steps, then wait for
 approval before changing anything.
 
-Either way, the handoff always carries:
+The handoff always carries:
 
 - **The exact state of the item in progress**: which parts are done, what is missing, which tests fail, what is in
   WIP and why.

@@ -14,11 +14,135 @@ const MAX_AUTO_TOTAL = 4500;
 const MAX_ANY_DESCRIPTION = 1536; // Claude Code cuts any description longer than this, typed or not.
 
 // The frontmatter is the block between the first two `---` lines. Like tests/marketplace.test.mjs, the description is
-// the one line that starts with `description: `; a quoted value is unquoted the way YAML reads it.
-function unquote(value) {
-  if (value.startsWith('"')) return JSON.parse(value);
-  if (value.startsWith("'")) return value.slice(1, -1).replace(/''/g, "'");
-  return value;
+// the `description:` key; its value is read the way YAML reads it, so its length is the length Claude Code sees: a
+// plain value with its continuation lines, a single- or double-quoted value (escapes, folding, a trailing comment), or
+// a `>` or `|` block. A value that is not valid YAML is an error, reported by a test, never a crash.
+const ESCAPES = { 0: '\0', a: '\x07', b: '\b', t: '\t', '\t': '\t', n: '\n', v: '\v', f: '\f', r: '\r', e: '\x1b', ' ': ' ',
+  '"': '"', '/': '/', '\\': '\\', N: '\x85', _: '\xa0', L: ' ', P: ' ' };
+const HEX = { x: 2, u: 4, U: 8 };
+
+// A line break inside a quoted value folds to a space; blank lines in between become that many newlines.
+function foldBreak(raw, i) {
+  let breaks = 0;
+  for (;;) {
+    while (raw[i] === ' ' || raw[i] === '\t') i++;
+    if (raw[i] !== '\n') return { i, text: breaks ? '\n'.repeat(breaks) : ' ' };
+    breaks++;
+    i++;
+  }
+}
+
+// raw starts just after the opening quote. Returns the value and the rest of the line after the closing quote.
+function quoted(raw, quote) {
+  let out = '';
+  let i = 0;
+  while (i < raw.length) {
+    const c = raw[i];
+    if (c === quote && quote === "'" && raw[i + 1] === "'") { out += "'"; i += 2; continue; }
+    if (c === quote) return { value: out, rest: raw.slice(i + 1).split('\n')[0] };
+    if (c === '\\' && quote === '"') {
+      const n = raw[i + 1];
+      if (n === '\n') { i += 2; while (raw[i] === ' ' || raw[i] === '\t') i++; continue; }
+      if (n in HEX) {
+        const hex = raw.slice(i + 2, i + 2 + HEX[n]);
+        if (!new RegExp(`^[0-9a-fA-F]{${HEX[n]}}$`).test(hex)) throw new Error(`bad \\${n} escape`);
+        out += String.fromCodePoint(parseInt(hex, 16));
+        i += 2 + HEX[n];
+        continue;
+      }
+      if (!(n in ESCAPES)) throw new Error(`unknown escape \\${n}`);
+      out += ESCAPES[n];
+      i += 2;
+      continue;
+    }
+    if (c === '\n') {
+      out = out.replace(/[ \t]+$/, '');
+      const f = foldBreak(raw, i + 1);
+      out += f.text;
+      i = f.i;
+      continue;
+    }
+    out += c;
+    i++;
+  }
+  throw new Error(`a ${quote === '"' ? 'double' : 'single'}-quoted value is never closed`);
+}
+
+// The lines of a `>` or `|` block, folded or kept, then chomped by the header's `-` (strip), `+` (keep) or neither.
+function block(header, lines) {
+  const m = /^([|>])([1-9]?)([+-]?)([1-9]?)\s*(#.*)?$/.exec(header);
+  if (!m) throw new Error(`bad block header ${JSON.stringify(header)}`);
+  const explicit = Number(m[2] || m[4]) || 0;
+  const chomp = m[3];
+  const first = lines.find((l) => l.trim());
+  const indent = explicit || (first ? /^ */.exec(first)[0].length : 0);
+  const body = lines.map((l) => (l.trim() ? l.slice(indent) : ''));
+  let trailing = 0;
+  while (body.length && body[body.length - 1] === '') { body.pop(); trailing++; }
+  if (!body.length) return '';
+  let out = '';
+  if (m[1] === '|') out = body.join('\n');
+  else {
+    let pending = 0;
+    let prevNormal = false;
+    body.forEach((l, k) => {
+      if (l === '') { pending++; return; }
+      const normal = !/^\s/.test(l);
+      if (k - pending > 0) out += prevNormal && normal ? (pending ? '\n'.repeat(pending) : ' ') : '\n'.repeat(pending + 1);
+      else out += '\n'.repeat(pending);
+      out += l;
+      prevNormal = normal;
+      pending = 0;
+    });
+  }
+  if (chomp === '-') return out;
+  return chomp === '+' ? out + '\n'.repeat(trailing + 1) : out + '\n';
+}
+
+// A plain value: the first line and any indented continuation lines, folded with spaces, up to a comment.
+function plain(first, more) {
+  const parts = [];
+  for (const [k, raw] of [first, ...more].entries()) {
+    const line = raw.trim();
+    if (k > 0 && line.startsWith('#')) break;
+    const text = line.replace(/(^|\s+)#.*$/, '');
+    if (k === 0 && /^([[\]{}&*!%@`]|- |-$)/.test(text)) throw new Error(`a plain value cannot start with ${JSON.stringify(text[0])}`);
+    if (/: |:$/.test(text)) throw new Error('a plain value cannot contain ": " (quote it)');
+    parts.push(text);
+    if (text !== line) break;
+  }
+  while (parts.length && parts[parts.length - 1] === '') parts.pop();
+  let out = '';
+  let pending = 0;
+  parts.forEach((p, k) => {
+    if (p === '') { pending++; return; }
+    if (out) out += pending ? '\n'.repeat(pending) : ' ';
+    out += p;
+    pending = 0;
+  });
+  return out;
+}
+
+function parseDescription(front) {
+  try {
+    const at = front.map((l, i) => (/^description:(\s|$)/.test(l) ? i : -1)).filter((i) => i >= 0);
+    if (!at.length) return { value: '' };
+    if (at.length > 1) throw new Error('more than one description key');
+    const head = front[at[0]].slice('description:'.length).trim();
+    let end = at[0] + 1;
+    while (end < front.length && (!front[end].trim() || /^\s/.test(front[end]))) end++;
+    const more = front.slice(at[0] + 1, end);
+    if (head.startsWith('"') || head.startsWith("'")) {
+      const raw = [front[at[0]].slice(front[at[0]].indexOf(head[0]) + 1), ...front.slice(at[0] + 1)].join('\n');
+      const { value, rest } = quoted(raw, head[0]);
+      if (!/^([ \t]+#.*)?[ \t]*$/.test(rest)) throw new Error(`text after the closing quote: ${JSON.stringify(rest.trim())}`);
+      return { value };
+    }
+    if (head.startsWith('|') || head.startsWith('>')) return { value: block(head, more) };
+    return { value: plain(head, more) };
+  } catch (e) {
+    return { error: e.message };
+  }
 }
 
 function readSkills() {
@@ -28,10 +152,9 @@ function readSkills() {
       const lines = readFileSync(join(ROOT, 'skills', plugin, name, 'SKILL.md'), 'utf8').split(/\r?\n/);
       const end = lines.indexOf('---', 1);
       const front = lines[0] === '---' && end > 0 ? lines.slice(1, end) : [];
-      const line = front.find((l) => l.startsWith('description: '));
-      const description = line ? unquote(line.slice('description: '.length).trim()) : '';
+      const { value: description = '', error } = parseDescription(front);
       const typed = front.some((l) => /^disable-model-invocation:\s*true\s*$/.test(l));
-      out.push({ id: `${plugin}/${name}`, description, typed });
+      out.push({ id: `${plugin}/${name}`, description, typed, error });
     }
   }
   return out;
@@ -54,6 +177,37 @@ const checks = {
 };
 
 const SKILLS = readSkills();
+
+test('every description parses as YAML', () => {
+  assert.deepEqual(SKILLS.filter((s) => s.error).map((s) => `${s.id}: ${s.error}`), []);
+});
+
+test('descriptions are read the way YAML reads them, and a bad one is an error, not a crash', () => {
+  const parse = (text) => parseDescription(text.split('\n'));
+  const value = (text) => {
+    const r = parse(text);
+    assert.equal(r.error, undefined, `${JSON.stringify(text)}: ${r.error}`);
+    return r.value;
+  };
+  assert.equal(value('name: x\ndescription: plain text\nother: y'), 'plain text');
+  assert.equal(value('description: plain text\n  continued here\nother: y'), 'plain text continued here');
+  assert.equal(value('description: plain # a comment'), 'plain');
+  assert.equal(value('description:\n  starts on the next line'), 'starts on the next line');
+  assert.equal(value('description: >\n  folded\n  lines\nother: y'), 'folded lines\n');
+  assert.equal(value('description: >-\n  folded\n  lines\n\n  new paragraph'), 'folded lines\nnew paragraph');
+  assert.equal(value('description: |\n  literal\n  lines\nother: y'), 'literal\nlines\n');
+  assert.equal(value('description: |-\n  literal\n    indented'), 'literal\n  indented');
+  assert.equal(value('description: "\\x41\\u0042 \\"q\\" it\'s"'), 'AB "q" it\'s');
+  assert.equal(value('description: "quoted" # a comment'), 'quoted');
+  assert.equal(value('description: "spans\n  two lines"'), 'spans two lines');
+  assert.equal(value("description: 'single ''quoted'' # not a comment'"), "single 'quoted' # not a comment");
+  assert.equal(value('name: x'), '');
+  assert.equal(value('description: >\nother: y'), '');
+  for (const bad of ['description: "never closed', 'description: "bad \\q escape"', 'description: "x" trailing',
+    "description: 'never closed", 'description: has: a colon', 'description: [a, list]', 'description: > bad']) {
+    assert.ok(parse(bad).error, `should not parse: ${JSON.stringify(bad)}`);
+  }
+});
 
 test('the skills were found and parsed', () => {
   assert.ok(SKILLS.length >= 20, `expected at least 20 skills, got ${SKILLS.length}`);

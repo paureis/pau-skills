@@ -149,7 +149,8 @@ will change, or how to make it remember how they like to work.
 
 Claude Code puts the description of every skill the model may start into the context of every session. To keep that
 cost small, only the skills an agent should reach for without being asked load on their own. The rest cost nothing
-until you type them, and the agent cannot start them: when one would help, it tells you which one to type.
+until you type them. The agent cannot start them or see their descriptions; `which-skill` knows both groups and
+tells you which one to type.
 `tests/context-budget.test.mjs` holds the first group to 12 skills and 4,500 characters of descriptions.
 
 - **Load on their own**: `which-skill`, `tdd`, `review-triage`, `evaluator`, `mutation-test`, `codebase-oracle`,

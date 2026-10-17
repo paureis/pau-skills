@@ -1,6 +1,6 @@
 ---
 name: migration-review
-description: "Review a database schema or data migration, in any migration tool or raw SQL, before it runs on a real database: locks and downtime, code running during deploy, data loss, reversibility, run time at real table size. Gives a verdict and safe rewrites. Use for any change under a migrations folder, or when the user says 'review this migration', 'will this lock the table', 'zero-downtime migration'."
+description: "Review a schema or data migration (any tool or raw SQL) before it runs: locks, downtime, deploy compatibility, data loss, reversibility, real run time; gives a verdict and safe rewrites. Use for any change under a migrations folder, or when the user says 'review this migration', 'is this migration safe', 'will this lock the table', 'add a NOT NULL column', 'rename a column without downtime'."
 argument-hint: "<migration file(s) or PR> [engine and version] [table sizes if known]"
 ---
 

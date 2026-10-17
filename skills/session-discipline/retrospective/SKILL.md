@@ -1,6 +1,6 @@
 ---
 name: retrospective
-description: Analyze the current session to extract reusable learnings and apply them to the right durable store (CLAUDE.md, the memory system, or a specific skill file), gated so the rule stores do not grow by restating themselves. Use when the user asks for a retrospective, "what did we learn", "what should we improve", or "how should skills be updated". Suggest it proactively after a multi-step task with repeated corrections, work redone 3+ times, or improvised steps. Improves how you work, which is distinct from documenting what was built.
+description: Analyze the current session to extract reusable learnings and apply them to the right durable store (CLAUDE.md, the memory system, or a specific skill file), gated so the rule stores do not grow by restating themselves. Use when the user asks for a retrospective, "what did we learn", "what should we improve", or "how should skills be updated". Worth running after a multi-step task with repeated corrections, work redone 3+ times, or improvised steps. Improves how you work, which is distinct from documenting what was built.
 disable-model-invocation: true
 ---
 
@@ -15,7 +15,7 @@ The audit script used below is `${CLAUDE_SKILL_DIR}/audit.mjs`. Run it with `nod
 ## When to Use
 
 - After a multi-step task where corrections were needed, or the user says "retrospective", "what did we learn", "what should we improve".
-- **Proactively suggest** (don't auto-run) when, in the session: the user made more than 2 corrections, an artifact was regenerated 3+ times, or steps were improvised that aren't standard. The user decides whether to run it.
+- The user starts this skill by typing it; the agent cannot start it or suggest it on its own, because its description is not in the agent's context. It is worth running when, in the session, the user made more than 2 corrections, an artifact was regenerated 3+ times, or steps were improvised that aren't standard.
 
 ## Step 1: Extract Signals
 

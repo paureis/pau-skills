@@ -154,7 +154,7 @@ fixes it, and only to a semver-compatible version. ECOSYSTEMS.md lists the pin m
 Anything that crosses a major version, touches a runtime or toolchain, or bundles several upgrades is a planned
 upgrade, not a patch: one major version at a time, on a green baseline, with a commit and a full test run after each
 step. Put the steps in the report as the plan. If the `dependency-upgrade` skill is installed, suggest the user run
-`/dependency-upgrade` to carry it out.
+`/dependency-upgrade` (or `/<plugin>:dependency-upgrade` from a plugin) to carry it out.
 
 If the user asks you to apply the patch-level fixes now: apply them through a supply-chain scanner if the project
 uses one, re-run the same audit commands from phase 2, confirm the finding is gone and nothing new appeared, then run
