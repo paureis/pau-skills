@@ -87,6 +87,64 @@ describe('redact', () => {
     assert.match(out, /~\/notes\.txt/);
     assert.match(out, /password=\[secret\]/);
   });
+
+  // Each secret is built at run time, so no file in the repository holds a secret-shaped string.
+  const SECRETS = {
+    'GITHUB_TOKEN=': 'abc123' + 'Q'.repeat(20),
+    'OPENAI_API_KEY=': 'xyz' + 'W'.repeat(24),
+    'DB_PASSWORD=': 'hunter' + '2',
+    'AWS_SECRET_ACCESS_KEY=': 'wJalr' + 'X'.repeat(30),
+    '{"password": "': 'pw12' + '3456' + '"}',
+    'Authorization: Bearer ': 'abcdef' + 'Z'.repeat(20),
+    'gitlab ': 'glp' + 'at-' + 'R'.repeat(20),
+    'google ': 'AI' + 'za' + 'S'.repeat(35),
+    'npm ': 'np' + 'm_' + 'T'.repeat(36),
+    'url postgres://app:': 'pw' + 'Secret9' + '@localhost:5432/db',
+  };
+
+  for (const [prefix, secret] of Object.entries(SECRETS)) {
+    test(`hides the secret in ${JSON.stringify(prefix.trim())}`, () => {
+      const value = secret.replace(/["}]+$/, '').replace(/@.*$/, '');
+      const out = redact(`${prefix}${secret}`, '/nowhere');
+      assert.ok(!out.includes(value), `${out} still shows ${value}`);
+      assert.match(out, /\[secret\]/);
+    });
+  }
+
+  test('secrets are hidden end to end through transcripts', () => {
+    const dir = join(tempDir('afa-sec-'), '-s-t');
+    mkdirSync(dir);
+    const lines = Object.entries(SECRETS).map(([prefix, secret], i) => JSON.stringify(
+      { type: 'user', timestamp: `2026-04-02T00:00:0${i}Z`, message: { role: 'user', content: `${prefix}${secret}` } }));
+    writeFileSync(join(dir, 's.jsonl'), lines.join('\n') + '\n');
+    const r = runNode(SCRIPT, { args: ['transcripts', dir] });
+    assert.equal(r.code, 0, r.stderr);
+    for (const secret of Object.values(SECRETS)) {
+      const value = secret.replace(/["}]+$/, '').replace(/@.*$/, '');
+      assert.ok(!r.stdout.includes(value), `transcripts printed ${value}`);
+    }
+  });
+
+  test('redaction stays fast on long input (no quadratic regular expression)', () => {
+    const inputs = ['a'.repeat(200000), 'a.'.repeat(100000), 'x_'.repeat(100000) + '=', ('ab' + '-'.repeat(5)).repeat(30000) + '@'];
+    for (const text of inputs) {
+      const start = Date.now();
+      redact(text, '/nowhere');
+      assert.ok(Date.now() - start < 1500, `took ${Date.now() - start} ms on ${text.slice(0, 12)}...`);
+    }
+  });
+
+  test('a 5 MB message is cut and printed quickly', () => {
+    const dir = join(tempDir('afa-big-'), '-b-c');
+    mkdirSync(dir);
+    const big = { type: 'user', timestamp: '2026-04-03T00:00:00Z', message: { role: 'user', content: 'a'.repeat(5 * 1024 * 1024) } };
+    writeFileSync(join(dir, 's.jsonl'), JSON.stringify(big) + '\n');
+    const start = Date.now();
+    const r = runNode(SCRIPT, { args: ['transcripts', dir] });
+    assert.equal(r.code, 0, r.stderr);
+    assert.ok(Date.now() - start < 5000, `took ${Date.now() - start} ms`);
+    assert.ok(r.stdout.split('\n').find((l) => l.startsWith('1\t')).length < 450);
+  });
 });
 
 describe('commits', () => {
