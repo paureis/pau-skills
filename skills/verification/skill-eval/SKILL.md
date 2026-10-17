@@ -1,8 +1,7 @@
 ---
 name: skill-eval
-description: "Check whether a change to a skill or a prompt changes what an agent does, with the comparison blinded. Runs each variant several times as headless claude -p sessions in neutral folders that hold one variant each, reduces every transcript to what the run did, has a reviewer with no tools score all runs in one pass under shuffled letters, compares that with your own blind read, and recommends whether to keep the change. Use when the user types /skill-eval or says 'did this skill change help', 'A/B this prompt', 'does the new version behave differently'. Costs one full agent run per variant per repeat plus one review; 3 runs per variant by default."
+description: "Check blind whether a change to a skill or prompt changes what an agent does: several headless runs per variant, scored by a reviewer who does not know which is which. Use when the user says 'did this skill change help', 'A/B this prompt', 'does the new version behave differently'. Costs one agent run per variant per repeat."
 argument-hint: "[the skill or prompt change to check] [--n <runs per variant, default 3>]"
-disable-model-invocation: true
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
@@ -21,6 +20,9 @@ produced which. You read every run too, blind, before the reviewer, and every di
 Use it before you keep a change to a skill, a prompt or an instruction file, when the question is "does the agent
 now behave differently". Do not use it for a change that cannot show up in what a run does (a typo, a reworded
 description nobody sees), or when one careful read of a single run answers the question.
+
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
 
 Bundled files:
 - `${CLAUDE_SKILL_DIR}/skill-eval.mjs`: `setup` makes the run folders and refuses a leak, `run` starts the headless

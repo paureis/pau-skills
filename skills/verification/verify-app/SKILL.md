@@ -1,6 +1,6 @@
 ---
 name: verify-app
-description: "Generate, or maintain, a project skill (.claude/skills/verify-*) that launches the real app, drives it like a user (web, CLI, TUI, HTTP, mobile), keeps evidence and cleans up. Use when the user says \"verify it in the app\", \"make a verification skill\", \"how can an agent test this app\", \"prove it works end to end\", \"maintain the verify skill\", or when a project has no scripted way to drive it."
+description: "Write or maintain the project's own verification skill and feature map, so any agent can launch the real app, drive it like a user and keep evidence. Use when the user says 'verify it in the app', 'make a verification skill', 'how can an agent test this app', 'prove it works end to end', 'maintain the verify skill', or the project has no scripted way to drive its app."
 argument-hint: "[maintain] [the app or surface to cover, when the repository has several]"
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
@@ -24,6 +24,9 @@ Arguments: $ARGUMENTS
   needed. Read that folder's `SKILL.md` and follow it. If the user asked for a new one anyway, say one exists and
   offer maintain mode instead of writing a second.
 - Otherwise: **create mode**, below.
+
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
 
 Bundled files, all read only:
 

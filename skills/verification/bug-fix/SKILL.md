@@ -1,6 +1,6 @@
 ---
 name: bug-fix
-description: "Fix a bug at its root cause, with runtime evidence. Reproduces it twice on the real surface, tests one hypothesis at a time, questions the shared premise after two failed fixes, commits the failing repro before the fix, and proves the change is safe. Use for \"fix this bug\", \"this is broken\", \"why does X return Y\", a crash or wrong output. Not for failures that come and go (flaky-test-hunt)."
+description: "Fix a bug at its root cause with runtime evidence: reproduce it twice, test one hypothesis at a time, commit a failing test before the fix. Use for 'fix this bug', 'this is broken', 'why does X return Y', a crash or wrong output that shows every time; a failure that comes and goes needs counted runs instead."
 argument-hint: "<the bug report: what you did, what you expected, what happened, where>"
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
