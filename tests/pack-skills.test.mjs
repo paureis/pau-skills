@@ -159,6 +159,7 @@ describe('packing named skills', () => {
     assert.equal(r.code, 0, r.stderr);
     assert.deepEqual(r.zips, ['alpha.zip', 'beta.zip']);
     assert.deepEqual(readZip(readFileSync(join(r.out, 'beta.zip'))).map((e) => e.name), ['beta/', 'beta/SKILL.md']);
+    assert.match(r.stdout, /beta\.zip\s+packed\s+1 file\s/);
   });
 
   test('two runs give identical bytes, whatever the time zone', () => {

@@ -481,7 +481,7 @@ export function main(argv, { cwd = process.cwd(), log = console.log, warn = cons
       const file = join(out, `${t.folder.name}.zip`);
       writeFileSync(file, zip);
       const shown = relative(cwd, file);
-      rows.push([shown && !shown.startsWith('..') ? shown : file, t.status, `${t.files.length} files`, `${zip.length} bytes`]);
+      rows.push([shown && !shown.startsWith('..') ? shown : file, t.status, `${t.files.length} file${t.files.length === 1 ? '' : 's'}`, `${zip.length} bytes`]);
     }
     const width = (k) => Math.max(...rows.map((r) => r[k].length));
     for (const r of rows) log(`${r[0].padEnd(width(0))}  ${r[1].padEnd(width(1))}  ${r[2].padStart(width(2))}  ${r[3].padStart(width(3))}`);
