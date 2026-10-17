@@ -64,6 +64,15 @@ describe('classify', () => {
     assert.equal(classify('Add flaky-test-hunt: find why a test fails, and prove the fix', ''), null);
     assert.equal(classify('Create a fix-it checklist and fix the docs', ''), null);
   });
+
+  test('realistic fix subjects are found, and look-alikes are not', () => {
+    const fixes = ['Add fix for crash on startup', 'Added a fix for the race', 'Implement fix for #44', 'Bug-fix: crash on save',
+      'hot-fix', 'quick-fix: wrong total', 'Hotfix-1.2.3 login'];
+    assert.deepEqual(fixes.filter((s) => classify(s, '') !== 'fix'), []);
+    assert.equal(classify('Reverted the cache change', ''), 'revert');
+    const not = ['Add prefix option', 'Update the test fixture', 'Rename fix_typo helper', 'Add bug-fix skill'];
+    assert.deepEqual(not.filter((s) => classify(s, '') !== null), []);
+  });
 });
 
 describe('redact', () => {

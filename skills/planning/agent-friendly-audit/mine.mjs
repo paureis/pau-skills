@@ -4,11 +4,14 @@
  * common secret shapes, and shows paths under the home folder as ~.
  *
  *   node mine.mjs commits [--repo <dir>] [--since <date>] [--json]
- *       Lists the non-merge commits that look like corrections: fixes ("fix", "fixes", "fixed", "hotfix", "bugfix"
- *       in the subject; a hyphenated name such as "bug-fix" is not a fix, nor is a subject that starts by adding
- *       something new), reverts (a subject starting "Revert" or a body saying "This reverts commit"), and "fixup!",
- *       "squash!" or "amend!" commits. Each comes with the files it touched, and the summary ranks the files touched
- *       by two or more of them. Only subjects are printed, never bodies or authors.
+ *       Lists the non-merge commits that look like corrections: fixes (a fix word on its own in the subject: "fix",
+ *       "fixes", "fixed", "hotfix", "bugfix", "Hotfix-1.2.3"; a compound at the start, "Bug-fix:", "hot-fix",
+ *       "quick-fix:"; or new work that is a fix, "Add fix for ..."), reverts (a subject starting "Revert" or
+ *       "Reverted", or a body saying "This reverts commit"), and "fixup!", "squash!" or "amend!" commits. Not fixes:
+ *       a longer word ("prefix", "fixture", "fix_typo"), a hyphenated name later in the subject ("Add bug-fix
+ *       skill"), and a subject that adds something new with "fix" only as its topic. Each comes with the files it
+ *       touched, and the summary ranks the files touched by two or more of them. Only subjects are printed, never
+ *       bodies or authors.
  *       A subject is a lead, not evidence: read the diff before counting it.
  *
  *   node mine.mjs transcripts <project folder>... [--max-chars <n, default 400>] [--json]
@@ -79,15 +82,23 @@ const cut = (s, max) => (s.length > max ? s.slice(0, max).trimEnd() + '...' : s)
 
 // ---------- commits ----------
 
-const FIX = /(?<![\w-])(fix|fixes|fixed|fixing|hotfix|hotfixes|bugfix|bugfixes)(?![\w-])/i;
-// A subject that adds something new ("Add flaky-test-hunt: ... prove the fix") names a fix as a topic.
-const NEW_WORK = /^(add|adds|added|create|creates|introduce|introduces|implement|implements|initial|new)\b/i;
+// A fix word on its own: not inside a longer word ("prefix", "fixture", "fix_typo") or a hyphenated name ("bug-fix
+// skill", "fix-it"), though a version may follow ("Hotfix-1.2.3").
+const FIX = /(?<![\w-])(fix|fixes|fixed|fixing|hotfix|hotfixes|bugfix|bugfixes|quickfix)(?!\w|-[A-Za-z])/i;
+// At the start of a subject a hyphenated or spaced compound is a fix too ("Bug-fix: crash on save", "hot-fix").
+const LEADING_FIX = /^(bug|hot|quick)[- ]?fix(es|ed)?(?!\w|-[A-Za-z])/i;
+// A subject that adds something new ("Add flaky-test-hunt: ... prove the fix") names a fix as a topic...
+const NEW_WORK = /^(add|adds|added|create|creates|created|introduce|introduces|introduced|implement|implements|implemented|initial|new)\b/i;
+// ...unless the new thing is the fix ("Add fix for crash", "Added a fix for the race", "Implement fix for #44").
+const NEW_FIX = /^\w+\s+((a|an|the)\s+)?((bug|hot|quick) ?)?(fix|fixes)\b(?!-)/i;
 
 /** 'revert', 'fixup', 'fix' or null for a commit subject and body. */
 export function classify(subject, body) {
-  if (/^revert\b/i.test(subject) || /This reverts commit [0-9a-f]{7,}/.test(body)) return 'revert';
+  if (/^revert(s|ed|ing)?\b/i.test(subject) || /This reverts commit [0-9a-f]{7,}/.test(body)) return 'revert';
   if (/^(fixup|squash|amend)!/i.test(subject)) return 'fixup';
-  if (FIX.test(subject) && !NEW_WORK.test(subject)) return 'fix';
+  if (LEADING_FIX.test(subject)) return 'fix';
+  if (NEW_WORK.test(subject)) return NEW_FIX.test(subject) ? 'fix' : null;
+  if (FIX.test(subject)) return 'fix';
   return null;
 }
 
