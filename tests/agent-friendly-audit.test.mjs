@@ -4,7 +4,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { writeFileSync, mkdirSync, realpathSync } from 'node:fs';
+import { writeFileSync, mkdirSync, realpathSync, utimesSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import { redact, classify, encodeProjectPath } from '../skills/planning/agent-friendly-audit/mine.mjs';
@@ -215,7 +215,7 @@ describe('transcripts', () => {
       '4\t2026-03-05\t[Request interrupted by user for tool use]',
       '7\t2026-03-05\tKeep the changelog short',
     ]);
-    assert.match(r.stdout, /^## 0a1b2c3d-0000-4000-8000-000000000001\.jsonl$/m);
+    assert.match(r.stdout, /^## -work-shop\/0a1b2c3d-0000-4000-8000-000000000001\.jsonl$/m);
     assert.match(r.stdout, /# 9 user messages in 2 sessions; skipped 1 subagent transcript and 1 unreadable line/);
   });
 
@@ -276,7 +276,7 @@ describe('folders', () => {
     mkdirSync(join(projects, '-somewhere-else'));
     const r = runNode(SCRIPT, { args: ['folders', '--repo', main, '--projects', projects] });
     assert.equal(r.code, 0, r.stderr);
-    const rows = r.stdout.split('\n').filter((l) => l.includes(projects));
+    const rows = r.stdout.split('\n').filter((l) => l.trim() && !l.startsWith('#'));
     assert.equal(rows.length, 2, r.stdout);
     assert.match(rows[0], /1 session, 1 subagent transcript/);
     assert.match(rows[1], /0 sessions, 0 subagent transcripts/);
@@ -295,5 +295,79 @@ describe('folders', () => {
   test('the folder name is the absolute path with every character that is not a letter or digit made a dash', () => {
     assert.equal(encodeProjectPath('/srv/dev/my_app.v2'), '-srv-dev-my-app-v2');
     assert.equal(encodeProjectPath('C:\\src\\app'), 'C--src-app');
+  });
+});
+
+// A repository with a transcript folder for itself, one for another project, and a stray session file in the
+// projects folder, all in temporary folders.
+function projectsFor() {
+  const home = realpathSync(tempDir('afa-h-'));
+  const main = join(home, 'src', 'app');
+  mkdirSync(main, { recursive: true });
+  git(main, 'init', '-q', '-b', 'main');
+  const projects = join(home, '.claude', 'projects');
+  const own = join(projects, encodeProjectPath(main));
+  const other = join(projects, encodeProjectPath(join(home, 'src', 'other')));
+  mkdirSync(own, { recursive: true });
+  mkdirSync(other, { recursive: true });
+  const line = (text) => JSON.stringify({ type: 'user', timestamp: '2026-05-01T00:00:00Z', message: { role: 'user', content: text } }) + '\n';
+  writeFileSync(join(own, 'old.jsonl'), line('own old session'));
+  writeFileSync(join(own, 'new.jsonl'), line('own live session'));
+  const dayAgo = new Date(Date.now() - 86400000);
+  utimesSync(join(own, 'old.jsonl'), dayAgo, dayAgo);
+  writeFileSync(join(other, 's.jsonl'), line('OTHER PROJECT that must not appear'));
+  writeFileSync(join(projects, 'stray.jsonl'), line('STRAY that must not appear'));
+  utimesSync(join(other, 's.jsonl'), dayAgo, dayAgo);
+  const env = { HOME: home, USERPROFILE: home, CLAUDE_CONFIG_DIR: '' };
+  return { home, main, projects, own, other, env };
+}
+
+describe('transcripts read only this repository', () => {
+  test('another project folder, the projects folder itself, or a glob over it is refused', () => {
+    const { main, projects, own, other, env } = projectsFor();
+    for (const args of [[other], [projects], [own, other]]) {
+      const r = runNode(SCRIPT, { args: ['transcripts', ...args, '--repo', main], env });
+      assert.equal(r.code, 1, `${args}: ${r.stdout}`);
+      assert.equal(r.stdout, '');
+      assert.match(r.stderr, /not a transcript folder of this repository|holds other project folders/);
+    }
+  });
+
+  test('with no folder, it reads the folders of this repository, leaves out the live session, and hides home', () => {
+    const { home, main, env } = projectsFor();
+    const r = runNode(SCRIPT, { args: ['transcripts', '--repo', main], env });
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stdout, /own old session/);
+    assert.doesNotMatch(r.stdout, /own live session|must not appear/);
+    assert.match(r.stdout, /^## ~-src-app\/old\.jsonl$/m);
+    assert.ok(!r.stdout.includes(encodeProjectPath(home)), r.stdout);
+    assert.match(r.stdout, /left out 1 recent session/);
+  });
+
+  test('--keep-recent reads the live session too, and --skip leaves out a named one', () => {
+    const { main, env } = projectsFor();
+    const keep = runNode(SCRIPT, { args: ['transcripts', '--repo', main, '--keep-recent'], env });
+    assert.equal(keep.code, 0, keep.stderr);
+    assert.match(keep.stdout, /own live session/);
+    const skip = runNode(SCRIPT, { args: ['transcripts', '--repo', main, '--keep-recent', '--skip', 'old'], env });
+    assert.equal(skip.code, 0, skip.stderr);
+    assert.doesNotMatch(skip.stdout, /own old session/);
+    assert.match(skip.stdout, /own live session/);
+  });
+
+  test('its own folder, named explicitly, is accepted', () => {
+    const { main, own, env } = projectsFor();
+    const r = runNode(SCRIPT, { args: ['transcripts', own, '--repo', main], env });
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stdout, /own old session/);
+  });
+
+  test('folders shows the folder name with the home part as ~', () => {
+    const { home, main, env } = projectsFor();
+    const r = runNode(SCRIPT, { args: ['folders', '--repo', main], env });
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stdout, /~-src-app/);
+    assert.ok(!r.stdout.includes(encodeProjectPath(home)), r.stdout);
+    assert.ok(!r.stdout.includes(home), r.stdout);
   });
 });
