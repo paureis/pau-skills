@@ -25,9 +25,9 @@ Keep the answer short. A list of every skill is not an answer.
 
 ## Which skills start on their own
 
-- **Start on their own** when the situation fits, so the agent may run them: `which-skill`, `tdd`, `review-triage`,
-  `evaluator`, `mutation-test`, `codebase-oracle`, `migration-review`, `flaky-test-hunt`,
-  `dependency-security-audit`, `safe-merge`.
+- **Start on their own** when the situation fits, so the agent may run them: `which-skill`, `tdd`, `bug-fix`,
+  `verify-app`, `review-triage`, `evaluator`, `mutation-test`, `codebase-oracle`, `migration-review`,
+  `flaky-test-hunt`, `dependency-security-audit`, `safe-merge`.
 - **Typed by the user**: every other skill below. Their descriptions are not in the agent's context and the agent
   cannot start them, so give the exact command to type, for example `/pau-skills:grill-me`.
 
@@ -43,6 +43,10 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 2. **`to-prd`** (planning). Turn the decided conversation into a written spec, without interviewing again.
 3. **`to-issues`** (planning). Split the spec into vertical slices that can each be built and verified alone.
 4. **Build each slice with `tdd`** (verification): red, green, refactor, one behaviour at a time.
+   - A new interface, module layout or data model? **`architect`** (planning, typed: `/architect`) sketches two
+     shapes before code, then builds against the one that survives.
+   - Unsure which of several approaches is best? **`arena`** (agent-orchestration, typed: `/arena`) has several
+     subagents try it with different briefs and a blind judge help pick.
    - Several slices that touch different files? **`parallel-worktrees`** (agent-orchestration) runs them at the same
      time, each agent in its own git worktree, then integrates them one by one.
    - A large effort run by several agents? **`methodology`** (agent-orchestration) gives the operating rules:
@@ -53,6 +57,8 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 5. **Prove it works.** **`mutation-test`** (verification) shows each important test can fail. **`evaluator`**
    (verification) has a fresh agent that did not build the change attack it, assertion by assertion.
    **`review-triage`** (verification) decides which review findings to fix and stops after one fix round.
+   **`verify-app`** (verification) writes the project's own recipe for launching the real app and proving a change in
+   it, with evidence; run it with `maintain` when the app has changed.
 6. **`safe-merge`** (guards). Merge the PR pinned to its head commit, without closing PRs stacked on it.
 7. **`session-close`** (session-discipline). End in a fixed order: retrospective, roadmap and log, handoff, commit.
    **`handoff`** alone writes the handoff when the session is ending mid-work.
@@ -67,6 +73,8 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | A CVE announcement, "are we vulnerable", "is this package safe" | `dependency-security-audit` (guards) | `dependency-upgrade` to apply fixes |
 | CI is slow or expensive, "how much CI should we run" | `ci-cost-and-cadence` (verification) | |
 | Review comments to work through, "which of these should I fix", a review loop that keeps going | `review-triage` (verification) | |
+| A bug: wrong output, a crash, "this is broken", "fix this bug" (happens every time) | `bug-fix` (verification) | `evaluator` to attack the fix |
+| "Verify it in the app", "how can an agent test this app", no scripted way to drive the app | `verify-app` (verification) | `evaluator` cites its drives as evidence |
 | A question about how the codebase works | `codebase-oracle` (agent-orchestration) | `grill-me` if it leads to a change |
 | "The code is getting messy", hard-to-test modules | `improve-codebase-architecture` (planning) | `grill-me` on the candidate picked |
 
@@ -112,6 +120,10 @@ Hooks act on every session where their plugin is installed. Each can be turned o
 - **`lean-subagent-dev`, `parallel-worktrees` or `methodology`?** `lean-subagent-dev` runs one subagent at a time with
   a short review, for everyday work. `parallel-worktrees` runs independent pieces at the same time. `methodology` is the
   full method for work under contract.
+- **`bug-fix` or `flaky-test-hunt`?** `bug-fix` is for a failure that happens every time. `flaky-test-hunt` is for
+  one that comes and goes; measure its rate first.
+- **`architect` or `improve-codebase-architecture`?** `architect` designs something new before it is built.
+  `improve-codebase-architecture` finds refactors in code that already exists.
 - **`handoff` or `session-close`?** `session-close` includes the handoff. Use `handoff` alone when there is no time
   for the rest, or when the work moves to another person or tool.
 - **`dependency-upgrade` or `dependency-security-audit`?** The audit finds what is risky now. The upgrade skill

@@ -96,7 +96,7 @@ Status: `todo`, `in progress`, `done`. Plugin and tier are where the skill goes.
 
 **P0.1 Backlog** (`done` with this file).
 
-**P0.2 Context budget** (`todo`, orchestrator, touches every skill).
+**P0.2 Context budget** (`done`, orchestrator, touches every skill).
 - Add `disable-model-invocation: true` to every typed-tier skill and shorten auto-tier descriptions to the limits.
 - Add `tests/context-budget.test.mjs`: counts auto-tier skills (12 at most), checks each auto description is at most
   400 characters and the total at most 4,500, and that every skill still has a description (the `/` menu shows it).
@@ -104,17 +104,17 @@ Status: `todo`, `in progress`, `done`. Plugin and tier are where the skill goes.
 - README: a short "What loads on its own" section with the two lists; `which-skill`: the same split.
 - Version bump: minor for every plugin (behaviour changes).
 
-**P0.3 NOTICE** (`todo`). Fix the stale paths (`plugins/<p>/skills/<s>` should be `skills/<p>/<s>`). Add a pstack
+**P0.3 NOTICE** (`done`). Fix the stale paths (`plugins/<p>/skills/<s>` should be `skills/<p>/<s>`). Add a pstack
 section with the MIT text, copyright 2026 Lauren Tan, listing adapted files as they land.
 
-**P0.4 Style word list** (`todo`). Extend `tests/style.test.mjs` with the lexical rules of upstream
+**P0.4 Style word list** (`done`). Extend `tests/style.test.mjs` with the lexical rules of upstream
 `skills/unslop/SKILL.md` (AI vocabulary such as delve, pivotal, tapestry, seamless, leverage as a verb; "serves as";
 "not just X but Y"; chatbot phrases; filler), skipping code blocks and inline code. Check `evals/project-setup/grade.mjs`
 for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the new rules find.
 
 ### N. New skills
 
-**N1 verify-app** (`todo`, verification, auto tier). The most valuable item.
+**N1 verify-app** (`done`, verification, auto tier). The most valuable item.
 - Upstream: `skills/create-verification-skill/SKILL.md` and its `references/feature-map-example/*.md`,
   `skills/maintain-verification-skill/SKILL.md`, `docs/guide/06-verify-and-ship.md`.
 - What it does: generates a project-local skill, `.claude/skills/verify-<app>/SKILL.md`, that teaches a fresh agent
@@ -140,7 +140,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
 - Done when: run on a fixture app (a small HTTP server and a small CLI in `tests/fixtures/`), the generated skill
   launches, drives one feature, keeps evidence and cleans up; `check-map.mjs` has tests that a mutation can break.
 
-**N2 arena** (`todo`, agent-orchestration, typed tier).
+**N2 arena** (`done`, agent-orchestration, typed tier).
 - Upstream: `skills/arena/SKILL.md`; `skills/architect/references/runner-prompt.md`.
 - What it does: N candidates attempt the same task and a blind judge helps pick. Phases: **Frame** (one prompt is the
   contract for every candidate; write 3 to 6 rubric criteria that the candidates never see); **Fan out** (all
@@ -160,7 +160,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
 - Optional script: `arena.mjs` scaffolds candidate folders and the synthesis-note template, and shuffles labels for
   the judge. Reuse `worktrees.mjs` by copying it in if needed (add the pair to `COPIES`).
 
-**N3 architect** (`todo`, planning, typed tier).
+**N3 architect** (`done`, planning, typed tier).
 - Upstream: `skills/architect/SKILL.md`, `references/design-red-flags.md`, `references/runner-prompt.md`,
   `references/rationale-template.md`.
 - What it does: designs before building. **Ground** (read the code involved; `codebase-oracle` if it is installed);
@@ -175,7 +175,7 @@ for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the
   opened, copies the nearest example, and takes the shortest path that compiles"): hand-synced lists, two ways to do
   one task, importable internals. Share vocabulary with `improve-codebase-architecture/LANGUAGE.md`.
 
-**N4 bug-fix** (`todo`, verification, auto tier).
+**N4 bug-fix** (`done`, verification, auto tier).
 - Upstream: `skills/poteto-mode/playbooks/bug-fix.md`, `skills/principle-attack-the-premise/SKILL.md`,
   `skills/principle-fix-root-causes/SKILL.md`, `skills/principle-prove-it-works/SKILL.md`,
   `automations/benny/skills/reproduce-and-fix-issues/references/verify-existing-fix.md`,
@@ -383,3 +383,9 @@ When the batch is merged, update the skill count on the author's GitHub profile 
 ## Done
 
 - 2026-10-17: P0.1 this backlog.
+- 2026-10-17: P0.2 context budget, P0.3 NOTICE, P0.4 style word list, N1 verify-app, N2 arena, N3 architect, N4
+  bug-fix. Each was built by a subagent in its own worktree, checked by the orchestrator, reviewed by a fresh
+  subagent, and fixed in one round (`verify-app` also had a cold run by a fresh agent). Not done from N1: the
+  `project-setup` offer to generate a verification skill, because `project-setup` promises not to send beginners to
+  other skills; decide whether to make an exception. The auto tier is now full (12 skills, about 50 characters left),
+  so a new auto skill needs a description trimmed elsewhere.

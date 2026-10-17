@@ -49,7 +49,21 @@ plugin repository
 (https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack).
 docs/ORIGINS.md lists, for each one, what this version changes.
 
-  (none yet; files are listed here as they are adapted)
+  skills/verification/bug-fix/SKILL.md
+  skills/verification/verify-app/SKILL.md
+  skills/verification/verify-app/MAINTAIN.md
+  skills/verification/verify-app/templates/verify-skill.md
+  skills/verification/verify-app/templates/feature.md
+  skills/verification/verify-app/references/feature-map-example/README.md
+  skills/verification/verify-app/references/feature-map-example/create-invoice.md
+  skills/verification/verify-app/references/feature-map-example/send-invoice.md
+  skills/verification/verify-app/references/feature-map-example/export.md
+  skills/agent-orchestration/arena/SKILL.md
+  skills/agent-orchestration/arena/CANDIDATE-BRIEF.md
+  skills/planning/architect/SKILL.md
+  skills/planning/architect/RED-FLAGS.md
+  skills/planning/architect/SKETCH-BRIEF.md
+  skills/planning/architect/RATIONALE-TEMPLATE.md
 
 Those files are distributed under the upstream license, reproduced here:
 

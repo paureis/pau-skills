@@ -27,6 +27,11 @@ alone.
 **Counts as evidence:** a passing automated test that you have run and watched pass; a captured trace with the
 relevant correlation IDs; a live reproduction.
 
+If the project has a verification skill (`.claude/skills/verify-<app>/`), a drive through it counts as a live
+reproduction: follow its Launch, Doctor, Drive and Cleanup sections, and cite the files in the evidence folder it
+names. Without one, reproduce live by hand. If the `verify-app` skill is installed, list "no verification skill"
+under the contract gaps and suggest generating one.
+
 **Does not count as evidence:**
 
 - "I read the code and it is correct." Reading is how you form a hypothesis, not how you settle one.

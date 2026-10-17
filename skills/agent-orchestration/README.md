@@ -2,7 +2,8 @@
 
 Skills: `methodology` (the method document, two adoption prompts and templates), `codebase-oracle`,
 `parallel-worktrees` (with `worktrees.mjs`), `lean-subagent-dev` (with a brief template, `TRIAGE.md` and
-`review-scope.mjs`, identical copies of the ones in `review-triage`). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
+`review-scope.mjs`, identical copies of the ones in `review-triage`), `arena` (with `arena.mjs` and the candidate
+and judge briefs). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
 [hooks/README.md](../../hooks/README.md)).
 
 ## lean-subagent-dev configuration
