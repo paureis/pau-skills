@@ -48,7 +48,7 @@ Do not read or write outside your working folder, except the paths listed under 
 Your final message is your notes, in this shape:
 
 ```
-Artifact: <the files you produced, or the branch and commit>
+Artifact: <the files you produced, as paths relative to your working folder, or the branch and commit>
 Shape: <the main decisions, in a few lines>
 Alternatives I rejected: <each one, and why>
 Checks I ran: <command: result, or "none, because ...">

@@ -11,7 +11,8 @@ anything. Assume each one has at least one real flaw, and find it.
 
 Everything you may read is under `<blind folder>`:
 - `rubric.md`: the task and the criteria to score;
-- one folder per candidate, named by a letter (`A`, `B`, `C`, ...). The letters were assigned at random.
+- one folder per candidate, named by a letter (`A`, `B`, `C`, ...). The letters were assigned at random;
+- `reference/`, if it is there: existing code that a criterion compares the candidates with.
 
 Read nothing outside that folder. Change no file anywhere.
 

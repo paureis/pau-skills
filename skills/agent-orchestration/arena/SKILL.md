@@ -106,9 +106,13 @@ node "${CLAUDE_SKILL_DIR}/arena.mjs" blind <arena-dir>
 
 It refuses a rubric without 3 to 6 numbered criteria, skips candidates with no output (dropouts), copies the rest
 and the rubric into a new temporary folder under the letters A, B, C in shuffled order, and writes the key to
-`<arena-dir>/blind-key.json` without printing it. Before launching the judge, look through the blind folder for
-anything that names a candidate's direction or number (in the notes, a branch name, a commit message in the patch)
-and replace it with `[removed]` in the blind copy only.
+`<arena-dir>/blind-key.json` without printing it. Before launching the judge:
+- Look through the blind folder for anything that names a candidate's direction or number (an absolute path such as
+  `.../candidate-2/` in the notes, a branch name, a commit message in the patch) and replace it with `[removed]` in
+  the blind copy only.
+- If a criterion compares the candidates with existing code ("no caller is longer than today"), copy that code into
+  the blind folder as `reference/`. Without it the judge can only take the candidates' word for it. Better still,
+  write criteria that the artifact alone can settle.
 
 Launch one fresh subagent, not a fork, with `JUDGE-BRIEF.md` and the blind folder's path, and nothing else: not the
 briefs, not the key, not your own view. Start it in the background (`run_in_background: true`) so you can read the
@@ -140,7 +144,8 @@ losing candidate's branch.
   candidates.
 
 For a code task, build the result on a new branch that starts from the base candidate's branch (or with its patch
-applied), then make the grafts as separate commits.
+applied), then make the grafts as separate commits. For a task that only produced files, copy the base candidate's
+files to where the task said they go (or next to `SYNTHESIS.md`) and make the grafts there.
 
 ## Phase 6: Verify
 
