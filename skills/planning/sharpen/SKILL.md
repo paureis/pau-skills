@@ -1,8 +1,7 @@
 ---
 name: sharpen
-description: "Sharpen a task before starting it: restate what the user is after and the problem behind it, ask how a top expert would approach it, say whether it is over- or under-specified, keep one outside check that the result is right, confirm with the user in a few lines, then do the work. Use when the user types /sharpen or says 'sharpen this', 'think before you start', 'make sure you understand the task', or 'restate the task before you start'."
+description: "Restate a task before starting it: the goal, the problem behind it, how an expert would approach it, what is missing, and one outside check of the result; confirm in a few lines, then do the work. Use when the user says 'sharpen this', 'think before you start', 'make sure you understand the task' or 'restate the task before you start'."
 argument-hint: "[the task, or nothing to use the last message]"
-disable-model-invocation: true
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
   upstream: https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/sharpen
