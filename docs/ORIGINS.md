@@ -358,6 +358,86 @@ to start it, drive it and keep proof.
 method I found for making it repeatable. A dry run on a fixture service and a cold run by a fresh agent on a fixture
 CLI (`tests/fixtures/verify-app/`) found the export and current-folder problems that the review round fixed.
 
+### hillclimb and `decisions.mjs` (Adapted from [pstack hillclimb playbook](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/playbooks/hillclimb.md))
+
+Closest upstream: `skills/poteto-mode/playbooks/hillclimb.md`, with the perf mantras from `playbooks/perf-issue.md`
+and the checklist from `skills/benchmark-checklist/SKILL.md` and `skills/principle-explain-the-number/SKILL.md`.
+`SKILL.md` shares about 2% of its word 6-grams with them and `BENCHMARK-CHECKLIST.md` about 24% (19% from
+`benchmark-checklist`, 5% from `explain-the-number`), measured before the review round. The structure is shared: the
+steps of the loop, the mantra order and the checklist questions. `decisions.mjs` is mine.
+
+**Problem.** An agent asked to make something faster reads the code, makes several changes at once, runs it once and
+reports a percentage. Or it stops at the first lucky win, keeps "might help" tweaks, and leaves no record of what was
+tried.
+
+**What this version changes.**
+- The agent makes each change itself. Upstream's subagent with a configured model and parallel worktrees become an
+  optional extra (the Agent tool with `isolation: "worktree"`, measured one at a time).
+- The harness is proven sensitive by a required deliberate regression that must read "worse, beyond noise", then
+  reverted. Upstream's contrasting workloads and printed error and work counts are optional.
+- One measurement format (median, run count, spread as max minus min) and one noise rule (a gap larger than the larger
+  spread).
+- The log lives outside the working tree; upstream used a gitignored file, which `git clean -fdx` removes. It is
+  append only, a correction is a new row that stands for its attempt everywhere, and the stop predicate is written in
+  the baseline row.
+- `decisions.mjs` is new: `append` refuses a keep without a measurement, a run count and a spread, a keep that is worse
+  or within noise of the best kept number (unless it is a behaviour-preserving simplification), a baseline with
+  failing tests, and a log inside a git work tree; `measure` repeats any command and prints the format at full
+  precision; `summary` prints the table; a `final` row records the closing check.
+- Harness detection for any ecosystem (`cargo bench`, `go test -bench`, `pytest-benchmark` or `asv`, JMH,
+  BenchmarkDotNet, a bench target in the task runner), with a fallback for size, memory and score metrics.
+- The mantras in order only, without perf-issue.md's "when an earlier mantra meets the target, stop".
+- Added: a clean tree and a branch first, a regression gate on every attempt, the noise-floor rule, a fixed run count
+  chosen for the runs you hope to reach, and a final check that measures the baseline commit and the final commit
+  alternately.
+- Dropped: opening a pull request and the links to Cursor-specific principle skills. The checklist gains profilers
+  per ecosystem, a warning about tracing-profiler inflation, and Amdahl's 1/(1-p) form.
+
+**Why.** The discipline upstream describes (one change, one measurement, keep or revert, no win from reading code) is
+what matters, and as prose an agent bends it. The script makes the log the gate every keep passes through. The review
+round found that a correction was judged against itself and that "simplification" keeps could drift without limit;
+both are refused now.
+
+### skill-eval and `skill-eval.mjs` (Adapted from [pstack eval playbook](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/playbooks/eval.md))
+
+Closest upstream: `skills/poteto-mode/playbooks/eval.md`. Local models: `evals/project-setup/` (`run.mjs`, `grade.mjs`,
+`JUDGE.md`) and this repository's `arena`. `SKILL.md` shares under 1% of its word 6-grams with `eval.md`; what comes
+from upstream is structure: the blinding rules (no meta words, an organic prompt, no chain-eliciting cues, sanitized
+names, runs that do not know of each other, one judge for both variants in one pass), the order of the steps, the 3 to
+6 criteria rubric and the reply fields. `JUDGE-BRIEF.md` and `skill-eval.mjs` are mine; the script adapts small helpers
+from `arena.mjs` and `run.mjs`.
+
+**Problem.** A change to a skill reads better, but nobody knows whether the agent behaves differently. An author who
+grades their own change sees what they hoped. A run that can tell it is being measured, or that finds a second copy of
+the skill, measures the wrong thing.
+
+**What this version changes.**
+- Cursor `Task` candidates become headless `claude -p --output-format stream-json` runs. Subagents are not used: they
+  inherit the session's skills and return no transcript.
+- An isolation recipe found on Claude Code 2.1.302: an empty HOME, `--setting-sources project`, `--strict-mcp-config`,
+  and an environment built from an allowlist (a run otherwise inherits the session's identity). The built-in skills
+  remain and are named as a confound.
+- `skill-eval.mjs` does the steps an agent gets wrong: it refuses meta words in the prompt, the path and file names
+  (and warns on contents); refuses a root that is not new and empty, or that sits under an instruction file; makes
+  neutral folders with a fresh repository each; reduces each transcript to what the run did; builds the blind copy from
+  those actions and the diff, with the installed skill left out, paths replaced and the order shuffled; runs a reviewer
+  with no tools on standard input; and unblinds with per-variant means and every disagreement.
+- The "different model family" judge becomes a fresh `claude -p` reviewer with a hostile brief. The orchestrator
+  scores blind first, and the script refuses to start the reviewer until it has.
+- Runs get random ids in a shuffled order, so nothing printed before the orchestrator's own read gives the variants
+  away; `run --force` rebuilds every run folder from the lab's pristine copies; scores use one strict `n/5` format.
+- The login is checked under the empty HOME before any run; `--real-home` is the fallback, and SKILL.md says what it
+  loses. Windows is refused for the real command rather than quoted half right.
+- `--grade-reply` covers a skill whose reply is the work product (an interview skill such as `grill-me`), and the
+  report says that a headless run shows only the first turn.
+- Cost first, with the budget variable; at least 2 runs per variant.
+- The meta-word list adds upstream's experiment, score, compare and arena to the backlog's words.
+
+**Why.** In the dry run a long path made a run mistype its own folder, the rubric's guidance would have told the
+reviewer about "variants", and the session id leaked through an environment variable. The review round found that run
+ids in variant order let the orchestrator's own read see the variants, and that a rerun started from the previous
+run's edits.
+
 ---
 
 ## agent-orchestration
@@ -590,6 +670,8 @@ to a new `grilling` skill that asks questions in rounds.
 - A "When it's done" section: no unresolved branches, "could you hand the plan to someone else", and a summary of the
   decisions for the user to confirm.
 - It keeps one question at a time.
+- With only a goal and no plan, it suggests running `/brainstorm` first; without it, it asks for two or three ways to
+  reach the goal before grilling one, and grills the user's idea if they decline.
 
 **Why.** The short version stopped early and ended without a record of what was decided.
 
@@ -667,6 +749,85 @@ contributors then copy whatever shape exists.
 - The scrap signals are kept; the new sketch must be smaller than the old one.
 
 **Why.** The design step should work in a plain Claude Code session with only this skill installed.
+
+### brainstorm (Original)
+
+Ideas from pstack, with no shared text or structure (0 of about 2,500 word 6-grams): "loosen constraints that don't
+serve the goal as readily as you add ones that do" from [`sharpen`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/sharpen) became the hard and assumed
+constraint sort and the "remove the biggest constraint" lens; settling an empirical fork by trying it, from the
+[prototype playbook](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/playbooks/prototype.md), became the throwaway prototype in Converge. Side
+by side prototypes also appear in upstream's `principle-exhaust-the-design-space`. Separate briefs per lens follow this
+repository's `arena`.
+
+**Problem.** Interviewing a plan narrows it. Starting with `grill-me` when there is only a goal locks in the first
+idea before any alternative exists, and one model's ideas tend to cluster around that first idea.
+
+**What it does.** Frame in at most three questions, diverge through named lenses with no judging, react with keep,
+kill or combine marks over two rounds, converge on 3 to 5 options weighed without a score after the facts are settled,
+with a premortem each, and hand a one-page summary to `grill-me`. The flow is the owner's design, written for Claude
+Code (the Agent tool for optional per-lens subagents, one question at a time).
+
+**Why.** The owner asked for a step before `grill-me`: widen, then settle. The cold run on a real question in this
+repository reached a full summary; the review round fixed a subagent brief that withheld the constraints its lens
+needed and ratings made before the facts were in.
+
+### sharpen (Adapted from [pstack `sharpen`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/sharpen))
+
+Closest upstream: `skills/sharpen/SKILL.md`, `skills/in-your-own-words/SKILL.md` and
+`skills/poteto-help/references/prompting.md`. The body shares about 25% of its word 6-grams with them (16% from
+`sharpen`, 9% from `prompting.md`).
+
+**Problem.** Agents start on the literal wording of a task, miss what the user is after, and add constraints instead
+of questioning the ones that do not serve the goal.
+
+**What this version changes.**
+- The upstream paragraph becomes numbered steps; the `in-your-own-words` restatement (the goal, the problem behind it,
+  and why) is the first.
+- A confirm step is added on purpose. Upstream works "without narrating the framing"; here the agent confirms in a
+  fixed six-line shape (Goal, Why, Outside check, Missing, Loosen or add, Your call) with AskUserQuestion or a plain
+  question, then works. The lines check understanding; they are not a new prompt, and "don't hand back a rewritten
+  prompt" is kept.
+- The prompt checklist from `prompting.md` is inline: put in the goal, the done check, the proof, the known facts and
+  the constraints; leave out the how, a list of skills or steps, and the user's theory of the cause until the agent
+  restates the problem. Its mentions of `/recall`, `/how`, `/why`, `/teach` and `/loop` are dropped.
+
+**Why.** The dry run on backlog item M3 showed that without a fixed shape the confirm ran to about 20 lines.
+
+### agent-friendly-audit and `mine.mjs` (Adapted from [pstack `correct`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/correct))
+
+Closest upstream: `skills/correct/SKILL.md`, with ideas from `skills/automate-me/SKILL.md` (parallel slices, no glob
+across projects), `docs/guide/09-make-it-yours.md`, `skills/architect/references/design-red-flags.md`, and the
+author's post on X from mid-October 2026 (an inverse pyramid of effort: the codebase first, then static analysis, then
+prose, and least of all human review). `SKILL.md` shares about 3% of its word 6-grams with them; the structure is
+`correct`'s (the fix order, proving each check, exceptions with a reason, an expiry and an approver, the rule table, "a
+class counts once it has happened twice", and the sentence about agent contributors). `SLICE-BRIEF.md`,
+`PLAN-TEMPLATE.md` and `mine.mjs` are mine.
+
+**Problem.** The same agent mistakes get corrected again and again in review and in chat, and each fix lands as one
+more sentence in an instruction file that nothing enforces.
+
+**What this version changes.**
+- `correct` fixes the top classes at once, one commit each. Here that is a proposal: a plan backed by counts, and
+  nothing is written until the user says yes.
+- Evidence comes in four named slices (review comments through the GitHub MCP tools or `gh api` REST, commit history
+  on the default branch, this project's Claude Code transcripts and memory, the instruction files), mined by read-only
+  subagents with a bundled brief, or in turn without them.
+- Confidence levels are new: two or more sources make a class high confidence (upstream `automate-me`'s "2+ slices"
+  means time slices of transcripts). Live copies count toward a class but not toward confidence. Rules for empty or
+  bot-only slices, for too little evidence (propose nothing), and for classes already enforced.
+- Each proposed check is proven in a scratch folder against `git show <sha>^`; a pattern with live copies becomes a
+  ratchet; a check that allows exceptions must fail on an expired one. Open questions are answered with a prototype.
+  The prompt is confirmed first, with `/sharpen` as an optional extra.
+- Privacy rules are new: pointers instead of raw excerpts, synthetic inputs for proofs, approvals recorded by role or
+  handle, never a person's name.
+- `mine.mjs` is new and read only: `commits` lists fix and revert commits with their files; `transcripts` prints only
+  what the user typed, reads only this repository's transcript folders, leaves out the live session, and redacts
+  emails, tokens, keys and URL credentials; `folders` finds the folders and shows home paths as `~`.
+
+**Why.** The backlog item and the post's recipe: put the effort where it holds without agent judgment, back it with
+data, and keep secrets out of what gets written. The review round found that secrets in environment-variable form
+(`GITHUB_TOKEN=...`) printed unredacted and that `transcripts` would read any project's folder; both are covered by
+tests now. The cold run on this repository found live instances of two classes in existing code.
 
 ---
 
