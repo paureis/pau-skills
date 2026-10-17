@@ -48,6 +48,61 @@ Read "How to work an item" first.
    the PR.
 7. **Update this file**: move the item to "Done" with the PR link.
 
+## How to run a batch
+
+The first batch (P0.2 to P0.4, N1 to N4, merged as pull request 6) was run this way, and it worked. Repeat it. One
+session is the orchestrator; it follows `lean-subagent-dev` (type `/lean-subagent-dev` at the start) and builds
+nothing itself except the integration.
+
+1. **Pick 3 or 4 items** that touch different files. New skills run well in parallel; items in section M edit
+   existing skills and shared files, so run those one at a time or give each a disjoint set of files.
+2. **One git worktree per builder**, all from the same commit of the working branch:
+   `git worktree add -b par/<batch>/<item> ../pau-skills-wt/<item> <base>` (a sibling folder, outside the checkout). Get the upstream source once into the
+   scratchpad (step 1 of "How to work an item") and give every builder its path.
+3. **Brief each builder** with the fields of `skills/agent-orchestration/lean-subagent-dev/BRIEF-TEMPLATE.md`: the
+   goal and its backlog item, the worktree, the files it may create, the files it must not touch, the rules that
+   apply (tier, attribution, standalone, language-neutral, no dashes, Node standard library), what done means
+   (`npm test`, `npm run scrub`, `node scripts/build-marketplace.mjs --check`, `claude plugin validate . --strict`,
+   mutations through `mutate.sh` after committing, and a dry run on a real or fixture target), when to stop and
+   report, "commit, never push", and a fixed report format. Ask the report for the drafts of everything the builder
+   may not write: the README bullet, the ORIGINS section (from a real `git diff --no-index` against upstream, with a
+   shared-text estimate), the NOTICE file list, the `which-skill` line, any `COPIES` entry, and "anything I was unsure
+   about". Launch all builders in one message, in the background.
+4. **The orchestrator owns the shared files**: `README.md`, `docs/ORIGINS.md`, `NOTICE`, `CHANGELOG.md`,
+   `.claude-plugin/marketplace.json`, `skills/session-discipline/which-skill/SKILL.md`, the plugin READMEs,
+   `tests/standalone.test.mjs` and this file. Builders never touch them and never run `scripts/new-skill.mjs`, which
+   edits them. Save each report's drafts to a notes file in the scratchpad as it arrives, so they survive a context
+   summary.
+5. **When a builder reports**: read its diff, rerun the checks in its worktree yourself, then launch one fresh
+   reviewer with the reviewer prompt at the end of `skills/verification/review-triage/TRIAGE.md`, pointed at the
+   worktree, the diff range and the backlog item. For a skill that generates or drives something (as `verify-app`
+   does), also launch a cold run: a fresh agent that follows the skill literally on a fixture and lists every place
+   the instructions failed. In the first batch the cold run found problems the reviewer missed.
+6. **Triage every finding** with `TRIAGE.md`, then send one fix round back to the same builder (SendMessage keeps its
+   context), with each finding numbered and "test first" for script items. After it reports, give the fix a second
+   look yourself, on the fix only, and try the riskiest fix by hand. Then stop: anything new goes to an issue or to
+   the owner.
+7. **Merge** each finished branch into the working branch with `git merge --no-ff`, one at a time, and run the full
+   suite after each merge.
+8. **Integrate** once, after the last merge: README (the reference bullets, the problem lists, the skill badge, the
+   tier lists), ORIGINS, NOTICE, `which-skill`, `evaluator` or other links the items ask for, plugin READMEs and
+   descriptions, minor version bumps for every plugin whose files changed and for the bundle, CHANGELOG, and the
+   statuses here. Run all four checks, commit, push, and open one pull request that says how each item was built
+   and checked and what the owner must decide.
+9. **Clean up** the worktrees and `par/` branches after checking each is clean and fully merged
+   (`git worktree remove`, `git branch -d`). After the owner merges, update the skill count on the profile README in
+   `paureis/paureis` (the `pau-skills` line).
+
+Things that bit the first batch:
+- Subagents cannot launch subagents. A builder that needs "a fresh agent" for a dry run uses a separate `claude -p`
+  process, or reports the step as not done; the orchestrator can run the cold run instead.
+- Each Bash call is a fresh shell: variables do not survive between calls, and `$!` after `cd dir && cmd &` is the
+  subshell, not the app. Skills that start processes must save state to a file and record the real process ID.
+- Reviewers found real bugs in every item, including leaks in arena's blind judging and cleanup that could kill
+  processes it did not start. Do not skip the review because the builder's own checks passed.
+- The auto tier is full (12 skills, 4,448 of 4,500 characters). Every item left in this file is typed tier, so the
+  limit does not block anything planned.
+
 ## Decisions taken (2026-10-17)
 
 1. **Tests.** Adopt pstack's position: prefer no new test over a bad test. Add its two-edit check to `tdd`: a test
@@ -60,6 +115,10 @@ Read "How to work an item" first.
    mid-sentence colons or semicolons. (Item P0.4.)
 4. **Context cost.** Every skill description loaded into every session costs context, so skills are split into two
    tiers and a test enforces the limits. (Item P0.2.)
+5. **`project-setup` stays standalone.** It does not offer to generate a verification skill: `verify-app` is in the
+   auto tier, so the agent reaches for it when a change needs proving in the running app.
+6. **Shortened auto descriptions stay as they are.** The most used trigger phrases of `migration-review` were
+   restored; restoring more would cost characters from another auto skill for little gain.
 
 ## Context budget
 
@@ -372,10 +431,11 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 
 ## Order
 
-1. P0.2, P0.3, P0.4 (groundwork; touches many files, done by one session).
-2. N1 verify-app, N2 arena with N3 architect, N4 bug-fix (independent, can run in parallel worktrees).
-3. N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval.
-4. M1 to M11 (edits to existing skills; one at a time, they touch shared files).
+1. Done: P0.2, P0.3, P0.4 (groundwork).
+2. Done: N1 verify-app, N2 arena with N3 architect, N4 bug-fix.
+3. **Next:** N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval (three builders in parallel).
+4. M1 to M11 (edits to existing skills; one at a time, or in disjoint groups, because they touch shared files).
+   M1 (`tdd`) first: it carries a decision the owner already took.
 5. N8 overnight-run, N9 engineering-principles.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
