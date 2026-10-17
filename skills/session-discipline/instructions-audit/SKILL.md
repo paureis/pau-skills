@@ -1,7 +1,6 @@
 ---
 name: instructions-audit
-description: Audit the instruction files a coding agent reads (CLAUDE.md at every level, CLAUDE.local.md, imported files, .claude/rules, AGENTS.md, .cursorrules, Copilot instructions and similar) for token cost, duplicated and contradictory rules, stale paths and commands, vague rules, secrets, and missing essentials, then produce a ranked report with concrete proposed edits and apply only the ones the user approves. Use when the user says "audit my CLAUDE.md", "clean up CLAUDE.md", "my CLAUDE.md is too long", "the agent keeps ignoring my rules", "review our AGENTS.md", "are my instructions stale", "trim the rules file", or before handing a repository's agent setup to a team.
-disable-model-invocation: true
+description: "Audit existing agent instruction files (CLAUDE.md, AGENTS.md, rules) for token cost, duplicates, contradictions, stale paths, vague rules and secrets, and propose edits. Use when the user says 'audit my CLAUDE.md', 'clean up CLAUDE.md', 'my CLAUDE.md is too long', 'the agent keeps ignoring my rules' or 'are my instructions stale'."
 argument-hint: "[project root, default: current directory]"
 ---
 
@@ -80,8 +79,8 @@ Open `CHECKS.md` and work through its checklist for every file. The scan cannot 
       what any competent agent does by default.
 - [ ] **Rules that keep being broken**: check `git log -p` on the instruction files for rules that were reworded or
       repeated, and ask the user which rules the agent ignores. Each becomes a hook candidate: name the event, what it
-      matches and what it blocks. If the `rule-to-hook` skill is installed, suggest the user run `/rule-to-hook` (or
-      `/<plugin>:rule-to-hook` from a plugin) to build the hook.
+      matches and what it blocks. If the `rule-to-hook` skill is installed, use it to build the hook once the user
+      approves that finding.
 - [ ] **Missing essentials**: how to install, build, test (all and a single test), lint and format; where the main
       code, tests and config live; anything an agent must never touch. Check that each answer is true now.
 - [ ] **Imports and layering**: an imported file that is huge or mostly irrelevant; a local file
@@ -110,6 +109,9 @@ Done when: the report is written, every finding has a concrete edit or an explic
 you", and nothing has been changed on disk.
 
 ## Phase 4: Apply approved edits only
+
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
 
 1. Ask which findings to apply. Accept numbers, ranges, "all critical and high", or "none".
 2. For each approved finding, show the final diff for that file, then apply it with the editor tool. Group edits by

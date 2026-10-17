@@ -1,7 +1,6 @@
 ---
 name: session-close
-description: Close a working session in a fixed order (clean tree, retrospective with the rules audit and the stale-reference check, roadmap and log updated, detailed handoff, commit and push) so the next session starts from files instead of memory. Type it to end a session, when the context is nearly full, or when a roadmap item meets its definition of done and the next one will not fit in what is left of the session.
-disable-model-invocation: true
+description: "End a working session in a fixed order: clean tree, short retrospective, roadmap and log, handoff file, commit and push. Use when the user says 'close the session', 'end the session', 'wrap up this session', 'we are done for today', when the context is nearly full, or when a roadmap item is done and the next will not fit."
 argument-hint: "[optional: what the next session should focus on]"
 ---
 
@@ -9,6 +8,9 @@ argument-hint: "[optional: what the next session should focus on]"
 
 One command for the loop: work -> reflect -> prepare the next session. It runs in full and in this order; no step is
 skipped silently. If a step does not apply, say why.
+
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
 
 ## Configuration
 
@@ -24,7 +26,7 @@ The project's definition of done (which suites must pass before something counts
 
 ## 0. When
 
-The user starts this skill by typing it; the agent cannot start it. It fits when:
+It fits when:
 
 - the user wants to end the session;
 - the context is nearly full (a `CONTEXT WARNING` or `CONTEXT CRITICAL` in a tool result, if the project has a hook
@@ -32,9 +34,9 @@ The user starts this skill by typing it; the agent cannot start it. It fits when
 - a roadmap item meets its definition of done and the next one does not fit in what is left of the session.
 
 If `CONTEXT WARNING` or `CONTEXT CRITICAL` appears during the close, keep going and keep each step short. Do not
-estimate context use yourself; the injected figure is authoritative. For the agent to ask for a close on its own at a
-warning, the project's `CLAUDE.md` needs a line saying so, for example "At a CONTEXT WARNING, finish the current
-action and ask the user to run /session-close".
+estimate context use yourself; the injected figure is authoritative. At a warning, the agent may start the close on its
+own, and it then asks first, as said at the top. A project that wants this every time can say so in its `CLAUDE.md`,
+for example "At a CONTEXT WARNING, finish the current action and start the session close".
 
 ## 1. Clean state
 
@@ -55,8 +57,8 @@ project root.
 - Run the short version here: list the corrections the user made and the work that was redone; write each lesson
   that will happen again as a proposed line in a scratch file; score it with
   `node "${CLAUDE_SKILL_DIR}/audit.mjs" --check <file>`; and apply only the lines that are not already there and that
-  the user approves. If the `retrospective` skill is installed and the user wants the full version, suggest they run
-  `/retrospective` (or `/<plugin>:retrospective` from a plugin) now, and continue with the next step when it is done.
+  the user approves. If the `retrospective` skill is installed and the user wants the full version, run it now, and
+  continue with the next step when it is done.
 - Either way, run `node "${CLAUDE_SKILL_DIR}/audit.mjs" --stale` from the project root: every path, command or script
   cited in `CLAUDE.md` and memory that no longer exists is fixed or deleted in the same session.
 - Bar for adding anything: it will happen again, it names the failure it prevents, and it fits in 8 lines. If a rule

@@ -1,7 +1,6 @@
 ---
 name: project-setup
-description: Set up Claude Code for a project through a short, adaptive interview, then write the project CLAUDE.md and, with a separate yes, the user's personal preferences. Asks one question at a time with options and a recommended answer, reads the project first so it never asks what the files already show, adapts to a Learn, Build or Mix session, and ends with a cheat sheet for the user's surface (desktop app, terminal, editor or web) and a first small task. Speaks the user's language (for example Spanish) from the first message. Written for people new to Claude Code, and useful for anyone starting work in a new repository. Use when the user says "set up Claude Code for this project", "I am new to Claude Code", "help me get started", "onboard me", "write my CLAUDE.md", "how should I work with Claude Code on this", or opens a new project and does not know where to begin.
-disable-model-invocation: true
+description: "Set up Claude Code for a project through a short interview for newcomers, in their language, then write CLAUDE.md on a yes and start a first task. Use when the user says 'set up Claude Code for this project', 'I am new to Claude Code', 'help me get started', 'onboard me' or 'how should I work with Claude Code on this'."
 argument-hint: "[quick | full] [language, for example spanish]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**), Read(~/.claude/CLAUDE.md), Bash(git status *), Bash(git log *), Bash(git remote -v), Bash(git branch --show-current), Bash(printenv CLAUDE_CODE_ENTRYPOINT)
 ---
@@ -70,6 +69,9 @@ rules above). The English version:
 > I will ask you some short questions about you and this project: about five for a quick setup, or about ten.
 > Then I will show you a CLAUDE.md file, which Claude Code reads at the start of every session. Nothing changes until
 > you say yes. First I will look at the project files. I will only read them.
+
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
 
 Then read, and do not change anything. Use the file tools (Read, Glob, Grep) to look. The only shell commands you
 need are `git status`, `git log --oneline -5`, `git remote -v`, `git branch --show-current` and

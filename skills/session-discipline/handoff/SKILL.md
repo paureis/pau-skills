@@ -1,12 +1,14 @@
 ---
 name: handoff
-description: "Transfer full working context from this session to a future one so work resumes cleanly after a pause. Use when the user says \"handoff\", \"hand off\", \"wrap up for now\", \"pause here\", \"let's continue this later\", when a session is getting long and context may be degrading, or when switching focus within the same project. This is about pausing/resuming a SESSION, not shipping finished work. Two modes: park (default: write a handoff file the next session reads) or immediate (print the handoff inline to copy into a new chat or another tool). General-purpose; works in any project."
-disable-model-invocation: true
+description: "Write a handoff so a fresh session or another tool can resume with no prior context, as HANDOFF.md or a block to copy. Use when the user says 'handoff', 'hand off', 'pause here', 'let's continue this later', 'wrap up for now', or the session is getting long. Pauses work in progress; does not commit, push or report shipped work."
 ---
 
 # Handoff
 
 Capture the full working context of this session into a structured handoff so a future session (a fresh Claude Code session, a new chat, or another tool) can pick up exactly where this one stopped, with no prior context.
+
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
 
 ## Modes
 
@@ -25,8 +27,8 @@ off, even when a written rule requires it. Before Step 1, state one of these to 
 - **"Running the retrospective now"**: run this short version: list the corrections the user made and the work that
   was redone; for each one that will happen again, propose one line for `CLAUDE.md` or memory, after checking that
   no existing line already says it; show the exact lines and apply only the ones the user approves. If the
-  `retrospective` skill is installed and the user wants the full version, suggest they run `/retrospective` (or
-  `/<plugin>:retrospective` from a plugin) first, then come back and write the handoff.
+  `retrospective` skill is installed and the user wants the full version, run it first, then come back and write the
+  handoff.
 - **"Skipping the retrospective because <reason>"**, only for a genuinely trivial session
   (a one-line fix, a pure question). If corrections were made, work was redone, or a phase
   closed, it is not trivial.
