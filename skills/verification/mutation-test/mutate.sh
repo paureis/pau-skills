@@ -6,11 +6,13 @@
 #   mutate.sh [--label <name>] <file> <command...> < mutation.sed
 #   mutate.sh [--label <name>] <file> <command...> < mutation.patch
 #   mutate.sh [--label <name>] --sed '<expression>' <file> <command...>
+#   mutate.sh --refactor [--label <name>] [--sed '<expression>'] <file> <command...>
 # <file> is relative to the repository root; the command runs from the repository root.
 # The mutation is a unified diff (if it starts with "diff" or "---", applied with `git apply --ignore-whitespace`) or a
 # sed script. Examples:
 #   echo 's/=== tenantId/!== tenantId/' | mutate.sh src/repo.ts npx vitest run tests/repo.test.ts
 #   mutate.sh --label no-auth --sed 's/requireAuth(req)/true/' src/api.ts npm test
+#   git show -R --format= --no-color <sha> -- src/repo.ts | mutate.sh src/repo.ts npm test   (undo a real past fix)
 #
 # Steps, and why each one exists:
 #  1. Refuses to run on a dirty tree: restoring with `git checkout -- <file>` erases every uncommitted change in that
@@ -30,16 +32,23 @@
 # Exit: 0 CAUGHT (the command failed with the mutation), 1 SURVIVED (the command passed: the test cannot fail that
 # way, fix the test), 2 the harness could not do its job (usage, dirty tree, control failed, mutation did not apply,
 # restore failed).
+#
+# --refactor turns the check around, for the second edit of the two-edit test: the edit is a pure refactor of the
+# internals and the command is expected to STAY GREEN. Every step above is the same; only the verdict flips.
+# Exit: 0 KEPT (the command still passes after the refactor), 1 BROKE (the command failed: the test is coupled to the
+# internals, or the edit was not a pure refactor, or it broke the build; the changed lines are printed), 2 as above.
 set -u
 
-usage() { echo "Usage: mutate.sh [--label <name>] [--sed '<expression>'] <file> <command...>   (mutation on stdin unless --sed)" >&2; exit 2; }
+usage() { echo "Usage: mutate.sh [--refactor] [--label <name>] [--sed '<expression>'] <file> <command...>   (edit on stdin unless --sed)" >&2; exit 2; }
 
 label=""
 sed_expr=""
+refactor=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --label) [ "$#" -ge 2 ] || usage; label="$2"; shift 2 ;;
     --sed) [ "$#" -ge 2 ] || usage; sed_expr="$2"; shift 2 ;;
+    --refactor) refactor=1; shift ;;
     --help|-h) usage ;;
     *) break ;;
   esac
@@ -48,21 +57,24 @@ done
 file="$1"
 shift
 tag="${label:+[$label] }"
+# What the edit is called in the output, and the word for a run that could not check anything.
+what="mutation"; stop="NOT MUTATED"
+if [ -n "$refactor" ]; then what="refactor"; stop="NOT REFACTORED"; fi
 
-root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "${tag}NOT MUTATED: not inside a git repository." >&2; exit 2; }
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "${tag}${stop}: not inside a git repository." >&2; exit 2; }
 cd "$root" || exit 2
 
 if [ ! -f "$file" ]; then
-  echo "${tag}NOT MUTATED: $file does not exist (paths are relative to the repository root)." >&2
+  echo "${tag}${stop}: $file does not exist (paths are relative to the repository root)." >&2
   exit 2
 fi
 if [ -n "$(git status --porcelain)" ]; then
-  echo "${tag}NOT MUTATED: the tree has uncommitted changes (the restore would erase those in $file). Commit first:" >&2
+  echo "${tag}${stop}: the tree has uncommitted changes (the restore would erase those in $file). Commit first:" >&2
   git status --short >&2
   exit 2
 fi
 if ! git ls-files --error-unmatch -- "$file" >/dev/null 2>&1; then
-  echo "${tag}NOT MUTATED: $file is not tracked by git, so it cannot be restored." >&2
+  echo "${tag}${stop}: $file is not tracked by git, so it cannot be restored." >&2
   exit 2
 fi
 
@@ -74,15 +86,15 @@ else
   cat > "$mutation"
 fi
 if [ ! -s "$mutation" ]; then
-  echo "${tag}NOT MUTATED: the mutation (patch or sed) arrived empty." >&2
+  echo "${tag}${stop}: the $what (patch or sed) arrived empty." >&2
   exit 2
 fi
 
-echo "=== ${tag}CONTROL (unmutated): $*"
+echo "=== ${tag}CONTROL (without the $what): $*"
 "$@"
 control=$?
 if [ "$control" -ne 0 ]; then
-  echo "${tag}NOT MUTATED: the command fails without the mutation (exit $control): a failure with it would prove nothing." >&2
+  echo "${tag}${stop}: the command fails without the $what (exit $control): its result with the $what would prove nothing." >&2
   exit 2
 fi
 
@@ -91,18 +103,30 @@ before="$(content_hash "$file")"
 if head -c 4 "$mutation" | grep -qE '^(diff|---)'; then
   touched="$(git apply --numstat "$mutation" 2>/dev/null | awk '{print $3}')"
   if [ "$touched" != "$file" ]; then
-    echo "${tag}NOT MUTATED: the patch must touch only $file and it touches: ${touched:-nothing it can parse}" >&2
+    echo "${tag}${stop}: the patch must touch only $file and it touches: ${touched:-nothing it can parse}" >&2
     exit 2
   fi
-  git apply --ignore-whitespace "$mutation" || { echo "${tag}NOT MUTATED: the patch did not apply." >&2; git checkout -- "$file"; exit 2; }
+  git apply --ignore-whitespace "$mutation" || { echo "${tag}${stop}: the patch did not apply." >&2; git checkout -- "$file"; exit 2; }
 else
   # GNU sed takes -i alone; BSD sed (macOS) needs an explicit, empty backup suffix.
   if sed --version >/dev/null 2>&1; then inplace=(-i); else inplace=(-i ''); fi
-  sed "${inplace[@]}" -f "$mutation" "$file" || { echo "${tag}NOT MUTATED: sed failed." >&2; git checkout -- "$file"; exit 2; }
+  sed "${inplace[@]}" -f "$mutation" "$file" || { echo "${tag}${stop}: sed failed." >&2; git checkout -- "$file"; exit 2; }
+fi
+# A deleted or emptied file fails any command (a missing module, an empty import), so its CAUGHT would prove nothing.
+# Reversing the commit that added or renamed the file gives exactly that patch.
+if [ ! -f "$file" ]; then
+  echo "${tag}${stop}: the $what deletes $file (a reversed commit that added or renamed it?): a missing file proves nothing." >&2
+  git checkout -- "$file"
+  exit 2
+fi
+if [ ! -s "$file" ]; then
+  echo "${tag}${stop}: the $what leaves $file empty: an empty file proves nothing." >&2
+  git checkout -- "$file"
+  exit 2
 fi
 after="$(content_hash "$file")"
 if [ "$before" = "$after" ]; then
-  echo "${tag}NOT MUTATED: the mutation did not change the content of $file (does the pattern match?)." >&2
+  echo "${tag}${stop}: the $what did not change the content of $file (does the pattern match?)." >&2
   git checkout -- "$file"
   exit 2
 fi
@@ -110,14 +134,14 @@ fi
 changed_lines() {
   diff -U0 <(git show "HEAD:./$file" | tr -d '\r') <(tr -d '\r' < "$file") | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' | cut -c1-160
 }
-echo "=== ${tag}MUTATION APPLIED to $file:"
+if [ -n "$refactor" ]; then echo "=== ${tag}REFACTOR APPLIED to $file:"; else echo "=== ${tag}MUTATION APPLIED to $file:"; fi
 changed_lines
 
 echo "=== ${tag}COMMAND: $*"
 "$@"
 code=$?
-survived_lines=""
-[ "$code" -eq 0 ] && survived_lines="$(changed_lines)"
+# Kept for the verdicts that need them read before believing them: SURVIVED, and BROKE in refactor mode.
+verdict_lines="$(changed_lines)"
 
 git checkout -- "$file"
 if ! git diff --quiet -- "$file" || [ -n "$(git status --porcelain -- "$file")" ]; then
@@ -127,10 +151,19 @@ if ! git diff --quiet -- "$file" || [ -n "$(git status --porcelain -- "$file")" 
 fi
 echo "=== ${tag}RESTORED $file (no diff, no status)."
 
+if [ -n "$refactor" ]; then
+  if [ "$code" -eq 0 ]; then
+    echo "=== ${tag}RESULT: KEPT (the command still passes after the refactor: the test does not depend on what it changed)."
+    exit 0
+  fi
+  echo "=== ${tag}RESULT: BROKE (the command failed with exit $code after the refactor). Read the failure first: a build error, syntax error or missing import means the refactor was wrong, not the test. A failing assertion means the test is coupled to the internals or the edit changed behaviour. Lines that changed:"
+  printf '%s\n' "$verdict_lines" | sed 's/^/    /'
+  exit 1
+fi
 if [ "$code" -ne 0 ]; then
   echo "=== ${tag}RESULT: CAUGHT (the command failed with exit $code: the test detects the mutation)."
   exit 0
 fi
 echo "=== ${tag}RESULT: SURVIVED (the command passed with the mutation: the test does not detect it). Lines that changed:"
-printf '%s\n' "$survived_lines" | sed 's/^/    /'
+printf '%s\n' "$verdict_lines" | sed 's/^/    /'
 exit 1
