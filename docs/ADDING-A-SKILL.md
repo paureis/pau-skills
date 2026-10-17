@@ -13,6 +13,12 @@ order; the scrub check and the validator at the end catch most of what gets forg
 2. **Scaffold it**: `node scripts/new-skill.mjs <plugin> <skill-name>`. This creates the `SKILL.md` and adds a stub
    to `docs/ORIGINS.md` and a bullet to the plugin's list in the README reference. Every placeholder is marked
    `TODO(new-skill)`, and the scrub check fails until none is left. The script refuses a name that already exists in any plugin.
+   The scaffold sets `disable-model-invocation: true`: the skill is in the **typed tier**, so its description stays out
+   of every session's context and it runs only when the user types it. Remove that line only for a skill the agent
+   must start on its own, because the user would not think to type it at that moment (an auto-tier skill). The auto
+   tier holds at most 12 skills, each description at most 400 characters and 4,500 in total;
+   `tests/context-budget.test.mjs` enforces this. A typed skill cannot be started by another skill, so a mention of
+   one says "suggest the user run `/<name>`".
 
 3. **Copy the skill in and generalise it.** Bring its `SKILL.md` body and any bundled files across from the project.
    Then:

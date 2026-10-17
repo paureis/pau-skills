@@ -73,6 +73,9 @@ export function plan(root, pluginName, skill) {
     '---',
     `name: ${skill}`,
     `description: ${MARK}: what the skill does, then "Use when ..." with the phrases a user would actually type.`,
+    // Typed tier by default: the description stays out of every session's context until the user types the skill.
+    // Remove this line only for a skill the agent must start on its own (docs/ADDING-A-SKILL.md, step 2).
+    'disable-model-invocation: true',
     '---',
     '',
     `# ${skill}`,
