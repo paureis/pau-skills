@@ -3,6 +3,16 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-17: config files with a byte order mark are honoured
+
+- `hooks/lib/config.mjs` ignored a `.claude/pau-skills.json` that starts with a UTF-8 byte order mark (some Windows
+  editors write one), so a hook could not be turned off. It now drops the mark before parsing. The same fix applies to
+  `instructions-audit`, where the mark hid a rules file's `paths:` frontmatter and a `package.json`'s scripts, and to
+  the plan file of `parallel-worktrees`, and to the `package.json` read by `audit.mjs --stale` in `retrospective` and
+  `session-close`, which reported every `npm run` script as missing.
+- Versions: pau-skills 0.9.2, pau-skills-hooks 0.1.1, session-discipline 0.7.2, verification 0.7.1,
+  agent-orchestration 0.5.2, guards 0.4.1.
+
 ## 2026-10-17: code fences close the CommonMark way in arena and instructions-audit
 
 - `arena.mjs` and the `instructions-audit` scanner toggled a code fence on any fence line, so a shorter fence inside a

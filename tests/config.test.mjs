@@ -37,6 +37,15 @@ test('invalid JSON counts as empty, never as an error', () => {
   assert.deepEqual(loadConfig({ home, project }), {});
 });
 
+test('a file that starts with a UTF-8 byte order mark is honoured', () => {
+  const { home, project } = dirs();
+  writeFileSync(join(project, '.claude', 'pau-skills.json'), '\uFEFF' + JSON.stringify({ hooks: { 'secret-guard': false } }));
+  writeFileSync(join(home, '.claude', 'pau-skills.json'), '\uFEFF' + JSON.stringify({ x: { p: 1 } }));
+  const c = loadConfig({ home, project });
+  assert.equal(hookEnabled('secret-guard', c, {}), false);
+  assert.deepEqual(hookOptions('x', c), { p: 1 });
+});
+
 test('PAU_SKILLS_DISABLE turns off named hooks, or all of them', () => {
   assert.equal(hookEnabled('a', {}, { PAU_SKILLS_DISABLE: 'b, a' }), false);
   assert.equal(hookEnabled('c', {}, { PAU_SKILLS_DISABLE: 'b, a' }), true);

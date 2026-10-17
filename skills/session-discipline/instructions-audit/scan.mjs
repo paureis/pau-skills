@@ -258,7 +258,8 @@ export function parseTargets(text, kind) {
   return out;
 }
 
-const readMaybe = (f) => { try { return readFileSync(f, 'utf8'); } catch { return null; } };
+// A leading byte order mark (some Windows editors write one) is dropped, or it hides frontmatter and breaks JSON.
+const readMaybe = (f) => { try { return readFileSync(f, 'utf8').replace(/^\uFEFF/, ''); } catch { return null; } };
 
 /** Project tooling the command references are checked against, read from a directory. */
 export function readTooling(dir) {

@@ -330,7 +330,7 @@ export function main(argv) {
   }
 
   let plan;
-  try { plan = JSON.parse(readFileSync(opts.file, 'utf8')); } catch (e) { console.error(`cannot read plan ${opts.file}: ${e.message}`); return 2; }
+  try { plan = JSON.parse(readFileSync(opts.file, 'utf8').replace(/^\uFEFF/, '')); } catch (e) { console.error(`cannot read plan ${opts.file}: ${e.message}`); return 2; }
   const problems = validatePlan(plan);
   if (problems.length) { console.error(`invalid plan:\n  ${problems.join('\n  ')}`); return 2; }
   let files;

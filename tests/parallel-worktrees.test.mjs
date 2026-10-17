@@ -221,6 +221,10 @@ test('CLI: status exits 0, a missing base exits 1; plan-check exits 1 on overlap
   const clean = join(root, 'clean.json');
   writeFileSync(clean, JSON.stringify({ pieces: [{ name: 'api', files: ['src/api/**'] }, { name: 'db', files: ['src/db/**'] }] }));
   assert.equal(runNode(SCRIPT, { args: ['plan-check', clean, '--repo', repo] }).code, 0);
+  const bom = join(root, 'bom.json');
+  writeFileSync(bom, '\uFEFF' + JSON.stringify({ pieces: [{ name: 'api', files: ['src/api/**'] }, { name: 'db', files: ['src/db/**'] }] }));
+  const withBom = runNode(SCRIPT, { args: ['plan-check', bom, '--repo', repo] });
+  assert.equal(withBom.code, 0, withBom.stderr);
 
   const invalid = join(root, 'invalid.json');
   writeFileSync(invalid, '{"pieces": 3}');

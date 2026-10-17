@@ -61,6 +61,13 @@ test('CLI: --check against a fake home, and --stale exit codes', () => {
   writeFileSync(join(project, 'CLAUDE.md'), 'Nothing cited.');
   assert.equal(runNode(AUDIT, { args: ['--stale', '--home', home], cwd: project }).code, 0);
 
+  // A package.json that starts with a byte order mark still counts its scripts.
+  writeFileSync(join(project, 'package.json'), '\uFEFF' + JSON.stringify({ scripts: { build: 'tsc' } }));
+  writeFileSync(join(project, 'CLAUDE.md'), 'Build with `npm run build`.');
+  const bom = runNode(AUDIT, { args: ['--stale', '--home', home], cwd: project });
+  assert.equal(bom.code, 0, bom.stdout);
+  writeFileSync(join(project, 'CLAUDE.md'), 'Nothing cited.');
+
   const report = runNode(AUDIT, { args: ['--home', home], cwd: project });
   assert.equal(report.code, 0);
   assert.match(report.stdout, /== Rule stores ==/);
