@@ -346,6 +346,12 @@ describe('append', () => {
     assert.equal(insideGitTree(link), dir);
     assert.match(append(link, { decision: 'revert', tests: 'pass', hypothesis: 'h', change: 'c' }).err, /git/);
     assert.equal(readFileSync(inside, 'utf8'), before);
+    // A link to a link: only resolving the whole chain finds the repository.
+    const chain = join(tempDir('hillclimb-'), 'chain.tsv');
+    symlinkSync(link, chain);
+    assert.equal(insideGitTree(chain), dir);
+    assert.match(append(chain, { decision: 'revert', tests: 'pass', hypothesis: 'h', change: 'c' }).err, /git/);
+    assert.equal(readFileSync(inside, 'utf8'), before);
     const dangling = join(outside, 'dangling.tsv');
     symlinkSync(join(dir, 'new.tsv'), dangling);
     assert.equal(insideGitTree(dangling), dir);
