@@ -24,8 +24,8 @@ off, even when a written rule requires it. Before Step 1, state one of these to 
 - **"Running the retrospective now"**: run this short version: list the corrections the user made and the work that
   was redone; for each one that will happen again, propose one line for `CLAUDE.md` or memory, after checking that
   no existing line already says it; show the exact lines and apply only the ones the user approves. If the
-  `retrospective` skill is installed and the user wants the full version, suggest they run `/retrospective` (or
-  `/<plugin>:retrospective` from a plugin) first, then come back and write the handoff.
+  `retrospective` skill is installed and the user wants the full version, run it first, then come back and write the
+  handoff.
 - **"Skipping the retrospective because <reason>"**, only for a genuinely trivial session
   (a one-line fix, a pure question). If corrections were made, work was redone, or a phase
   closed, it is not trivial.

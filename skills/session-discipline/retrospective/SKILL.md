@@ -14,7 +14,7 @@ The audit script used below is `${CLAUDE_SKILL_DIR}/audit.mjs`. Run it with `nod
 ## When to Use
 
 - After a multi-step task where corrections were needed, or the user says "retrospective", "what did we learn", "what should we improve".
-- The user starts this skill by typing it; the agent cannot start it or suggest it on its own, because its description is not in the agent's context. It is worth running when, in the session, the user made more than 2 corrections, an artifact was regenerated 3+ times, or steps were improvised that aren't standard.
+- It is worth running when, in the session, the user made more than 2 corrections, an artifact was regenerated 3+ times, or steps were improvised that aren't standard.
 
 ## Step 1: Extract Signals
 

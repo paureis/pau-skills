@@ -91,9 +91,8 @@ delete it. Examples of rewrites:
 Signals: the scan's emphasised rules (capitals, "again", "NEVER"); the same rule reworded several times in
 `git log -p -- CLAUDE.md`; the user saying "it keeps doing X". A rule that has been broken more than twice while
 written down should become a mechanism: a PreToolUse hook, a pre-commit check, a CI step or a test. Describe the
-hook (its event, what it matches, what it blocks), suggest the user run `/rule-to-hook` (or `/<plugin>:rule-to-hook`
-from a plugin) if it is installed, and
-propose shortening the rule to one line that names the hook once it exists.
+hook (its event, what it matches, what it blocks), build it with the `rule-to-hook` skill if it is installed and the
+user approves the finding, and propose shortening the rule to one line that names the hook once it exists.
 
 ### Missing essentials
 An agent should be able to find, from the always-loaded files or one pointer away:

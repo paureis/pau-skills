@@ -79,8 +79,8 @@ Open `CHECKS.md` and work through its checklist for every file. The scan cannot 
       what any competent agent does by default.
 - [ ] **Rules that keep being broken**: check `git log -p` on the instruction files for rules that were reworded or
       repeated, and ask the user which rules the agent ignores. Each becomes a hook candidate: name the event, what it
-      matches and what it blocks. If the `rule-to-hook` skill is installed, suggest the user run `/rule-to-hook` (or
-      `/<plugin>:rule-to-hook` from a plugin) to build the hook.
+      matches and what it blocks. If the `rule-to-hook` skill is installed, use it to build the hook once the user
+      approves that finding.
 - [ ] **Missing essentials**: how to install, build, test (all and a single test), lint and format; where the main
       code, tests and config live; anything an agent must never touch. Check that each answer is true now.
 - [ ] **Imports and layering**: an imported file that is huge or mostly irrelevant; a local file
