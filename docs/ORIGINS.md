@@ -251,6 +251,36 @@ the summary: edits since the user's last message with no check after the last on
 
 **Changes for this release.** None; written for this release.
 
+
+### review-triage and `review-scope.mjs` (Original)
+
+Written in one of my projects on 2026-10-15, as that project's rules for reviewing a change. The rating idea came from
+a "value against effort" chart in a post I read: each candidate change placed by value and effort, shaded by risk, and
+labelled "judgement, not measurement". No text was taken from anywhere.
+
+**Problem.** AI reviews over-verify. They can always find one more thing, and each fix can bring a new bug, so the
+review and fix loop does not end by itself. The project needed limits on what was worth changing: a finding has to
+name a failure (this input, this wrong result) or it is a preference; findings go to must fix, fix if cheap, or leave;
+the risk of the fix is weighed as well as the problem, because a small fix in the riskiest code can break more than it
+repairs; every fix has a test that fails without it; the second look covers only the fix; and there is one review
+round and one fix round.
+
+**Evidence so far.** Two real runs, on 2026-10-16. A release preparation touching 7 files: one review round, nothing
+met the bar, no fix round. A feature of about 600 lines across 11 files: one finding, a misleading message, rated
+fix if cheap and fixed test first in one fix round; the second look covered only the fix. That finding came from
+asking the implementer to list anything it was unsure about. Not yet seen: a must-fix found in review, or a fix that
+caused a new bug, which is the case the round limit exists for. In the same project, a reviewer that checked the plan
+against the real environment before anything was built found a real design gap, which is why the method says review
+before building pays more.
+
+**Changes for this release.** The project's must-fix list and its risky files became configuration in
+`.claude/review-rules.json`, with defaults that hold for any project. The rating became low, medium or high instead of
+1 to 5, and is never turned into a score. Added: the check that a claimed impossible state really is impossible, the
+rule that an unsettled security finding goes to the maintainer, the rule that a repeated finding stays left, the
+reviewer prompt, and `review-scope.mjs`, which prints the rules, scopes the change and flags a fix round with no test,
+in risky code, or outside the change. `TRIAGE.md` and the script are shared with `lean-subagent-dev`, which carries
+identical copies.
+
 ---
 
 ## agent-orchestration
@@ -304,6 +334,33 @@ someone resolves later with less context. Merging every branch and testing once 
 changes broke the build.
 
 **Changes for this release.** None; written for this release.
+
+
+### lean-subagent-dev (Original)
+
+Written in one of my projects on 2026-10-15, as that project's rules for how work runs: who does what, the brief, the
+orchestrator's checks and the review. It was tried there before being generalised.
+
+**Problem.** Subagent workflows I had used ran two reviewer subagents per task, which was slow, and review tools find
+problems without deciding which are worth fixing. I wanted one builder, one checker and a short review: the main
+session keeps the owner's questions and every push, pull request, merge and tag; code and test work goes to one
+subagent with a written brief; the main session reads the diff, reruns the checks and runs a control itself; and the
+review stops after one review round and one fix round.
+
+**Evidence so far.** Two real tasks, on 2026-10-16 (the same two runs as `review-triage`). A release preparation of 7
+files went to one subagent with a written brief; the orchestrator read the diff and reran the typecheck and tests,
+and the review found nothing to fix. A feature of about 600 lines across 11 files went to one subagent from a written
+plan; the orchestrator verified it with its own control (a fake configuration where the right value passed and the
+wrong one failed), and the one finding, which the subagent had raised itself, was fixed in one round. The briefs that
+worked named the exact files, the rules that apply, "commit, never push" and a fixed report format, and the line
+"anything you were unsure about" surfaced the one real finding. Not yet seen: a must-fix in review, or a fix that
+caused a new bug.
+
+**Changes for this release.** The project's own lists became configuration. New: the usage budget (tight, normal,
+generous, from `LEAN_SUBAGENT_BUDGET` or the project file), which sets the delegation threshold, the subagent's model,
+the plan check and how much review to run, because a subagent costs more usage in total, not less; the plan check
+before building; the brief template with its "stop and report if" section; the delegation log, so the way of working
+can be judged after a week; and "when to step up" to the heavier methods.
 
 ---
 

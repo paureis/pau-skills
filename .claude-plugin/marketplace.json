@@ -9,7 +9,7 @@
     {
       "name": "pau-skills",
       "description": "Everything in this marketplace as one plugin: every skill and every hook from session-discipline, verification, agent-orchestration, guards and planning. Install this or the individual plugins, not both.",
-      "version": "0.5.1",
+      "version": "0.6.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -162,7 +162,7 @@
     {
       "name": "session-discipline",
       "description": "Start every session from the written roadmap and the git state, keep the facts a compaction loses, and close in a fixed order: retrospective, roadmap and log, handoff, commit. Plus an instruction-file audit, a guided project setup for new users, and a router over every skill.",
-      "version": "0.4.1",
+      "version": "0.4.2",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -227,7 +227,7 @@
     {
       "name": "verification",
       "description": "Prove work is correct: a mutation harness, a hostile evaluator, test-driven development, flaky-test diagnosis, database migration review, a CI cost method, and hooks that stop tests being weakened and \"done\" being claimed without a check.",
-      "version": "0.4.1",
+      "version": "0.5.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -280,7 +280,7 @@
     {
       "name": "agent-orchestration",
       "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, an evidence-only codebase oracle, and parallel work in separate git worktrees.",
-      "version": "0.3.1",
+      "version": "0.4.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
