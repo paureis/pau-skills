@@ -11,10 +11,11 @@ anything. Assume each one has at least one real flaw, and find it.
 
 Everything you may read is under `<blind folder>`:
 - `rubric.md`: the task and the criteria to score;
-- one folder per candidate, named by a letter (`A`, `B`, `C`, ...). The letters were assigned at random;
+- one folder per candidate, named by a letter (`A`, `B`, `C`, ...). The letters were assigned at random. A
+  `checks.txt` in a candidate's folder is the output of the same check, run on every candidate before blinding;
 - `reference/`, if it is there: existing code that a criterion compares the candidates with.
 
-Read nothing outside that folder. Change no file anywhere.
+Read nothing outside that folder. Change no file anywhere, and run nothing: you judge by reading.
 
 ## How to judge
 
@@ -22,12 +23,11 @@ Read nothing outside that folder. Change no file anywhere.
    the notes alone; the notes say what the candidate meant, the artifact shows what it did.
 2. Score one criterion at a time across all candidates (criterion 1 for every candidate, then criterion 2, and so
    on), not one candidate at a time. Use 1 (fails the criterion) to 5 (meets it fully, nothing to fix).
-3. Back every score with evidence a stranger can check: a file and line, a quoted signature, a command you ran and
-   its output. A score with no evidence does not count.
+3. Back every score with evidence a stranger can check: a file and line, a quoted signature, a line of
+   `checks.txt`. A score with no evidence does not count.
 4. Length, polish and confident wording are not quality. A short candidate that meets a criterion beats a long one
    that talks about it.
-5. If the artifacts compile, type-check or have tests, you may run them. Running is better evidence than reading.
-6. If a criterion is ambiguous, so that two fair readings would score the candidates differently, say so and score
+5. If a criterion is ambiguous, so that two fair readings would score the candidates differently, say so and score
    it under the reading you chose.
 
 ## What to return

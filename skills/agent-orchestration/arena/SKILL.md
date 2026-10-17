@@ -27,7 +27,8 @@ Bundled files, open them when you reach their phase:
 - `${CLAUDE_SKILL_DIR}/arena.mjs`: `init` makes the candidate folders, the rubric and the synthesis note; `blind`
   copies the candidates under shuffled letters for the judge (Node 20+, no dependencies)
 
-Make a task list with one entry per phase (Frame, Fan out, Judge, Pick, Graft, Verify) before launching anything.
+Make a task list with one entry per phase (Frame, Fan out, Score, Judge, Pick, Graft, Verify) before launching
+anything.
 
 ## Cost first
 
@@ -65,16 +66,22 @@ Every candidate gets the same prompt, so the prompt is the contract.
    A different model or effort level per candidate adds a little more diversity. The Agent tool's `model` and
    `effort` fields are meant to be set only on an explicit request, so set them only when the user asked (for
    example "/arena ... one on a smaller model", "one at max effort"), and name only a model the session offers.
-5. **The folders.** Put the arena folder outside the repository (a temporary folder) or in a folder git ignores:
+5. **The folders.** The arena folder holds the rubric and every brief, so no candidate may ever work in it or next
+   to it. Put it in a temporary folder outside the repository, and never tell a candidate its path:
    ```bash
    node "${CLAUDE_SKILL_DIR}/arena.mjs" init <arena-dir> --n <N> --task "<one line>"
    ```
-   Write the rubric into `<arena-dir>/rubric.md`.
-6. **The briefs.** Fill `CANDIDATE-BRIEF.md` once per candidate. Only the "Your direction" field differs. Save the
-   exact prompt each candidate gets in its `candidate-<k>/brief.md`.
+   Write the rubric into `<arena-dir>/rubric.md`. For a candidate that only writes new files, make its own work
+   folder somewhere else (`mktemp -d`, one per candidate); a candidate that changes the repository gets a worktree
+   in Phase 2.
+6. **The base commit**, for a task that changes the repository. Commit your own work first: a worktree starts from
+   a commit and does not carry uncommitted changes. Write `git rev-parse HEAD` on the `Base commit:` line of
+   `<arena-dir>/SYNTHESIS.md`. Every candidate starts from it and every patch is taken against it.
+7. **The briefs.** Fill `CANDIDATE-BRIEF.md` once per candidate. Only the "Your direction" field and the work folder
+   differ. Save the exact prompt each candidate gets in its `candidate-<k>/brief.md`.
 
-**Done when** the rubric has 3 to 6 checkable criteria, every brief field is filled, and the briefs differ only in
-their direction.
+**Done when** the rubric has 3 to 6 checkable criteria, the base commit is recorded (for a repository change), every
+brief field is filled, and the briefs differ only in their direction and work folder.
 
 ## Phase 2: Fan out
 
@@ -84,11 +91,17 @@ other briefs.
 
 Where each candidate works:
 - **It changes the repository** (code, or a sketch inside the real codebase): set `isolation: "worktree"`. Each gets
-  its own temporary worktree and commits there; the result names the worktree path and branch. When it returns, save
-  the change as `candidate-<k>/change.patch` (`git diff <base-commit> <branch>`) and its final message as
+  its own temporary worktree and commits there; the result names the worktree path and branch. When it returns,
+  check that its branch starts from the base commit (`git merge-base --is-ancestor <base-commit> <branch>`), then
+  save the change as `candidate-<k>/change.patch` (`git diff <base-commit> <branch>`) and its final message as
   `candidate-<k>/notes.md`.
-- **It only writes new files** (a design document, a standalone sketch): its output folder is `candidate-<k>/`
-  itself. Save its final message as `candidate-<k>/notes.md`.
+- **It only writes new files** (a design document, a standalone sketch): it writes in its own work folder from
+  Frame. When it returns, copy that folder's contents into `candidate-<k>/` (`cp -R <work-folder>/. <arena-dir>/candidate-<k>/`)
+  and save its final message as `candidate-<k>/notes.md`.
+
+If the artifact can be run (tests in the patch, a sketch that type-checks), run the same check on every candidate
+yourself, in its worktree or work folder, and save the output as `candidate-<k>/checks.txt`. The judge only reads, so
+this is how evidence from a run reaches it.
 
 Do not steer a candidate while it runs and do not pass one candidate another's work. A candidate that fails, stops
 or returns nothing is a dropout: continue with N-1 and note it. With fewer than two candidates left there is no
@@ -96,42 +109,49 @@ arena: say so, then re-run or do the task once.
 
 **Done when** every candidate has returned or been declared a dropout, and each `candidate-<k>/` holds its output.
 
-## Phase 3: Judge
+## Phase 3: Score
 
-Start the judge only after every candidate has finished.
+Read every candidate end to end: the whole patch or document, not the notes. Score each criterion yourself and write
+your scores and your choice of base in `SYNTHESIS.md` **before** the judge is launched. A judge's verdict arrives in
+this conversation as soon as it finishes, so a judge started before your scores are written can anchor them.
+
+## Phase 4: Judge
+
+Start the judge only after every candidate has finished and your scores are written.
 
 ```bash
 node "${CLAUDE_SKILL_DIR}/arena.mjs" blind <arena-dir>
 ```
 
-It refuses a rubric without 3 to 6 numbered criteria, skips candidates with no output (dropouts), copies the rest
-and the rubric into a new temporary folder under the letters A, B, C in shuffled order, and writes the key to
-`<arena-dir>/blind-key.json` without printing it. Before launching the judge:
+It refuses a rubric without 3 to 6 numbered criteria or with a template placeholder left. It copies every candidate
+with output, hidden files included and anything named `brief.md` or `.git` left out, and the rubric into a new
+temporary folder under the letters A, B, C in shuffled order. It writes the key to `<arena-dir>/blind-key.json`
+without printing it. A candidate with no non-empty file is a dropout. A link that could lead the judge to a brief or
+outside the candidate makes it refuse, naming the link; fix the candidate folder and run it again. When a key
+already exists it refuses, because a judge may still be reading the first blind folder; pass `--force` only when no
+judge is running. Before launching the judge:
 - Look through the blind folder for anything that names a candidate's direction or number (an absolute path such as
-  `.../candidate-2/` in the notes, a branch name, a commit message in the patch) and replace it with `[removed]` in
-  the blind copy only.
+  `.../candidate-2/` in the notes or in `checks.txt`, a branch name, a commit message in the patch) and replace it
+  with `[removed]` in the blind copy only.
 - If a criterion compares the candidates with existing code ("no caller is longer than today"), copy that code into
   the blind folder as `reference/`. Without it the judge can only take the candidates' word for it. Better still,
   write criteria that the artifact alone can settle.
 
 Launch one fresh subagent, not a fork, with `JUDGE-BRIEF.md` and the blind folder's path, and nothing else: not the
-briefs, not the key, not your own view. Start it in the background (`run_in_background: true`) so you can read the
-candidates while it works.
+briefs, not the key, not your scores, not your own view. It only reads: tell it to change no file and run nothing.
 
-## Phase 4: Pick
+## Phase 5: Pick
 
-1. Read every candidate end to end: the whole patch or document, not the notes. Score each criterion yourself and
-   write your scores in `SYNTHESIS.md` **before** you read the judge's verdict. Reading the verdict first anchors you.
-2. Then read the verdict, open `blind-key.json`, and compare by candidate.
+1. Read the verdict, open `blind-key.json`, and compare with your scores by candidate.
    - Agreement on the base confirms the pick.
    - Disagreement means one of you is biased or a criterion was unclear. You know which brief made which candidate
      and may favour the one you would have written; the judge may have read a criterion differently (it says so
      under "Ambiguous criteria"). Read the judge's evidence and the candidates' notes again before deciding, and
      record the reason in the note.
-3. Pick the base a future maintainer can extend most easily without breaking its invariants. When two are tied,
+2. Pick the base a future maintainer can extend most easily without breaking its invariants. When two are tied,
    take the smaller interface or the clearer seam.
 
-## Phase 5: Graft
+## Phase 6: Graft
 
 Walk each other candidate once more for what is worth porting: usually one or two things each, not most of it.
 Fold each graft in by hand so the result stays one design under one way of thinking: rename it to the base's terms,
@@ -147,14 +167,14 @@ For a code task, build the result on a new branch that starts from the base cand
 applied), then make the grafts as separate commits. For a task that only produced files, copy the base candidate's
 files to where the task said they go (or next to `SYNTHESIS.md`) and make the grafts there.
 
-## Phase 6: Verify
+## Phase 7: Verify
 
 Verify the result like any other work: the project's own tests, type check, lint and build; for a design, check that
 the usage examples compile against the types. If `evaluator` is installed, run it on the result with the rubric as
 the contract; otherwise give a fresh subagent the rubric and the result and ask it to find where the result fails.
 
 If verification finds a problem the arena missed, decide which kind it is. The frame was wrong: re-frame and re-run.
-A candidate had it and you missed the graft: go back to Phase 5. Do not patch over it.
+A candidate had it and you missed the graft: go back to Phase 6. Do not patch over it.
 
 Fill in `SYNTHESIS.md`: the base and why, the judge's verdict, your scores and the comparison, each graft with its
 source, what was rejected and why, convergence and dropouts, and the verification result.
@@ -165,9 +185,10 @@ the blind folder.
 
 ## Do not
 
-- Do not show the rubric to a candidate, or one candidate's work to another.
+- Do not show the rubric to a candidate, or one candidate's work to another, and never let a candidate work in
+  the arena folder.
 - Do not give the judge the briefs, the key, this conversation or your opinion.
-- Do not read the judge's verdict before writing your own scores.
+- Do not launch the judge before your own scores are written.
 - Do not pick from the notes without reading the artifacts.
 - Do not average divergent candidates or paste grafts across.
 

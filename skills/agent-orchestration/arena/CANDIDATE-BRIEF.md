@@ -1,7 +1,8 @@
 # Candidate brief
 
 Fill in every field and send the result as the whole prompt of one candidate subagent. Every candidate gets the
-same text, word for word, except the **Your direction** field. Save the exact prompt you sent in that candidate's
+same text, word for word, except the **Your direction** field and its work folder. Never name the arena folder in a
+brief: it holds the rubric and the other briefs. Save the exact prompt you sent in that candidate's
 `brief.md`. A field you cannot fill means the frame is not finished: go back to Frame before launching anything.
 
 ---
@@ -30,7 +31,8 @@ has, add nothing new". Follow it fully, even where you would normally compromise
 ## Where you work
 
 <Either: "You are in your own git worktree. Commit your work there on the current branch before you finish." Or:
-"Write every file under <absolute path of candidate-K>. Do not write anywhere else.">
+"Write every file under <absolute path of this candidate's own work folder, outside the arena folder>. Do not
+write anywhere else.">
 
 Do not read or write outside your working folder, except the paths listed under "What you can rely on".
 

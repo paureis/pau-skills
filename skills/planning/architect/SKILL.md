@@ -83,18 +83,24 @@ to three entry points); the most common caller made trivial; designed around the
 (ports and adapters); built on what the codebase already has.
 
 How to get them:
-- **By default, write them yourself, one after the other.** Before starting the second, write one sentence saying how
-  its shape must differ from the first. If you cannot, pick another direction.
+- **By default, write them yourself, one after the other.** Screen steps 2 and 3 then compare them. Before starting
+  the second, write one sentence saying how its shape must differ from the first. If you cannot, pick another
+  direction.
 - **For a larger design, or to get sketches that did not see each other:** if `arena` is installed, suggest the user
   run `/arena` with the sketch task, `SKETCH-BRIEF.md` as the core of each candidate's brief, and your grounding notes.
-  It runs the sketches in parallel, has a blind judge score them, and returns one synthesized sketch with a synthesis
-  note; continue here at Screen with that result. You cannot start it yourself: the user types it. If it is not
-  installed, you can brief two subagents with `SKETCH-BRIEF.md` in one message, one direction each, and compare the
-  results yourself.
+  It runs the sketches in parallel, has a blind judge score them, picks a base and grafts the others into it, and
+  returns one synthesized sketch with a synthesis note; continue here at Screen with that result. You cannot start
+  it yourself: the user types it. If it is not installed, you can brief two subagents with `SKETCH-BRIEF.md` in one
+  message, one direction each, and compare the results yourself.
 
-**Done when** at least two sketches of different shape exist, each with its usage example.
+**Done when** at least two sketches of different shape exist, each with its usage example; or an arena run has
+returned one synthesized sketch and a synthesis note that compared at least two.
 
 ## Phase 3: Screen
+
+With your own two sketches, do all four steps. With an arena result, the comparison and the grafts are already done:
+check the synthesized sketch against step 1, skip steps 2 and 3, and put the arena's synthesis note in the
+rationale's "How the candidates were compared" section.
 
 1. Check every sketch against `RED-FLAGS.md`. A red flag means revise the sketch or drop it. Keep the contributor in
    mind: an agent that sees only the files it opened, copies the nearest example and takes the shortest path that
@@ -104,10 +110,12 @@ How to get them:
    reappear in every caller, it earns its place.
 3. Pick a base. Take one or two good ideas from the other sketch and fold them in by hand, in the base's terms.
 4. Write the rationale from `RATIONALE-TEMPLATE.md`: usage, shape, how the candidates were compared, tradeoffs,
-   alternatives, open questions.
+   alternatives, open questions. Save it where the project keeps design documents, if it has a place (an ADR folder,
+   `docs/design/`), as `<name>-rationale.md`; otherwise as `RATIONALE.md` next to the sketch files. It is committed
+   with the sketch, and the report gives its path.
 
-**Done when** one sketch is chosen, it raises no red flag you have not accepted in writing under "Tradeoffs
-accepted", and the rationale is written.
+**Done when** one sketch is chosen (or the arena's sketch has passed step 1), it raises no red flag you have not
+accepted in writing under "Tradeoffs accepted", and the rationale is written.
 
 ## Phase 4: Agree (optional)
 
@@ -173,5 +181,5 @@ Red flags: <none | which, and how resolved or accepted>
 Checkpoint: <skipped | shown to the user: outcome>
 Implementation: <commits>; tests <command: PASS | FAIL>
 Deviations: <none | each, and what changed>   Scrapped: <no | yes, why, and the new sketch>
-Rationale: <path>
+Rationale: <path, from Screen step 4>
 ```
