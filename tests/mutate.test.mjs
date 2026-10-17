@@ -118,6 +118,8 @@ test('refactor mode, BROKE: an edit that breaks the checked behaviour exits 1, p
   assert.match(r.out, /RESULT: BROKE/);
   assert.doesNotMatch(r.out, /CAUGHT/);
   assert.match(r.out, /RESULT: BROKE[\s\S]*\+export const isOwner = \(user, doc\) => true;/);
+  // A crash is not a coupled test: the verdict tells the agent to read the failure first.
+  assert.match(r.out, /build error, syntax error or missing import means the refactor was wrong, not the test/);
   assertRestored();
 });
 
