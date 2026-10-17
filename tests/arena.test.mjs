@@ -3,7 +3,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, readFileSync, mkdirSync, existsSync, readdirSync, symlinkSync, lstatSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { repo, runNode, tempDir } from './helpers.mjs';
+import { repo, runNode, tempDir, removeAtExit } from './helpers.mjs';
 import {
   mulberry32, shuffle, assignLabels, countCriteria, validateRubric, isExcluded, rubricTemplate, outsideFences,
   synthesisTemplate, parseArgs, main,
@@ -270,6 +270,7 @@ describe('blind', () => {
     assert.equal(main(['blind', dir], (s) => lines.push(s), () => {}), 0);
     const m = /Blind folder: (.+)/.exec(lines.join('\n'));
     assert.ok(m, lines.join('\n'));
+    removeAtExit(m[1]);
     assert.ok(!m[1].startsWith(dir), m[1]);
     assert.deepEqual(readdirSync(m[1]).sort(), ['A', 'B', 'C', 'rubric.md']);
   });

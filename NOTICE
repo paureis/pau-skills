@@ -64,6 +64,11 @@ docs/ORIGINS.md lists, for each one, what this version changes.
   skills/planning/architect/RED-FLAGS.md
   skills/planning/architect/SKETCH-BRIEF.md
   skills/planning/architect/RATIONALE-TEMPLATE.md
+  skills/verification/hillclimb/SKILL.md
+  skills/verification/hillclimb/BENCHMARK-CHECKLIST.md
+  skills/verification/skill-eval/SKILL.md
+  skills/planning/agent-friendly-audit/SKILL.md
+  skills/planning/sharpen/SKILL.md
 
 Those files are distributed under the upstream license, reproduced here:
 

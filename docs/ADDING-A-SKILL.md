@@ -81,8 +81,10 @@ order; the scrub check and the validator at the end catch most of what gets forg
 10. **Commit** with the message from a file (`git commit -F <file>`), then push.
 
 11. **After the merge, ship it to claude.ai.** Skills can also be uploaded to a claude.ai account, which syncs them to
-    the terminal, the desktop app and the web. Zip the skill's folder with the folder at the zip root (`<name>/` and
-    everything in it) and upload it under Customize, Skills. claude.ai refuses a description with an XML-like tag
-    (`<word>`) and a name containing "claude" or "anthropic"; `tests/context-budget.test.mjs` and
-    `tests/marketplace.test.mjs` catch both before you get that far. Uploaded skills appear as
+    the terminal, the desktop app and the web. Run `npm run pack-skills -- <name>` on main: it writes
+    `dist/<name>.zip` with the folder at the zip root, built from the committed files, and refuses when claude.ai
+    would (a name that is not lowercase letters, digits and hyphens, holds "claude" or "anthropic", or differs from
+    the folder; an empty description, one over 1,024 characters, or one with an XML-like tag such as `<word>`; over
+    30 MB). Without `--out` it first removes old zips from `dist/`, and it warns when HEAD is not on main. Upload the
+    zip under Customize, Skills; to replace a skill, open it and upload the new zip. Uploaded skills appear as
     `/anthropic-skills:<name>` in a session started after the upload.

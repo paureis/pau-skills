@@ -59,7 +59,9 @@ do the terminal and the desktop app (signed in with that account). To have every
 1. Upload each skill to claude.ai (Customize, Skills, Upload a skill) as a zip of its folder, for example a zip of
    `skills/verification/verify-app/` with the `verify-app/` folder at its root. Bundled files come along. Synced
    skills appear as `/anthropic-skills:<name>` (or `/<name>` when nothing else uses the name). When a skill changes
-   here, upload its new zip.
+   here, upload its new zip. In a clone of this repository, `npm run pack-skills -- verify-app` builds that zip in
+   `dist/` from the committed files (`--all` builds one for every skill, `--since <ref>` one for each skill changed
+   since that commit), and refuses a skill claude.ai would refuse.
 2. On each computer, install only the hooks, which a skill upload cannot carry:
 
    ```bash
