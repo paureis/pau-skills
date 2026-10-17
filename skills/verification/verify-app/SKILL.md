@@ -52,9 +52,11 @@ cannot show, one question at a time (with AskUserQuestion when it is available).
   without one, the fallback for the surface (section 2).
 - **Observe.** What proof can be captured: screenshots, accessibility snapshots, terminal transcripts, response
   bodies, logs, exit codes, files written, rows stored, messages sent.
-- **Isolate.** Can two instances run side by side (ports, data folders, browser profiles, config folders)? If not,
-  the generated skill says so and refuses to drive an instance it did not start. Refusing beats corrupting the
-  user's own session.
+- **Isolate.** Where does the app write: the current folder, `HOME`, the XDG folders, the temp folder, a configured
+  path, a database? Each one must point into the run's own folder, or a drive changes the user's data (commands run
+  from the repository root, so a file written "here" lands in the user's repository). Can two instances run side by
+  side (ports, data folders, browser profiles)? If not, the generated skill says so and refuses to drive an instance
+  it did not start. Refusing beats corrupting the user's own session.
 
 ### 2. Make it start
 
@@ -71,47 +73,57 @@ generated skill may create it. Mark it as verification scaffolding and remove it
 
 ### 3. Write the skill
 
-Copy `${CLAUDE_SKILL_DIR}/templates/verify-skill.md` to `.claude/skills/verify-<app>/SKILL.md`, with `<app>` a short
-lowercase name for the app, and fill in every `TODO(verify-app)` from what steps 1 and 2 found. The frontmatter
-needs `name: verify-<app>`, equal to the folder name, and a description that names the app, the surface and when to
-reach for it: without them the skill never registers. Leave no placeholder and no example command that was not taken
-from this repository. The sections:
+Copy `${CLAUDE_SKILL_DIR}/templates/verify-skill.md` to `.claude/skills/verify-<app>/SKILL.md` and fill in every spot
+marked `TODO(verify-app)` and every template token (`<app>`, `<surface>`, `<harness>`) from what steps 1 and 2 found;
+check-map reports any left. `<app>` is a short lowercase name for the app. The frontmatter needs
+`name: verify-<app>`, equal to the folder name, and a description that names the app, the surface and when to reach
+for it: without them the skill never registers. The template's fixed text (the run-folder commands, the start-up
+record, the proof rules) is written for a POSIX shell: keep it, and adapt it only when the project's commands run in
+another shell, such as PowerShell. Every other command comes from this repository; no example command stays in the
+file.
 
-- **Launch.** The exact commands that build once and start the app for verification, and how to tell it is ready.
-  Ready means usable, not only that a process answers: a port can be open while migrations or a data load still run,
-  so wait for the condition that proves a user could act now (a ready line in the log, a health check that covers
-  the data store, the first page rendering its main control). Launch reaches that state from an empty data folder,
-  including migrations and seed data. Record everything the run starts (process IDs, container IDs, terminal session
-  names, temporary folders) in the run's scratch folder, and make sure the recorded ID is the app's own (DRIVING.md,
-  section 3). Every command in the generated skill must work in a fresh shell, because each Bash tool call starts
-  one: the template saves the run's variables to a file. For a short-lived CLI or TUI there is no server to keep up:
-  launch means build or install once, then each drive gets its own isolated session (its own config and data
-  folders, its own terminal session).
-- **Doctor.** One read-only check that answers "is this instance worth driving?": the process is up, it is the one
-  this run started (process ID, port owner, data folder), it runs the build under test (version or commit), sign-in
-  is valid. Run it before the first drive, after any failed drive, and after anything surprising. When the doctor
+Required sections, checked by check-map: Launch, Doctor, Drive, Evidence and Cleanup, none empty, and Launch, Doctor
+and Cleanup each with a command in a code block. The template also has Run folders, Helpers, Feature map and Not yet
+proven on the real target; keep them (Helpers says "None." when there are none). What each section holds:
+
+- **Run folders.** Fixed text: the run ID, the scratch folder `$RUN`, the evidence folder `$EV`, and the variables
+  saved to `$RUN/env`, which every later command loads with `set -a` so the app sees them too. Each Bash tool call
+  starts a fresh shell, so nothing else carries over. You fill in "Where the app writes": every location from step 1,
+  and how each is pointed into `$RUN` (a variable, a flag, `env HOME=...`, or running the app from `$RUN/work`).
+- **Launch.** For a server or a UI: the exact commands that build once and start the app, and how to tell it is
+  ready. Ready means usable, not only that a process answers: a port can be open while migrations or a data load
+  still run, so wait for the condition that proves a user could act now (a ready line in the log, a health check
+  that covers the data store, the first page rendering its main control), from an empty data folder, including
+  migrations and seed data. Record what started in `$RUN/started.txt`, and make sure the recorded process is the
+  app's own (DRIVING.md, section 3). For a CLI, a TUI or a library nothing stays running: Launch builds or installs
+  once, and each drive gets its own isolated session.
+- **Doctor.** One read-only check that answers "is this instance worth driving?". For a server or a UI: the process
+  is up, it is the one this run started (process ID or port owner against the record), it runs the build under test
+  (version or commit), its data is in `$RUN`, sign-in is valid. For a CLI, a TUI or a library: the program the drive
+  will run is the one built from this working tree, not another copy on `PATH`, and the write locations point into
+  `$RUN`. Run it before the first drive, after any failed drive, and after anything surprising. When the doctor
   cannot see the failure (a stuck screen on a healthy process), reset to a known state or relaunch; do not hope.
 - **Drive.** The harness and the real handles from this repository, with the file each came from: accessible roles
   and names, labels, test IDs, prompt strings, routes, command names. Prefer them over coordinates, tab order and
   CSS paths. Wait on a condition, never on a fixed sleep.
 - **Evidence.** Where proof goes and what counts as proof. The folder is inside the repository, ignored by git, and
-  outside everything Cleanup deletes, so the proof survives the teardown. Write it on a line of its own as
-  `` Evidence folder: `<path>` `` (check-map.mjs reads that line), add the folder to `.gitignore` (show the line),
-  and give each run its own subfolder, and each feature a subfolder in that, created before the feature's first step.
-  The proof standards, written into the generated skill:
-  - Use the real user path, never an internal setter, a test-only endpoint or a seeded shortcut.
-  - Capture the action and the state it produced, not only the final screen.
-  - Check side effects as well as what is visible (a file written, a row stored, a message sent), through a second,
-    read-only view.
-  - Mock only where a production boundary already isolates the external system.
-  - A dry run or test mode is trusted only after you have observed what it skips (files, network, git refs). Some
-    dry runs still call the network or open a browser.
-- **Cleanup.** Stop only what this run started, by the IDs it recorded. Never by process name (`pkill`, `killall`,
-  `taskkill /IM`), never with a command that wipes ignored files (`git clean -x`), never by removing shared volumes.
-  Remove scratch state and scaffolding; leave the evidence. Then confirm the port is free and the evidence is still
-  there.
-- **Helpers.** Any script the skill ships sits in its folder, can be run as written, and its exact invocation is shown
-  in the section that uses it. A helper the reader has to work out is not a helper.
+  outside everything Cleanup deletes, so the proof survives the teardown. It is written on a line of its own as
+  `` Evidence folder: `<path>` `` (check-map.mjs reads that line). Add the folder to `.gitignore`, creating the file
+  when the project has none, and show the line. Each run has its own subfolder, each feature a subfolder in that,
+  and each step numbered files: `01-<step>.cmd` (exactly what ran), `.out`, `.err`, `.exit`, and screenshots,
+  snapshots or response bodies as the surface needs. The proof rules in the template stay as they are.
+- **Cleanup.** Stop only what `$RUN/started.txt` lists, checking that each process still has its recorded start time
+  (a process ID can be reused), and delete only the paths it lists. Never by process name (`pkill`, `killall`,
+  `taskkill /IM`), never by a glob, never with a command that wipes ignored files (`git clean -x`), never by removing
+  shared volumes. Then confirm: every recorded process is gone, the port is free (for a server), the output of
+  `git status --porcelain` is what it was when the run started (nothing escaped into the repository), and the evidence is still
+  there. Remove `$RUN` last, because it holds the record. DRIVING.md, section 3, has the commands.
+- **Helpers.** Optional. Any script the skill ships sits in its folder, can be run as written, and its exact
+  invocation is shown in the section that uses it. A helper the reader has to work out is not a helper.
+- **Not yet proven on the real target.** The real target is where users run the app; a local run may stand in for
+  parts of it. For example, the runs use a local PostgreSQL in a container while users hit a managed database with
+  its own extensions and permissions, or a mock mail server instead of the real provider, or Linux while users are
+  on Windows. List each stand-in and what it does that the real target will not, or write that there are none.
 
 ### 4. Seed the feature map
 
@@ -134,27 +146,36 @@ Start with the 3 to 5 features a user meets first, found from routes, commands, 
 node "${CLAUDE_SKILL_DIR}/check-map.mjs" .claude/skills/verify-<app>
 ```
 
-It checks the frontmatter, the five sections and the evidence line, that the index matches the feature files on
-disk, the four headings in every feature file, leftover `TODO(verify-app)` markers, and that the evidence folder is
-ignored by git with nothing in it tracked. Fix every problem it prints.
+It checks the frontmatter, the five required sections (none empty; Launch, Doctor and Cleanup with a command in a
+code block), the evidence line, leftover `TODO(verify-app)` markers and template tokens, that the index matches the
+feature files on disk (subfolders of `features/` count), the four headings in every feature file, and that the
+evidence folder is ignored by git with nothing in it tracked. Fix every problem it prints. A clean result means the
+shape is right, not that the commands work: step 6 proves those.
 
 ### 6. Prove it once, end to end
 
 A generated skill that was never executed is a draft. Run its instructions as written, once: launch, doctor, drive one
 mapped feature (one is enough; the map is there so later runs can cover the rest), keep the evidence, clean up.
 
-- The honest test is a reader who has not seen this conversation. If you can start a subagent (the Agent tool),
-  give it only this brief: "Follow `.claude/skills/verify-<app>/SKILL.md` to verify the feature in
-  `features/<file>.md`. Report each command you ran, what you saw, and where the evidence is." Without a subagent,
-  follow the file yourself, using only what it says.
-- After cleanup, confirm that the evidence still exists at the named folder and that nothing the run started is still
-  running (the recorded process IDs are gone, the port is free). A cleanup that eats the proof fails this step.
+- The honest test is a reader who has not seen this conversation, with only this brief: "Follow
+  `.claude/skills/verify-<app>/SKILL.md` to verify the feature in `features/<file>.md`. Report each command you ran,
+  what you saw, where the evidence is, and every place the instructions were unclear or wrong."
+  - If you can start a subagent (the Agent tool), give it the brief.
+  - Otherwise, a fresh session: ask the user to open a new Claude Code session in the repository and paste the brief,
+    or run `claude -p "<the brief>"` from the repository root if the user agrees (it needs permission to run the
+    commands, like any session).
+  - Only when neither is possible, follow the file yourself, using only what it says. This is the weaker test,
+    because you know what the file meant to say; say so in the report.
+- After cleanup, confirm that the evidence still exists at the named folder, that nothing the run started is still
+  running (the recorded processes are gone, the port is free for a server), and that `git status` shows nothing new
+  outside the evidence folder. A cleanup that eats the proof fails this step.
 - Fix what failed, and run the generated Cleanup after every failed attempt too, so broken attempts leave no process
   or port behind. A step that failed may already have changed the app's data, so relaunch from empty before trying
   again rather than carrying on with the same instance.
-- If you proved it in a stand-in for the real target (a container instead of a fresh machine, a local stack instead
-  of a remote one), list every setup step the stand-in did that the target will not. Put the list in the generated
-  skill under "Not yet proven on the real target". Those steps stay unproven until a run there covers them.
+- If the run used a stand-in for the real target (see "Not yet proven on the real target" in step 3: a container
+  instead of a fresh machine, a local database instead of the managed one), list every setup step the stand-in did
+  that the target will not, in that section of the generated skill. Those steps stay unproven until a run on the
+  real target covers them.
 
 ### 7. Hand it over
 
@@ -167,7 +188,7 @@ the skill is installed on its own); suggest a schedule only if the user asks.
 Verify skill: .claude/skills/verify-<app>/ (<surface>, harness <harness>)
 Features mapped: <n>: <names>; not covered yet: <surfaces or features, or none>
 check-map: clean
-End-to-end run: <feature> by <subagent | me>: launch <ok>, doctor <ok>, drive <ok>, evidence at <path> (kept after cleanup), cleanup <ok>
+End-to-end run: <feature> by <subagent | fresh session | me, the weaker test>: launch <ok>, doctor <ok>, drive <ok>, evidence at <path> (kept after cleanup), cleanup <ok>
 Fixed to make it start: <list, or none>
 Not yet proven on the real target: <list, or none>
 Questions for the user: <list, or none>

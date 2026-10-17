@@ -21,14 +21,16 @@ Preconditions:
   issued today.
 - An empty `$RUN/export/` folder.
 
+Steps:
+
 - **Export all.** Run `./bin/inv export --out "$RUN/export/all.csv"`. Exit code `0`, stdout `Exported 2 invoices`.
   The file has 3 lines, and the first is `number,customer,issued,status,total`.
 - **Export a range.** Run `./bin/inv export --out "$RUN/export/old.csv" --from 2000-01-01 --to 2000-12-31`. Exit code
   `0`, stdout `No invoices in range; wrote the header only`, and the file has 1 line.
 - **Refuse to overwrite.** Run `./bin/inv export --out "$RUN/export/all.csv"` again. Exit code `2`, stderr names the
   file and suggests `--force`, and the file is unchanged (same checksum as before).
-- **Proof.** Copy both CSV files to `$EV/export/`, with each command, its output and its exit code in
-  `$EV/export/commands.txt`.
+- **Proof.** Each step is saved as `$EV/export/<nn>-<step>.cmd`, `.out`, `.err` and `.exit` (`01-all`, `02-range`,
+  `03-overwrite`), and both CSV files are copied there.
 
 ## Gotchas
 

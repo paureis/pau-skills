@@ -22,6 +22,8 @@ Preconditions:
 - The baseline state from `README.md`, plus a draft `INV-0001` for `Acme Ltd` made through `Create an invoice`.
 - Launch started the test mailbox, and the doctor reports it at `$MAIL_URL` with no messages.
 
+Steps:
+
 - **Ask to send.** Open `INV-0001` and choose `Send`. Run `await page.getByRole('button', { name: 'Send' }).click()`. A
   dialog named `Send invoice` names `billing@acme.example`.
 - **Confirm.** Run `await page.getByRole('dialog', { name: 'Send invoice' }).getByRole('button', { name: 'Send now' }).click()`.
@@ -30,8 +32,8 @@ Preconditions:
   `Invoice INV-0001 from Demo Co`, with a link to `/i/` in the body.
 - **Refuse a second send.** Run `./bin/inv send INV-0001`. Exit code `1`, stderr `INV-0001 is already sent`, and the
   mailbox still has one message.
-- **Proof.** Save the mailbox response to `$EV/send-invoice/messages.json`, a screenshot of the invoice page to
-  `$EV/send-invoice/sent.png`, and the `inv` command, output and exit code to `$EV/send-invoice/send-twice.txt`.
+- **Proof.** Save a screenshot of the invoice page to `$EV/send-invoice/02-sent.png`, the mailbox response to
+  `$EV/send-invoice/03-messages.json`, and the `inv` step as `04-send-twice.cmd`, `.out`, `.err` and `.exit`.
 
 ## Gotchas
 

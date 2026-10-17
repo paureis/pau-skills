@@ -24,6 +24,8 @@ Preconditions:
 - The baseline state from `README.md`.
 - No invoice exists yet, so the next number is `INV-0001`.
 
+Steps:
+
 - **Open the form.** Choose `New invoice`. Run `await page.getByRole('button', { name: 'New invoice' }).click()`. A
   form named `Invoice` appears, and the `Customer` combobox has focus.
 - **Add a line.** Pick `Acme Ltd` and add one line. Run `await page.getByRole('combobox', { name: 'Customer' }).selectOption('Acme Ltd')`,
@@ -33,12 +35,12 @@ Preconditions:
   and `await page.getByRole('button', { name: 'Save draft' }).click()`. An alert reads `Add at least one line`, and
   the URL is still `/invoices/new`.
 - **Save.** Add the line again and choose `Save draft`. The heading reads `INV-0001`, and a status reads `Draft saved`.
-- **Read it back.** Run `curl -sS -H "Authorization: Bearer $INV_TOKEN" "$URL/api/invoices/INV-0001"`. Status `200`,
-  `"status": "draft"` and `"total": "360.00"`.
-- **API entry.** Run `curl -sS -X POST "$URL/api/invoices" -H "Authorization: Bearer $INV_TOKEN" -H 'content-type: application/json' -d '{"customer":"Blue Fern","lines":[{"description":"Hosting","quantity":1,"unitPrice":"40"}]}'`.
-  Status `201`, and the body has `"number": "INV-0002"`.
-- **Proof.** Open `Invoices`. Run `await page.screenshot({ path: process.env.EV + '/create-invoice/list.png' })` and
-  write `await page.getByRole('table', { name: 'Invoices' }).ariaSnapshot()` to `$EV/create-invoice/list.aria.txt`.
+- **Read it back.** Run `curl -sS -w '\n%{http_code}\n' -H "Authorization: Bearer $INV_TOKEN" "$URL/api/invoices/INV-0001"`.
+  The last line is `200`, and the body above it has `"status": "draft"` and `"total": "360.00"`.
+- **API entry.** Run `curl -sS -w '\n%{http_code}\n' -X POST "$URL/api/invoices" -H "Authorization: Bearer $INV_TOKEN" -H 'content-type: application/json' -d '{"customer":"Blue Fern","lines":[{"description":"Hosting","quantity":1,"unitPrice":"40"}]}'`.
+  The last line is `201`, and the body has `"number": "INV-0002"`.
+- **Proof.** Open `Invoices`. Run `await page.screenshot({ path: process.env.EV + '/create-invoice/07-list.png' })` and
+  write `await page.getByRole('table', { name: 'Invoices' }).ariaSnapshot()` to `$EV/create-invoice/07-list.aria.txt`.
   Both show `INV-0001` for `Acme Ltd` and `INV-0002` for `Blue Fern`.
 
 ## Gotchas

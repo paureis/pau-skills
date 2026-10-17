@@ -15,7 +15,10 @@ End with exactly one, and say which:
 
 ## What you may edit
 
-Only the verify skill's own folder: its `SKILL.md`, `features/`, and the helper scripts it owns. Never product code. A
+Only the verify skill's own folder: its `SKILL.md`, `features/`, and the helper scripts it owns. Never product code.
+One exception, and only on the user's yes: when the evidence folder is not ignored by git, or has tracked files in
+it, the fix is outside that folder (a line in `.gitignore`, or `git rm --cached` on the tracked files). Show the exact
+change and ask; with a yes it goes in the same commit, without one it is a finding in the report. A
 behaviour the map describes that the app no longer has is either doc drift (fix the map) or a product regression
 (report it; never change the map to describe broken behaviour).
 
@@ -25,7 +28,8 @@ behaviour the map describes that the app no longer has is either doc drift (fix 
    sections and a feature map. Several: ask which. None: stop and offer create mode instead of inventing one.
 
 1. **Index hygiene.** Run `node "${CLAUDE_SKILL_DIR}/check-map.mjs" <skill folder>`. Fix every problem it prints:
-   missing, extra, duplicate or dead index entries, missing headings, an evidence folder git does not ignore.
+   missing, extra, duplicate or dead index entries, missing headings, leftover markers. An evidence folder git does
+   not ignore falls under the exception in "What you may edit".
 
 2. **Source wave.** One read-only subagent per feature file, all started in one message so they run at the same time
    (the Agent tool; a read-only type such as Explore where the session has one). Each brief names the feature file
@@ -62,8 +66,9 @@ behaviour the map describes that the app no longer has is either doc drift (fix 
      (the script runs as written and its invocation is in the skill).
    - Product gap: the app is broken. Report it to the user with the evidence. Keep it out of the commit.
 
-6. **Keep or stop.** For changed: re-read every changed file, run check-map again, and commit only the skill folder.
-   For clean or blocked: no commit; report the outcome and the coverage as they are.
+6. **Keep or stop.** For changed: re-read every changed file, run check-map again, and commit only the skill folder
+   (plus the `.gitignore` change, if the user said yes to it). For clean or blocked: no commit; report the outcome
+   and the coverage as they are.
 
 Keep short run notes (features covered, unreachable prerequisites, drift found, outcome) in a scratch folder outside
 the repository. Do not commit them.

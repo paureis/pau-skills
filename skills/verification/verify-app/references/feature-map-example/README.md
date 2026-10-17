@@ -10,22 +10,26 @@ then the feature file for what you are verifying.
   `scripts/seed-demo` (customers `Acme Ltd` and `Blue Fern`, no invoices).
 - The doctor reports this run's process ID, `$RUN/db` as the database and the commit under test.
 - The signed-in user is `demo@example.com`, created by the seed.
-- `inv` is built at `./bin/inv` and reads `INV_URL` and `INV_TOKEN` from the environment Launch prints.
+- `inv` is built at `./bin/inv`. Launch appends `INV_URL` and `INV_TOKEN` to `$RUN/env`, and every command loads that
+  file with `set -a` (as `SKILL.md` shows), so `inv`, `curl` and the browser scripts all see them.
 
 ## Driving conventions
 
 - Start every feature from the baseline state unless its preconditions say otherwise.
-- Browser steps are Playwright calls in one scratch script per feature, run with `node $RUN/<feature>.mjs`; the
-  calls are written out in each step.
+- Browser steps are Playwright calls in one scratch script per feature, `$RUN/<feature>.mjs`, run with
+  `node "$RUN/<feature>.mjs"` after the lines that load `$RUN/env` (so `process.env.EV` is set); the calls are
+  written out in each step.
 - Find elements by role and accessible name. The app sets no test IDs.
 - Treat quoted names, flags and values as literal.
 - A feature that changes data cleans up its own records at the end, through the user path, and keeps its evidence.
 
 ## Proof rules
 
-- Browser proof: a screenshot and an accessibility snapshot of the end state, in `$EV/<feature>/`.
-- API proof: the request, the response headers and the body, in `$EV/<feature>/`.
-- CLI proof: the command, stdout, stderr and the exit code, in `$EV/<feature>/`.
+- Each step's files are numbered in the order they ran, in `$EV/<feature>/`: `01-<step>.cmd` (exactly what ran),
+  `.out`, `.err`, `.exit`, and `.png`, `.aria.txt`, `.body` or `.headers` as the step needs.
+- Browser proof: a screenshot and an accessibility snapshot of the end state.
+- API proof: the request, the status, the response headers and the body.
+- CLI proof: the command, stdout, stderr and the exit code.
 - A change is proven through a second, read-only view: a write in the browser is read back through the API or `inv`.
 - Every artifact names the feature file and the entry point it came from.
 - An entry point you could not reach is reported with the command tried and the missing precondition.
