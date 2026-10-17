@@ -38,8 +38,12 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
      time, each agent in its own git worktree, then integrates them one by one.
    - A large effort run by several agents? **`methodology`** (agent-orchestration) gives the operating rules:
      contracts, evidence, and no agent certifying its own work.
+   - Day-to-day work with subagents, or usage running low? **`lean-subagent-dev`** (agent-orchestration), run at
+     the start of the session: one subagent at a time with a brief, the main session checks the work, and the usage
+     budget sets how much to delegate.
 5. **Prove it works.** **`mutation-test`** (verification) shows each important test can fail. **`evaluator`**
    (verification) has a fresh agent that did not build the change attack it, assertion by assertion.
+   **`review-triage`** (verification) decides which review findings to fix and stops after one fix round.
 6. **`safe-merge`** (guards). Merge the PR pinned to its head commit, without closing PRs stacked on it.
 7. **`session-close`** (session-discipline). End in a fixed order: retrospective, roadmap and log, handoff, commit.
    **`handoff`** alone writes the handoff when the session is ending mid-work.
@@ -53,6 +57,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | Outdated dependencies, a framework major version to adopt | `dependency-upgrade` (guards) | `dependency-security-audit` for known risk |
 | A CVE announcement, "are we vulnerable", "is this package safe" | `dependency-security-audit` (guards) | `dependency-upgrade` to apply fixes |
 | CI is slow or expensive, "how much CI should we run" | `ci-cost-and-cadence` (verification) | |
+| Review comments to work through, "which of these should I fix", a review loop that keeps going | `review-triage` (verification) | |
 | A question about how the codebase works | `codebase-oracle` (agent-orchestration) | `grill-me` if it leads to a change |
 | "The code is getting messy", hard-to-test modules | `improve-codebase-architecture` (planning) | `grill-me` on the candidate picked |
 
@@ -92,6 +97,12 @@ Hooks act on every session where their plugin is installed. Each can be turned o
   interview only asks what the code cannot tell.
 - **`evaluator` or `mutation-test`?** `mutation-test` checks one test or guard can fail. `evaluator` checks the
   whole change against its acceptance criteria. Use both on anything that guards security or money.
+- **`evaluator` or `review-triage`?** `evaluator` grades a change against its contract until two rounds are clean.
+  `review-triage` decides which findings from any review are worth fixing, with one fix round. A failed contract
+  assertion is a must-fix in triage, so they work together.
+- **`lean-subagent-dev`, `parallel-worktrees` or `methodology`?** `lean-subagent-dev` runs one subagent at a time with
+  a short review, for everyday work. `parallel-worktrees` runs independent pieces at the same time. `methodology` is the
+  full method for work under contract.
 - **`handoff` or `session-close`?** `session-close` includes the handoff. Use `handoff` alone when there is no time
   for the rest, or when the work moves to another person or tool.
 - **`dependency-upgrade` or `dependency-security-audit`?** The audit finds what is risky now. The upgrade skill

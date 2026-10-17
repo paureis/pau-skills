@@ -1,8 +1,28 @@
 # agent-orchestration
 
 Skills: `methodology` (the method document, two adoption prompts and templates), `codebase-oracle`,
-`parallel-worktrees` (with `worktrees.mjs`). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
+`parallel-worktrees` (with `worktrees.mjs`), `lean-subagent-dev` (with a brief template, `TRIAGE.md` and
+`review-scope.mjs`, identical copies of the ones in `review-triage`). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
 [hooks/README.md](../../hooks/README.md)).
+
+## lean-subagent-dev configuration
+
+The usage budget comes from the `LEAN_SUBAGENT_BUDGET` environment variable (`tight`, `normal` or `generous`), else
+`delegation.budget` in `.claude/review-rules.json`, else `normal`. The variable wins because the budget belongs to the
+person more than to the project; set it once in the `env` block of your user `settings.json`:
+
+```json
+{ "env": { "LEAN_SUBAGENT_BUDGET": "tight" } }
+```
+
+| Budget | Delegate | Subagent model | Review |
+|---|---|---|---|
+| tight | changes of 5+ files | smaller for mechanical work, same for risky paths | the orchestrator's own checks |
+| normal | any change in behaviour or tests, and changes of 3+ files | same | checks plus a read of every risky file |
+| generous | any change in behaviour or tests, and changes of 2+ files | same | plus a reviewer subagent on risky files |
+
+The rest of `.claude/review-rules.json` (must-fix list, risky paths, checks, and `delegation.minFiles` and
+`delegation.log`) is described in [the verification README](../verification/README.md#review-triage-configuration).
 
 ## No-idle hook
 

@@ -3,6 +3,20 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-17: review-triage and lean-subagent-dev
+
+- New skill: `review-triage` (verification). Decides which review findings are worth fixing: a finding must name a
+  failure, is rated by value, effort and the risk of the fix, and lands in must fix, fix if cheap, or leave. Every fix
+  has a test that fails without it, the second look covers only the fix, and there is one review round and one fix
+  round. `review-scope.mjs` prints the project's rules from `.claude/review-rules.json`, scopes a change, and flags a
+  fix round with no test, in risky code, or outside the change.
+- New skill: `lean-subagent-dev` (agent-orchestration). A way of working for a whole session: one subagent at a time
+  with a written brief, the main session checks the work itself, and the review follows the same triage method. The
+  usage budget (`LEAN_SUBAGENT_BUDGET` or the project file) sets the delegation threshold, the subagent's model and
+  how much review to run. It carries identical copies of `TRIAGE.md` and `review-scope.mjs`, so it works on its own.
+- `which-skill` routes to both.
+- Versions: pau-skills 0.6.0, session-discipline 0.4.2, verification 0.5.0, agent-orchestration 0.4.0.
+
 ## 2026-10-11: project-setup speaks the user's language
 
 - `project-setup` picks the user's language before its first message: a language named in the arguments (for

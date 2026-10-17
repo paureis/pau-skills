@@ -17,8 +17,12 @@ const OPTIONAL_OUTSIDE = {
   'verification/evaluator': ['skills/verification/mutation-test/mutate.sh'],
 };
 
-// A script a skill needs from another skill is copied into its folder. The copies must stay identical.
-const COPIES = [['skills/session-discipline/retrospective/audit.mjs', 'skills/session-discipline/session-close/audit.mjs']];
+// A script or method file a skill needs from another skill is copied into its folder. The copies must stay identical.
+const COPIES = [
+  ['skills/session-discipline/retrospective/audit.mjs', 'skills/session-discipline/session-close/audit.mjs'],
+  ['skills/verification/review-triage/review-scope.mjs', 'skills/agent-orchestration/lean-subagent-dev/review-scope.mjs'],
+  ['skills/verification/review-triage/TRIAGE.md', 'skills/agent-orchestration/lean-subagent-dev/TRIAGE.md'],
+];
 
 function skills() {
   const out = [];
@@ -100,7 +104,7 @@ test('a skill that names another skill says what to do if that skill is not inst
   assert.deepEqual(bad, []);
 });
 
-test('scripts copied between skills are identical', () => {
+test('files copied between skills are identical', () => {
   for (const [a, b] of COPIES) {
     assert.equal(readFileSync(join(ROOT, b), 'utf8'), readFileSync(join(ROOT, a), 'utf8'), `${b} differs from ${a}: copy it again`);
   }

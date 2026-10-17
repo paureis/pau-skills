@@ -1,7 +1,7 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 23](https://img.shields.io/badge/skills-23-informational)
+![Skills: 25](https://img.shields.io/badge/skills-25-informational)
 ![Hooks: 11](https://img.shields.io/badge/hooks-11-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
@@ -111,9 +111,22 @@ context was compacted.
 - `parallel-worktrees` splits work into independent pieces, one git worktree and branch per agent, then integrates
   them one at a time.
 - `methodology` is an operating method where no agent certifies its own work.
+- `lean-subagent-dev` is the light version for a whole session: one subagent at a time with a written brief, and the
+  main session checks its work itself. It asks how much usage room you have and delegates less when it is tight,
+  because a subagent costs more usage in total, not less.
 - `no-idle` (hook) stops subagents from ending their turn waiting for something that will never wake them.
 
-### 7. The careful work nobody wants to do
+### 7. A review that never ends
+
+An AI review can always find one more thing, and each fix can bring a new bug, so the review and fix loop does not stop
+by itself. Half the findings are preferences, and the fix for a minor one lands in the code where a mistake costs most.
+
+- `review-triage` keeps only findings that name a failure, weighs the risk of each fix as well as the problem, and
+  sorts them into must fix, fix if cheap, or leave. Every fix gets a test that fails without it, the second look covers
+  only the fix, and there is one review round and one fix round. It works for any review, human or AI.
+- `lean-subagent-dev` uses the same method for the review of each subagent's work.
+
+### 8. The careful work nobody wants to do
 
 - `dependency-upgrade` plans and applies upgrades in any ecosystem, one major version at a time, on a green baseline.
 - `dependency-security-audit` gives a ranked vulnerability, reachability and supply-chain report for any ecosystem
@@ -122,7 +135,7 @@ context was compacted.
 - `flaky-test-hunt` measures how often a test fails, finds the actual cause, and proves the fix.
 - `ci-cost-and-cadence` decides how much CI to run and when, from measurements.
 
-### 8. Starting with Claude Code for the first time
+### 9. Starting with Claude Code for the first time
 
 Someone who knows Claude from the browser opens Claude Code in their project and does not know what to ask, what it
 will change, or how to make it remember how they like to work.
@@ -165,6 +178,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills); everythi
   and reversibility, for any migration tool.
 - **[ci-cost-and-cadence](skills/verification/ci-cost-and-cadence/SKILL.md)**: Measures where CI minutes go, compares five options with numbers, and builds the chosen
   one.
+- **[review-triage](skills/verification/review-triage/SKILL.md)**: Decides which review findings are worth fixing (must fix, fix if cheap, leave), with a test per
+  fix and one review round and one fix round; `review-scope.mjs` flags a fix with no test, in risky code or outside
+  the change.
 - Hooks: [`test-tamper-guard`](hooks/verification/test-tamper-guard.mjs), [`verify-before-done`](hooks/verification/verify-before-done.mjs).
 
 ### agent-orchestration
@@ -173,6 +189,8 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills); everythi
 - **[codebase-oracle](skills/agent-orchestration/codebase-oracle/SKILL.md)**: Answers questions about a codebase from evidence in it only; never guesses.
 - **[parallel-worktrees](skills/agent-orchestration/parallel-worktrees/SKILL.md)**: Runs independent pieces of work in separate git worktrees, with `worktrees.mjs` to check a
   plan for overlapping files and report every worktree's state.
+- **[lean-subagent-dev](skills/agent-orchestration/lean-subagent-dev/SKILL.md)**: A way of working for a whole session: one subagent at a time with a written brief, the main
+  session checks the work itself and triages the review, and the usage budget sets how much to delegate.
 - Hook: [`no-idle`](hooks/agent-orchestration/no-idle.mjs).
 
 ### guards
