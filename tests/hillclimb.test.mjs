@@ -55,10 +55,11 @@ describe('parseMeasurement', () => {
   });
 
   test('refuses a measurement without a run count or a spread', () => {
-    assert.throws(() => parseMeasurement('median=1.23s'), /runs/);
-    assert.throws(() => parseMeasurement('median=1.23s runs=10'), /spread/);
-    assert.throws(() => parseMeasurement('median=1.23s spread=0.1s'), /runs/);
-    assert.throws(() => parseMeasurement('runs=10 spread=0.1s'), /median/);
+    // The message names the missing key, so the user knows what to add.
+    assert.throws(() => parseMeasurement('median=1.23s'), /no runs=/);
+    assert.throws(() => parseMeasurement('median=1.23s runs=10'), /no spread=/);
+    assert.throws(() => parseMeasurement('median=1.23s spread=0.1s'), /no runs=/);
+    assert.throws(() => parseMeasurement('runs=10 spread=0.1s'), /no median=/);
   });
 
   test('refuses a bad run count, a negative spread, mixed units, a repeated key and free text', () => {
