@@ -145,6 +145,20 @@ will change, or how to make it remember how they like to work.
   It ends with a cheat sheet for the desktop app, terminal or editor, and a first small task. It works on its own,
   without the rest of this marketplace.
 
+## What loads on its own
+
+Claude Code puts the description of every skill the model may start into the context of every session. To keep that
+cost small, only the skills an agent should reach for without being asked load on their own. The rest cost nothing
+until you type them. The agent cannot start them or see their descriptions; `which-skill` knows both groups and
+tells you which one to type.
+`tests/context-budget.test.mjs` holds the first group to 12 skills and 4,500 characters of descriptions.
+
+- **Load on their own**: `which-skill`, `tdd`, `review-triage`, `evaluator`, `mutation-test`, `codebase-oracle`,
+  `migration-review`, `flaky-test-hunt`, `dependency-security-audit`, `safe-merge`.
+- **You type them** (`/pau-skills:<skill>` or `/<plugin>:<skill>`): `project-setup`, `session-close`, `handoff`,
+  `retrospective`, `claude-md-audit`, `lean-subagent-dev`, `methodology`, `parallel-worktrees`, `grill-me`, `to-prd`,
+  `to-issues`, `improve-codebase-architecture`, `ci-cost-and-cadence`, `dependency-upgrade`, `rule-to-hook`.
+
 ## Reference
 
 Every skill is a folder in [`skills/`](skills), grouped by plugin, and every hook is a script in [`hooks/`](hooks).

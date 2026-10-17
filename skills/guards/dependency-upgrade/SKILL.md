@@ -1,6 +1,7 @@
 ---
 name: dependency-upgrade
 description: Plan and carry out dependency upgrades safely in any ecosystem (npm, pnpm, Yarn, Bun, pip, uv, Poetry, Go modules, Cargo, Maven, Gradle, Bundler, Composer, NuGet, Mix, Swift PM), including runtime and toolchain versions and Docker base images. Covers one major upgrade of a key framework or a batch pass of minor and patch updates, from inventory and a green baseline through changelog research, a bisectable plan, one commit per step, and a report of what was upgraded, skipped or blocked. Use when the user says "upgrade dependencies", "bump packages", "update deps", "upgrade to React 19", "move to Django 5", "upgrade Spring Boot", "bump the Go version", "update the Node version", "update the base image", "we are way behind on versions", "Dependabot has 30 PRs open", or "what breaks if we upgrade X".
+disable-model-invocation: true
 argument-hint: "[package and target version, e.g. 'next 15', or 'hygiene' for a minor/patch pass]"
 ---
 

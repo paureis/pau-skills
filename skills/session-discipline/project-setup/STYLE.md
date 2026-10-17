@@ -22,8 +22,8 @@ The goal is text that a tired or nervous reader understands on the first read, w
   dialog". The terms below are fixed for this skill.
 - Use common words when they are as precise as the technical word. Keep the technical word when it is more precise,
   and explain it the first time.
-- Do not use filler: "simply", "just", "basically", "easily", "obviously", "of course".
-- Do not use marketing words: "seamless", "robust", "powerful", "leverage", "cutting-edge".
+- Do not use filler: `simply`, `just`, `basically`, `easily`, `obviously`, `of course`.
+- Do not use marketing words: `seamless`, `robust`, `powerful`, `leverage`, `cutting-edge`.
 - Do not use em dashes or en dashes. Use a comma, a colon, parentheses or a new sentence.
 
 ## Precision and uncertainty

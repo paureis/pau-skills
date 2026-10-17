@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: "Test-driven development with a red-green-refactor loop. Use when user wants to build features or fix bugs using TDD, says 'test first', 'red green refactor', 'write tests', 'TDD', 'test-driven', 'build this with tests', or wants integration tests. Also use when the user asks to add test coverage to existing code, or says 'make sure this is tested'."
+description: "Test-driven development with a red-green-refactor loop. Use when the user wants to build a feature or fix a bug test first, says 'test first', 'red green refactor', 'write tests', 'TDD', 'test-driven', 'build this with tests', wants integration tests, asks to add test coverage to existing code, or says 'make sure this is tested'."
 license: MIT (adapted from mattpocock/skills; see NOTICE)
 metadata:
   upstream: https://github.com/mattpocock/skills/tree/main/skills/engineering/tdd

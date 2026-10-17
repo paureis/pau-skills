@@ -1,12 +1,13 @@
 ---
 name: which-skill
-description: Recommend which pau-skills skill, or sequence of skills, fits the user's situation, and explain what the installed hooks already do automatically. Use when the user asks "which skill should I use", "what can these skills do", "where do I start", "is there a skill for this", "help me pick", or describes a task and seems unsure how to approach it with the pau-skills plugins.
+description: "Recommend which pau-skills skill, or sequence of skills, fits the user's situation (including the ones the user starts by typing /name), and explain what the installed hooks already do. Use when the user asks 'which skill should I use', 'what can these skills do', 'where do I start', 'is there a skill for this', 'help me pick', or seems unsure how to approach a task."
 ---
 
 # Which Skill
 
 A router over every skill in this marketplace. Read the user's situation, pick the smallest set of skills that fits,
-and say in what order to run them. Do not run them yourself unless the user asks.
+and say in what order to run them. Do not run them yourself unless the user asks, and then only the ones that start
+on their own (see below).
 
 ## How to answer
 
@@ -21,6 +22,14 @@ and say in what order to run them. Do not run them yourself unless the user asks
    claims to be done without running checks.
 
 Keep the answer short. A list of every skill is not an answer.
+
+## Which skills start on their own
+
+- **Start on their own** when the situation fits, so the agent may run them: `which-skill`, `tdd`, `review-triage`,
+  `evaluator`, `mutation-test`, `codebase-oracle`, `migration-review`, `flaky-test-hunt`,
+  `dependency-security-audit`, `safe-merge`.
+- **Typed by the user**: every other skill below. Their descriptions are not in the agent's context and the agent
+  cannot start them, so give the exact command to type, for example `/pau-skills:grill-me`.
 
 ## Starting out
 

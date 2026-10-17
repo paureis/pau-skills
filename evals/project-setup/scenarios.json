@@ -3,7 +3,7 @@
     "name": "nervous-beginner",
     "fixture": "chat-assistant",
     "persona": "personas/nervous-beginner.md",
-    "opening": "Hi. My son said I should run /project-setup first. I am new to this.",
+    "opening": "/project-setup Hi. My son said I should run /project-setup first. I am new to this.",
     "expect": {
       "personal": "global",
       "agentsImport": false,
