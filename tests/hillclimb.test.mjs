@@ -442,7 +442,7 @@ describe('summary', () => {
     assert.match(r.out, /^\| time \| attempt \|/m);
     assert.match(r.out, /h\\\|pipe/, 'a pipe in a cell is escaped');
     assert.match(r.out, /baseline 2s, best 1s \(-50\.0%, attempt 1\)/);
-    assert.match(r.out, /attempts 2 \(kept 1, reverted 1\), not counting the sensitivity check/);
+    assert.match(r.out, /attempts 2 \(kept 1, reverted 1\), not counting the sensitivity check or the final check/);
     assert.match(r.out, /first baseline note: stop: half the baseline and at least 2 attempts/);
   });
 
@@ -477,6 +477,19 @@ describe('summary', () => {
     const s = run(['summary', log]).out;
     assert.match(s, /baseline 4s \(the latest of 2 baselines; the first was 2s\), best 3s \(-25\.0%, attempt 2\)/);
     assert.match(s, /first baseline note: stop: half and at least 3 attempts/);
+  });
+
+  test('the final check is a keep with id "final": held within noise is enough, it is not an attempt, and summary shows it', () => {
+    const log = newLog();
+    baseline(log);
+    append(log, { decision: 'keep', tests: 'pass', measurement: 'median=1.00s runs=5 spread=0.05s', hypothesis: 'h', change: 'c' });
+    const fin = (m) => append(log, { decision: 'keep', tests: 'pass', id: 'final', measurement: m, hypothesis: 'final check', change: 'none: the final commit measured again' });
+    assert.match(fin('median=1.50s runs=5 spread=0.05s').err, /worse/, 'a win that did not hold is refused');
+    const r = fin('median=1.03s runs=5 spread=0.05s');
+    assert.equal(r.code, 0, r.err);
+    const s = run(['summary', log]).out;
+    assert.match(s, /attempts 1 \(kept 1, reverted 0\), not counting the sensitivity check or the final check/);
+    assert.match(s, /final check 1\.03s \(-48\.5% against the latest baseline\)/);
   });
 
   test('a missing log is an error', () => {

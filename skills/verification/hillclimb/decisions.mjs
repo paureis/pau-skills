@@ -26,8 +26,9 @@
  *   node decisions.mjs summary <log>
  *       Prints the log as a Markdown table, then the latest baseline (and the first, when there are several), the best
  *       kept number against the latest baseline, the attempt counts and the first baseline's note (where the stop
- *       predicate is written). An attempt is counted once, by its latest row, and the
- *       row with attempt id "sensitivity" (the deliberate regression) is not counted.
+ *       predicate is written). An attempt is counted once, by its latest row; the rows with attempt id "sensitivity"
+ *       (the deliberate regression) and "final" (the last check of the final commit) are not attempts. A keep with id
+ *       "final" needs only to hold the best number within noise, not beat it; summary prints it on its own line.
  *
  * The measurement format: `median=<number><unit> runs=<count> spread=<number><unit>`, keys in any order, the same
  * unit (or none) on median and spread, extra `key=value` pairs allowed (for example `errors=0 work=1000`). The spread
@@ -59,6 +60,7 @@ export const DECISIONS = ['baseline', 'keep', 'revert'];
 export const TESTS = ['pass', 'fail'];
 export const MIN_RUNS = 3;
 export const SENSITIVITY = 'sensitivity';
+export const FINAL = 'final';
 const REFERENCE = /^reference \((lower|higher) is better\)$/;
 const NUMBER = /^([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)([A-Za-z%/]*)$/;
 
@@ -297,7 +299,7 @@ function buildRow(log, fields, now) {
       if (decision === 'keep') {
         if (tests !== 'pass') throw new Refusal('a keep needs passing tests; revert the change');
         if (d.beyondNoise && !d.better) throw new Refusal(`the number is worse than the best kept so far (${d.text}); revert the change`);
-        if (!d.beyondNoise && !/^simplification\b/i.test(fields.note ?? '')) {
+        if (!d.beyondNoise && attempt !== FINAL && !/^simplification\b/i.test(fields.note ?? '')) {
           throw new Refusal(`the change is within noise (${d.text}); revert it, or keep it as a simplification that holds the number with --note "simplification: ..."`);
         }
       }
@@ -363,7 +365,7 @@ function summary(log, out) {
   const baselines = rows.filter((r) => at(r, 'decision') === 'baseline');
   const latest = new Map();
   for (const r of rows) {
-    if (['keep', 'revert'].includes(at(r, 'decision')) && at(r, 'attempt') !== SENSITIVITY) latest.set(at(r, 'attempt'), at(r, 'decision'));
+    if (['keep', 'revert'].includes(at(r, 'decision')) && ![SENSITIVITY, FINAL].includes(at(r, 'attempt'))) latest.set(at(r, 'attempt'), at(r, 'decision'));
   }
   const kept = [...latest.values()].filter((d) => d === 'keep').length;
   if (first) {
@@ -371,13 +373,18 @@ function summary(log, out) {
     const lastBase = baselines[baselines.length - 1];
     const b = parseMeasurement(at(lastBase, 'measurement'));
     const { row: best, m } = bestKept(rows, direction, undefined);
-    const pct = b.median === 0 ? '' : `${m.median - b.median > 0 ? '+' : m.median < b.median ? '-' : ''}${Math.abs(((m.median - b.median) / Math.abs(b.median)) * 100).toFixed(1)}%, `;
+    const pct = (x) => (b.median === 0 ? '' : `${x.median > b.median ? '+' : x.median < b.median ? '-' : ''}${Math.abs(((x.median - b.median) / Math.abs(b.median)) * 100).toFixed(1)}%, `);
     const which = baselines.length > 1
       ? ` (the latest of ${baselines.length} baselines; the first was ${formatNumber(parseMeasurement(at(first, 'measurement')).median)}${b.unit})`
       : '';
-    out(`baseline ${formatNumber(b.median)}${b.unit}${which}, best ${formatNumber(m.median)}${m.unit} (${pct}attempt ${at(best, 'attempt')})`);
+    out(`baseline ${formatNumber(b.median)}${b.unit}${which}, best ${formatNumber(m.median)}${m.unit} (${pct(m)}attempt ${at(best, 'attempt')})`);
+    const fin = [...rows].reverse().find((r) => at(r, 'attempt') === FINAL && at(r, 'decision') === 'keep');
+    if (fin) {
+      const f = parseMeasurement(at(fin, 'measurement'));
+      out(`final check ${formatNumber(f.median)}${f.unit} (${pct(f).replace(/, $/, '')} against the latest baseline)`);
+    }
   }
-  out(`attempts ${latest.size} (kept ${kept}, reverted ${latest.size - kept}), not counting the sensitivity check`);
+  out(`attempts ${latest.size} (kept ${kept}, reverted ${latest.size - kept}), not counting the sensitivity check or the final check`);
   if (first && at(first, 'note')) out(`first baseline note: ${at(first, 'note')}`);
   return 0;
 }
