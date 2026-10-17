@@ -28,7 +28,7 @@ on it.
    - Python: `python -m cProfile -s cumulative <script>`, or `py-spy record` if it is installed;
    - Go: `go test -cpuprofile cpu.out -bench .` then `go tool pprof cpu.out`;
    - Rust: `cargo flamegraph` if it is installed, or `perf`;
-   - JVM: async-profiler or JDK Flight Recorder (`-XX:+FlightRecorder`);
+   - JVM: async-profiler or JDK Flight Recorder (`-XX:StartFlightRecording`);
    - .NET: `dotnet-trace` and `dotnet-counters`;
    - JavaScript: `node --cpu-prof`, or the browser's performance panel.
 
@@ -50,7 +50,8 @@ on it.
 4. **Did it error?** Count failures and non-success results, and check that the output is correct, not only
    present. Rejections and early exits are fast; timeouts and retries are slow. If the harness does not count errors
    or check the output, make it, and make it exit non-zero when the output is wrong.
-5. **Does it reproduce?** Run each side at least 5 times and report the median, the run count and the spread (the
+5. **Does it reproduce?** Run each side at least 5 times for anything timed (a metric that comes out the same every
+   run, such as a size, needs 3 runs to show that it does) and report the median, the run count and the spread (the
    largest value minus the smallest). When you compare two sides directly, alternate them (A, B, A, B) so warmup,
    caches and drift favor neither. A gap smaller than the spread is no measurable difference.
 6. **Does it matter?** Next to any micro result, measure the path a user waits on, with realistic data sizes and
