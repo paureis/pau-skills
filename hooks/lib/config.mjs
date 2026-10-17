@@ -13,14 +13,15 @@
 // which is handy for one session: PAU_SKILLS_DISABLE=verify-before-done claude.
 //
 // Every plugin in this marketplace is rooted at the repository, so all hooks share this one file. A file that is
-// missing or not valid JSON counts as empty: a broken config must never break a session.
+// missing or not valid JSON counts as empty: a broken config must never break a session. A leading UTF-8 byte order
+// mark, which some Windows editors write, is ignored.
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 function readJson(path) {
   try {
-    const value = JSON.parse(readFileSync(path, 'utf8'));
+    const value = JSON.parse(readFileSync(path, 'utf8').replace(/^\uFEFF/, ''));
     return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   } catch {
     return {};

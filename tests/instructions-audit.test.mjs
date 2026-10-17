@@ -9,7 +9,7 @@ import { repo, runNode, tempDir } from './helpers.mjs';
 import {
   estimateTokens, fileStats, splitUnits, bigrams, overlap, findDuplicates, extractImports, extractReferences,
   pathCandidate, checkReferences, parseTargets, findSecrets, mask, findVague, findEmphasis, discoverFiles, scan,
-  isPathScoped, sectionsOf, parseArgs, formatText,
+  isPathScoped, sectionsOf, parseArgs, formatText, readTooling,
 } from '../skills/session-discipline/instructions-audit/scan.mjs';
 
 const SCAN = repo('skills', 'session-discipline', 'instructions-audit', 'scan.mjs');
@@ -215,6 +215,15 @@ test('discoverFiles: user, project, local, rules, other tools and nested; skips 
   assert.equal(map['services/api/AGENTS.md'], 'other-tool');
   for (const k of ['.cursorrules', '.github/copilot-instructions.md', '.github/instructions/py.instructions.md', '.cursor/rules/style.mdc']) assert.ok(k in map, k);
   assert.ok(!Object.keys(map).some((k) => /node_modules|\.venv/.test(k)));
+});
+
+test('a byte order mark does not hide a rules file\'s frontmatter or a package.json script', () => {
+  const home = tempDir('cma-home-'); const root = tempDir('cma-root-');
+  put(root, '.claude/rules/api.md', '\uFEFF---\npaths:\n  - "api/**"\n---\nScoped rule.\n');
+  put(root, 'package.json', '\uFEFF' + JSON.stringify({ scripts: { build: 'tsc' } }));
+  const api = discoverFiles(root, { home, ancestors: false }).find((f) => f.path.endsWith('api.md'));
+  assert.equal(api.loads, 'conditional');
+  assert.deepEqual(readTooling(root).scripts, { build: 'tsc' });
 });
 
 test('scan: imports one level deep, totals, duplicates across an import, stale refs, global refs skipped', () => {

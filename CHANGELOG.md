@@ -3,6 +3,15 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-17: config files with a byte order mark are honoured
+
+- `hooks/lib/config.mjs` ignored a `.claude/pau-skills.json` that starts with a UTF-8 byte order mark (some Windows
+  editors write one), so a hook could not be turned off. It now drops the mark before parsing. The same fix applies to
+  `instructions-audit`, where the mark hid a rules file's `paths:` frontmatter and a `package.json`'s scripts, and to
+  the plan file of `parallel-worktrees`.
+- Versions: pau-skills 0.8.1, pau-skills-hooks 0.1.1, session-discipline 0.6.1, verification 0.6.2,
+  agent-orchestration 0.5.1, guards 0.4.1.
+
 ## 2026-10-17: pau-skills-hooks, the hooks without the skills
 
 - New plugin `pau-skills-hooks`: every hook in the marketplace and no skills, about zero tokens of always-on context.
