@@ -11,6 +11,8 @@ metadata:
 
 Interview the user relentlessly about every aspect of the plan or design until you reach a **shared understanding**: every open decision resolved, no ambiguity left.
 
+If there is no plan yet, only a goal, grilling would lock in the first idea before any alternative exists. Suggest the user run `/brainstorm` first, if it is installed, to widen the options. If it is not, ask the user for two or three alternatives to the first idea, then grill the one they pick.
+
 ## How to run it
 
 - **One question at a time.** Never dump a list. Resolve each branch before opening the next.
