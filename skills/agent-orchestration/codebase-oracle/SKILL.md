@@ -1,6 +1,6 @@
 ---
 name: codebase-oracle
-description: "Research a codebase to answer architectural, design, or implementation questions with verified, evidence-based answers. Use when the user pastes a list of questions about their code, asks what the codebase actually does, wants assumptions verified before making a design decision, or says 'answer these from the code', 'research these in the codebase', 'check the code for this', or 'use the oracle'. Works in any repository and in any environment, whether files can be read directly or only project documents are available."
+description: "Answer architecture, design or implementation questions from the code itself, with verified evidence for each answer. Use when the user pastes questions about their code, asks what the codebase actually does, wants assumptions checked before a design decision, or says 'answer these from the code', 'research this in the codebase', 'use the oracle'."
 ---
 
 # Codebase Oracle

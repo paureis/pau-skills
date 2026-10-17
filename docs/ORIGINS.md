@@ -23,6 +23,10 @@ After that comparison, every skill (adapted ones included) went through a punctu
 dashes with commas, colons, periods or parentheses. It changed no instructions, so the classifications and change
 lists below still hold.
 
+The skills adapted from [pstack](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack)
+(`arena`, `architect`, `bug-fix`, `verify-app`) were compared the same way, file by file, against that commit of
+Cursor's plugin repository. pstack is a single snapshot, so there is no history to search.
+
 ---
 
 ## session-discipline
@@ -281,6 +285,77 @@ reviewer prompt, and `review-scope.mjs`, which prints the rules, scopes the chan
 in risky code, or outside the change. `TRIAGE.md` and the script are shared with `lean-subagent-dev`, which carries
 identical copies.
 
+
+### bug-fix (Adapted from [pstack bug-fix playbook](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/playbooks/bug-fix.md))
+
+Closest upstream: `skills/poteto-mode/playbooks/bug-fix.md`, with `skills/principle-attack-the-premise/SKILL.md`,
+`skills/principle-fix-root-causes/SKILL.md`, `skills/principle-prove-it-works/SKILL.md`, `skills/blast-radius/SKILL.md`
+and `automations/benny/skills/reproduce-and-fix-issues/references/verify-existing-fix.md`. About 5% of my `SKILL.md`
+word 6-grams (136 of 2,775) appear in those files, mostly from fix-root-causes, blast-radius and attack-the-premise.
+`EVIDENCE.md` shares none.
+
+**Problem.** Agents fixing a bug tend to add a guard where it crashed, keep "might help" changes, try a third fix on
+the same wrong belief, and call it fixed from a unit test or from one run.
+
+**What this version changes.**
+- The playbook's six steps become nine and take in the principle skills it links to: the legitimacy test for guards
+  (a guard is a fix only when the state it guards is legitimate), attack the premise after two failed fixes that rest
+  on it, suspect the observation method, and a blast-radius step that names the one fact the change is safe because
+  of, with a five-rung proof ladder.
+- From verify-existing-fix: reproduce twice from a clean state, "no baseline, no claim", and a section for verifying
+  a fix that already exists, with versions checked out in separate worktrees, never over the user's changes.
+- Added: a search for an existing fix in step 1; work on a branch; a hypothesis log whose rows count only with pasted
+  output, with predictions if true and if false; reverting every change a refuted hypothesis motivated; the failing
+  repro committed before the fix and the fix committed before the proof; paths back when a fix or its safety check
+  fails; the verdict "reproduced, not fixed"; a report template.
+- Removed: Cursor's control skill and `/loop`, model and speed choices, the other pstack skills it called, and the
+  instruction to delegate the investigation. An independent check goes to `evaluator` if it is installed, or to a
+  fresh subagent.
+- New `EVIDENCE.md`, language-neutral: driving and resetting each surface, runtime evidence per language,
+  `git bisect run`, checks on the observation itself, and expected-failure markers with how to pin the reason a test
+  fails (pytest `raises=`, Rust `should_panic(expected = ...)`).
+
+**Why.** The playbook depends on Cursor and on other pstack skills for its key rules. A Claude Code agent needs them
+in one place, for any language and surface. Tried on a planted off-by-one whose obvious fix is a guard: the
+legitimacy question led to the producer, not the guard.
+
+### verify-app and `check-map.mjs` (Adapted from [pstack `create-verification-skill`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/create-verification-skill))
+
+Closest upstream: `skills/create-verification-skill/SKILL.md` and its `references/feature-map-example/`,
+`skills/maintain-verification-skill/SKILL.md`, and `docs/guide/06-verify-and-ship.md`. Shared word 6-grams, measured
+before the review round (which only lowered them): `SKILL.md` about 6%, `MAINTAIN.md` about 9%, the templates about
+2%, the example map 0 to 1%; `DRIVING.md` and `check-map.mjs` none. The shared part is mostly structure: the
+interview questions, the Launch, Doctor, Drive, Evidence and Cleanup sections, the four feature headings, the
+end-to-end proof, and maintain's outcomes and rules.
+
+**Problem.** An agent says a change works without having used the running app, because the project has no written way
+to start it, drive it and keep proof.
+
+**What this version changes.**
+- Two upstream skills become one: maintain is the `maintain` argument, with its steps in `MAINTAIN.md`. An existing
+  verify skill is used instead of writing a second.
+- Written for Claude Code: output goes to `.claude/skills/verify-<app>/`; questions through AskUserQuestion one at a
+  time; the Agent tool for the per-feature source check and for a cold-reader proof, or a fresh session.
+- Run state is explicit: one exported env file per run; every place the app writes (current folder, home, XDG
+  folders, temp, configured paths) pointed into the run folder, with a git status check that nothing escaped into the
+  repository; one record of what the run started, with a start-time check before any process is stopped; tmux on a
+  private socket; scratch files named with the run ID and deleted only by recorded path; the run folder removed only
+  after the stop is confirmed.
+- Templates with every spot to fill marked, server and CLI variants of Launch and Doctor, numbered evidence per step,
+  and an explained "not yet proven on the real target" section.
+- New `DRIVING.md`: the project's own harness first, with signals per ecosystem, then fallbacks for web, CLI, TUI,
+  HTTP, mobile, desktop and libraries, and port-owner commands per OS.
+- New `check-map.mjs`, a checker for the generated skill: frontmatter, required sections with a command in Launch,
+  Doctor and Cleanup, leftover template tokens, the index against the feature files (subfolders and the common link
+  forms), the four feature headings, and an evidence folder that git ignores and does not track. Markdown is read the
+  CommonMark way where it matters.
+- The example map is rewritten (invoices, driven through a browser, an API and a CLI).
+- Removed: Cursor paths and commands, and the guide's pull request, shipping and benchmark material.
+
+**Why.** Proving behaviour in the real app is the step agents skip most, and pstack's pair of skills is the clearest
+method I found for making it repeatable. A dry run on a fixture service and a cold run by a fresh agent on a fixture
+CLI (`tests/fixtures/verify-app/`) found the export and current-folder problems that the review round fixed.
+
 ---
 
 ## agent-orchestration
@@ -361,6 +436,40 @@ generous, from `LEAN_SUBAGENT_BUDGET` or the project file), which sets the deleg
 the plan check and how much review to run, because a subagent costs more usage in total, not less; the plan check
 before building; the brief template with its "stop and report if" section; the delegation log, so the way of working
 can be judged after a week; and "when to step up" to the heavier methods.
+
+
+### arena and `arena.mjs` (Adapted from [pstack `arena`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/arena))
+
+Closest upstream: `skills/arena/SKILL.md` and `skills/architect/references/runner-prompt.md`. `SKILL.md` shares about
+8% of its word 6-grams with them (measured before the review round): the phase structure and a few sentences, such as
+"every candidate gets the same prompt, so the prompt is the contract". `CANDIDATE-BRIEF.md` carries the runner rule
+in other words; `JUDGE-BRIEF.md` and `arena.mjs` are mine.
+
+**Problem.** One attempt at an interface or a module layout locks in the first shape that came to mind, and comparing
+attempts by feel favours the one you would have written yourself.
+
+**What this version changes.**
+- Upstream gets diversity from several model families. Here each candidate gets one direction in its brief, from a
+  table per task type; the Agent tool's model and effort fields are set only when the user asks.
+- The judge is a fresh subagent with a hostile brief that sees the candidates under shuffled letters
+  (`arena.mjs blind`), never the briefs, the key or the conversation, only reads, and scores criterion by criterion
+  with evidence. When an artifact can be run, the orchestrator runs the same check on every candidate and hands the
+  output over as `checks.txt`.
+- A Score phase: the orchestrator writes its own scores before the judge is launched, so the verdict cannot anchor
+  them.
+- Candidates work outside the arena folder, so they cannot read the rubric or each other's briefs; the base commit is
+  recorded before fan-out.
+- `arena.mjs` refuses a rubric with fewer than 3 or more than 6 criteria or unfilled placeholders, detects dropouts
+  (including empty output), never puts a link in the blind copy, never copies `.git` or a brief, and refuses to
+  overwrite a key a judge may still be using.
+- Cost first: N defaults to 3; on a tight `LEAN_SUBAGENT_BUDGET` it states the cost and suggests 2.
+- References to poteto-mode and the principle skills are replaced by inline rules; verification uses `evaluator` if
+  it is installed.
+
+**Why.** Without other model families in the loop, a blind judge and different briefs are what stop the comparison
+from reflecting my own preference. In the dry run on a helper's interface in this repository, the judge caught a
+broken import the orchestrator had missed. The review round closed two leaks in the blind copy (links and a background
+verdict arriving before the orchestrator's own scores).
 
 ---
 
@@ -531,6 +640,31 @@ Closest upstream: `SKILL.md` 2026-04-28 to 2026-05-27; `LANGUAGE.md` and `INTERF
 - Broader trigger phrases.
 
 **Why.** I run it in sessions and tools where subagents and the sibling skills are not available.
+
+
+### architect (Adapted from [pstack `architect`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/architect))
+
+Closest upstream: `skills/architect/SKILL.md` and its `references/design-red-flags.md`, `runner-prompt.md` and
+`rationale-template.md`. Shared word 6-grams: `SKILL.md` 7%, `RED-FLAGS.md` 23% (the same eight flags and headings,
+prose rewritten), `SKETCH-BRIEF.md` 3%, `RATIONALE-TEMPLATE.md` 5% (the same section list).
+
+**Problem.** Jumping straight to code fixes the shape before anyone has compared it with another one, and agent
+contributors then copy whatever shape exists.
+
+**What this version changes.**
+- The sketch phase no longer requires arena: by default it writes two sketches in sequence; because `arena` is a
+  typed skill, it suggests the user run `/arena`, or briefs two subagents. With an arena result, Screen runs only the
+  red flags.
+- Grounding uses `codebase-oracle` if it is installed, instead of pstack's how and why skills.
+- A table of not-implemented stubs for 13 languages.
+- Screen is its own phase, with the deletion test and the agent-contributor test; the red flags gain the vocabulary of
+  `improve-codebase-architecture/LANGUAGE.md` and ways to make internals unreachable per language.
+- Agree is optional, with explicit triggers, through AskUserQuestion. Implement uses `tdd` if it is installed, with
+  an inline fallback; deviations go into a new Deviations section of the rationale, which is saved next to the
+  project's design documents.
+- The scrap signals are kept; the new sketch must be smaller than the old one.
+
+**Why.** The design step should work in a plain Claude Code session with only this skill installed.
 
 ---
 

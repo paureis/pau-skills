@@ -1,6 +1,7 @@
 ---
 name: parallel-worktrees
 description: Split a body of work into independent pieces and run them in parallel, each in its own git worktree on its own branch, so several agents (subagents in one session, or several Claude Code sessions or terminals) never edit the same checkout; decide whether parallel work is safe at all, write a brief per piece, set up the worktrees, integrate the branches one at a time with the tests run after each merge, and clean up without losing uncommitted work. Use when the user says "run these in parallel", "split this across agents", "use worktrees", "spin up several sessions on this", "fan out", "parallelize the refactor", "work on several features at once", or when a task list has pieces that touch different parts of the codebase.
+disable-model-invocation: true
 argument-hint: "[the work to split, e.g. 'issues 41, 42 and 47' or a path to a plan]"
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: evaluator
-description: Run an independent, hostile evaluation of an increment in a forked context that has not seen how it was built, grading each contract assertion PASS, FAIL or UNVERIFIED with reproducible evidence and mutation-verifying every test it relies on. Use after an increment is built and before calling it done, or when the user says "evaluate this", "run the evaluator", "attack this build", "independent review", "is this really done".
+description: "Run a hostile, independent evaluation of an increment in a forked context that has not seen the build, grading each contract assertion PASS, FAIL or UNVERIFIED with reproducible evidence. Use after an increment is built and before calling it done, or when the user says 'evaluate this', 'run the evaluator', 'attack this build', 'independent review', 'is this really done'."
 argument-hint: "<repo path> <contract path> <assertion ids, e.g. SEC-1..SEC-10>"
 context: fork
 agent: general-purpose
@@ -26,6 +26,11 @@ alone.
 
 **Counts as evidence:** a passing automated test that you have run and watched pass; a captured trace with the
 relevant correlation IDs; a live reproduction.
+
+If the project has a verification skill (`.claude/skills/verify-<app>/`), a drive through it counts as a live
+reproduction: follow its Launch, Doctor, Drive and Cleanup sections, and cite the files in the evidence folder it
+names. Without one, reproduce live by hand. If the `verify-app` skill is installed, list "no verification skill"
+under the contract gaps and suggest generating one.
 
 **Does not count as evidence:**
 

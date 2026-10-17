@@ -3,6 +3,29 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-17: ideas from pstack, and a context budget
+
+- New skills, adapted from [pstack](https://github.com/cursor/plugins/tree/main/pstack) (MIT, see NOTICE):
+  - `verify-app` (verification): generates and maintains a project skill that launches the real app, drives it like a
+    user, keeps evidence and cleans up only what it started. `check-map.mjs` checks the generated skill.
+  - `bug-fix` (verification): reproduce twice, test hypotheses with runtime evidence, fix the first wrong decision,
+    commit the failing repro before the fix, and prove what the change cannot break.
+  - `arena` (agent-orchestration): several subagents attempt one task with different briefs; a blind judge and the
+    orchestrator's own scores pick a base, and the best parts are grafted by hand. `arena.mjs` makes the blind copy.
+  - `architect` (planning): sketch two shapes before code, screen them against red flags for agent contributors,
+    build against the sketch.
+- Context budget: 17 skills you start on purpose now load only when you type them (`disable-model-invocation:
+  true`). The 12 that load on their own have descriptions of at most 400 characters (about 4,450 in total, within
+  the 4,500 limit), and `tests/context-budget.test.mjs` enforces the limits, reading descriptions the way YAML does.
+  Skills that used to start a typed skill now suggest its `/` command. README, `which-skill` and ADDING-A-SKILL list
+  the two groups, and `scripts/new-skill.mjs` scaffolds new skills in the typed tier.
+- The style test also bans words and phrases typical of AI-written text, and skips code fences the CommonMark way.
+- `evaluator` counts a drive through a project's verification skill as live evidence.
+- NOTICE has corrected paths and a pstack section. `docs/BACKLOG.md` holds the rest of the pstack work, detailed
+  enough for a new session to pick up.
+- Versions: pau-skills 0.7.0, session-discipline 0.5.0, verification 0.6.0, agent-orchestration 0.5.0, guards 0.4.0,
+  planning 0.3.0.
+
 ## 2026-10-17: review-triage and lean-subagent-dev
 
 - New skill: `review-triage` (verification). Decides which review findings are worth fixing: a finding must name a

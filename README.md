@@ -1,7 +1,7 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 25](https://img.shields.io/badge/skills-25-informational)
+![Skills: 29](https://img.shields.io/badge/skills-29-informational)
 ![Hooks: 11](https://img.shields.io/badge/hooks-11-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
@@ -64,6 +64,8 @@ green by skipping the failing test.
 - `tdd` builds one behaviour at a time, test first.
 - `mutation-test` breaks the code on purpose to prove a test catches it.
 - `evaluator` has a fresh agent, which did not build the change, grade it against its acceptance criteria.
+- `verify-app` writes the project's own recipe for starting the real app and proving a change in it, with evidence.
+- `bug-fix` finds the actual cause of a bug from runtime evidence and ships only the change that evidence justifies.
 
 ### 2. Rules that are written down and still broken
 
@@ -105,12 +107,16 @@ context was compacted.
 - `to-prd` and `to-issues` turn the decided plan into a spec and vertical-slice issues.
 - `codebase-oracle` answers questions about the code from evidence in the code, and says when it cannot.
 - `improve-codebase-architecture` finds refactors that make modules deeper and easier to test.
+- `architect` sketches the types and signatures in two different shapes before any code is written, and builds
+  against the one that survives the red flags.
 
 ### 6. Several agents in one repository
 
 - `parallel-worktrees` splits work into independent pieces, one git worktree and branch per agent, then integrates
   them one at a time.
 - `methodology` is an operating method where no agent certifies its own work.
+- `arena` runs several subagents at one task with different briefs, and a blind judge helps pick and combine the
+  results.
 - `lean-subagent-dev` is the light version for a whole session: one subagent at a time with a written brief, and the
   main session checks its work itself. It asks how much usage room you have and delegates less when it is tight,
   because a subagent costs more usage in total, not less.
@@ -145,12 +151,29 @@ will change, or how to make it remember how they like to work.
   It ends with a cheat sheet for the desktop app, terminal or editor, and a first small task. It works on its own,
   without the rest of this marketplace.
 
+## What loads on its own
+
+Claude Code puts the description of every skill the model may start into the context of every session. To keep that
+cost small, only the skills an agent should reach for without being asked load on their own. The rest cost nothing
+until you type them. The agent cannot start them or see their descriptions; `which-skill` knows both groups and
+tells you which one to type.
+`tests/context-budget.test.mjs` holds the first group to 12 skills and 4,500 characters of descriptions.
+
+- **Load on their own**: `which-skill`, `tdd`, `bug-fix`, `verify-app`, `review-triage`, `evaluator`,
+  `mutation-test`, `codebase-oracle`, `migration-review`, `flaky-test-hunt`, `dependency-security-audit`,
+  `safe-merge`.
+- **You type them** (`/pau-skills:<skill>` or `/<plugin>:<skill>`): `project-setup`, `session-close`, `handoff`,
+  `retrospective`, `claude-md-audit`, `lean-subagent-dev`, `methodology`, `parallel-worktrees`, `grill-me`, `to-prd`,
+  `to-issues`, `improve-codebase-architecture`, `ci-cost-and-cadence`, `dependency-upgrade`, `rule-to-hook`, `arena`,
+  `architect`.
+
 ## Reference
 
 Every skill is a folder in [`skills/`](skills), grouped by plugin, and every hook is a script in [`hooks/`](hooks).
 Each name below links to the file itself. A skill runs as `/<plugin>:<skill>`, or `/pau-skills:<skill>` from the
 bundle. "Adapted" marks the skills
-derived from [mattpocock/skills](https://github.com/mattpocock/skills); everything else is original.
+derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
+[pstack](https://github.com/cursor/plugins/tree/main/pstack); everything else is original.
 
 ### session-discipline
 
@@ -181,6 +204,12 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills); everythi
 - **[review-triage](skills/verification/review-triage/SKILL.md)**: Decides which review findings are worth fixing (must fix, fix if cheap, leave), with a test per
   fix and one review round and one fix round; `review-scope.mjs` flags a fix with no test, in risky code or outside
   the change.
+- **[bug-fix](skills/verification/bug-fix/SKILL.md)** (adapted): Reproduces a bug twice on the real surface, tests hypotheses with
+  runtime evidence, fixes the first wrong decision instead of guarding the symptom, commits the failing repro before
+  the fix, and proves what the change cannot break.
+- **[verify-app](skills/verification/verify-app/SKILL.md)** (adapted): Generates a project skill, `.claude/skills/verify-<app>/`, that
+  launches the real app, drives it like a user, keeps evidence that survives cleanup and cleans up only what it
+  started, with a feature map; `check-map.mjs` checks it, and `maintain` keeps it in step with the app.
 - Hooks: [`test-tamper-guard`](hooks/verification/test-tamper-guard.mjs), [`verify-before-done`](hooks/verification/verify-before-done.mjs).
 
 ### agent-orchestration
@@ -191,6 +220,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills); everythi
   plan for overlapping files and report every worktree's state.
 - **[lean-subagent-dev](skills/agent-orchestration/lean-subagent-dev/SKILL.md)**: A way of working for a whole session: one subagent at a time with a written brief, the main
   session checks the work itself and triages the review, and the usage budget sets how much to delegate.
+- **[arena](skills/agent-orchestration/arena/SKILL.md)** (adapted): Runs several candidate subagents at one task, each with a
+  different brief, has a fresh judge score them blind against a rubric they never saw, then picks a base and grafts
+  the best parts by hand; `arena.mjs` scaffolds the folders and makes the blind copy.
 - Hook: [`no-idle`](hooks/agent-orchestration/no-idle.mjs).
 
 ### guards
@@ -208,6 +240,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills); everythi
 - **[to-prd](skills/planning/to-prd/SKILL.md)** (adapted): Synthesizes the conversation into a PRD without re-interviewing.
 - **[to-issues](skills/planning/to-issues/SKILL.md)** (adapted): Splits a plan into vertical-slice issues for any tracker.
 - **[improve-codebase-architecture](skills/planning/improve-codebase-architecture/SKILL.md)** (adapted): Finds refactors that turn shallow modules into deep ones.
+- **[architect](skills/planning/architect/SKILL.md)** (adapted): Sketches types and signatures with not-implemented bodies before
+  writing code, compares at least two shapes against red flags for agent contributors, then implements against the
+  sketch test first and scraps it when deviations repeat.
 
 [docs/ORIGINS.md](docs/ORIGINS.md) records, for every piece, the problem that led to it and, for each adapted skill,
 the upstream version it was compared against and what this version changes, taken from a diff.
@@ -273,4 +308,7 @@ To bring a new skill into the repository, start with `node scripts/new-skill.mjs
 - The planning skills and `tdd` are adapted from [mattpocock/skills](https://github.com/mattpocock/skills) by Matt
   Pocock, under the MIT License. The upstream notice is in [NOTICE](NOTICE). The layout of this README, organised
   around the problems each piece fixes, also follows his.
+- `arena`, `architect`, `bug-fix` and `verify-app` are adapted from [pstack](https://github.com/cursor/plugins/tree/main/pstack)
+  by Lauren Tan, under the MIT License. The upstream notice is in [NOTICE](NOTICE). The context budget and several
+  rules in [docs/BACKLOG.md](docs/BACKLOG.md) also come from reading it.
 - Everything else is mine, under the MIT License ([LICENSE](LICENSE)).

@@ -1,6 +1,7 @@
 ---
 name: project-setup
 description: Set up Claude Code for a project through a short, adaptive interview, then write the project CLAUDE.md and, with a separate yes, the user's personal preferences. Asks one question at a time with options and a recommended answer, reads the project first so it never asks what the files already show, adapts to a Learn, Build or Mix session, and ends with a cheat sheet for the user's surface (desktop app, terminal, editor or web) and a first small task. Speaks the user's language (for example Spanish) from the first message. Written for people new to Claude Code, and useful for anyone starting work in a new repository. Use when the user says "set up Claude Code for this project", "I am new to Claude Code", "help me get started", "onboard me", "write my CLAUDE.md", "how should I work with Claude Code on this", or opens a new project and does not know where to begin.
+disable-model-invocation: true
 argument-hint: "[quick | full] [language, for example spanish]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**), Read(~/.claude/CLAUDE.md), Bash(git status *), Bash(git log *), Bash(git remote -v), Bash(git branch --show-current), Bash(printenv CLAUDE_CODE_ENTRYPOINT)
 ---

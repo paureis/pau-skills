@@ -1,6 +1,6 @@
 ---
 name: migration-review
-description: Review a database schema or data migration before it runs against a real database, in any migration tool (raw SQL, Rails, Django, Alembic, Prisma, Drizzle, Knex, TypeORM, Sequelize, Flyway, Liquibase, golang-migrate, goose, Ecto, Laravel, EF Core, Supabase), for locking and downtime, compatibility with the code running during deploy, data loss, reversibility, correctness and run time at the table's real size, and return a verdict with a rewritten safe version of every risky statement. Focus on PostgreSQL and MySQL, with notes for SQLite and SQL Server. Use when the user says "review this migration", "is this migration safe", "will this lock the table", "can I run this in production", "check my schema change", "zero-downtime migration", "add a NOT NULL column safely", "rename a column without downtime", or before merging or deploying any change under a migrations folder.
+description: "Review a schema or data migration (any tool or raw SQL) before it runs: locks, downtime, deploy compatibility, data loss, reversibility, real run time; gives a verdict and safe rewrites. Use for any change under a migrations folder, or when the user says 'review this migration', 'is this migration safe', 'will this lock the table', 'add a NOT NULL column', 'rename a column without downtime'."
 argument-hint: "<migration file(s) or PR> [engine and version] [table sizes if known]"
 ---
 

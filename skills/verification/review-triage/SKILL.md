@@ -1,6 +1,6 @@
 ---
 name: review-triage
-description: "Decide which review findings are worth fixing, and stop the review and fix loop. Each finding must name a failure (this input, this wrong result); it is rated by the value of fixing it, the effort, and the risk the fix itself carries, and lands in must fix, fix if cheap, or leave. Every fix comes with a test that fails without it, the second look covers only the fix, and there is one review round and one fix round. Works for any review: a person, an AI review tool, a review bot or a subagent. Use when the user says \"triage these review comments\", \"which of these findings should I fix\", \"is this worth fixing\", \"the review keeps finding things\", \"stop the review loop\", \"what blocks the merge\", or pastes review findings."
+description: "Decide which review findings are worth fixing and stop the review and fix loop. Each finding must name a failure; it lands in must fix, fix if cheap, or leave, and every fix gets a test that fails without it. Use when the user pastes review findings or says 'triage these review comments', 'is this worth fixing', 'the review keeps finding things', 'what blocks the merge'."
 argument-hint: "[the findings: a pull request, a review file, or pasted comments]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 ---
