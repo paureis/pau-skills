@@ -1,6 +1,6 @@
 ---
 name: lean-subagent-dev
-description: "A way of working for a whole session: one subagent at a time builds from a written brief, you check its work and keep every push and merge, scaled to the usage budget. Use when the user says 'work lean', 'lean subagent', 'delegate this to a subagent', 'brief a subagent', 'how much should I delegate', 'I am low on usage'."
+description: "A way of working for a whole session: one subagent at a time builds from a written brief, you check its work and keep every push and merge, scaled to the usage budget. Use when the user says 'work lean', 'lean subagent', 'delegate this to a subagent', 'brief a subagent', or when they ask how much to delegate or say they are low on usage."
 argument-hint: "[the work for this session, or a path to a plan]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)

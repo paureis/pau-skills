@@ -1,6 +1,6 @@
 ---
 name: methodology
-description: "Install a discipline for building software with AI agents in which no agent certifies its own work: contracts with verify clauses, a separate evaluator, two state files. Use when the user says 'adopt the methodology', 'set up a contract', 'how should agents verify their work', or wants PROJECT.md and log.md."
+description: "Install a discipline for building software with AI agents in which no agent certifies its own work: contracts with verify clauses, a separate evaluator, two state files. Use when the user says 'adopt the methodology', 'set up a contract', or wants PROJECT.md and log.md, or when they ask how agents should verify their work."
 ---
 
 # Methodology

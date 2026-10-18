@@ -1,6 +1,6 @@
 ---
 name: dependency-upgrade
-description: "Upgrade dependencies, runtimes and base images in any ecosystem, one major at a time or as a batch of minor and patch updates, each step tested and committed. Use when the user says 'upgrade dependencies', 'bump packages', 'upgrade to React 19', 'bump the Go version', 'update the base image', 'we are way behind on versions', 'Dependabot has 30 PRs open', 'what breaks if we upgrade X'."
+description: "Upgrade dependencies, runtimes and base images in any ecosystem, one major at a time or as a batch of minor and patch updates, each step tested and committed. Use when the user says 'upgrade dependencies', 'bump packages', 'upgrade to React 19', 'bump the Go version', 'update the base image', or when versions are far behind, Dependabot has many PRs open, or the user asks what an upgrade breaks."
 argument-hint: "[package and target version, e.g. 'next 15', or 'hygiene' for a minor/patch pass]"
 ---
 
