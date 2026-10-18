@@ -77,6 +77,8 @@ docs/ORIGINS.md lists, for each one, what this version changes.
   skills/agent-orchestration/codebase-oracle/EXPLORER-BRIEF.md
   skills/agent-orchestration/codebase-oracle/EXPLAINER-BRIEF.md
   skills/guards/rule-to-hook/SKILL.md
+  skills/planning/improve-codebase-architecture/SKILL.md
+  skills/planning/improve-codebase-architecture/EXECUTION.md
 
 Those files are distributed under the upstream license, reproduced here:
 

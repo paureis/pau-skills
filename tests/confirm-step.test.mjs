@@ -16,8 +16,9 @@ const CONFIRM_PARAGRAPH = 'If you started this skill on your own, without the us
 
 // Settled with the owner after the P0.5 review: only skills whose cost has no other gate. Skills that already stop
 // for the user's yes before they write (retrospective, instructions-audit, to-issues, ci-cost-and-cadence,
-// project-setup), conversations the user can stop with a word (brainstorm, grill-me) and skills that write only a
-// local file or a proposal (handoff, to-prd, improve-codebase-architecture) do not ask twice.
+// project-setup, improve-codebase-architecture, whose code changes start only on an explicit ask to implement),
+// conversations the user can stop with a word (brainstorm, grill-me) and skills that write only a local file or a
+// proposal (handoff, to-prd) do not ask twice.
 const CONFIRM_LIST = [
   // launches subagents or headless runs
   'agent-orchestration/arena', 'agent-orchestration/codebase-oracle', 'agent-orchestration/parallel-worktrees',
