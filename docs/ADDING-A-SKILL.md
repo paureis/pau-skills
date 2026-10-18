@@ -85,6 +85,10 @@ order; the scrub check and the validator at the end catch most of what gets forg
    (the tests fail while `marketplace.json` is out of date). Then **bump the plugin's version** in its entry in
    `.claude-plugin/marketplace.json`, and the `pau-skills` bundle's version too, since it ships the same files. A
    change to a hook also bumps `pau-skills-hooks`, which ships every hook and no skills.
+   To list what to bump, run this from your branch:
+   `git diff --name-only $(git merge-base origin/main HEAD) -- skills hooks | cut -d/ -f1-2 | sort -u`. Bump each
+   `skills/<plugin>` it prints, the bundle, and `pau-skills-hooks` for any `hooks/` line (a change to `hooks/lib/`
+   also bumps every plugin that has hooks).
    Users only receive a change when the version changes. Use a minor bump for a new skill and a patch bump for a fix.
    Add a line to `CHANGELOG.md`.
 
@@ -92,6 +96,7 @@ order; the scrub check and the validator at the end catch most of what gets forg
    ```bash
    claude plugin validate . --strict
    ```
+   CI runs the same command on every push to main and every pull request, so a local failure also fails CI.
 
 10. **Commit** with the message from a file (`git commit -F <file>`), then push.
 
