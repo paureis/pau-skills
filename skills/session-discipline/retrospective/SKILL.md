@@ -39,11 +39,13 @@ reads it. Growth is the cost; a learning has to buy its place.
    what a future agent does: name the moment it applies and what the agent would do differently there. Drop it, and
    show `DROPPED: not decision-changing (<why>)` in the table, when the agent would only read more text and act the
    same (it is already the default, or the user already knows it and only forgot to say it), or when it stops being
-   true once a path, version or file name changes (write it about the class, not this one file). Consolidation, trim
-   and stale-reference rows (items 2 to 5) are exempt: they shrink the stores on purpose. For each learning that
-   passes, put it in a scratch file and run
+   true once a path, version or file name changes (write it about the class, not this one file). A correction that a
+   written rule already covers is not dropped here: the search below finds it as a DUPLICATE to enforce.
+   Consolidation, trim and stale-reference rows (items 2 to 5) are exempt: they shrink the stores on purpose. For each
+   learning that passes, put it in a scratch file and run
    `node "${CLAUDE_SKILL_DIR}/audit.mjs" --check <file>` from the project root (it scores the
-   text against every unit of both CLAUDE.md files, every memory and every skill). Classify against the closest unit:
+   text against every unit of both CLAUDE.md files, every memory and every skill; it skips units under about a dozen
+   content words, so read the short rules of the target store yourself). Classify against the closest unit:
    - **DUPLICATE** (already stated): drop it. If it happened anyway, the existing rule failed as a rule, so the
      retrospective item becomes "make that rule enforceable" (a gate, a script, a test), never a restatement.
    - **EXTENDS** (an existing unit covers the class; this is a new instance or mechanism): edit that unit in
@@ -88,6 +90,7 @@ Route each approved learning and make the edit:
 - **Feedback, preference, or project fact** -> the **memory system**: write a memory file in the project's memory directory using the documented frontmatter, and add the one-line pointer to `MEMORY.md`. First check for an existing memory that already covers it and update that instead of duplicating.
 - **Skill improvement** -> edit the specific `SKILL.md` (project `.claude/skills/<name>/` or global `~/.claude/skills/<name>/`). Describe the exact edit, then make it on approval.
 - **Project-specific context that isn't a rule** -> a project reference doc or a `reference`-type memory.
+- **A rule that failed as a rule (DUPLICATE)** -> a check in the project: a test, a lint rule, a script or a hook. Use `rule-to-hook` if it is installed; otherwise write the check and show it failing on the past mistake.
 - **A skill that did not start** -> that skill's `description:` line: add the words the user actually said, within the length limit, rather than a rule elsewhere telling the agent to use it.
 
 Don't capture the same learning in two places. Pick the store that will actually be consulted at the right time (a rule the model must follow -> CLAUDE.md or memory; a behavior inside one workflow -> that skill file).
