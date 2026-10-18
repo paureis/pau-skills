@@ -285,8 +285,9 @@ Facts (Claude Code documentation, skills page, checked 2026-10-17):
 - Every skill is model-invocable. No skill sets `disable-model-invocation`; `tests/context-budget.test.mjs` fails on
   it.
 - Each description is a trigger list: one sentence on what the skill does, then the phrases a person would say, and
-  what makes it different where another installed skill could be picked. At most 400 characters each and 12,000 in
-  total (the owner runs a 1M window, where the listing gets about 40,000 characters shared with every other plugin).
+  what makes it different where another installed skill could be picked. At most 400 characters each and 13,000 in
+  total (the owner runs a 1M window with `SLASH_COMMAND_TOOL_CHAR_BUDGET` at 80000; raised from 12,000 for the fifth
+  batch, by the owner's choice).
 - Skills that launch subagents or headless runs, commit, push or install with no other check, or change how the whole
   session works carry the confirm paragraph word for word, unless something in them already stops for the user's yes
   before that cost. `CONFIRM_LIST` in `tests/confirm-step.test.mjs` is the list (13 skills), and the README and
