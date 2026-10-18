@@ -16,6 +16,8 @@ the plugin they installed is bumped.
   written as situations ("when versions are far behind"), so they do not count as asking.
 - A skill can start another one directly where the step is part of the work you asked for, and offers it where it is
   a next step or the current skill is still read-only.
+- `bug-fix` now says when it is worth loading: the cause is not obvious, a first fix did not hold, the bug came back or
+  the fix is risky. An obvious one-line fix is done in the session without it.
 - `which-skill` drops its typed and automatic lists; `scripts/new-skill.mjs` no longer writes the flag;
   `docs/ADDING-A-SKILL.md` step 2 describes the new rule.
 - Minor bump for every skill plugin and the bundle; the hooks did not change.

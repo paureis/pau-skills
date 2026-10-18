@@ -687,9 +687,10 @@ When the batch is merged, update the skill count on the author's GitHub profile 
 - **P1.3 version-bump check** (`todo`). Nothing checks that a change to a plugin's files bumps that plugin's version
   and the bundle's, though CLAUDE.md requires it. A test or script that compares against the merge base and names the
   plugin to bump. Found by the same cold run; the owner decides whether it is worth its code.
-- **P1.5 bug-fix trigger** (`todo`). After P0.5, "total() returns None when the cart is empty. Fix it." started no
-  skill in 3 of 3 headless runs; the session fixed the bug inline, test first. Check whether a plain one-line fix
-  should start `bug-fix` at all, and if so which words the description needs; prove it with `skill-eval`.
+- **P1.5 bug-fix trigger** (`done` in P0.5). After P0.5, "total() returns None when the cart is empty. Fix it." started
+  no skill in 3 of 3 headless runs; the session fixed the bug inline, test first. The owner decided that is right: an
+  obvious one-line fix needs no skill. The description now says when `bug-fix` is worth loading (the cause is not
+  obvious, a first fix did not hold, the bug came back, the fix is risky).
 - **P1.4 typed-skill names** (`closed`: P0.5 removed every `/<plugin>:<name>` mention, so there is nothing left to
   ratchet). Some skills named a typed skill as `/<name>` without the `/<plugin>:<name>` form; the cold run of the
   second batch found three live instances, for example in `architect` and `which-skill`.

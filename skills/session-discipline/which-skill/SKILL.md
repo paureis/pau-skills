@@ -76,7 +76,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | A CVE announcement, "are we vulnerable", "is this package safe" | `dependency-security-audit` (guards) | `dependency-upgrade` to apply fixes |
 | CI is slow or expensive, "how much CI should we run" | `ci-cost-and-cadence` (verification) | |
 | Review comments to work through, "which of these should I fix", a review loop that keeps going | `review-triage` (verification) | |
-| A bug: wrong output, a crash, "this is broken", "fix this bug" (happens every time) | `bug-fix` (verification) | `evaluator` to attack the fix |
+| A bug whose cause is not obvious, a fix that did not hold, a bug that came back, "find the root cause" (happens every time; an obvious one-line fix needs no skill) | `bug-fix` (verification) | `evaluator` to attack the fix |
 | "Verify it in the app", "how can an agent test this app", no scripted way to drive the app | `verify-app` (verification) | `evaluator` cites its drives as evidence |
 | A question about how the codebase works, or why it is built that way | `codebase-oracle` (agent-orchestration) | `grill-me` if it leads to a change |
 | "The code is getting messy", hard-to-test modules | `improve-codebase-architecture` (planning) | `grill-me` on the candidate picked |

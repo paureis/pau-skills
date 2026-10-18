@@ -69,7 +69,8 @@ green by skipping the failing test.
   history, and checks that a pure refactor leaves the test green.
 - `evaluator` has a fresh agent, which did not build the change, grade it against its acceptance criteria.
 - `verify-app` writes the project's own recipe for starting the real app and proving a change in it, with evidence.
-- `bug-fix` finds the actual cause of a bug from runtime evidence and ships only the change that evidence justifies.
+- `bug-fix` finds the actual cause of a bug from runtime evidence and ships only the change that evidence justifies,
+  when the cause is not obvious or a first fix did not hold.
 - `hillclimb` makes a number better (run time, size, memory, a score) one measured change at a time, on a harness
   proven to notice a regression, and claims no win it did not measure.
 
