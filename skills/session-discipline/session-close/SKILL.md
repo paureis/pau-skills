@@ -1,6 +1,6 @@
 ---
 name: session-close
-description: "End a working session in a fixed order: clean tree, short retrospective, roadmap and log, handoff file, commit and push. Use when the user says 'close the session', 'end the session', 'wrap up this session', 'we are done for today', when the context is nearly full, or when a roadmap item is done and the next will not fit."
+description: "End a working session in a fixed order: clean tree, short retrospective, roadmap and log, handoff file, commit and push. Use when the user says 'close the session', 'end the session' or 'wrap up this session', or when work stops for the day, the context is nearly full, or a roadmap item is done and the next will not fit."
 argument-hint: "[optional: what the next session should focus on]"
 ---
 

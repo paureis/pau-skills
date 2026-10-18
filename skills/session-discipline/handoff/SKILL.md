@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: "Write a handoff so a fresh session or another tool can resume with no prior context, as HANDOFF.md or a block to copy. Use when the user says 'handoff', 'hand off', 'pause here', 'let's continue this later', 'wrap up for now', or the session is getting long. Pauses work in progress; does not commit, push or report shipped work."
+description: "Write a handoff so a fresh session or another tool can resume with no prior context, as HANDOFF.md or a block to copy. Use when the user says 'handoff', 'hand off', 'pause here' or 'wrap up for now', or when work will resume later or the session is getting long. Pauses work in progress; does not commit, push or report shipped work."
 ---
 
 # Handoff

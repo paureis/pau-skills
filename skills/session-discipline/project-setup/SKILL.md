@@ -1,6 +1,6 @@
 ---
 name: project-setup
-description: "Set up Claude Code for a project through a short interview for newcomers, in their language, then write CLAUDE.md on a yes and start a first task. Use when the user says 'set up Claude Code for this project', 'I am new to Claude Code', 'help me get started', 'onboard me' or 'how should I work with Claude Code on this'."
+description: "Set up Claude Code for a project through a short interview for newcomers, in their language, then write CLAUDE.md on a yes and start a first task. Use when the user says 'set up Claude Code for this project', 'help me get started with Claude Code' or 'onboard me', or when the user is new to Claude Code and unsure how to work with it on a project."
 argument-hint: "[quick | full] [language, for example spanish]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**), Read(~/.claude/CLAUDE.md), Bash(git status *), Bash(git log *), Bash(git remote -v), Bash(git branch --show-current), Bash(printenv CLAUDE_CODE_ENTRYPOINT)
 ---
