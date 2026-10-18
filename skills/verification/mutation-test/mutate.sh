@@ -85,7 +85,7 @@ if ! git ls-files --error-unmatch -- "$file" >/dev/null 2>&1; then
 fi
 
 mutation="$(mktemp)"
-pycache="$(mktemp -d)"
+pycache="$(mktemp -d)" || { rm -f "$mutation"; echo "${tag}${stop}: could not make a temporary folder." >&2; exit 2; }
 trap 'rm -f "$mutation"; rm -rf "$pycache"' EXIT
 export PYTHONDONTWRITEBYTECODE=1
 export PYTHONPYCACHEPREFIX="$pycache"
