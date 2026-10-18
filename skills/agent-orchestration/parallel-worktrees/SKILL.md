@@ -72,13 +72,33 @@ Do not parallelize when:
 - pieces share a database schema or migration sequence and cannot be given separate numbers up front;
 - you cannot state how each piece proves it is done (then you cannot integrate safely either).
 
+### A race instead of a split
+
+The opposite shape also uses worktrees: several agents attempt the same piece and you keep one result. It fits when
+the right approach is unclear and a single attempt could lock in the wrong one (an algorithm, a hard fix, a design
+with more than one plausible shape).
+
+- Write the selection rule down before spawning any arm: the tests every arm must pass, a measured number and how it
+  is measured (for example the median of five benchmark runs), or a judge with a written rubric. Write down too what
+  happens on a tie (for example, the smaller diff wins) and when no arm passes (report to the user; do not lower the
+  bar). A rule chosen after seeing the results picks a favourite.
+- In the `plan-check` JSON, list the race as one piece with the files every arm will touch. The arms claim the same
+  files on purpose, because only one of them is merged.
+- Each arm still gets its own worktree, branch (`par/<batch>/<piece>-a`, `-b`, `-c`), ports and databases (Phase 3)
+  and brief. The briefs are otherwise the same, or differ only in the approach each arm is asked to try.
+- A race of N arms costs N times one attempt. When the confirm paragraph before Phase 1 applies, the line you ask
+  with names that cost.
+- For a race with a blind judge (one that does not know which arm produced which result), use `arena` if it is
+  installed. Without it, give a fresh subagent the rubric and the results with the arm names removed.
+
 **Done when** `plan-check` exits 0, or every reported overlap has a written decision (serialize, owner, or merge),
 and every ordering dependency is either removed or turned into a sequence.
 
 ## Phase 2: plan the pieces
 
 - [ ] One branch per piece, all created from the **same base commit**. Record it: `git rev-parse HEAD` on an
-      up-to-date base branch. Pieces started from different commits make integration harder to reason about.
+      up-to-date base branch. Pieces started from different commits make integration harder to reason about. Record
+      `git worktree list` too, for the cleanup in Phase 6.
 - [ ] Branch names follow one pattern, for example `par/<batch>/<piece>` (`par/2024-billing/api`). A shared prefix
       makes them easy to list and delete later (`git branch --list 'par/2024-billing/*'`).
 - [ ] Pre-assign anything numbered: migration numbers, ports, test database names (see Phase 3).
@@ -126,6 +146,16 @@ Each worktree is a fresh checkout. Nothing untracked comes with it. Budget for:
   queue prefix in local emulators.
 
 Put the per-worktree values in the worktree's own untracked env file and in the brief.
+
+A worktree separates files, the index and the checked-out branch, nothing else. Ports, databases and other local
+services, caches that are not safe to write from two processes at once, the integration branch, remotes and tags
+are still shared. For each one two agents could write, give each agent its own copy (a port, a database name, a cache
+folder) or put a real lock in front of it (a sequence, or a lock the tool itself takes). A line in the brief that
+says "do not touch X" is not a lock: an agent that misreads it, or a tool it runs, writes anyway, and the collision
+shows up later as a failure nobody can reproduce. File ownership ("Assign an owner" in Phase 1) stays the rule for
+files, because every edit lands on a branch you read at integration; shared state outside the files leaves no such
+trace. The integration branch, remotes and tags stay with the orchestrator: agents never merge into the integration
+branch, push to the base branch or create tags.
 
 **Claude Code alternative.** Recent Claude Code versions can create and manage worktrees themselves: `claude
 --worktree <name>` starts a session in a new worktree, and the Agent tool accepts `isolation: "worktree"` so a
@@ -180,6 +210,9 @@ and keep it for the batch.
 - If a merge breaks the suite and the fix is not obvious, abort it (`git merge --abort`, or `git reset --hard` to
   the previous merge commit on the integration branch only), continue with the next piece, and send the broken one
   back to its agent with the failure.
+- In a race, judge every arm that reported by the rule written in Phase 1, record each arm's result (for the
+  report), and merge only the winning arm, in the race piece's planned place in the order. The
+  other arms are not merged.
 
 **Done when** every piece is merged into the integration branch, the full suite, lint and build pass on it, and it
 has been merged or opened as a pull request against the base branch the way the project normally lands work.
@@ -197,6 +230,14 @@ git branch -d par/batch1/api                    # -d refuses unmerged branches; 
 ```
 
 - Run these from the main checkout, not from inside the worktree being removed.
+- A listing that calls a worktree clean and merged (the commands above, `worktrees.mjs status`, or any audit script)
+  is advice, not permission. Before removing one, also check that no agent or session still runs in it: every agent
+  of the batch has reported or been stopped, and no terminal, editor or dev server has it open (`lsof +D <path>` on
+  macOS and Linux lists processes with files open there; on Windows, check open terminals and editors). Ask the user
+  about any worktree that was not in the `git worktree list` you recorded before the batch.
+- A race's losing branches are unmerged, so `git branch -d` refuses them. Delete them only after the user says yes;
+  until then keep them, since a losing arm can hold a part worth taking. Their clean worktrees can go; the branch
+  keeps the commits.
 - Never use `git worktree remove --force` or `git branch -D` to get past a refusal. Find out what is uncommitted or
   unmerged first, and either commit and merge it or confirm with the user that it can go.
 - After pruning, look for leftover folders git no longer tracks (prune only removes git's records) and delete them
@@ -204,7 +245,8 @@ git branch -d par/batch1/api                    # -d refuses unmerged branches; 
   created.
 
 **Done when** `git worktree list` shows only the worktrees that existed before the batch, the batch's branches are
-deleted locally (and remotely, if they were pushed), and no batch database or container is left running.
+deleted locally (and remotely, if they were pushed), except losing race arms the user chose to keep, and no batch
+database or container is left running.
 
 ## Do not
 
@@ -212,7 +254,9 @@ deleted locally (and remotely, if they were pushed), and no batch database or co
 - Do not start pieces from different base commits without saying so in the plan.
 - Do not let an agent edit a file another piece owns, or regenerate a shared lockfile it does not own.
 - Do not merge all branches and run the tests once at the end.
-- Do not remove a worktree, or delete a branch, that has uncommitted or unmerged work.
+- Do not remove a worktree, or delete a branch, that has uncommitted or unmerged work (a race's losing arm included)
+  without the user's yes.
+- Do not treat "do not touch X" in a brief as a lock on shared state; separate it or lock it.
 - Do not copy secrets into a tracked file to save setup time.
 
 ## Report
@@ -223,6 +267,7 @@ Base commit: <sha>   Integration branch: <name>
 Pieces:
   <name>  branch <branch>  worktree <path>  done-command <cmd>: PASS | FAIL  commits <n>
 Overlaps found by plan-check: <none | list, with the decision for each>
+Race: <none | piece: selection rule; each arm's result; arm kept; losing branches kept or deleted with the user's yes>
 Merge order and result after each merge: <piece>: suite PASS | FAIL (<what failed, how fixed>)
 Conflicts resolved: <file: how both intents were kept>
 Not merged: <piece: why, what it needs>
