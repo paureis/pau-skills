@@ -1,6 +1,6 @@
 ---
 name: verify-app
-description: "Write or maintain the project's own verification skill and feature map, so any agent can launch the real app, drive it like a user and keep evidence. Use when the user says 'verify it in the app', 'make a verification skill', 'how can an agent test this app', 'prove it works end to end', 'maintain the verify skill', or the project has no scripted way to drive its app."
+description: "Write or maintain the project's own verification skill and feature map, so any agent can launch the real app, drive it like a user and keep evidence. Use when the user says 'make a verification skill', 'maintain the verify skill', or asks how an agent can test the app, or when a change must be proven in the running app and nothing scripted drives it."
 argument-hint: "[maintain] [the app or surface to cover, when the repository has several]"
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
