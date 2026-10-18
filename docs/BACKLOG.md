@@ -618,7 +618,7 @@ gravity" (if a reviewer's findings are all nits and preferences, the code is pro
 done it differently" as the most common false positive, and a learned-pattern format for recurring findings
 (confidence: candidate, recurring, strong; skip when; do not skip when).
 
-**M5 retrospective** (`in review`, fourth batch). Upstream: `skills/reflect/references/synthesizer.md`,
+**M5 retrospective** (`done`, fourth batch). Upstream: `skills/reflect/references/synthesizer.md`,
 `references/divergent-reviewer.md`. Gate each proposed edit on "decision-changing: a future agent does something
 different because of the edit, not just reads more text". Add a lens for "decisions that worked but for the wrong
 reasons".
@@ -636,23 +636,23 @@ user's guess as one candidate among others. For big questions, 2 to 4 explorers 
 explainer; answer format Overview, Key concepts, How it works, Where things live, Gotchas. History questions through
 git and `gh` first.
 
-**M8 safe-merge and evaluator** (`in review`, fourth batch). Upstream: `skills/poteto-mode/playbooks/shipping.md`,
+**M8 safe-merge and evaluator** (`done`, fourth batch). Upstream: `skills/poteto-mode/playbooks/shipping.md`,
 `docs/guide/06-verify-and-ship.md`. A verdict covers a patch: compare `git patch-id` at the verdict commit with the
 current head before trusting an older verdict after a rebase. Evaluator: evidence by change type (a CLI change runs
 the real command, a parser or migration replays a saved input, a storage change reads the value back) and
 "inconclusive" when a check could not run.
 
-**M9 improve-codebase-architecture** (`in review`, fourth batch). Upstream: `skills/architect/references/design-red-flags.md`,
+**M9 improve-codebase-architecture** (`done`, fourth batch). Upstream: `skills/architect/references/design-red-flags.md`,
 `skills/principle-minimize-reader-load/SKILL.md`, `skills/principle-model-the-domain/SKILL.md`,
 `skills/poteto-mode/playbooks/refactoring.md`. Add the agent-contributor red flags, the reader-load test, the
 model-the-domain signs, and for execution: pin behaviour with a characterization test first ("type check and lint
 are not a pin"), migrate callers and delete in one wave.
 
-**M10 which-skill** (`in review`, fourth batch). Upstream: `skills/poteto-help/SKILL.md` and `references/`. A "fix a run that went
+**M10 which-skill** (`done`, fourth batch). Upstream: `skills/poteto-help/SKILL.md` and `references/`. A "fix a run that went
 wrong" symptom table; check state only when it changes the answer; when a skill is missing from the router's table,
 read its frontmatter and route by its description; the prompt checklist (or point to `sharpen`).
 
-**M11 small additions** (`in review`, fourth batch).
+**M11 small additions** (`done`, fourth batch).
 - `methodology`: "a plateau is not a stop"; never relax a finish predicate; an append-only decision log.
 - `parallel-worktrees`: a "race" shape with the selection rule declared before spawning; "instructions and
   conventions are not concurrency control"; a cleanup audit's bucket is advice, not permission.
@@ -685,7 +685,7 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 3. Done: N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval, P1.1 pack-skills, N11 brainstorm.
 4. Done: M1 with M3, M4 with M6, M2 rule-to-hook, M7 codebase-oracle (the third batch).
 5. Done: P0.5, every skill loads on its own (decision 7), with Part B, trimming the owner's plugins.
-6. In review: the fourth batch, M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M10
+6. Done: the fourth batch, M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M10
    `which-skill`, M11 small additions with the `suppression-reason` hook, P1.2 and P1.3.
 7. **Next:** N8 overnight-run, N9 engineering-principles, and the small items P1.6 to P1.8.
 
@@ -699,10 +699,10 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   `dist/<skill>.zip` for named skills, or for every skill changed since a git ref, would make that one command. Check
   the upload rules claude.ai enforces before writing: no XML-like tag in a description, no "claude" or "anthropic" in
   a name (both already tested).
-- **P1.2 validate in CI** (`in review`, fourth batch). `claude plugin validate . --strict` runs only locally; add it to the CI workflow
+- **P1.2 validate in CI** (`done`, fourth batch). `claude plugin validate . --strict` runs only locally; add it to the CI workflow
   (`.github/workflows/`), or say in `docs/ADDING-A-SKILL.md` why it cannot run there. Found by the
   `agent-friendly-audit` cold run.
-- **P1.3 version-bump check** (`in review`, fourth batch). Nothing checks that a change to a plugin's files bumps that plugin's version
+- **P1.3 version-bump check** (`done`, fourth batch). Nothing checks that a change to a plugin's files bumps that plugin's version
   and the bundle's, though CLAUDE.md requires it. A test or script that compares against the merge base and names the
   plugin to bump. Found by the same cold run; the owner decides whether it is worth its code.
   The fourth batch's plan check found one miss in eleven pull requests, and the owner chose a checklist line over a
@@ -771,3 +771,11 @@ When the batch is merged, update the skill count on the author's GitHub profile 
     cloud session (the variable set in the default cloud environment).
   A synced plugin disabled only with `claude plugin disable <name>@synced` still listed its skills; turning it off on
   claude.ai (Customize, Plugins) removed them. The skill count stays at 34, so the profile README did not change.
+- 2026-10-18: M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M10 which-skill, M11
+  small additions with the new `suppression-reason` hook, P1.2 validate in CI and P1.3 (a checklist line, by the
+  owner's choice), merged as [pull request 21](https://github.com/paureis/pau-skills/pull/21). Five builders in
+  parallel, each brief checked by a read-only subagent first; every item had a fresh reviewer, one fix round and a
+  second look, and M5, M8, M9 and M11 had cold runs as headless sessions. Reviewers found a must-fix or serious finding
+  in every item. The 10 changed skills were zipped with `pack-skills --since 7e06226` and sent to the owner; all
+  replace an existing skill. `pau-skills-hooks` went to 0.2.0 for the hook. The skill count stays at 34, so the
+  profile README did not change. Follow-ups: P1.6 to P1.8.
