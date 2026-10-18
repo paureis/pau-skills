@@ -24,9 +24,10 @@
  * limits: a bullet of one or two content words can never be DUPLICATE (read those yourself), negation is lost
  * ("never" and "not" are stopwords), and word forms and synonyms differ ("test" against "tests", "ask" against
  * "asking", "before" against "first"). Any other CLAUDE.md unit that short, such as a heading's one-line intro, is
- * dropped as before: it matches any proposal on the same topic. Synced skills are scored by --check, labelled [synced skill]; a skill that is both
- * local and synced is one unit with both labels. Short units and synced skills stay out of the pairs report and the
- * largest units: synced skills are edited at their source, and synced files run to tens of KB.
+ * dropped as before: it matches any proposal on the same topic. Synced skills are scored by --check, labelled
+ * [synced skill], one unit per <id> and name; a skill that is both local and synced is one unit with both labels.
+ * Short units and synced skills stay out of the pairs report and the largest units: synced skills are edited at
+ * their source, and synced files run to tens of KB.
  */
 import { readFileSync, readdirSync, existsSync, statSync, realpathSync } from 'node:fs';
 import { join, basename, dirname } from 'node:path';
@@ -144,16 +145,15 @@ function main(args) {
   for (const s of stores) units.push(...unitsOf(s.label, s.text));
   for (const f of memFiles) units.push({ store: 'memory', name: f, text: readFileSync(join(memDir, f), 'utf8').replace(/^---[\s\S]*?---\r?\n/, '') });
   for (const f of skillFiles) units.push({ store: 'skill', name: skillName(f), text: readFileSync(f, 'utf8') });
-  // A synced skill that is also installed locally is one unit with both labels, scored against both texts.
+  // Each synced copy is its own unit, keyed by <id> and name: one name can sit under two ids with different text. A
+  // local skill of the same name is one unit with every synced copy, labelled with both, scored against each text.
   const local = new Map(units.filter((u) => u.store === 'skill').map((u) => [u.name, u]));
-  const synced = new Map();
-  for (const f of syncedFiles) if (!synced.has(skillName(f))) synced.set(skillName(f), f);
-  for (const [name, f] of synced) {
+  for (const f of syncedFiles) {
     const text = readFileSync(f, 'utf8');
-    const u = local.get(name);
-    if (u) { u.store = 'skill, synced skill'; u.alt = text; } else units.push({ store: 'synced skill', synced: true, name, text });
+    const u = local.get(skillName(f));
+    if (u) { u.store = 'skill, synced skill'; (u.alts ||= []).push(text); } else units.push({ store: 'synced skill', synced: true, name: skillName(f), file: f, text });
   }
-  for (const u of units) { u.sh = shingles(u.text); if (u.alt) u.altSh = shingles(u.alt); }
+  for (const u of units) { u.sh = shingles(u.text); u.altSh = (u.alts || []).map(shingles); }
   // The pairs report and the largest units: long units of the local stores only.
   const reportUnits = units.filter((u) => !u.short && !u.synced);
 
@@ -162,7 +162,7 @@ function main(args) {
     const sh = shingles(text);
     const scored = units.map((u) => {
       if (u.short) { const w = wordScore(u.text, text); return { u, score: w.score, v: wordVerdict(w), note: `  (word score: ${w.shared} of ${w.total} words)` }; }
-      const score = Math.max(containment(sh, u.sh), u.altSh ? containment(sh, u.altSh) : 0);
+      const score = Math.max(containment(sh, u.sh), ...u.altSh.map((a) => containment(sh, a)));
       return { u, score, v: verdict(score), note: '' };
     }).sort((a, b) => RANK[b.v] - RANK[a.v] || b.score - a.score).slice(0, 8);
     console.log(`Proposed learning: ${CHECK} (${tokens(text).length} content words). Closest existing units (bigram containment; short CLAUDE.md units by word score):`);
@@ -197,8 +197,8 @@ function main(args) {
   const memBytes = memFiles.reduce((n, f) => n + statSync(join(memDir, f)).size, 0);
   console.log(`  ${String(memBytes).padStart(7)} bytes  ~${String(est(memBytes)).padStart(5)} tok  ${memFiles.length} memory files (loaded on recall)`);
   console.log(`  ${skillFiles.length} skills`);
-  const syncedBytes = [...synced.values()].reduce((n, f) => n + statSync(f).size, 0);
-  console.log(`  ${String(syncedBytes).padStart(7)} bytes  ~${String(est(syncedBytes)).padStart(5)} tok  ${synced.size} synced skills from claude.ai (edited at their source; scored only by --check)`);
+  const syncedBytes = syncedFiles.reduce((n, f) => n + statSync(f).size, 0);
+  console.log(`  ${String(syncedBytes).padStart(7)} bytes  ~${String(est(syncedBytes)).padStart(5)} tok  ${syncedFiles.length} synced skills from claude.ai (edited at their source; scored only by --check)`);
 
   console.log('\n== Largest units ==');
   for (const u of [...reportUnits].sort((a, b) => b.text.length - a.text.length).slice(0, 8)) console.log(`  ${String(u.text.length).padStart(6)} bytes  [${u.store}] ${u.name}`);
