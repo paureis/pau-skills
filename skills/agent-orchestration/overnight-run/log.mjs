@@ -14,6 +14,12 @@
  *       Prints the rows (or the last n) as a Markdown table, with a column naming the row that supersedes each one,
  *       then a count of rows, superseded rows and runs.
  *
+ *   node log.mjs calls <transcript.jsonl>
+ *       Lists the tool calls and the failed tool results of a Claude Code transcript (a session file under
+ *       ~/.claude/projects/, or a --output-format stream-json capture), one per line: the line number in the file,
+ *       the time when the event has one, the tool and its input cut to 300 characters, or ERROR and the result. The
+ *       morning reviewer cites <file>:<line> from it. Read only; lines that are not JSON are skipped.
+ *
  * Every free text field (run, phase, decision, reason, evidence, result) is cleaned the way upstream log.sh does:
  * a value whose first character a spreadsheet would read as a formula (=, +, - or @, also after leading whitespace,
  * or a tab or carriage return first) gets a single quote in front, and then tabs, carriage returns, newlines and
@@ -142,13 +148,13 @@ export function appendRow(log, fields, now = new Date()) {
 // Command line
 // ---------------------------------------------------------------------------------------------------------------
 
-const USAGE = 'usage: log.mjs append <log> --phase <p> --decision <d> --reason <r> --evidence <e> --result <r> [--run <id>] [--supersedes <row id>]\n       log.mjs show <log> [--last <n>]';
+const USAGE = 'usage: log.mjs append <log> --phase <p> --decision <d> --reason <r> --evidence <e> --result <r> [--run <id>] [--supersedes <row id>]\n       log.mjs show <log> [--last <n>]\n       log.mjs calls <transcript.jsonl>';
 
 export function parseArgs(argv) {
   const [cmd, log, ...opts] = argv;
-  if (cmd !== 'append' && cmd !== 'show') throw new Usage(cmd ? `unknown command ${cmd}` : 'no command');
-  if (!log || log.startsWith('--')) throw new Usage(`${cmd} needs the path of the decision log`);
-  const allowed = cmd === 'append' ? OPTIONS : ['last'];
+  if (!['append', 'show', 'calls'].includes(cmd)) throw new Usage(cmd ? `unknown command ${cmd}` : 'no command');
+  if (!log || log.startsWith('--')) throw new Usage(`${cmd} needs the path of the ${cmd === 'calls' ? 'transcript' : 'decision log'}`);
+  const allowed = cmd === 'append' ? OPTIONS : cmd === 'show' ? ['last'] : [];
   const fields = {};
   for (let i = 0; i < opts.length; i += 2) {
     const name = opts[i].replace(/^--/, '');
@@ -177,10 +183,27 @@ function show(log, last, out) {
   return 0;
 }
 
+function calls(file, out) {
+  if (!existsSync(file)) throw new Refusal(`${file} does not exist`);
+  const cut = (v) => JSON.stringify(v ?? '').slice(0, 300);
+  readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+    let e;
+    try { e = JSON.parse(line); } catch { return; }
+    const content = e?.message?.content;
+    if (!Array.isArray(content)) return;
+    for (const c of content) {
+      if (c?.type === 'tool_use') out([i + 1, e.timestamp, c.name, cut(c.input)].filter((x) => x !== undefined && x !== '').join(' '));
+      else if (c?.type === 'tool_result' && c.is_error) out(`${i + 1} ERROR ${cut(c.content)}`);
+    }
+  });
+  return 0;
+}
+
 export function main(argv, out = console.log, err = console.error, env = process.env) {
   let opts;
   try { opts = parseArgs(argv); } catch (e) { err(`${e.message}\n${USAGE}`); return 2; }
   try {
+    if (opts.cmd === 'calls') return calls(opts.log, out);
     if (opts.cmd === 'show') return show(opts.log, opts.fields.last ? Number(opts.fields.last) : 0, out);
     const fields = { ...opts.fields };
     if (fields.run === undefined && env.CLAUDE_CODE_SESSION_ID) fields.run = env.CLAUDE_CODE_SESSION_ID;

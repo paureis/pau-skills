@@ -6,7 +6,7 @@ from the worktree, with read-only rules and the log script:
 
 ```bash
 claude -p --strict-mcp-config --output-format stream-json --verbose \
-  --allowedTools Read Grep Glob "Bash(node <path of log.mjs> *)" "Bash(node -e *)" 'Bash(git log *)' \
+  --allowedTools Read Grep Glob "Bash(node <path of log.mjs> *)" 'Bash(git log *)' \
   'Bash(git show *)' 'Bash(git diff *)' "Bash(bash <state>/done.sh)" 'Bash(git hash-object *)' \
   --disallowedTools Edit Write 'Bash(git push *)' 'Bash(git commit *)' \
   "$(cat <state>/audit-prompt.md)" > <state>/audit.jsonl
@@ -30,13 +30,10 @@ Inputs:
 - The work: `git -C <worktree> log --oneline <base>..overnight/<label>`, and `git -C <worktree> show <sha>` for each
   commit.
 
-Each transcript line is one JSON event. To list the tool calls and the failed results of a file in order:
-
-```bash
-node -e 'const fs=require("fs");let n=0;for(const l of fs.readFileSync(process.argv[1],"utf8").split("\n")){n++;let e;try{e=JSON.parse(l)}catch{continue}for(const c of e.message?.content??[]){if(c.type==="tool_use")console.log(n,e.timestamp??"",c.name,JSON.stringify(c.input).slice(0,300));if(c.type==="tool_result"&&c.is_error)console.log(n,"ERROR",JSON.stringify(c.content).slice(0,300))}}' <file>
-```
-
-The first number is the line in the file; cite `<file>:<line>` as evidence.
+Each transcript line is one JSON event. To list the tool calls and the failed results of a file in order, run
+`node <path of log.mjs> calls <file>`. The first number on each line is the line in the file: cite `<file>:<line>`
+as evidence, and read that line of the file for the full event. Run one command per call: a command joined to
+another with `;` or `&&` needs an allow rule for each part, and is refused otherwise.
 
 Check, for the rows of this run (the rows whose `run` column names these transcripts):
 1. Every row maps to a real decision or action in the transcript, near its time.

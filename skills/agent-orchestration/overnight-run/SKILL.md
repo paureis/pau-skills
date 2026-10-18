@@ -32,7 +32,7 @@ How it differs from its neighbours:
 
 Bundled files, open each when you reach its step:
 - `${CLAUDE_SKILL_DIR}/log.mjs` (Node 20+, no dependencies): `append` adds one row to the decision log, `show` prints
-  it with what supersedes what. Below, `LOG` stands for `node "${CLAUDE_SKILL_DIR}/log.mjs"`; write the full
+  it with what supersedes what, and `calls` lists the tool calls in a transcript for the audit. Below, `LOG` stands for `node "${CLAUDE_SKILL_DIR}/log.mjs"`; write the full
   command each time, since a shell variable does not survive from one Bash call to the next.
 - `${CLAUDE_SKILL_DIR}/LOOP.md`: each way to wake a run and what it needs, the outer shell loop around `claude -p`,
   and where the log goes for a cloud scheduled task.
@@ -78,7 +78,9 @@ whole run.
    blanket bypass: no `--dangerously-skip-permissions`, no `bypassPermissions` mode. In a session that stays open, a
    permission prompt waits until morning, so the same rules go into `.claude/settings.local.json`
    (`permissions.allow` and `permissions.deny`) before the user leaves. A run cannot read the flags it was started
-   with: take them from the user's message or from the settings file, and copy them into `RUN.md`. The state folder
+   with: take them from the user's message or from the settings file, and copy them into `RUN.md`. A rule covers one
+   command, so in a headless run `<test command>; echo $?` is refused unless `echo` is allowed too: run one command
+   per call. The state folder
    and the worktree are outside the repository, so a headless run also needs `--add-dir` for their parent folder,
    or its file tools cannot write there.
 6. **The work can be thrown away**: a fresh worktree on its own branch (step 3) and nothing pushed, so a bad night
@@ -142,7 +144,10 @@ From the main checkout: `git worktree add <worktree> -b overnight/<label> <base>
 main checkout (a sibling folder). For the setup a new worktree needs (dependencies, environment files, ports), use
 `parallel-worktrees` if it is installed; without it, install dependencies the way the project's README or CI does.
 
-Then, in the worktree:
+Then, in the worktree. A session keeps the folder it started in, so a session started in the main checkout runs a
+bare `pytest` there, not in the worktree: put `cd <worktree>` at the top of `done.sh`, use `git -C <worktree>`, and
+run the test command through `done.sh` or from the worktree. The outer loop in LOOP.md starts each turn in the
+worktree, which avoids this.
 1. Run the test command. It passes at the base, or fails only where failing tests are the task.
 2. Run the predicate. It fails, with the remaining count you expect.
 3. `git status --short` prints nothing. Files the build or the tests write go in the shared exclude file,
@@ -225,7 +230,8 @@ transcript. It audits the trail (did the log tell the truth), not the code.
    sessions; the outer loop also keeps a `--output-format stream-json --verbose` capture of each turn in `<state>`.
    Never glob across `~/.claude/projects/`: the other folders hold the user's other conversations.
 2. **Start the reviewer** with the prompt in `${CLAUDE_SKILL_DIR}/AUDIT.md`, filled in. Use a subagent (the Agent
-   tool) given only that prompt: it starts without this conversation. Where there is no Agent tool, run a headless
+   tool) given only that prompt: it starts without this conversation, and with this session's permission rules, so
+   it reads transcripts with `LOG calls` (covered by the log script's allow rule) rather than ad hoc scripts. Where there is no Agent tool, run a headless
    `claude -p` with the prompt and the read-only rules AUDIT.md lists. Where neither works, audit it yourself and
    say so on the first line of Attention.
 3. **Check what it reports**: open the rows and transcript lines it names. It appends its findings to the log with

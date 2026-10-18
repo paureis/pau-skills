@@ -247,6 +247,33 @@ describe('show', () => {
   });
 });
 
+describe('calls', () => {
+  test('lists the tool calls and the failed results of a transcript, with their line numbers', () => {
+    const file = join(tempDir('overnight-'), 'session.jsonl');
+    const events = [
+      { type: 'system', subtype: 'init' },
+      { type: 'assistant', timestamp: '2026-10-18T23:47:00Z', message: { content: [{ type: 'text', text: 'hi' }, { type: 'tool_use', name: 'Bash', input: { command: 'python3 -m unittest -q' } }] } },
+      { type: 'user', message: { content: [{ type: 'tool_result', is_error: true, content: 'Exit code 1' }] } },
+      { type: 'user', message: { content: 'a plain prompt' } },
+      { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit', input: { file_path: 'calc.py', old_string: 'x'.repeat(500) } }] } },
+    ];
+    writeFileSync(file, events.map((e) => JSON.stringify(e)).join('\n') + '\nnot json\n');
+    const r = run(['calls', file]);
+    assert.equal(r.code, 0, r.err);
+    const lines = r.out.split('\n');
+    assert.equal(lines.length, 3);
+    assert.equal(lines[0], '2 2026-10-18T23:47:00Z Bash {"command":"python3 -m unittest -q"}');
+    assert.equal(lines[1], '3 ERROR "Exit code 1"');
+    assert.match(lines[2], /^5 Edit \{"file_path":"calc.py"/);
+    assert.ok(lines[2].length < 330, 'a long input is cut');
+  });
+
+  test('a missing transcript is an error, and calls takes no options', () => {
+    assert.equal(run(['calls', join(tempDir('overnight-'), 'none.jsonl')]).code, 1);
+    assert.equal(run(['calls', newLog(), '--last', '2']).code, 2);
+  });
+});
+
 describe('usage', () => {
   test('unknown commands and options, a missing value and a repeated option exit 2', () => {
     assert.equal(run([]).code, 2);
