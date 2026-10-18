@@ -204,6 +204,7 @@ describe('suppression-reason: review fixes', () => {
   test('a bare eslint directive in an HTML comment is reported', () => {
     assert.ok(edit('web/A.vue', '<!-- eslint-disable-next-line vue/no-v-html -->\n<div v-html="x" />'));
     assert.ok(edit('web/A.svelte', '<!-- eslint-disable-next-line -->\n{@html x}'));
+    assert.ok(edit('web/A.vue', '<!-- eslint-disable-line --> <div v-html="htmlContent"></div>'));
   });
   test('an eslint directive with a reason in an HTML comment is silent', () => {
     assert.equal(edit('web/A.vue', '<!-- eslint-disable-next-line vue/no-v-html -- trusted markdown from our CMS -->\n<div v-html="x" />'), null);
@@ -218,6 +219,11 @@ describe('suppression-reason: review fixes', () => {
   test('source folders named build, out, gen or target below the root are checked', () => {
     for (const p of ['src/build/a.ts', 'src/out/a.ts', 'lib/gen/a.py', 'src/target/a.rs']) assert.ok(isCodeFile(p), p);
   });
+  test('build output and vendored folders are judged from the project root, given absolute paths', () => {
+    const at = (root, p) => decide({ tool_name: 'Edit', tool_input: { file_path: `${root}/${p}`, old_string: 'x', new_string: '// @ts-ignore\nx' } }, { root });
+    assert.equal(at('/repo', 'dist/app.js'), null);
+    assert.ok(at('/home/me/vendor/proj', 'src/a.ts'));
+  });
   test('build output at the project root is still skipped', () => {
     for (const p of ['build/a.ts', 'out/a.js', 'gen/a.go', 'target/debug/a.rs', 'dist/a.js']) assert.equal(isCodeFile(p), false, p);
   });
@@ -226,6 +232,7 @@ describe('suppression-reason: review fixes', () => {
   test('a TypeScript error code alone is not a reason', () => {
     assert.ok(edit('src/a.ts', '// @ts-expect-error TS2322\nconst n: number = "x";'));
     assert.ok(edit('src/a.ts', '// @ts-ignore: TS2339, TS2345\nx.y();'));
+    assert.ok(edit('pkg/a.go', 'f() //nolint:staticcheck // SA1019'));
   });
 
   // S6: each edit of a MultiEdit is judged on its own; doc comments, license and encoding lines are not reasons.
