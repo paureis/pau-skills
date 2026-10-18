@@ -251,6 +251,14 @@ the most result with the least code, and leave the design a little simpler than 
 smaller interface.
 
 **How to apply it.**
+- Subtract within the code the change touches, not across the repository. A wider cleanup is its own change, offered
+  to the user, not slipped into this one.
+- A bug fix carries no unrelated deletions: the fix changes the fault and nothing else. Offer to run `bug-fix` if it
+  is installed; its fix step removes every hunk that does not trace to the cause. Without it, keep the diff to the
+  fault and list the cleanups you saw for later.
+- Check before calling code dead. An exported function, class or endpoint with no callers in the repository may have
+  callers outside it (a published library, a public API), or be named in stored data or a job queue; the exceptions
+  under migrate callers then delete apply. Code is dead when nothing inside or outside can reach it.
 - Sequence removal before construction: delete dead code, collapse one-caller wrappers, drop redundant checks and
   remove references to nothing before you introduce the new shape.
 - Cut before you polish: get to the minimum before you spend effort on quality.

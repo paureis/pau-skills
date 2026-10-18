@@ -106,9 +106,10 @@ premise have failed, write the premise down and test it before a third fix.
   answer.
 
 ### Subtract before you add
-- **When it applies:** Sequencing an addition, a refactor or a rewrite, or judging the size of a diff.
-- **Rule:** Remove dead code, redundant checks and stubs first, then make the smallest change that reaches the target
-  shape.
+- **When it applies:** Sequencing an addition, a refactor or a rewrite, or judging the size of a diff, within the
+  code the change touches.
+- **Rule:** In that code, remove what is dead, redundant or a stub first, then make the smallest change that reaches
+  the target shape; a bug fix carries no unrelated deletions.
 - **Sign you skipped it:** The change adds a layer, an option or a check beside code it left unused, or the diff is
   larger than the problem.
 
