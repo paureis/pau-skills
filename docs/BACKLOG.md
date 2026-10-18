@@ -88,7 +88,7 @@ nothing itself except the integration.
 8. **Integrate** once, after the last merge: README (the reference bullets, the problem lists, the skill badge, the
    tier lists), ORIGINS, NOTICE, `which-skill`, `evaluator` or other links the items ask for, plugin READMEs and
    descriptions, minor version bumps for every plugin whose files changed and for the bundle, CHANGELOG, and the
-   statuses here. Run all four checks, commit, push, and open one pull request that says how each item was built
+   statuses here. To list the plugins to bump, use the command in step 8 of `docs/ADDING-A-SKILL.md`. Run all four checks, commit, push, and open one pull request that says how each item was built
    and checked and what the owner must decide.
 9. **Clean up** the worktrees and `par/` branches after checking each is clean and fully merged
    (`git worktree remove`, `git branch -d`). After the owner merges, update the skill count on the profile README in
@@ -177,6 +177,23 @@ Things that bit the P0.5 batch (every skill loads on its own):
   skill choice still shows. Pass `--permission-mode acceptEdits` in a throwaway copy when the later steps matter.
 - The container restarted mid-batch and the fix rounds' reports were lost from the conversation; the commits and the
   agents' output files survived. Read the last handback from each output file.
+
+Things that bit the fourth batch (M5, M8, M9, M10, M11, P1.2 with P1.3):
+- The plan checks found a real problem in every brief again: `git patch-id --stable` ignores indentation (an
+  indentation change that alters Python behaviour kept its id), the upstream paths named for M11 held none of the
+  quoted phrases, a characterization test would be thrown away by `tdd`'s red-green loop, and the hook mapping the
+  P1.3 brief proposed was wrong. The P1.3 plan check also counted the misses (one in eleven pull requests) and the
+  owner chose a checklist line over a script.
+- The reviewers found a must-fix or serious finding in every item: the M9 restore step erased the user's uncommitted
+  edits, the evaluator gave a patch id for a dirty tree, the bump-listing command missed untracked files and renames,
+  and the suppression hook skipped whole projects under a folder named `build/`.
+- The cold runs again found what reviewers missed, and they ran as headless `claude -p` sessions with an empty HOME:
+  the retrospective audit cannot see short CLAUDE.md bullets, `flaky-test-hunt` did not start for "CI failed, can we
+  just retry it?" when the failure looked deterministic, and its agents diffed against a stale local main.
+- Headless children inherit the session's environment (`CLAUDECODE`, the session id, attribution trailers in their
+  commits); unset the `CLAUDE*` variables in the child when isolation matters.
+- In a Python fixture, `mutate.sh` can leave stale `.pyc` files when a break and its restore land in the same second;
+  set `PYTHONDONTWRITEBYTECODE=1`.
 
 ## Kickoff for the next session
 
@@ -601,7 +618,7 @@ gravity" (if a reviewer's findings are all nits and preferences, the code is pro
 done it differently" as the most common false positive, and a learned-pattern format for recurring findings
 (confidence: candidate, recurring, strong; skip when; do not skip when).
 
-**M5 retrospective** (`todo`). Upstream: `skills/reflect/references/synthesizer.md`,
+**M5 retrospective** (`in review`, fourth batch). Upstream: `skills/reflect/references/synthesizer.md`,
 `references/divergent-reviewer.md`. Gate each proposed edit on "decision-changing: a future agent does something
 different because of the edit, not just reads more text". Add a lens for "decisions that worked but for the wrong
 reasons".
@@ -619,23 +636,23 @@ user's guess as one candidate among others. For big questions, 2 to 4 explorers 
 explainer; answer format Overview, Key concepts, How it works, Where things live, Gotchas. History questions through
 git and `gh` first.
 
-**M8 safe-merge and evaluator** (`todo`). Upstream: `skills/poteto-mode/playbooks/shipping.md`,
+**M8 safe-merge and evaluator** (`in review`, fourth batch). Upstream: `skills/poteto-mode/playbooks/shipping.md`,
 `docs/guide/06-verify-and-ship.md`. A verdict covers a patch: compare `git patch-id` at the verdict commit with the
 current head before trusting an older verdict after a rebase. Evaluator: evidence by change type (a CLI change runs
 the real command, a parser or migration replays a saved input, a storage change reads the value back) and
 "inconclusive" when a check could not run.
 
-**M9 improve-codebase-architecture** (`todo`). Upstream: `skills/architect/references/design-red-flags.md`,
+**M9 improve-codebase-architecture** (`in review`, fourth batch). Upstream: `skills/architect/references/design-red-flags.md`,
 `skills/principle-minimize-reader-load/SKILL.md`, `skills/principle-model-the-domain/SKILL.md`,
 `skills/poteto-mode/playbooks/refactoring.md`. Add the agent-contributor red flags, the reader-load test, the
 model-the-domain signs, and for execution: pin behaviour with a characterization test first ("type check and lint
 are not a pin"), migrate callers and delete in one wave.
 
-**M10 which-skill** (`todo`). Upstream: `skills/poteto-help/SKILL.md` and `references/`. A "fix a run that went
+**M10 which-skill** (`in review`, fourth batch). Upstream: `skills/poteto-help/SKILL.md` and `references/`. A "fix a run that went
 wrong" symptom table; check state only when it changes the answer; when a skill is missing from the router's table,
 read its frontmatter and route by its description; the prompt checklist (or point to `sharpen`).
 
-**M11 small additions** (`todo`).
+**M11 small additions** (`in review`, fourth batch).
 - `methodology`: "a plateau is not a stop"; never relax a finish predicate; an append-only decision log.
 - `parallel-worktrees`: a "race" shape with the selection rule declared before spawning; "instructions and
   conventions are not concurrency control"; a cleanup audit's bucket is advice, not permission.
@@ -668,10 +685,9 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 3. Done: N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval, P1.1 pack-skills, N11 brainstorm.
 4. Done: M1 with M3, M4 with M6, M2 rule-to-hook, M7 codebase-oracle (the third batch).
 5. Done: P0.5, every skill loads on its own (decision 7), with Part B, trimming the owner's plugins.
-6. **Next: the fourth batch:** M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M11
-   small additions (one builder). M10 `which-skill` is a shared file the orchestrator owns, so the orchestrator does it
-   in that batch's integration pass. P1.2 and P1.3 can ride along as a small fifth builder.
-7. N8 overnight-run, N9 engineering-principles.
+6. In review: the fourth batch, M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M10
+   `which-skill`, M11 small additions with the `suppression-reason` hook, P1.2 and P1.3.
+7. **Next:** N8 overnight-run, N9 engineering-principles, and the small items P1.6 to P1.8.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
 
@@ -683,16 +699,29 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   `dist/<skill>.zip` for named skills, or for every skill changed since a git ref, would make that one command. Check
   the upload rules claude.ai enforces before writing: no XML-like tag in a description, no "claude" or "anthropic" in
   a name (both already tested).
-- **P1.2 validate in CI** (`todo`). `claude plugin validate . --strict` runs only locally; add it to the CI workflow
+- **P1.2 validate in CI** (`in review`, fourth batch). `claude plugin validate . --strict` runs only locally; add it to the CI workflow
   (`.github/workflows/`), or say in `docs/ADDING-A-SKILL.md` why it cannot run there. Found by the
   `agent-friendly-audit` cold run.
-- **P1.3 version-bump check** (`todo`). Nothing checks that a change to a plugin's files bumps that plugin's version
+- **P1.3 version-bump check** (`in review`, fourth batch). Nothing checks that a change to a plugin's files bumps that plugin's version
   and the bundle's, though CLAUDE.md requires it. A test or script that compares against the merge base and names the
   plugin to bump. Found by the same cold run; the owner decides whether it is worth its code.
+  The fourth batch's plan check found one miss in eleven pull requests, and the owner chose a checklist line over a
+  script: `docs/ADDING-A-SKILL.md` step 8 now gives a command that lists the plugins to bump. Build the script after a
+  second miss.
 - **P1.5 bug-fix trigger** (`done` in P0.5). After P0.5, "total() returns None when the cart is empty. Fix it." started
   no skill in 3 of 3 headless runs; the session fixed the bug inline, test first. The owner decided that is right: an
   obvious one-line fix needs no skill. The description now says when `bug-fix` is worth loading (the cause is not
   obvious, a first fix did not hold, the bug came back, the fix is risky).
+- **P1.6 retrospective audit blind spots** (`todo`). `audit.mjs` (and its copy in `session-close`) skips units of 12
+  or fewer content words, so short CLAUDE.md bullets never score as DUPLICATE, and it does not scan skills synced from
+  claude.ai under `~/.claude/skills/synced/<id>/<name>/`. The skill now tells the agent to read short bullets itself;
+  the script should see both. Found by the fourth batch's review and cold run.
+- **P1.7 mutate.sh and Python bytecode** (`todo`). A break and its restore in the same second can leave a stale
+  `.pyc`, so the mutant keeps running and a later control fails with no visible diff. Export
+  `PYTHONDONTWRITEBYTECODE=1` in the harness or say so in `mutation-test`. Found by the M9 dry run.
+- **P1.8 evaluator evidence line** (`todo`). The evaluator's "Counts as evidence" line accepts "a passing automated test
+  that you have run and watched pass", which an agent reads as enough without the mutation check the same skill
+  requires; and its Mutation field accepts an unrun "would" claim. Found by the M8 cold run; pre-existing.
 - **P1.4 typed-skill names** (`closed`: P0.5 removed every `/<plugin>:<name>` mention, so there is nothing left to
   ratchet). Some skills named a typed skill as `/<name>` without the `/<plugin>:<name>` form; the cold run of the
   second batch found three live instances, for example in `architect` and `which-skill`.

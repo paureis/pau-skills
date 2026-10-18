@@ -80,7 +80,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 
 | The user says or has | Start with | Then |
 |---|---|---|
-| "This test fails sometimes", an intermittent CI failure | `flaky-test-hunt` (verification) | `tdd` for the regression test |
+| "This test fails sometimes", an intermittent CI failure, a failed CI run someone wants to retry | `flaky-test-hunt` (verification): first checks for a stale base or a failure that repeats | `tdd` for the regression test; `bug-fix` if it fails every time |
 | A database migration about to run | `migration-review` (verification) | fix, then review again |
 | Outdated dependencies, a framework major version to adopt | `dependency-upgrade` (guards) | `dependency-security-audit` for known risk |
 | A CVE announcement, "are we vulnerable", "is this package safe" | `dependency-security-audit` (guards) | `dependency-upgrade` to apply fixes |
@@ -149,6 +149,7 @@ Hooks act on every session where their plugin is installed. Each can be turned o
 | `no-verify-guard` | Blocks skipping git hooks or commit signing |
 | `merge-guard`, `inline-backtick-guard` | Block a raw `gh pr merge` and backticks in inline interpreter payloads |
 | `test-tamper-guard` | Asks before a test is skipped, focused or loses assertions |
+| `suppression-reason` | Tells the agent when an edit adds a lint or type-check suppression with no reason |
 | `verify-before-done` | Sends the agent back once if it changed code and ran no checks |
 | `no-idle` | Tells every subagent never to end its turn waiting |
 

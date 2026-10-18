@@ -82,6 +82,12 @@ rule required it. The approval gate lets the resumed session read and run read-o
 
 **Changes for this release.** It names the plugin-qualified retrospective skill. Nothing else.
 
+**Later changes (2026-10-18).** An idea from the pstack session-pickup playbook (treat the trail as the record, do
+not redo finished work, verify inherited claims), in new words: the handoff's top block carries the resume rule, each
+claim carries a cheap "How to check" that exercises it, a check ends as holds, false or could not check, and only
+reading checks and tests marked safe run before approval. Checks are limited to cheap ones because the playbook
+contradicts itself on re-running a repro. It also fixes a dangling reference to "first commands listed below".
+
 ### Roadmap hook, `hooks/session-discipline/roadmap.mjs` (Original)
 
 **Problem.** The roadmap is the only order of work: one item at a time, the next one starts only when the previous one
@@ -288,6 +294,13 @@ about a failure that happens one run in twenty.
 
 **Changes for this release.** None; written for this release.
 
+**Later changes (2026-10-18).** An idea from the pstack babysit playbook (classify a CI failure before a retry), in
+new words: fetch and deepen first; a failure in code the branch never touched suggests a stale base, checked against
+the base CI actually tested (a pull request's merge commit names it); one re-run at most, as a diagnostic, and a CI
+re-run only when asked; two identical failures end the hunt only when CI history and a few local runs agree, since a
+one-in-three flake fails twice in a row one time in nine. A cold run showed the description did not start the skill
+for a failed CI run someone wanted to retry, so it now names that situation.
+
 ### migration-review (Original)
 
 **Problem.** Migrations are usually reviewed only for whether the SQL is valid. What goes wrong in production is what
@@ -304,6 +317,19 @@ were checked against a throwaway PostgreSQL 16 cluster; the MySQL and SQL Server
 **Problem.** When the goal is a green suite, the cheapest edit is to the test: skip it, mark it as an expected
 failure, or delete the assertion that fails. The suite goes green and the bug ships. Skipping is sometimes right, so
 the hook asks the user instead of refusing, and it compares before and after so only what the edit adds is flagged.
+
+**Changes for this release.** None; written for this release.
+
+### Suppression-reason hook, `hooks/verification/suppression-reason.mjs` (Original)
+
+An idea from pstack `agents/comment-sicko.md`, which names three suppressions "and similar"; no shared text.
+
+**Problem.** When a linter or type checker complains, the cheapest edit is to silence it, and a bare suppression hides
+both the warning and why it does not apply. The hook reports, through `additionalContext` only, an edit to a code file
+that raises the count of suppressions with no reason, in about a dozen languages. It never blocks or approves. What
+counts as a reason (free text in the tool's own syntax, or a comment on the line above) is this hook's own criterion. A
+review found false reports on comments that named a directive and on string literals, a missed Vue case and a path
+filter that skipped whole projects; all were fixed test first before the release.
 
 **Changes for this release.** None; written for this release.
 
@@ -556,6 +582,12 @@ contexts, convergence by adversary, mutation verification, falsified premises, t
 **Changes for this release.** The source project's name, a file name and a run ID in the examples were replaced with
 generic descriptions; a `SKILL.md` routes to the right door and the templates.
 
+**Later changes (2026-10-18).** Ideas from pstack (`autonomous-run.md`, `docs/guide/07-overnight.md`,
+`show-me-your-work`), in new words (1 of 379 word 6-grams, the phrase "a plateau is not a stop"): a wrong log entry is
+corrected by a new entry that supersedes it; a plateau is not a stop and is not convergence; a finish condition is
+never relaxed to end a run (that is the contract-wrong branch, so it goes to the human); every unattended or
+open-ended run has a stop (a dead end or a budget), recorded in `PROJECT.md` and owned by the human.
+
 ### codebase-oracle (Adapted from [pstack `how`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/how) and [`why`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/why))
 
 Written as an Original skill: 0 of 1215 word 6-grams appeared in any upstream version. This version takes the evidence
@@ -618,6 +650,12 @@ changes broke the build.
 
 **Changes for this release.** None; written for this release.
 
+**Later changes (2026-10-18).** Ideas from pstack `swarm` (a race with the selection rule declared up front),
+`principle-separate-before-serializing-shared-state` (instructions are not concurrency control) and the
+worktree-cleanup playbook (an audit's bucket is advice, not permission), in new words: a race shape that always asks
+for its N-times cost unless the user asked for a race, with its own rules in every phase; what worktrees do not
+separate (ports, databases, caches, the integration branch, tags and remotes), checked after each agent; and before
+removing a worktree, a check that no agent, editor or watcher still uses it.
 
 ### lean-subagent-dev (Original; `TRIAGE.md` adapted, ideas from [pstack poteto-mode](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode))
 

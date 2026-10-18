@@ -3,6 +3,41 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-18: the fourth pstack batch (retrospective, safe-merge, evaluator, improve-codebase-architecture, which-skill, small additions, CI)
+
+- `retrospective`: a proposed edit must change what a future agent does, or it is dropped and shown as DROPPED; a user
+  correction always goes on to the redundancy search; a new lens catches decisions that were right for the wrong
+  reason; only the user's own corrections count; approval row by row; a DUPLICATE goes to a check, and a skill that did
+  not start goes to its description at its source. The agent now reads short CLAUDE.md bullets itself, since the audit
+  cannot see them. `session-close` and `handoff` use the same bar in their short retrospectives.
+- `safe-merge`: before merging on an older review or evaluator verdict, compare patch ids
+  (`git diff-tree -p --full-index` piped to `git patch-id --verbatim`); a different or missing id means the verdict is
+  redone. Covers stacked, promotion and fork PRs.
+- `evaluator`: evidence by change type (a CLI runs the real command, a parser runs a saved real input, storage reads the
+  value back and, for the stored form, the raw value); a check that could not run is UNVERIFIED with `inconclusive:`;
+  the output names the commit, base and patch id its verdict covers, and withholds the id on a dirty tree.
+- `improve-codebase-architecture`: Explore screens for red flags for agent contributors, missing domain structure and
+  reader load; a new step 4 (`EXECUTION.md`) carries out a chosen candidate only on an explicit ask, on a clean tree
+  and its own branch: a characterization test proven able to fail, small green steps, callers migrated and the old
+  path deleted in one wave. It stays off the confirm list because that ask is its gate.
+- `which-skill`: a "fix a run that went wrong" table, check the project's state only when it changes the answer, route
+  a skill missing from the tables by its description, and a checklist for wording a request.
+- `methodology`: a wrong log entry is corrected by a superseding entry; a plateau is not a stop; a finish condition is
+  never relaxed to end a run; every unattended run has a stop owned by the human, with a field in `PROJECT.md`.
+- `parallel-worktrees`: a race shape (several attempts at one piece, the selection rule written first, its cost asked
+  for); what worktrees do not separate; a check that no agent or watcher still uses a worktree before removing it.
+- `handoff`: the handoff carries a resume rule and a cheap check per claim; the next session verifies instead of
+  redoing, and reports a check that could not run as such.
+- `flaky-test-hunt`: classifies a CI failure before treating it as flaky (fetch first, a stale base against the base CI
+  tested, one diagnostic re-run, two identical failures end the hunt only when history agrees), and now also starts
+  when a failed CI run is about to be retried.
+- New hook `suppression-reason` (verification): tells the agent when an edit adds a lint or type-check suppression with
+  no reason next to it. It never blocks. Turn it off with `"hooks": { "suppression-reason": false }`.
+- CI runs `claude plugin validate . --strict` (Claude Code 2.1.302, Node 22, Linux) in a new `validate` job.
+  `docs/ADDING-A-SKILL.md` step 8 gives a command that lists the plugins a change must bump, counting new files and
+  moves (P1.2, P1.3).
+- Minor bump for every skill plugin, the bundle and `pau-skills-hooks`.
+
 ## 2026-10-17: every skill loads on its own (P0.5)
 
 - All 34 skills can now be started by the agent from your own words; `disable-model-invocation` is gone from every

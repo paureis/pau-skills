@@ -2,7 +2,7 @@
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Skills: 34](https://img.shields.io/badge/skills-34-informational)
-![Hooks: 11](https://img.shields.io/badge/hooks-11-informational)
+![Hooks: 12](https://img.shields.io/badge/hooks-12-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
 The Claude Code skills, hooks and scripts I use every day, packaged as a plugin marketplace. I am Alvaro "Pau" Reis,
@@ -63,6 +63,7 @@ green by skipping the failing test.
 
 - `verify-before-done` (hook) sends the agent back once if it changed code and ran no test, build or check afterwards.
 - `test-tamper-guard` (hook) asks you before a test is skipped, focused or stripped of assertions.
+- `suppression-reason` (hook) tells the agent when it adds a lint or type-check suppression with no reason next to it.
 - `tdd` builds one behaviour at a time, test first, and keeps a test only when it fails if the behaviour breaks and
   still passes after a pure refactor.
 - `mutation-test` breaks the code on purpose to prove a test catches it, preferring a real past mistake from git
@@ -210,7 +211,8 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   `--stale` finds rules that cite files that are gone.
 - **[session-close](skills/session-discipline/session-close/SKILL.md)**: Closes a session in a fixed order: clean tree, retrospective, roadmap and log, handoff, commit
   and push.
-- **[handoff](skills/session-discipline/handoff/SKILL.md)**: Writes a handoff the next session can resume from, after a retrospective gate.
+- **[handoff](skills/session-discipline/handoff/SKILL.md)**: Writes a handoff the next session can resume from, after a retrospective gate, with a
+  cheap check for every claim so the next session verifies instead of redoing.
 - **[instructions-audit](skills/session-discipline/instructions-audit/SKILL.md)**: Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
   references and secrets, and proposes edits for approval.
 - **[project-setup](skills/session-discipline/project-setup/SKILL.md)**: Interviews you about how you want to work, then writes the project CLAUDE.md and,
@@ -227,8 +229,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[evaluator](skills/verification/evaluator/SKILL.md)**: A hostile evaluator in a forked context grades each contract assertion with reproducible evidence of
   the right kind for the change, marks a check that could not run as inconclusive, and names the patch its verdict
   covers.
-- **[flaky-test-hunt](skills/verification/flaky-test-hunt/SKILL.md)**: Reproduces an intermittent failure with `repeat.mjs`, classifies the cause, and proves the
-  fix with a measured failure rate.
+- **[flaky-test-hunt](skills/verification/flaky-test-hunt/SKILL.md)**: First checks whether a CI failure is a flake at all (a stale base, a failure that
+  repeats), then reproduces an intermittent failure with `repeat.mjs`, classifies the cause, and proves the fix with a
+  measured failure rate.
 - **[migration-review](skills/verification/migration-review/SKILL.md)**: Reviews a schema or data migration for locks, compatibility with running code, data safety
   and reversibility, for any migration tool.
 - **[ci-cost-and-cadence](skills/verification/ci-cost-and-cadence/SKILL.md)**: Measures where CI minutes go, compares five options with numbers, and builds the chosen
@@ -251,16 +254,18 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   changes what an agent does: each variant runs several times as a headless `claude -p` session in a neutral folder
   that holds only that variant, runs are graded on what they did, and a reviewer with no tools scores them blind next
   to your own blind read; `skill-eval.mjs` sets up the folders, refuses leaks and makes the blind copy.
-- Hooks: [`test-tamper-guard`](hooks/verification/test-tamper-guard.mjs), [`verify-before-done`](hooks/verification/verify-before-done.mjs).
+- Hooks: [`test-tamper-guard`](hooks/verification/test-tamper-guard.mjs), [`suppression-reason`](hooks/verification/suppression-reason.mjs), [`verify-before-done`](hooks/verification/verify-before-done.mjs).
 
 ### agent-orchestration
 
-- **[methodology](skills/agent-orchestration/methodology/SKILL.md)**: Contracts, an evidence standard, an evaluator, convergence and two-file state, with templates.
+- **[methodology](skills/agent-orchestration/methodology/SKILL.md)**: Contracts, an evidence standard, an evaluator, convergence, a stop for every
+  unattended run and two-file state, with templates.
 - **[codebase-oracle](skills/agent-orchestration/codebase-oracle/SKILL.md)** (adapted): Answers questions about a codebase from the
   code and its history, grading each answer's evidence in five tiers, with read-only explorers for big questions;
   never presents a guess as a finding.
-- **[parallel-worktrees](skills/agent-orchestration/parallel-worktrees/SKILL.md)**: Runs independent pieces of work in separate git worktrees, with `worktrees.mjs` to check a
-  plan for overlapping files and report every worktree's state.
+- **[parallel-worktrees](skills/agent-orchestration/parallel-worktrees/SKILL.md)**: Runs independent pieces of work in separate git worktrees, or races several
+  attempts at one piece and keeps the best, with `worktrees.mjs` to check a plan for overlapping files and report every
+  worktree's state.
 - **[lean-subagent-dev](skills/agent-orchestration/lean-subagent-dev/SKILL.md)** (adapted): A way of working for a whole session:
   one subagent at a time with a written brief and standing orders, the main session checks the work itself and triages
   the review, and the usage budget sets how much to delegate and each role's effort.

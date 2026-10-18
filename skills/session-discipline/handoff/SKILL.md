@@ -22,8 +22,8 @@ off, even when a written rule requires it. Before Step 1, state one of these to 
 - **"Retrospective already ran this session"**, and say what it produced (including "nothing
   worth adding", which is a legitimate result).
 - **"Running the retrospective now"**: run this short version: list the corrections the user made and the work that
-  was redone; for each one that will happen again, propose one line for `CLAUDE.md` or memory, after checking that
-  no existing line already says it; show the exact lines and apply only the ones the user approves. If the
+  was redone; for each one that will happen again and would make a future agent act differently, propose one line
+  for `CLAUDE.md` or memory, after checking that no existing line already says it; show the exact lines and apply only the ones the user approves. If the
   `retrospective` skill is installed and the user wants the full version, run it first, then come back and write the
   handoff.
 - **"Skipping the retrospective because <reason>"**, only for a genuinely trivial session
