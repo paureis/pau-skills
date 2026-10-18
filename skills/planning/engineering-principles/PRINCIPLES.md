@@ -6,36 +6,41 @@ Read the whole section of a principle before you cite it.
 
 ## Build the lever
 
-When the work is not trivial, build the tool that does it instead of doing it by hand. A codemod, a generator or a
-script does the work the same way every time and reruns for free. It is one thing a reviewer can read and rerun to
+When a tool would do the work better than hand edits (the same edit in many places, a check you will repeat, a
+migration, an analysis over a lot of data), let the tool do it. A codemod, a generator, a script or an existing tool
+does the work the same way every time and reruns for free. It is one thing a reviewer can read and rerun to
 check the work; a change made by hand can only be checked by doing it again. A deterministic script turns "trust me"
 into "run this".
 
-The bar is triviality, not repetition: skip the lever only for a couple of obvious edits you can see at a glance. A
-one-off still earns a lever when the lever is what makes the work checkable.
+Skip it for a couple of obvious edits you can see at a glance, and for ordinary changes that touch several files in
+different ways. A one-off still earns a lever when the lever is what makes the work checkable, such as a data
+migration you run once.
 
 **How to apply it.**
-- Do the first unit by hand to learn the recipe, then build the tool. Prove it by running it on that unit and
-  diffing the result against your hand-made version.
+- Do the first unit by hand to learn the recipe, then build the tool. To prove it, save your hand-made version,
+  restore that unit to how it was, run the tool, and diff its result against the saved version. Running the tool on
+  the unit you already edited proves nothing: a tool that is safe to rerun finds nothing left to do there.
 - Pick the kind of lever by the work: a codemod or script for edits, a generator for repetitive files, a query over
   the data (loaded into SQLite, say) for an analysis, a rerunnable check for verification.
-- Write it in the project's own language or with a tool the project already uses. For edits, prefer a tool that
-  understands the syntax over a text substitution when names can also appear in strings or comments: the language
-  server's rename, `gofmt -r` or `gopls rename` for Go, `ast-grep` or `comby` for many languages, LibCST for Python,
-  OpenRewrite for Java, `jscodeshift` for JavaScript. Plain `sed` is fine when a search shows every hit is the name.
+- An existing tool is a lever too, and often the best one: the language server's rename, `gofmt -r` or
+  `gopls rename` for Go, `ast-grep` or `comby` for many languages, LibCST for Python, OpenRewrite for Java,
+  `jscodeshift` for JavaScript. It leaves no file in the diff, so say in the report which tool and command did the
+  work, so a reviewer can rerun it. For edits, prefer a tool that understands the syntax over a text substitution
+  when names can also appear in strings or comments; plain `sed` is fine when a search shows every hit is the name.
+- When you write the lever, write it in the project's own language or with a tool the project already uses.
 - Make the lever safe to rerun (see make operations idempotent): a second run finds nothing left to do.
 - A deterministic lever beats fanning out. If the tool can process every unit in one pass, run it yourself; do not
   hand delegates the job of applying by hand what a script can do.
 - When you do hand work to subagents, write the lever as a file they all read: the recipe, how each result is
   checked, and the files they must not touch. Keep it outside their write scope, so none of them can quietly edit the
   contract.
-- The lever belongs in the change: put the script in the diff next to the work it did, where a reviewer can read it
-  and rerun it. Whether it stays in the repository after review is the user's call.
+- A lever you wrote belongs in the change: put the script in the diff next to the work it did, where a reviewer can
+  read it and rerun it. Whether it stays in the repository after review is the user's call.
 - Build the smallest script that does or proves the job, never a framework (see subtract before you add).
 
-**Sign you skipped it.** Applying this principle produces a file. If you cited it and the diff holds no codemod,
-script, generator or delegate brief, you did not apply it. Forty files edited by hand, or subagents each editing a
-share of them, are the usual form.
+**Sign you skipped it.** Applying this principle leaves a script, codemod, generator or delegate brief you wrote in
+the diff, or a named tool and command in the report. If you cited it and there is neither, you did not apply it.
+Forty files edited by hand, or subagents each editing a share of them, are the usual form.
 
 ## Explain the number
 

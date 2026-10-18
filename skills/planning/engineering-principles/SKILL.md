@@ -22,13 +22,17 @@ offer to run `improve-codebase-architecture` if it is installed. To sketch new c
 
 ## How to use it
 
+Read `${CLAUDE_SKILL_DIR}/PRINCIPLES.md` with the Read tool. The whole file is fine (about 350 lines); a command
+that cuts out one section may be refused, and a section read only in part does not count as read.
+
 1. **The user names a principle.** Match the name loosely (case, hyphens, a missing "the"). Read its section in
-   PRINCIPLES.md to the end (the next `## ` heading; some run past 40 lines), then apply it to the work in front of
-   you. A name that is not in the index is not a principle here:
-   say so, and work from the plain meaning of the words without citing anything.
-2. **You reach a decision yourself.** Before you pick a data shape, a type, a module split, the order of a change, or
-   how to make one edit in many places, read the "When it applies" lines below. For each one that matches, read its
-   section, then decide. When none matches, decide without them; do not stretch a principle to fit.
+   PRINCIPLES.md to its end, then apply it to the work in front of you. A name that is not in the index is not a
+   principle here: say so, and work from the plain meaning of the words without citing anything.
+2. **The decision this skill was started for.** When it was started for a decision in the user's current request (a
+   data shape, a type, a module split, the order of a change, one edit in many places), read the "When it applies"
+   lines below. For each one that matches that decision, read its section, then decide. When none matches, decide
+   without them; do not stretch a principle to fit. This sets no rule for later work: a later decision is checked
+   against the index only if the skill is started for it.
 3. **Citing a principle.** When you cite one, in a reply, a plan or a review, name the decision it changed: "subtract
    before you add: deleted the unused adapter before writing the new one". Cite only a principle whose section in
    PRINCIPLES.md you read in this session; the index line alone is not enough. A citation with no decision behind it
@@ -45,12 +49,13 @@ premise have failed, write the premise down and test it before a third fix.
 ## Index
 
 ### Build the lever
-- **When it applies:** Any work that is not trivial: one edit across many files, a migration, an analysis, a check
-  you will repeat.
-- **Rule:** Build the tool that does or proves the work (a script, a codemod, a generator, a rerunnable check)
-  instead of doing it by hand; the lever belongs in the change, and stays out of any delegate's write scope.
-- **Sign you skipped it:** You cite it and the diff holds no script, codemod or generator, or forty files changed by
-  hand.
+- **When it applies:** Work a tool does better than hand edits: the same edit in many places, a check you will
+  repeat, a migration, an analysis over a lot of data.
+- **Rule:** Let a tool do or prove the work: an existing one (a language-server rename, a formatter's rewrite rule)
+  or a script, codemod or generator you write; a script you wrote belongs in the change, outside any delegate's
+  write scope.
+- **Sign you skipped it:** The same edit made by hand in many files, or by subagents each taking a share; or you cite
+  it and can name no tool or script that did the work.
 
 ### Explain the number
 - **When it applies:** Before you trust, report or act on a number you measured: a speedup, a regression, a latency,
