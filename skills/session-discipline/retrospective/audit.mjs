@@ -10,13 +10,27 @@
  *
  * Run it from the project root. Stores (all optional): ~/.claude/CLAUDE.md, ./CLAUDE.md, the project's memory dir
  * (~/.claude/projects/<slug>/memory, slug derived from the cwd the way Claude Code does), every SKILL.md under
- * ~/.claude/skills and under ./.claude/skills. CLAUDE.md files are split into units at headings and bullets; each
- * memory file is one unit. Overlap is bigram containment after stopword removal: two paragraphs that restate each
- * other score high, two that share a topic in different words score low. That is what the gate is for: "is this
- * ALREADY here" before "add it".
+ * ~/.claude/skills/<name> and ./.claude/skills/<name>, and the skills synced from claude.ai under
+ * ~/.claude/skills/synced/<id>/<name>. CLAUDE.md files are split into units at headings and bullets; each memory
+ * file and each skill is one unit. Overlap is bigram containment after stopword removal: two paragraphs that restate
+ * each other score high, two that share a topic in different words score low. That is what the gate is for: "is
+ * this ALREADY here" before "add it".
+ *
+ * Short CLAUDE.md bullets (12 or fewer content words) have too few bigrams for that: "Use pnpm, never npm." has two,
+ * and an unrelated sentence sharing one scores 0.500. --check scores them instead by the share of the unit's
+ * distinct content words found in the proposal, every word inside a code span included whatever its length (a word
+ * score: DUPLICATE at 3 or more shared words and a share of 0.75, RELATED at 2 and 0.5). A word-score verdict is a
+ * candidate: the agent reads the bullet (one line) and confirms it before dropping or merging a learning. Known
+ * limits: a bullet of one or two content words can never be DUPLICATE (read those yourself), negation is lost
+ * ("never" and "not" are stopwords), and word forms and synonyms differ ("test" against "tests", "ask" against
+ * "asking", "before" against "first"). Any other CLAUDE.md unit that short, such as a heading's one-line intro, is
+ * dropped as before: it matches any proposal on the same topic. Synced skills are scored by --check, labelled
+ * [synced skill], one unit per <id> and name; a skill that is both local and synced is one unit with both labels.
+ * Short units and synced skills stay out of the pairs report and the largest units: synced skills are edited at
+ * their source, and synced files run to tens of KB.
  */
 import { readFileSync, readdirSync, existsSync, statSync, realpathSync } from 'node:fs';
-import { join, basename } from 'node:path';
+import { join, basename, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 
@@ -37,10 +51,33 @@ export function verdict(top) {
   return top >= DUPLICATE_AT ? 'DUPLICATE/EXTENDS' : top >= RELATED_AT ? 'RELATED' : 'NEW';
 }
 
+// Short units: the same words as tokens(), but a code span keeps its words ("`pnpm`" is "pnpm", not "code"), of any
+// length ("`rg`" is "rg"), because in a short bullet the tool named in the span is often the whole rule. The proposal
+// keeps words of any length, so a plain "rg" in it matches.
+export const SHORT_MAX = 12;
+const plainWords = (s) => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((w) => w && !STOP.has(w));
+export const words = (s) => [
+  ...plainWords(s.replace(/`[^`]*`/g, ' ')).filter((w) => w.length > 2),
+  ...[...s.matchAll(/`([^`]*)`/g)].flatMap((m) => plainWords(m[1])),
+];
+
+/** Word score of a short unit against a proposal: { shared, total, score } over the unit's distinct content words. */
+export function wordScore(unitText, proposalText) {
+  const mine = new Set(words(unitText)); const theirs = new Set(plainWords(proposalText));
+  let shared = 0; for (const w of mine) if (theirs.has(w)) shared++;
+  return { shared, total: mine.size, score: mine.size ? shared / mine.size : 0 };
+}
+export function wordVerdict({ shared, score }) {
+  return shared >= 3 && score >= 0.75 ? 'DUPLICATE/EXTENDS' : shared >= 2 && score >= 0.5 ? 'RELATED' : 'NEW';
+}
+const RANK = { 'DUPLICATE/EXTENDS': 2, RELATED: 1, NEW: 0 };
+
 /** Claude Code's project slug: every ':', '\', '/' and space becomes one '-' ("C:\Some Dir" -> "C--Some-Dir"). */
 export const projectSlug = (cwd) => cwd.replace(/[:\\/ ]/g, '-');
 
-/** Split a CLAUDE.md into units: each heading starts a unit; each top-level or first-level bullet starts a unit. */
+/** Split a CLAUDE.md into units: each heading starts a unit; each top-level or first-level bullet starts a unit. A
+ * bullet of 12 or fewer content words is marked short; any other unit that small is dropped, because a word score on
+ * a heading's short intro matches any proposal on the same topic. */
 export function unitsOf(label, text) {
   const out = [];
   let cur = null; let name = label;
@@ -48,12 +85,12 @@ export function unitsOf(label, text) {
     const h = /^#{1,6}\s+(.*)/.exec(line);
     const b = /^\s{0,4}- /.test(line);
     if (h) { if (cur) out.push(cur); name = h[1].trim(); cur = { store: label, name, text: '' }; continue; }
-    if (b) { if (cur) out.push(cur); cur = { store: label, name: `${name} > ${line.trim().slice(2, 70).trim()}`, text: '' }; }
+    if (b) { if (cur) out.push(cur); cur = { store: label, name: `${name} > ${line.trim().slice(2, 70).trim()}`, text: '', bullet: true }; }
     if (!cur) cur = { store: label, name, text: '' };
     cur.text += line + '\n';
   }
   if (cur) out.push(cur);
-  return out.filter((u) => tokens(u.text).length > 12);
+  return out.map((u) => { const n = tokens(u.text).length; return n > SHORT_MAX ? u : n > 0 && u.bullet ? { ...u, short: true } : null; }).filter(Boolean);
 }
 
 // Paths worth checking: anything under a usual top-level folder, or a bare file name with a known extension.
@@ -96,28 +133,52 @@ function main(args) {
   const skillFiles = skillDirs.filter((d) => existsSync(d))
     .flatMap((d) => readdirSync(d).map((s) => join(d, s, 'SKILL.md')))
     .filter((f) => existsSync(f));
+  // Synced from claude.ai: synced/<id>/<name>/SKILL.md, with files such as manifest.json beside the folders, so an
+  // entry that is not a folder is skipped, never read as one.
+  const isDir = (p) => { try { return statSync(p).isDirectory(); } catch { return false; } };
+  const subdirs = (d) => (isDir(d) ? readdirSync(d).map((n) => join(d, n)) : []);
+  const syncedFiles = subdirs(join(home, '.claude', 'skills', 'synced')).flatMap(subdirs)
+    .map((d) => join(d, 'SKILL.md')).filter((f) => existsSync(f));
+  const skillName = (f) => basename(dirname(f)) + '/SKILL.md';
 
   const units = [];
   for (const s of stores) units.push(...unitsOf(s.label, s.text));
   for (const f of memFiles) units.push({ store: 'memory', name: f, text: readFileSync(join(memDir, f), 'utf8').replace(/^---[\s\S]*?---\r?\n/, '') });
-  for (const f of skillFiles) units.push({ store: 'skill', name: basename(join(f, '..')) + '/SKILL.md', text: readFileSync(f, 'utf8') });
-  for (const u of units) u.sh = shingles(u.text);
+  for (const f of skillFiles) units.push({ store: 'skill', name: skillName(f), text: readFileSync(f, 'utf8') });
+  // Each synced copy is its own unit, keyed by <id> and name: one name can sit under two ids with different text. A
+  // local skill of the same name is one unit with every synced copy, labelled with both, scored against each text.
+  const local = new Map(units.filter((u) => u.store === 'skill').map((u) => [u.name, u]));
+  for (const f of syncedFiles) {
+    const text = readFileSync(f, 'utf8');
+    const u = local.get(skillName(f));
+    if (u) { u.store = 'skill, synced skill'; (u.alts ||= []).push(text); } else units.push({ store: 'synced skill', synced: true, name: skillName(f), file: f, text });
+  }
+  for (const u of units) { u.sh = shingles(u.text); u.altSh = (u.alts || []).map(shingles); }
+  // The pairs report and the largest units: long units of the local stores only.
+  const reportUnits = units.filter((u) => !u.short && !u.synced);
 
   if (CHECK) {
     const text = readFileSync(CHECK, 'utf8');
     const sh = shingles(text);
-    const scored = units.map((u) => ({ u, score: containment(sh, u.sh) })).sort((a, b) => b.score - a.score).slice(0, 8);
-    console.log(`Proposed learning: ${CHECK} (${tokens(text).length} content words). Closest existing units:`);
-    for (const { u, score } of scored) console.log(`  ${score.toFixed(3)}  [${u.store}] ${u.name}`);
-    const v = verdict(scored[0]?.score ?? 0);
-    console.log(v === 'DUPLICATE/EXTENDS' ? '\nVERDICT: DUPLICATE/EXTENDS. This is already stated; edit that unit (or make it enforceable). Do not add a new one.'
+    const scored = units.map((u) => {
+      if (u.short) { const w = wordScore(u.text, text); return { u, score: w.score, v: wordVerdict(w), note: `  (word score: ${w.shared} of ${w.total} words)` }; }
+      const score = Math.max(containment(sh, u.sh), ...u.altSh.map((a) => containment(sh, a)));
+      return { u, score, v: verdict(score), note: '' };
+    }).sort((a, b) => RANK[b.v] - RANK[a.v] || b.score - a.score).slice(0, 8);
+    console.log(`Proposed learning: ${CHECK} (${tokens(text).length} content words). Closest existing units (bigram containment; short CLAUDE.md units by word score):`);
+    // A synced copy's path has an <id> level that is easy to guess wrong, so it is printed.
+    for (const { u, score, note } of scored) console.log(`  ${score.toFixed(3)}  [${u.store}] ${u.name}${note}${u.file ? `  (${u.file})` : ''}`);
+    const v = scored[0]?.v ?? 'NEW';
+    // A verdict that rests on a word score is a candidate: the bullet is one line, so the agent reads it and decides.
+    if (v !== 'NEW' && scored[0].u.short) console.log(`\nVERDICT: ${v}, by word score: a candidate. Read that bullet (it is one line) and confirm DUPLICATE or RELATED before you drop or merge the learning.`);
+    else console.log(v === 'DUPLICATE/EXTENDS' ? '\nVERDICT: DUPLICATE/EXTENDS. This is already stated; edit that unit (or make it enforceable). Do not add a new one.'
       : v === 'RELATED' ? '\nVERDICT: RELATED. Add only what is new, inside the closest unit.'
       : '\nVERDICT: NEW. A new unit is justified only if it is a rule that will recur, not a one-off.');
     return 0;
   }
 
   if (args.includes('--stale')) {
-    // Project stores only: the global CLAUDE.md cites paths of many projects.
+    // Project stores only: the global CLAUDE.md, the user's skills and the synced skills cite paths of many projects.
     const projectStores = stores.filter((s) => s.label !== 'global CLAUDE.md');
     for (const f of memFiles) projectStores.push({ label: `memory ${f}`, text: readFileSync(join(memDir, f), 'utf8') });
     const localSkills = join(cwd, '.claude', 'skills');
@@ -137,20 +198,23 @@ function main(args) {
   const memBytes = memFiles.reduce((n, f) => n + statSync(join(memDir, f)).size, 0);
   console.log(`  ${String(memBytes).padStart(7)} bytes  ~${String(est(memBytes)).padStart(5)} tok  ${memFiles.length} memory files (loaded on recall)`);
   console.log(`  ${skillFiles.length} skills`);
+  const syncedBytes = syncedFiles.reduce((n, f) => n + statSync(f).size, 0);
+  console.log(`  ${String(syncedBytes).padStart(7)} bytes  ~${String(est(syncedBytes)).padStart(5)} tok  ${syncedFiles.length} synced skills from claude.ai (edited at their source; scored only by --check)`);
 
   console.log('\n== Largest units ==');
-  for (const u of [...units].sort((a, b) => b.text.length - a.text.length).slice(0, 8)) console.log(`  ${String(u.text.length).padStart(6)} bytes  [${u.store}] ${u.name}`);
+  for (const u of [...reportUnits].sort((a, b) => b.text.length - a.text.length).slice(0, 8)) console.log(`  ${String(u.text.length).padStart(6)} bytes  [${u.store}] ${u.name}`);
 
   console.log(`\n== Most overlapping pairs (bigram containment, floor ${MIN}) ==`);
   const pairs = [];
-  for (let i = 0; i < units.length; i++) for (let j = i + 1; j < units.length; j++) {
-    const s = containment(units[i].sh, units[j].sh);
-    if (s >= MIN) pairs.push({ s, a: units[i], b: units[j] });
+  for (let i = 0; i < reportUnits.length; i++) for (let j = i + 1; j < reportUnits.length; j++) {
+    const s = containment(reportUnits[i].sh, reportUnits[j].sh);
+    if (s >= MIN) pairs.push({ s, a: reportUnits[i], b: reportUnits[j] });
   }
   pairs.sort((x, y) => y.s - x.s);
   if (!pairs.length) console.log('  none above the floor');
   for (const p of pairs.slice(0, TOP)) console.log(`  ${p.s.toFixed(3)}  [${p.a.store}] ${p.a.name}\n         <-> [${p.b.store}] ${p.b.name}`);
-  console.log(`\n${units.length} units compared, ${pairs.length} pairs at or above the floor.`);
+  const shortCount = units.filter((u) => u.short).length;
+  console.log(`\n${reportUnits.length} units compared, ${pairs.length} pairs at or above the floor. Scored only by --check: ${shortCount} short CLAUDE.md units, ${units.filter((u) => u.synced).length} synced-only skills.`);
   return 0;
 }
 

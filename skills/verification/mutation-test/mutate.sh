@@ -19,6 +19,12 @@
 #     file, so a mutation on top of uncommitted work loses the work (this has happened). Commit first.
 #  2. Runs the command once WITHOUT the mutation (the control) and exits 2 if it fails: without it, a mistyped command
 #     (exit 127) or a missing test file would count as a caught mutation.
+#     Before it, Python's bytecode cache is turned off for the command: PYTHONDONTWRITEBYTECODE=1 whatever the caller
+#     set, and PYTHONPYCACHEPREFIX pointed at an empty folder removed on exit. Python checks a .pyc against the
+#     source's time in whole seconds and its size, so the control's .pyc of the original matched a same-size mutant
+#     written in the same second and the original ran instead: a false SURVIVED (13 of 15 back-to-back runs), or a
+#     false KEPT with --refactor. The prefix also stops Python reading a .pyc left by the user's own earlier run, and
+#     no __pycache__ is written in the repository. Only the harness's child commands see either variable.
 #  3. Assertion one, the mutation APPLIED: for a patch, `git apply --numstat` must show it touches only <file> (the
 #     restore only restores that file); after applying, <file> must differ BY CONTENT with carriage returns stripped,
 #     not by `git status` (on a Windows checkout `sed -i` rewrites CRLF line endings even when nothing matched, and git
@@ -79,7 +85,10 @@ if ! git ls-files --error-unmatch -- "$file" >/dev/null 2>&1; then
 fi
 
 mutation="$(mktemp)"
-trap 'rm -f "$mutation"' EXIT
+pycache="$(mktemp -d)" || { rm -f "$mutation"; echo "${tag}${stop}: could not make a temporary folder." >&2; exit 2; }
+trap 'rm -f "$mutation"; rm -rf "$pycache"' EXIT
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONPYCACHEPREFIX="$pycache"
 if [ -n "$sed_expr" ]; then
   printf '%s\n' "$sed_expr" > "$mutation"
 else
