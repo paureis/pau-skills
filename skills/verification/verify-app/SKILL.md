@@ -17,6 +17,9 @@ the app. Write every line for that reader: exact commands, real selectors, resul
 
 Arguments: $ARGUMENTS
 
+If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
+lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
+
 ## Pick the mode
 
 - The arguments start with `maintain`: **maintain mode**. Read `${CLAUDE_SKILL_DIR}/MAINTAIN.md` and follow it.
@@ -24,9 +27,6 @@ Arguments: $ARGUMENTS
   needed. Read that folder's `SKILL.md` and follow it. If the user asked for a new one anyway, say one exists and
   offer maintain mode instead of writing a second.
 - Otherwise: **create mode**, below.
-
-If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
-lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
 
 Bundled files, all read only:
 
