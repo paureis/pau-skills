@@ -2,9 +2,10 @@
 name: improve-codebase-architecture
 description: "Find deepening opportunities in existing code: refactors that turn shallow modules into deep ones, easier to test and to navigate, then talk the chosen one through. Use when the user says 'improve architecture', 'find refactoring opportunities', 'architecture review' or 'zoom out on the codebase', or when the code is getting messy or hard to test."
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
-license: MIT (adapted from mattpocock/skills; see NOTICE)
+license: MIT (adapted from mattpocock/skills and cursor/plugins pstack; see NOTICE)
 metadata:
   upstream: https://github.com/mattpocock/skills/tree/main/skills/engineering/improve-codebase-architecture
+  upstream-pstack: https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/architect/references/design-red-flags.md
 ---
 
 # Improve Codebase Architecture
@@ -60,7 +61,7 @@ Assume the next contributor is an agent that sees only the files it opened, copi
 
 Look for the domain structure the code is missing. The signs: an if/else or switch chain on a kind or type field that grows one branch per new case, often repeated in several modules (a lookup table, a registry, or one adapter per variant behind one interface would hold it); a second boolean that must stay in sync with the first (a single state field or a state machine); and temporal decomposition, above. Do not force an abstraction. Prefer boring code when the current shape is already clear, local and unlikely to grow: a candidate must delete branches, duplicated rules or invalid states, not add indirection.
 
-Run the **reader-load test** on each area you suspect: can a new reader answer "where does X come from?" and "what can change X?" in under 30 seconds? On the way, count the two things that make it slow: the layers they must trace between the question and the answer, and the state they must hold in their head (mutable fields, module state, globals, flags). Either one fails the test alone; a flat file with fifty globals is as hard to read as six thin layers. A good candidate lowers one without raising the other.
+Run the **reader-load test** on each area you suspect: can a new reader answer "where does X come from?" and "what can change X?" in under 30 seconds? On the way, count the two things that make it slow: the layers they must trace between the question and the answer, and the state they must hold in their head (mutable fields, module state, globals, flags). Either one fails the test alone; a flat file with fifty globals is as hard to read as six thin layers. A good candidate lowers the total: a layer or a piece of state it adds must save at least as much elsewhere.
 
 ### 2. Present candidates
 
