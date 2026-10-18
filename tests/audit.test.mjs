@@ -43,6 +43,10 @@ test('wordScore: a short unit scores by the share of its distinct content words,
   assert.equal(wordVerdict(wordScore(bullet, 'Use pnpm workspaces for the monorepo.')), 'RELATED');
   // Code spans are words here: a different tool in the same sentence shape is new.
   assert.equal(wordVerdict(wordScore(bullet, 'Use `uv` for Python, not `pip`.')), 'NEW');
+  // A tool name of two letters still counts inside a code span, and matches the same word written plainly.
+  const rg = wordScore('- Prefer `rg` over `grep`.\n', 'Use rg instead of grep for searches.');
+  assert.deepEqual([rg.shared, rg.total], [2, 4]);
+  assert.equal(wordVerdict(rg), 'RELATED');
   const longer = '- Run the linter before every commit to main.\n';
   assert.equal(wordVerdict(wordScore(longer, 'Run the commit hooks in CI as well.')), 'NEW');
   assert.notEqual(wordVerdict(wordScore(longer, 'Run the linter on a pull request.')), 'DUPLICATE/EXTENDS');
