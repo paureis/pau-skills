@@ -53,6 +53,7 @@ To remove every hook from one plugin, disable the plugin: `claude plugin disable
 | [`merge-guard`](guards/merge-guard.mjs) | guards | PreToolUse (Bash, PowerShell) | Denies a raw `gh pr merge`, and `gh pr close` with branch deletion, which close stacked PRs | Denies |
 | [`inline-backtick-guard`](guards/block-inline-backtick-payload.mjs) | guards | PreToolUse (Bash) | Denies `node -e`, `python -c` and similar when a backtick in the payload would be run by bash | Denies |
 | [`test-tamper-guard`](verification/test-tamper-guard.mjs) | verification | PreToolUse (Write, Edit, MultiEdit) | Asks before an edit to a test file adds a skip or focus marker or removes assertions, in 11 languages | Asks |
+| [`suppression-reason`](verification/suppression-reason.mjs) | verification | PreToolUse (Write, Edit, MultiEdit) | Tells the agent when an edit to a code file adds a lint or type-check suppression (`eslint-disable`, `@ts-ignore`, `# noqa`, `//nolint`, `#[allow(` and others) with no reason next to it | No |
 | [`verify-before-done`](verification/verify-before-done.mjs) | verification | Stop | Sends the agent back once when it edited code since your last message and ran no test, build, lint or type check after the last edit | Once |
 | [`roadmap`](session-discipline/roadmap.mjs) | session-discipline | SessionStart | Prints the current, next and blocked roadmap items and open questions | No |
 | [`branch-context`](session-discipline/branch-context.mjs) | session-discipline | SessionStart | Prints branch, ahead/behind, uncommitted files, stashes, an unfinished merge or rebase, and a warning on a protected branch | No |
@@ -92,6 +93,19 @@ It runs `git` read-only (status and the current branch) only when a command need
 |---|---|---|
 | `mode` | `"ask"` | `"ask"` shows you a permission prompt; `"deny"` refuses outright. |
 | `extraTestPaths` | `[]` | Globs that also count as test files, in addition to the usual `test/`, `tests/`, `spec/`, `__tests__/`, `*.test.*`, `*.spec.*`, `*_test.*`, `test_*.py`, `*Test.java` and similar. |
+
+### suppression-reason
+
+| Option | Default | Meaning |
+|---|---|---|
+| `ignorePaths` | `[]` | Globs of files never checked. Vendored and generated paths (`node_modules/`, `vendor/`, `third_party/`, `dist/`, `build/`, `target/`, `generated/`, `*.min.*`, protobuf output) are always skipped. |
+
+It only adds a note to the agent's context; it never asks, denies or approves. "No reason" is this hook's own
+criterion: a reason is free text in the tool's own syntax (`-- why` for eslint, rubocop and phpcs, text after
+`@ts-expect-error` or `@ts-ignore`, text after the codes for `# noqa`, `# type: ignore`, `pylint: disable`, `//nolint`,
+`NOLINT` and `#pragma warning disable`, Rust `reason = "..."`), a trailing comment after an attribute or annotation, or
+a comment on the line just above. A rule code alone is not a reason. Formatter directives such as `prettier-ignore`
+are not counted. Only an increase is reported, so existing suppressions stay quiet until someone adds another.
 
 ### verify-before-done
 
