@@ -16,14 +16,15 @@
  * each other score high, two that share a topic in different words score low. That is what the gate is for: "is
  * this ALREADY here" before "add it".
  *
- * Short CLAUDE.md units (12 or fewer content words) have too few bigrams for that: "Use pnpm, never npm." has two,
+ * Short CLAUDE.md bullets (12 or fewer content words) have too few bigrams for that: "Use pnpm, never npm." has two,
  * and an unrelated sentence sharing one scores 0.500. --check scores them instead by the share of the unit's
  * distinct content words found in the proposal, every word inside a code span included whatever its length (a word
  * score: DUPLICATE at 3 or more shared words and a share of 0.75, RELATED at 2 and 0.5). A word-score verdict is a
  * candidate: the agent reads the bullet (one line) and confirms it before dropping or merging a learning. Known
- * limits: a unit of one or two content words can never be DUPLICATE (read those yourself), negation is lost ("never"
- * and "not" are stopwords), and word forms and synonyms differ ("test" against "tests", "ask" against "asking",
- * "before" against "first"). Synced skills are scored by --check, labelled [synced skill]; a skill that is both
+ * limits: a bullet of one or two content words can never be DUPLICATE (read those yourself), negation is lost
+ * ("never" and "not" are stopwords), and word forms and synonyms differ ("test" against "tests", "ask" against
+ * "asking", "before" against "first"). Any other CLAUDE.md unit that short, such as a heading's one-line intro, is
+ * dropped as before: it matches any proposal on the same topic. Synced skills are scored by --check, labelled [synced skill]; a skill that is both
  * local and synced is one unit with both labels. Short units and synced skills stay out of the pairs report and the
  * largest units: synced skills are edited at their source, and synced files run to tens of KB.
  */
@@ -73,8 +74,9 @@ const RANK = { 'DUPLICATE/EXTENDS': 2, RELATED: 1, NEW: 0 };
 /** Claude Code's project slug: every ':', '\', '/' and space becomes one '-' ("C:\Some Dir" -> "C--Some-Dir"). */
 export const projectSlug = (cwd) => cwd.replace(/[:\\/ ]/g, '-');
 
-/** Split a CLAUDE.md into units: each heading starts a unit; each top-level or first-level bullet starts a unit. A unit
- * of 12 or fewer content words is marked short; one with none is dropped. */
+/** Split a CLAUDE.md into units: each heading starts a unit; each top-level or first-level bullet starts a unit. A
+ * bullet of 12 or fewer content words is marked short; any other unit that small is dropped, because a word score on
+ * a heading's short intro matches any proposal on the same topic. */
 export function unitsOf(label, text) {
   const out = [];
   let cur = null; let name = label;
@@ -82,12 +84,12 @@ export function unitsOf(label, text) {
     const h = /^#{1,6}\s+(.*)/.exec(line);
     const b = /^\s{0,4}- /.test(line);
     if (h) { if (cur) out.push(cur); name = h[1].trim(); cur = { store: label, name, text: '' }; continue; }
-    if (b) { if (cur) out.push(cur); cur = { store: label, name: `${name} > ${line.trim().slice(2, 70).trim()}`, text: '' }; }
+    if (b) { if (cur) out.push(cur); cur = { store: label, name: `${name} > ${line.trim().slice(2, 70).trim()}`, text: '', bullet: true }; }
     if (!cur) cur = { store: label, name, text: '' };
     cur.text += line + '\n';
   }
   if (cur) out.push(cur);
-  return out.map((u) => { const n = tokens(u.text).length; return n > SHORT_MAX ? u : n > 0 ? { ...u, short: true } : null; }).filter(Boolean);
+  return out.map((u) => { const n = tokens(u.text).length; return n > SHORT_MAX ? u : n > 0 && u.bullet ? { ...u, short: true } : null; }).filter(Boolean);
 }
 
 // Paths worth checking: anything under a usual top-level folder, or a bare file name with a known extension.
@@ -166,7 +168,9 @@ function main(args) {
     console.log(`Proposed learning: ${CHECK} (${tokens(text).length} content words). Closest existing units (bigram containment; short CLAUDE.md units by word score):`);
     for (const { u, score, note } of scored) console.log(`  ${score.toFixed(3)}  [${u.store}] ${u.name}${note}`);
     const v = scored[0]?.v ?? 'NEW';
-    console.log(v === 'DUPLICATE/EXTENDS' ? '\nVERDICT: DUPLICATE/EXTENDS. This is already stated; edit that unit (or make it enforceable). Do not add a new one.'
+    // A verdict that rests on a word score is a candidate: the bullet is one line, so the agent reads it and decides.
+    if (v !== 'NEW' && scored[0].u.short) console.log(`\nVERDICT: ${v}, by word score: a candidate. Read that bullet (it is one line) and confirm DUPLICATE or RELATED before you drop or merge the learning.`);
+    else console.log(v === 'DUPLICATE/EXTENDS' ? '\nVERDICT: DUPLICATE/EXTENDS. This is already stated; edit that unit (or make it enforceable). Do not add a new one.'
       : v === 'RELATED' ? '\nVERDICT: RELATED. Add only what is new, inside the closest unit.'
       : '\nVERDICT: NEW. A new unit is justified only if it is a rule that will recur, not a one-off.');
     return 0;

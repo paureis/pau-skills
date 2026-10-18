@@ -47,11 +47,12 @@ reads it. Growth is the cost; a learning has to buy its place.
    you remove afterwards; never stash or touch the user's uncommitted work) and run
    `node "${CLAUDE_SKILL_DIR}/audit.mjs" --check <file>` from the project root. It scores the text against every unit
    of both CLAUDE.md files, every memory, every skill and every skill synced from claude.ai (`[synced skill]`). A
-   CLAUDE.md unit of 12 or fewer content words gets a word score (the share of its words found in your text) instead.
-   A word-score verdict is a candidate: read that bullet (it is one line) and confirm DUPLICATE or RELATED before you
-   drop or merge a learning. The word score never makes a bullet of one or two content words a DUPLICATE, loses
-   negation ("never", "not") and treats different word forms and synonyms as different words ("test" and "tests",
-   "ask" and "asking", "before" and "first"), so still read the short bullets of the project and global CLAUDE.md
+   CLAUDE.md bullet of 12 or fewer content words gets a word score (the share of its words found in your text)
+   instead; any other CLAUDE.md text that short (a heading's one-line intro) is not scored. A word-score verdict is
+   a candidate: read that bullet (it is one line) and confirm DUPLICATE or RELATED before you drop or merge a
+   learning. The word score never makes a bullet of one or two content words a DUPLICATE, loses negation ("never",
+   "not") and treats different word forms and synonyms as different words ("test" and "tests", "ask" and "asking",
+   "before" and "first"), so still read the short bullets and short paragraphs of the project and global CLAUDE.md
    yourself every time. Its RELATED verdict is a candidate EXTENDS: read that unit and decide. Classify against the
    closest unit:
    - **DUPLICATE** (already stated): drop it. If it happened anyway, the existing rule failed as a rule, so the
