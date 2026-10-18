@@ -27,3 +27,17 @@ jobs:
         run: npm run scrub
       - name: marketplace.json is up to date
         run: node scripts/build-marketplace.mjs --check
+
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Claude Code 2.1.302
+        run: npm install -g @anthropic-ai/claude-code@2.1.302
+      - name: Plugin manifests pass claude plugin validate --strict
+        run: claude plugin validate . --strict

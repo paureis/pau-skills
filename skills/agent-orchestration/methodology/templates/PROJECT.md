@@ -11,6 +11,10 @@
 **Open gate:** [which owner decision is blocking, or "none"]
 **Next action (resume here):** [the single next thing, concrete enough to act on
 without reading anything else. If it needs the owner, say so and say what for.]
+**Stop for the current run:** [dead end: N different approaches with no progress,
+or no untried hypothesis left; budget: time, iterations, money. Set by the owner
+before the run; the agent never raises or moves it. "none" only for a run the
+owner watches.]
 
 **Contract:** `[path]` v[N]: [X assertions: Y MUST / Z MUST-NOT / W SHOULD]
 [What hardened it to this version, and what that skeptic caught.]

@@ -2,7 +2,7 @@
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Skills: 34](https://img.shields.io/badge/skills-34-informational)
-![Hooks: 11](https://img.shields.io/badge/hooks-11-informational)
+![Hooks: 12](https://img.shields.io/badge/hooks-12-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
 The Claude Code skills, hooks and scripts I use every day, packaged as a plugin marketplace. I am Alvaro "Pau" Reis,
@@ -63,6 +63,7 @@ green by skipping the failing test.
 
 - `verify-before-done` (hook) sends the agent back once if it changed code and ran no test, build or check afterwards.
 - `test-tamper-guard` (hook) asks you before a test is skipped, focused or stripped of assertions.
+- `suppression-reason` (hook) tells the agent when it adds a lint or type-check suppression with no reason next to it.
 - `tdd` builds one behaviour at a time, test first, and keeps a test only when it fails if the behaviour breaks and
   still passes after a pure refactor.
 - `mutation-test` breaks the code on purpose to prove a test catches it, preferring a real past mistake from git
@@ -122,7 +123,8 @@ context was compacted.
 - `to-prd` and `to-issues` turn the decided plan into a spec and vertical-slice issues.
 - `codebase-oracle` answers questions about the code from the code and its history, and labels how strong the
   evidence is for each answer.
-- `improve-codebase-architecture` finds refactors that make modules deeper and easier to test.
+- `improve-codebase-architecture` finds refactors that make modules deeper and easier to test, and carries one out
+  behind a characterization test when you ask.
 - `architect` sketches the types and signatures in two different shapes before any code is written, and builds
   against the one that survives the red flags.
 
@@ -202,12 +204,15 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 
 ### session-discipline
 
-- **[which-skill](skills/session-discipline/which-skill/SKILL.md)**: Recommends the skill or sequence of skills that fits your situation.
-- **[retrospective](skills/session-discipline/retrospective/SKILL.md)**: Turns a session's corrections into rule, memory or skill edits, gated by `audit.mjs`; `--stale`
-  finds rules that cite files that are gone.
+- **[which-skill](skills/session-discipline/which-skill/SKILL.md)**: Recommends the skill or sequence of skills that fits your situation, and what
+  to do about a run that went wrong.
+- **[retrospective](skills/session-discipline/retrospective/SKILL.md)**: Turns a session's corrections into rule, memory or skill edits, gated by `audit.mjs`; drops
+  an edit that would not change what a future agent does, and catches decisions that were right for the wrong reason;
+  `--stale` finds rules that cite files that are gone.
 - **[session-close](skills/session-discipline/session-close/SKILL.md)**: Closes a session in a fixed order: clean tree, retrospective, roadmap and log, handoff, commit
   and push.
-- **[handoff](skills/session-discipline/handoff/SKILL.md)**: Writes a handoff the next session can resume from, after a retrospective gate.
+- **[handoff](skills/session-discipline/handoff/SKILL.md)**: Writes a handoff the next session can resume from, after a retrospective gate, with a
+  cheap check for every claim so the next session verifies instead of redoing.
 - **[instructions-audit](skills/session-discipline/instructions-audit/SKILL.md)**: Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
   references and secrets, and proposes edits for approval.
 - **[project-setup](skills/session-discipline/project-setup/SKILL.md)**: Interviews you about how you want to work, then writes the project CLAUDE.md and,
@@ -221,9 +226,12 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[mutation-test](skills/verification/mutation-test/SKILL.md)**: `mutate.sh` applies one mutation (a real past fix reversed, when there
   is one) and checks by script that it applied, changed behaviour, and was restored; `--refactor` checks that a pure
   refactor leaves the test green.
-- **[evaluator](skills/verification/evaluator/SKILL.md)**: A hostile evaluator in a forked context grades each contract assertion with reproducible evidence.
-- **[flaky-test-hunt](skills/verification/flaky-test-hunt/SKILL.md)**: Reproduces an intermittent failure with `repeat.mjs`, classifies the cause, and proves the
-  fix with a measured failure rate.
+- **[evaluator](skills/verification/evaluator/SKILL.md)**: A hostile evaluator in a forked context grades each contract assertion with reproducible evidence of
+  the right kind for the change, marks a check that could not run as inconclusive, and names the patch its verdict
+  covers.
+- **[flaky-test-hunt](skills/verification/flaky-test-hunt/SKILL.md)**: First checks whether a CI failure is a flake at all (a stale base, a failure that
+  repeats), then reproduces an intermittent failure with `repeat.mjs`, classifies the cause, and proves the fix with a
+  measured failure rate.
 - **[migration-review](skills/verification/migration-review/SKILL.md)**: Reviews a schema or data migration for locks, compatibility with running code, data safety
   and reversibility, for any migration tool.
 - **[ci-cost-and-cadence](skills/verification/ci-cost-and-cadence/SKILL.md)**: Measures where CI minutes go, compares five options with numbers, and builds the chosen
@@ -246,16 +254,18 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   changes what an agent does: each variant runs several times as a headless `claude -p` session in a neutral folder
   that holds only that variant, runs are graded on what they did, and a reviewer with no tools scores them blind next
   to your own blind read; `skill-eval.mjs` sets up the folders, refuses leaks and makes the blind copy.
-- Hooks: [`test-tamper-guard`](hooks/verification/test-tamper-guard.mjs), [`verify-before-done`](hooks/verification/verify-before-done.mjs).
+- Hooks: [`test-tamper-guard`](hooks/verification/test-tamper-guard.mjs), [`suppression-reason`](hooks/verification/suppression-reason.mjs), [`verify-before-done`](hooks/verification/verify-before-done.mjs).
 
 ### agent-orchestration
 
-- **[methodology](skills/agent-orchestration/methodology/SKILL.md)**: Contracts, an evidence standard, an evaluator, convergence and two-file state, with templates.
+- **[methodology](skills/agent-orchestration/methodology/SKILL.md)**: Contracts, an evidence standard, an evaluator, convergence, a stop for every
+  unattended run and two-file state, with templates.
 - **[codebase-oracle](skills/agent-orchestration/codebase-oracle/SKILL.md)** (adapted): Answers questions about a codebase from the
   code and its history, grading each answer's evidence in five tiers, with read-only explorers for big questions;
   never presents a guess as a finding.
-- **[parallel-worktrees](skills/agent-orchestration/parallel-worktrees/SKILL.md)**: Runs independent pieces of work in separate git worktrees, with `worktrees.mjs` to check a
-  plan for overlapping files and report every worktree's state.
+- **[parallel-worktrees](skills/agent-orchestration/parallel-worktrees/SKILL.md)**: Runs independent pieces of work in separate git worktrees, or races several
+  attempts at one piece and keeps the best, with `worktrees.mjs` to check a plan for overlapping files and report every
+  worktree's state.
 - **[lean-subagent-dev](skills/agent-orchestration/lean-subagent-dev/SKILL.md)** (adapted): A way of working for a whole session:
   one subagent at a time with a written brief and standing orders, the main session checks the work itself and triages
   the review, and the usage budget sets how much to delegate and each role's effort.
@@ -270,7 +280,8 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   highest layer that holds it (architecture, types, lint or CI with a ratchet, a test, or a hook for what the agent
   does), tested, proven on a past mistake and recorded in a rule table, with hook templates in JavaScript and Python
   and `ratchet.mjs` for patterns already common.
-- **[safe-merge](skills/guards/safe-merge/SKILL.md)**: Merges a PR pinned to its head commit and deletes the branch only if no open PR is based on it.
+- **[safe-merge](skills/guards/safe-merge/SKILL.md)**: Merges a PR pinned to its head commit and deletes the branch only if no open PR is based on it;
+  before merging on an older review or evaluator verdict, compares patch ids to see whether the verdict still holds.
 - **[dependency-upgrade](skills/guards/dependency-upgrade/SKILL.md)**: Plans and applies dependency and toolchain upgrades in any ecosystem, step by step.
 - **[dependency-security-audit](skills/guards/dependency-security-audit/SKILL.md)**: A ranked vulnerability, reachability and supply-chain audit for any ecosystem and
   container image, built on native audit tools and OSV-based scanners, not a raw scanner dump.
@@ -281,7 +292,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[grill-me](skills/planning/grill-me/SKILL.md)** (adapted): Interviews you one question at a time until every branch of a plan is decided.
 - **[to-prd](skills/planning/to-prd/SKILL.md)** (adapted): Synthesizes the conversation into a PRD without re-interviewing.
 - **[to-issues](skills/planning/to-issues/SKILL.md)** (adapted): Splits a plan into vertical-slice issues for any tracker.
-- **[improve-codebase-architecture](skills/planning/improve-codebase-architecture/SKILL.md)** (adapted): Finds refactors that turn shallow modules into deep ones.
+- **[improve-codebase-architecture](skills/planning/improve-codebase-architecture/SKILL.md)** (adapted): Finds refactors that turn shallow modules into deep ones,
+  screened for red flags for agent contributors and for reader load, talks the chosen one through, and on request
+  carries it out behind a characterization test, on its own branch.
 - **[architect](skills/planning/architect/SKILL.md)** (adapted): Sketches types and signatures with not-implemented bodies before
   writing code, compares at least two shapes against red flags for agent contributors, then implements against the
   sketch test first and scraps it when deviations repeat.

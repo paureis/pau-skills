@@ -48,6 +48,15 @@ text is already there". `--stale` was added after rules kept pointing at files a
 instead of one project's; dated "owner rule" notes were removed; one bullet was added to "Fixes in the rule itself"
 (the third-time rule from `RULES.md`).
 
+**Later changes (2026-10-18).** Ideas from pstack's `reflect` (`references/synthesizer.md`,
+`references/divergent-reviewer.md`), in new words (0 of 1,670 word 6-grams of the SKILL.md after the first pass appear
+in reflect's `SKILL.md`, `synthesizer.md` or `divergent-reviewer.md`): a decision-changing gate before the audit
+search (a row that adds text must change what a future agent does; a user correction always goes on to the search),
+a lens for decisions that were right for the wrong reason, the learning beneath the obvious one, one piece of evidence
+per row, approval row by row, only the user's own corrections count, a route that enforces a DUPLICATE, and a route
+for a skill that did not start (its description, edited at its source within its limits). A cold run showed the audit
+cannot see short CLAUDE.md bullets, so the skill now tells the agent to read them itself.
+
 ### session-close (Original)
 
 Generalized from a project's session-close skill.
@@ -72,6 +81,12 @@ the retrospective was the step that got squeezed out between finishing the work 
 rule required it. The approval gate lets the resumed session read and run read-only checks before asking.
 
 **Changes for this release.** It names the plugin-qualified retrospective skill. Nothing else.
+
+**Later changes (2026-10-18).** An idea from the pstack session-pickup playbook (treat the trail as the record, do
+not redo finished work, verify inherited claims), in new words: the handoff's top block carries the resume rule, each
+claim carries a cheap "How to check" that exercises it, a check ends as holds, false or could not check, and only
+reading checks and tests marked safe run before approval. Checks are limited to cheap ones because the playbook
+contradicts itself on re-running a repro. It also fixes a dangling reference to "first commands listed below".
 
 ### Roadmap hook, `hooks/session-discipline/roadmap.mjs` (Original)
 
@@ -105,6 +120,11 @@ skill that is never invoked does not help. The router maps situations to a start
 and lists what the hooks already do without being asked.
 
 **Changes for this release.** None; written for this release.
+
+**Later changes (2026-10-18).** Ideas from pstack's `poteto-help` and its `references/prompting.md`, in new words
+(about 1% of the added word 6-grams appear there): a "fix a run that went wrong" symptom table, check the project's
+state only when it changes the answer, route a skill missing from the tables by its own description, and the checklist
+for wording a request, with `sharpen` offered for a task about to start.
 
 ### Branch-context hook, `hooks/session-discipline/branch-context.mjs` (Original)
 
@@ -183,6 +203,12 @@ it runs with `context: fork`, so it starts without the builder's conversation by
 
 **Changes for this release.** Converted from a paste-in prompt to a forked skill with `$ARGUMENTS` for the scope; it
 points at `mutate.sh` for mutation checks; the notes for the human running it moved to the end.
+
+**Later changes (2026-10-18).** Ideas from pstack (`docs/guide/06-verify-and-ship.md`,
+`skills/poteto-mode/playbooks/shipping.md`), in new words (0 of 630 word 6-grams): what counts as a live reproduction
+for each change type (a storage assertion about the stored form reads the raw value), a check that could not run marked
+UNVERIFIED with `inconclusive:` (a resource the change requires is not a FAIL), and an `Evaluated:` line naming the
+commit, base and patch id the verdict covers, withheld on a dirty tree.
 
 ### tdd (Adapted from [mattpocock/skills `tdd`](https://github.com/mattpocock/skills/tree/main/skills/engineering/tdd) and [pstack](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/principle-test-behavior-not-implementation/SKILL.md))
 
@@ -268,6 +294,13 @@ about a failure that happens one run in twenty.
 
 **Changes for this release.** None; written for this release.
 
+**Later changes (2026-10-18).** An idea from the pstack babysit playbook (classify a CI failure before a retry), in
+new words: fetch and deepen first; a failure in code the branch never touched suggests a stale base, checked against
+the base CI actually tested (a pull request's merge commit names it); one re-run at most, as a diagnostic, and a CI
+re-run only when asked; two identical failures end the hunt only when CI history and a few local runs agree, since a
+one-in-three flake fails twice in a row one time in nine. A cold run showed the description did not start the skill
+for a failed CI run someone wanted to retry, so it now names that situation.
+
 ### migration-review (Original)
 
 **Problem.** Migrations are usually reviewed only for whether the SQL is valid. What goes wrong in production is what
@@ -284,6 +317,19 @@ were checked against a throwaway PostgreSQL 16 cluster; the MySQL and SQL Server
 **Problem.** When the goal is a green suite, the cheapest edit is to the test: skip it, mark it as an expected
 failure, or delete the assertion that fails. The suite goes green and the bug ships. Skipping is sometimes right, so
 the hook asks the user instead of refusing, and it compares before and after so only what the edit adds is flagged.
+
+**Changes for this release.** None; written for this release.
+
+### Suppression-reason hook, `hooks/verification/suppression-reason.mjs` (Original)
+
+An idea from pstack `agents/comment-sicko.md`, which names three suppressions "and similar"; no shared text.
+
+**Problem.** When a linter or type checker complains, the cheapest edit is to silence it, and a bare suppression hides
+both the warning and why it does not apply. The hook reports, through `additionalContext` only, an edit to a code file
+that raises the count of suppressions with no reason, in about a dozen languages. It never blocks or approves. What
+counts as a reason (free text in the tool's own syntax, or a comment on the line above) is this hook's own criterion. A
+review found false reports on comments that named a directive and on string literals, a missed Vue case and a path
+filter that skipped whole projects; all were fixed test first before the release.
 
 **Changes for this release.** None; written for this release.
 
@@ -536,6 +582,12 @@ contexts, convergence by adversary, mutation verification, falsified premises, t
 **Changes for this release.** The source project's name, a file name and a run ID in the examples were replaced with
 generic descriptions; a `SKILL.md` routes to the right door and the templates.
 
+**Later changes (2026-10-18).** Ideas from pstack (`autonomous-run.md`, `docs/guide/07-overnight.md`,
+`show-me-your-work`), in new words (1 of 379 word 6-grams, the phrase "a plateau is not a stop"): a wrong log entry is
+corrected by a new entry that supersedes it; a plateau is not a stop and is not convergence; a finish condition is
+never relaxed to end a run (that is the contract-wrong branch, so it goes to the human); every unattended or
+open-ended run has a stop (a dead end or a budget), recorded in `PROJECT.md` and owned by the human.
+
 ### codebase-oracle (Adapted from [pstack `how`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/how) and [`why`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/why))
 
 Written as an Original skill: 0 of 1215 word 6-grams appeared in any upstream version. This version takes the evidence
@@ -598,6 +650,12 @@ changes broke the build.
 
 **Changes for this release.** None; written for this release.
 
+**Later changes (2026-10-18).** Ideas from pstack `swarm` (a race with the selection rule declared up front),
+`principle-separate-before-serializing-shared-state` (instructions are not concurrency control) and the
+worktree-cleanup playbook (an audit's bucket is advice, not permission), in new words: a race shape that always asks
+for its N-times cost unless the user asked for a race, with its own rules in every phase; what worktrees do not
+separate (ports, databases, caches, the integration branch, tags and remotes), checked after each agent; and before
+removing a worktree, a check that no agent, editor or watcher still uses it.
 
 ### lean-subagent-dev (Original; `TRIAGE.md` adapted, ideas from [pstack poteto-mode](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode))
 
@@ -717,6 +775,13 @@ deletion, and deletes the branch afterwards only if no open PR uses it as its ba
 reads the trunk from the repository's default branch, with environment variables for an expected repository,
 promotion pairs (`develop->main`), protected branches and the merge method; it is translated, and the guard's message
 prints the script's real path.
+
+**Later changes (2026-10-18).** An idea from pstack's `skills/poteto-mode/playbooks/shipping.md` ("a verdict covers a
+patch"), in new words (0 of 520 word 6-grams in upstream): before merging on an older review or evaluator verdict,
+compare the patch id (`git -c core.quotePath=true diff-tree -p --full-index` piped to `git patch-id --verbatim`) of the
+verdict against the current head's; a different or missing id means the verdict is redone. A review and a cold run
+found that `--stable` ignores indentation, that abbreviated blob ids made binary patches differ between clones,
+and that promotion and stacked PRs need their own base.
 
 ### dependency-security-audit (Original)
 
@@ -881,10 +946,26 @@ Closest upstream: `skills/engineering/to-issues`, 2026-06-03 to 2026-07-06, and 
 
 **Why.** I use it across projects with different trackers, and without a size guide it over-sliced.
 
-### improve-codebase-architecture (Adapted from [`improve-codebase-architecture`](https://github.com/mattpocock/skills/tree/main/skills/engineering/improve-codebase-architecture))
+### improve-codebase-architecture (Adapted from [`improve-codebase-architecture`](https://github.com/mattpocock/skills/tree/main/skills/engineering/improve-codebase-architecture) and pstack [`design-red-flags.md`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/architect/references/design-red-flags.md), `architect/SKILL.md`, `principle-minimize-reader-load`, `principle-model-the-domain` and `poteto-mode/playbooks/refactoring.md`)
 
 Closest upstream: `SKILL.md` 2026-04-28 to 2026-05-27; `LANGUAGE.md` and `INTERFACE-DESIGN.md` 2026-04-24 to
 2026-06-10. `LANGUAGE.md` is essentially upstream's (97% of its 6-grams), trimmed.
+
+**Later changes (2026-10-18, from pstack at 09d06eb).** 85 of 1,464 new word 6-grams (5.8%) appear in pstack: 23 in
+`architect/SKILL.md` (the agent-contributor sentence), 22 in `design-red-flags.md` (the flag names and two
+definitions), 18 in `principle-minimize-reader-load` (the 30-second test), 15 in `principle-model-the-domain` (the
+boolean sign and "do not force an abstraction"), 8 in `refactoring.md` ("type check and lint are not a pin"). The new
+`SKILL.md` lines share 11.4%, `EXECUTION.md` 1.0%. What this version changes against those files:
+- Seven of upstream's eight red flags, as one-line bullets in this skill's vocabulary, used in Explore to find
+  candidates rather than to screen sketches (shallow module was already in the friction questions).
+- The reader-load test, scored as a net change; upstream's six bullets are dropped.
+- From model-the-domain, only the signs and the "boring code" line; each candidate names what it removes.
+- A step 4, Execution (`EXECUTION.md`), only on an explicit ask to implement and a yes to the decisions left open, on
+  a clean tree and its own branch: a characterization pin at the nearest interface the change leaves in place,
+  committed and proven able to fail (with `tdd` or `mutation-test` if installed, by hand otherwise), small green
+  steps, callers migrated and the old path deleted in one wave within the change, with stored names, queued jobs,
+  rolling deploys and outside callers left to the user, and before and after reader-load counts. Upstream's
+  subagent delegation, separate target-shape and subtract steps and rebase and pull request step are dropped.
 
 **What this version changes.**
 - Self-contained: links to files that are not part of it are removed (`DEEPENING.md`, and `CONTEXT-FORMAT.md` and
@@ -894,7 +975,8 @@ Closest upstream: `SKILL.md` 2026-04-28 to 2026-05-27; `LANGUAGE.md` and `INTERF
 - `INTERFACE-DESIGN.md` generates three or more designs inline under named constraints (minimize the interface,
   maximize flexibility, optimize the common caller, ports and adapters), instead of spawning parallel subagents.
 - Each key principle gets a one-line explanation.
-- A Rules section: no code in this phase, domain language first, respect ADRs, be opinionated.
+- A Rules section: no code before step 4 (no code at all before 2026-10-18), domain language first, respect ADRs, be
+  opinionated.
 - Broader trigger phrases.
 
 **Why.** I run it in sessions and tools where subagents and the sibling skills are not available.

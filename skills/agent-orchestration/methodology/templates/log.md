@@ -5,6 +5,10 @@
 
      Format:  ## [YYYY-MM-DD] phase | event
 
+     A wrong entry is corrected by a new entry (today's date, the current phase)
+     that names the one it supersedes, never by editing it:
+       ## [YYYY-MM-DD] phase | Supersedes [YYYY-MM-DD] "<old event, in full>": <what is true instead>
+
      Cite run IDs, agent IDs, and commit SHAs. A finding whose provenance you
      cannot reconstruct is a rumor.
 

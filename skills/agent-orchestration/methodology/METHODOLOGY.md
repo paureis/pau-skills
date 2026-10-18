@@ -185,6 +185,26 @@ The forbidden third option is running the same thing again hoping for a differen
 sample. If you cannot say which of the two categories you are in, you have not
 read the trace.
 
+**A plateau is not a stop.** A plateau is a stretch of attempts that makes no
+progress toward the finish condition: the same assertions still fail, the number
+does not move. It is not convergence. Convergence (two clean adversary rounds,
+mechanism 4) is a finish condition; a plateau is a reason to change the
+approach (read the trace again, try a different hypothesis, take a smaller step)
+until the run reaches the stop below.
+
+**Never relax a finish condition to make a run end.** Dropping an assertion,
+turning a MUST into a SHOULD or lowering a threshold because the run is stuck is
+the contract-wrong branch above, so it goes to the human, who amends the
+contract or does not.
+
+**Every unattended or open-ended run has a stop, set before it starts**, so
+"keep going" never means "forever". Write it in `PROJECT.md`: a dead end (a set
+number of different approaches with no progress, or no untried hypothesis left,
+whichever comes first) and a budget (time, iterations, money). Reaching either
+stops the run, appends what was tried and what each attempt showed to `log.md`,
+and escalates to the human. The stop belongs to the human: the agent never
+raises its own budget or moves its own stop.
+
 ---
 
 ## The supporting structure
@@ -194,7 +214,8 @@ read the trace.
 - **`PROJECT.md`**: mutable. Current phase, open gate, next action, and three
   lists: done / in-flight / blocked. Overwrite it; it describes *now*.
 - **`log.md`**: append-only. `## [YYYY-MM-DD] phase | event`. Never edit a past
-  line.
+  line. A wrong entry is corrected by a new entry that names the one it
+  supersedes, by its date and event, and says what is true instead.
 
 The contract these two files satisfy: **a zero-context agent, given only these
 two files, can resume the project correctly.**
@@ -278,7 +299,8 @@ Practical notes:
   with error bars.
 - Prompt verifiers to **refute**, and to default to "refuted" under uncertainty.
 - Any autonomous loop needs a convergence criterion (*K consecutive rounds
-  finding nothing new*), or it will run until it runs out of budget.
+  finding nothing new*), or it will run until it runs out of budget. It also
+  needs a dead-end or budget stop that escalates to the human (mechanism 7).
 - Record the run ID. Findings without provenance are anecdotes.
 - Orchestrate at decision points. Never for mechanical edits.
 
@@ -312,6 +334,7 @@ So you can recognize them in the wild:
 | Fixture-as-liveness | Replays a world that changed | #2 evidence standard |
 | Premature "complete" | Completion commit, then bugfix commits | #4 convergence |
 | Blind retry | Same prompt, hoping for a better sample | #7 restart vs. escalate |
+| Moved finish line | An assertion dropped or a bar lowered so a stuck run can end | #7 escalate, never relax |
 | Context amnesia | State lived in a chat window that closed | two-file state |
 | Vibed taste | "This looks good to me" | rubrics |
 

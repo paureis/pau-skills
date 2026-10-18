@@ -22,8 +22,8 @@ off, even when a written rule requires it. Before Step 1, state one of these to 
 - **"Retrospective already ran this session"**, and say what it produced (including "nothing
   worth adding", which is a legitimate result).
 - **"Running the retrospective now"**: run this short version: list the corrections the user made and the work that
-  was redone; for each one that will happen again, propose one line for `CLAUDE.md` or memory, after checking that
-  no existing line already says it; show the exact lines and apply only the ones the user approves. If the
+  was redone; for each one that will happen again and would make a future agent act differently, propose one line
+  for `CLAUDE.md` or memory, after checking that no existing line already says it; show the exact lines and apply only the ones the user approves. If the
   `retrospective` skill is installed and the user wants the full version, run it first, then come back and write the
   handoff.
 - **"Skipping the retrospective because <reason>"**, only for a genuinely trivial session
@@ -49,10 +49,21 @@ Produce this structure (as the file contents in park mode, or the inline block i
 ```markdown
 ## Continue: [brief title of the project/task]
 
+**How to resume:** this file is the record of the earlier session. Do not redo work it lists as done. Before you build
+on a claim in "What's Been Done" or "Current State", run its "How to check" once. A check reads or runs once; it does
+not redo the work. Before my approval, run only reading checks (files, `git log`, `git show`) and tests marked "safe to
+run" below; ask me before any other test, a long run or one that costs money. Each check ends one of three ways:
+holds; false (say so and treat the item as not done); or could not check (missing dependency, service not running,
+another machine): the claim stands as written, flagged, and I decide.
+
 **Before changing anything, tell me:**
-1. What you understand was already done
+1. What you understand was already done, and which claims you checked and how each came out
 2. Your proposed next steps
 3. Then wait for my approval. Reading files and running the read-only first commands listed below need no approval.
+
+### First commands (read-only)
+[Two to four commands that show where things stand, e.g. `git status`, `git log --oneline -5`. Nothing that writes,
+installs, pushes or costs money.]
 
 ---
 
@@ -60,13 +71,17 @@ Produce this structure (as the file contents in park mode, or the inline block i
 [What this project/task is about. 2 to 3 sentences.]
 
 ### What's Been Done
-[Specific deliverables and decisions, not vague.]
+[Specific deliverables and decisions, not vague. End each claim with "How to check:" and one cheap check that
+exercises the claim, not one that only shows a commit exists: the line of code that does it, or one named test to
+run once. Mark a test "safe to run" only if it writes no files outside temp folders, needs no database or service
+and calls nothing outside the machine. E.g. "Parser handles empty input. How to check: run the empty-input test once
+(`pytest tests/test_parser.py::test_empty`, `go test -run TestEmpty ./parser`); safe to run."]
 
 ### Key Learnings
 [Gotchas, constraints, preferences, corrections, so the next session doesn't repeat mistakes.]
 
 ### Current State
-[Exactly where things stand: what's complete, in progress, blocked.]
+[Exactly where things stand: what's complete, in progress, blocked. Each claim ends with "How to check:", as above.]
 
 ### Next Steps
 1. [User's stated priority, if given; always first]
@@ -87,6 +102,9 @@ Produce this structure (as the file contents in park mode, or the inline block i
 - **Assume no prior context**: the receiving session knows nothing about this conversation.
 - **User's direction comes first**: if the user said what to focus on next, it leads Next Steps.
 - **Concrete, not vague**: "drafted the proposal with 5 sections" not "worked on the proposal".
+- **Every claim is checkable**: each item in What's Been Done and Current State names how to check it once, without
+  redoing the work, by exercising the claim rather than showing a commit exists. If you cannot name a check, say the
+  claim is unverified.
 - **Keep the approval gate**: the next session confirms its understanding before changing anything, and may read and run read-only checks first.
 - **Concise, not a transcript**: enough to continue effectively, no more.
 - **Preserve content that matters**: put specific text, code, specs, or decisions in Reference Material rather than just describing them.

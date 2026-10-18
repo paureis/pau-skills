@@ -62,9 +62,10 @@ project root.
   continue with the next step when it is done.
 - Either way, run `node "${CLAUDE_SKILL_DIR}/audit.mjs" --stale` from the project root: every path, command or script
   cited in `CLAUDE.md` and memory that no longer exists is fixed or deleted in the same session.
-- Bar for adding anything: it will happen again, it names the failure it prevents, and it fits in 8 lines. If a rule
-  already existed and was broken anyway, the answer is to mechanize it, not to rewrite it. Net growth of the rule
-  stores is zero or negative per session (before/after bytes in the final message).
+- Bar for adding anything: it will happen again, a future agent would act differently because of it, it names the
+  failure it prevents, and it fits in 8 lines. If a rule already existed and was broken anyway, the answer is to
+  mechanize it, not to rewrite it. Net growth of the rule stores is zero or negative per session (before/after bytes
+  in the final message).
 - "Nothing to add" is a valid result, and it is said.
 
 ## 3. Roadmap and log

@@ -35,7 +35,7 @@ In `${CLAUDE_SKILL_DIR}/templates/`:
 | `CLAUDE-rules.md` | Operating-rules block to merge into the project's `CLAUDE.md` |
 | `CLAUDE-rules-forward-only.md` | The same for the forward-only door: process tiers, the trust line, the contagion rule |
 | `PROJECT.md` | Mutable state file: phase, open gate, next action, done / in-flight / blocked |
-| `log.md` | Append-only history, `## [YYYY-MM-DD] phase \| event` |
+| `log.md` | Append-only history, `## [YYYY-MM-DD] phase \| event`; a wrong entry is corrected by a new entry that names the one it supersedes |
 | `contract.template.json` | Annotated contract schema: assertions with `verify` clauses, `pinnedValues`, `nonGoals`, `gradingRule` |
 
 Copy them into the project, fill every bracket, and do not keep the brackets' wording.

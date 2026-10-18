@@ -43,6 +43,10 @@ making it.
 - Port: [PORT=31xx and any other ports]
 - Database / services: [test database name, Compose project name, key prefix]
 
+(Give this worktree its own copy of every port, database and service it writes, and of any cache that is not safe
+to write from two processes at once. Shared state that cannot be separated gets a real lock or a sequence from the
+orchestrator, not a "do not touch" line here.)
+
 ### Done when
 
 All of these pass in this worktree, and you have run them yourself after your last change:
@@ -57,7 +61,8 @@ All of these pass in this worktree, and you have run them yourself after your la
 ### Rules
 
 - Commit your work in small, described commits on your branch. Leave nothing uncommitted when you finish.
-- Do not push to, merge into, or rebase the base branch or any other piece's branch.
+- Do not push to, merge into, or rebase the base branch or any other piece's branch. Do not create or push tags.
+- Use only the ports, databases and services listed above.
 - Do not run `git worktree`, `git checkout <other branch>`, `git stash` or `git reset --hard`.
 - Do not skip hooks or tests to make the done-command pass. If something outside your scope breaks it, report it.
 
