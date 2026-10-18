@@ -11,7 +11,8 @@ and say in what order to run them. Do not run them yourself unless the user asks
 ## How to answer
 
 1. **Find out what the user is trying to do**, in one sentence. If it is unclear, ask one question, not five.
-2. **Match it to a flow below.** Most work follows the main flow; problems come in through an on-ramp.
+2. **Match it to a flow below.** Most work follows the main flow; problems come in through an on-ramp; a run that
+   already went wrong goes to "Fix a run that went wrong".
 3. **Recommend one starting skill** with its full invocation, then the next one or two after it. Explain in a line
    why each one fits this situation, not what it does in general.
 4. **Check it is installed.** Skills are namespaced by plugin: `/verification:tdd` from the individual plugin, or
@@ -19,6 +20,14 @@ and say in what order to run them. Do not run them yourself unless the user asks
    (`claude plugin install <plugin>@pau-skills`).
 5. **Mention a hook only if it matters here**, for example that `verify-before-done` will send the agent back if it
    claims to be done without running checks.
+
+Check the project's state only when it changes the answer, and mention it only then. For example: whether a
+`.claude/skills/verify-<app>/` skill exists matters when the question is about proving a change in the running app
+(without one, `verify-app` comes first); whether `PROJECT.md` and a contract exist matters when the question is about
+`methodology`. Do not inspect the repository for a question the tables already answer.
+
+If a skill from this marketplace is installed but missing from the tables below, read the frontmatter of its
+`SKILL.md` and route by its description. Where a table and a skill's own `SKILL.md` disagree, the skill wins.
 
 Keep the answer short. A list of every skill is not an answer.
 
@@ -83,6 +92,28 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | A task about to start, "make sure you understand this", "restate this first", a vague or over-constrained request | `sharpen` (planning) | the skill that fits the task |
 | "Make it faster", "make it smaller", improve a number (run time, bundle size, memory, a score) over many attempts with proof for each step | `hillclimb` (verification) | `bug-fix` if a step uncovers a bug |
 | "Did this skill or prompt change help?", "A/B this prompt", does a new version of a skill behave differently | `skill-eval` (verification) | `arena` to pick between attempts at one task |
+
+## Fix a run that went wrong
+
+| Symptom | What to do |
+|---|---|
+| A skill did not start on its own from the user's words | The skill listing may be over budget, so Claude Code dropped its description. Type the skill's name for now; ask the user to run `/context` and, if skills show with no description, raise `SLASH_COMMAND_TOOL_CHAR_BUDGET` or turn off unused plugins (`docs/INSTALL.md` in the repository) |
+| A skill asked first although the user had asked for it, or started work the user never asked for | The ask-first rule counts the user's request or a brief naming the skill as a yes, and a remark that only matches a description as no. Say plainly which it was; if the skill got it wrong, that is a bug in the skill to report |
+| Parallel agents overwrote each other's files | `parallel-worktrees`: one worktree and branch per agent. Telling agents "do not touch X" is not enough |
+| The agent claimed success from a green build or from reading the code | Ask for the real command, the stored value read back, or a drive of the app. `evaluator` grades the change with evidence; `verify-app` gives the project a way to drive the app |
+| The review and fix loop keeps going | `review-triage`: one review round, one fix round, then the rest goes to the owner or an issue |
+| The same correction keeps being made, session after session | `retrospective` for this session's lessons; `rule-to-hook` once a written rule is still broken |
+| A fix did not hold, or two fixes in a row failed | `bug-fix`: attack the premise both fixes shared before trying a third |
+| A long or unattended run kept going but finished nothing | It needs a finish condition a script can check, not a duration, and a plateau is not a stop. `methodology` for work under contract; `hillclimb` when the goal is a number |
+| A subagent's report was taken at its word and the work was wrong | `lean-subagent-dev`: reread the diff and rerun the checks after every subagent |
+| Context was lost after a compaction or a new session | `handoff` before the session ends; the `compact-snapshot` hook keeps the last messages and edited files across a compaction |
+
+## Wording the request
+
+When the user asks how to phrase a task for the agent, a good request names the goal, how to tell it is done, what
+counts as proof, the facts already known, and the real constraints. It leaves out the how, a list of skills to run, and
+the user's own theory of the cause, which the agent will otherwise follow instead of testing. Offer to run `sharpen`
+if it is installed: it restates the task this way and confirms it before the work starts.
 
 ## Improving the agent's environment
 
