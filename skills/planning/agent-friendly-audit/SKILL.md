@@ -37,8 +37,9 @@ Bundled files:
 
 Related skills, all optional: `retrospective` learns from one session, this from the whole history;
 `instructions-audit` reviews the instruction files for cost and drift; `rule-to-hook` implements one rule as a hook
-or check, this finds which rules are needed. Use each if it is installed; without them, this skill covers what it
-needs inline.
+or check, this finds which rules are needed. None of them runs before the user's yes. After it, use `rule-to-hook`
+in step 8 if it is installed, and offer `retrospective` and `instructions-audit` as next steps if they are
+installed; without them, this skill covers what it needs inline.
 
 ## Privacy, for every step
 
