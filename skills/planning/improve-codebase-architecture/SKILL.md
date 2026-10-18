@@ -59,7 +59,7 @@ Assume the next contributor is an agent that sees only the files it opened, copi
 - **Pass-through module**: forwards calls of the same shape and adds no policy; it fails the deletion test.
 - **Temporal decomposition**: modules follow the order things run (load, validate, transform, save) instead of the knowledge they own, so one rule repeats in every stage.
 
-Look for the domain structure the code is missing. The signs: an if/else or switch chain on a kind or type field that grows one branch per new case, often repeated in several modules (a lookup table, a registry, or one adapter per variant behind one interface would hold it); a second boolean that must stay in sync with the first (a single state field or a state machine); and temporal decomposition, above. Do not force an abstraction. Prefer boring code when the current shape is already clear, local and unlikely to grow: a candidate must delete branches, duplicated rules or invalid states, not add indirection.
+Look for the domain structure the code is missing. The signs: an if/else or switch chain on a kind or type field that grows one branch per new case, often repeated in several modules (a lookup table, a registry, or one adapter per variant behind one interface would hold it); a second boolean that must stay in sync with the first (a single state field or a state machine); and temporal decomposition, above. Do not force an abstraction. Prefer boring code when the current shape is already clear, local and unlikely to grow.
 
 Run the **reader-load test** on each area you suspect: can a new reader answer "where does X come from?" and "what can change X?" in under 30 seconds? On the way, count the two things that make it slow: the layers they must trace between the question and the answer, and the state they must hold in their head (mutable fields, module state, globals, flags). Either one fails the test alone; a flat file with fifty globals is as hard to read as six thin layers. A good candidate lowers the total: a layer or a piece of state it adds must save at least as much elsewhere.
 
@@ -69,7 +69,7 @@ Present a numbered list of deepening opportunities. For each candidate:
 
 - **Files**: which files/modules are involved
 - **Problem**: why the current architecture is causing friction
-- **Solution**: plain English description of what would change
+- **Solution**: plain English description of what would change, and what it removes: branches, duplicated rules, invalid states, a layer, reachable internals. An abstraction that adds indirection and removes none of these is not a candidate.
 - **Benefits**: explained in terms of locality and leverage, in how tests would improve, and in what the reader-load test would gain (layers or state removed)
 
 Use `CONTEXT.md` vocabulary for the domain, and LANGUAGE.md vocabulary for the architecture.
@@ -93,7 +93,7 @@ Side effects happen inline as decisions crystallize:
 
 Start this step only when the user, or the brief you are working from, asks in so many words to implement the chosen candidate. Picking a candidate, or agreeing on its shape in the grilling loop, is not that ask: end the loop with the decision, ask whether to implement it, and wait. Execution edits code and commits each step; it never pushes.
 
-Then follow `${CLAUDE_SKILL_DIR}/EXECUTION.md`: pin current behaviour with a characterization test and prove the pin can fail before any structure moves, move in small steps that each end on green, migrate every caller and delete the old path in one wave, and check the result with the reader-load test.
+Then follow `${CLAUDE_SKILL_DIR}/EXECUTION.md`: on a clean tree and a branch of its own, pin current behaviour with a characterization test and prove the pin can fail before any structure moves, move in small steps that each end on green, migrate every caller and delete the old path in one wave, and check the result with the reader-load test.
 
 ## Rules
 
