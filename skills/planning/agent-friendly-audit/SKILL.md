@@ -1,6 +1,6 @@
 ---
 name: agent-friendly-audit
-description: "Mine a project's history (review comments, fix commits, transcripts, instruction files) for the mistakes agents repeat, and propose a check or design fix for each, backed by counts. Use when the user says 'why do agents keep getting this wrong', 'make this repo agent friendly', 'find what agents keep breaking' or 'what should we enforce instead of review'."
+description: "Mine a project's history (reviews, fix commits, transcripts, instruction files) for mistakes agents repeat, and propose a check or design fix for each, backed by counts. Use when the user says 'make this repo agent friendly', 'find what agents keep breaking' or 'mine our history for agent mistakes', or when agents keep making the same mistake and review has to catch it."
 argument-hint: "[focus: a module, a mistake you keep correcting, or a time range]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
@@ -37,8 +37,9 @@ Bundled files:
 
 Related skills, all optional: `retrospective` learns from one session, this from the whole history;
 `instructions-audit` reviews the instruction files for cost and drift; `rule-to-hook` implements one rule as a hook
-or check, this finds which rules are needed. Use each if it is installed; without them, this skill covers what it
-needs inline.
+or check, this finds which rules are needed. None of them runs before the user's yes. After it, use `rule-to-hook`
+in step 8 if it is installed, and offer `retrospective` and `instructions-audit` as next steps if they are
+installed; without them, this skill covers what it needs inline.
 
 ## Privacy, for every step
 
