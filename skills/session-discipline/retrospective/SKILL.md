@@ -53,7 +53,11 @@ reads it. Growth is the cost; a learning has to buy its place.
    learning. The word score never makes a bullet of one or two content words a DUPLICATE, loses negation ("never",
    "not") and treats different word forms and synonyms as different words ("test" and "tests", "ask" and "asking",
    "before" and "first"), so still read the short bullets and short paragraphs of the project and global CLAUDE.md
-   yourself every time. Its RELATED verdict is a candidate EXTENDS: read that unit and decide. Classify against the
+   yourself every time. Where no scratch file can be written, pipe the text in:
+   `node "${CLAUDE_SKILL_DIR}/audit.mjs" --check /dev/stdin` (Linux and macOS). If `--check` still cannot run (the
+   script fails, `node` is missing), say so in the row's Gate result and compare by hand against every store the
+   audit reads, synced skills under `~/.claude/skills/synced/<id>/<name>/` included; never grade a learning against
+   CLAUDE.md alone. Its RELATED verdict is a candidate EXTENDS: read that unit and decide. Classify against the
    closest unit:
    - **DUPLICATE** (already stated): drop it. If it happened anyway, the existing rule failed as a rule, so the
      retrospective item becomes "make that rule enforceable" (Step 4), never a restatement.
