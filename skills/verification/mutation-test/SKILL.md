@@ -1,6 +1,6 @@
 ---
 name: mutation-test
-description: "Prove a test or guard can fail: introduce the exact defect it claims to catch, run it and restore the file, with a script checking each step. Use after writing a test for a bug or a security rule, or when the user says 'mutation test', 'can this test fail', 'prove the test catches it', 'is this guard real'."
+description: "Prove a test or guard can fail: introduce the exact defect it claims to catch, run it, then restore the file. Use after writing a test for a bug or a security rule, or when the user says 'mutation test', 'can this test fail', 'is this test any good', 'could this test catch a bug', 'prove the test catches it', 'is this guard real'."
 argument-hint: "[--refactor] <file> <test command>"
 ---
 
