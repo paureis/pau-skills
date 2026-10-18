@@ -1,6 +1,6 @@
 ---
 name: rule-to-hook
-description: "Turn a rule that keeps getting broken, not a new automation, into an enforced check (types, lint, CI, a test or a Claude Code hook) proven on a past mistake. Use when the user says 'this rule keeps getting broken', 'I keep telling Claude not to', 'enforce this rule', 'make this a hook', 'block this command', 'stop the agent from doing X', 'why does it ignore CLAUDE.md'."
+description: "Turn one rule that keeps getting broken, not a new automation, into an enforced check (types, lint, CI, a test or a Claude Code hook) proven on a past mistake. Use when the user says 'enforce this rule', 'make this a hook', 'block this command the agent keeps running', 'stop the agent from doing X', or when one rule keeps getting broken or the user keeps repeating the same correction."
 argument-hint: "[the rule, or where it is written, e.g. 'CLAUDE.md: never git add -A']"
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
