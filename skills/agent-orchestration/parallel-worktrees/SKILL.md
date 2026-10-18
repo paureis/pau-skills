@@ -86,8 +86,8 @@ with more than one plausible shape).
   files on purpose, because only one of them is merged.
 - Each arm still gets its own worktree, branch (`par/<batch>/<piece>-a`, `-b`, `-c`), ports and databases (Phase 3)
   and brief. The briefs are otherwise the same, or differ only in the approach each arm is asked to try.
-- A race of N arms costs N times one attempt. When the confirm paragraph before Phase 1 applies, the line you ask
-  with names that cost.
+- A race of N arms costs N times one attempt. Unless the user asked for a race, say that cost and wait for a yes
+  before spawning, even when the user asked for parallel work.
 - For a race with a blind judge (one that does not know which arm produced which result), use `arena` if it is
   installed. Without it, give a fresh subagent the rubric and the results with the arm names removed.
 
@@ -154,8 +154,9 @@ folder) or put a real lock in front of it (a sequence, or a lock the tool itself
 says "do not touch X" is not a lock: an agent that misreads it, or a tool it runs, writes anyway, and the collision
 shows up later as a failure nobody can reproduce. File ownership ("Assign an owner" in Phase 1) stays the rule for
 files, because every edit lands on a branch you read at integration; shared state outside the files leaves no such
-trace. The integration branch, remotes and tags stay with the orchestrator: agents never merge into the integration
-branch, push to the base branch or create tags.
+trace. The integration branch, remotes and tags stay with the orchestrator. The brief's line against merging,
+pushing to the base or tagging is a reminder, not the protection: after each agent reports, check them (`git tag`,
+`git log` of the integration and base branches) and undo what should not be there.
 
 **Claude Code alternative.** Recent Claude Code versions can create and manage worktrees themselves: `claude
 --worktree <name>` starts a session in a new worktree, and the Agent tool accepts `isolation: "worktree"` so a
@@ -163,9 +164,9 @@ subagent runs in a temporary worktree that is cleaned up if it made no changes. 
 the exact flags and where the worktrees are placed. These remove the manual `git worktree add`, but not the per
 worktree setup above, and not Phases 1, 2 and 5.
 
-**Done when** `git worktree list` shows one worktree per piece on the right branch, and in each one the project's
-install step and the piece's done-command have run once (failing tests are fine at this point; a missing dependency
-is not).
+**Done when** `git worktree list` shows one worktree per piece (per arm, for a race) on the right branch, and in each
+one the project's install step and the piece's done-command have run once (failing tests are fine at this point; a
+missing dependency is not).
 
 ## Phase 4: run the agents
 
@@ -180,7 +181,9 @@ is not).
   other piece owns it), or queue the change for integration. Do not let it "just make the small edit".
 
 **Done when** every agent has reported, every piece's done-command passes in its worktree, and `status` shows
-`dirty 0` for each piece (everything committed).
+`dirty 0` for each piece (everything committed). A race's arms are the exception: an arm that fails is a result, not
+work to send back. The race is done when the selection rule has picked a winner, or no arm passed and that has gone
+to the user.
 
 ## Phase 5: integrate
 
@@ -211,8 +214,8 @@ and keep it for the batch.
   the previous merge commit on the integration branch only), continue with the next piece, and send the broken one
   back to its agent with the failure.
 - In a race, judge every arm that reported by the rule written in Phase 1, record each arm's result (for the
-  report), and merge only the winning arm, in the race piece's planned place in the order. The
-  other arms are not merged.
+  report), and merge only the winning arm, in the race piece's planned place in the order. The other arms are not
+  merged, and a losing arm is never sent back for more work.
 
 **Done when** every piece is merged into the integration branch, the full suite, lint and build pass on it, and it
 has been merged or opened as a pull request against the base branch the way the project normally lands work.
@@ -232,14 +235,16 @@ git branch -d par/batch1/api                    # -d refuses unmerged branches; 
 - Run these from the main checkout, not from inside the worktree being removed.
 - A listing that calls a worktree clean and merged (the commands above, `worktrees.mjs status`, or any audit script)
   is advice, not permission. Before removing one, also check that no agent or session still runs in it: every agent
-  of the batch has reported or been stopped, and no terminal, editor or dev server has it open (`lsof +D <path>` on
-  macOS and Linux lists processes with files open there; on Windows, check open terminals and editors). Ask the user
-  about any worktree that was not in the `git worktree list` you recorded before the batch.
-- A race's losing branches are unmerged, so `git branch -d` refuses them. Delete them only after the user says yes;
-  until then keep them, since a losing arm can hold a part worth taking. Their clean worktrees can go; the branch
-  keeps the commits.
-- Never use `git worktree remove --force` or `git branch -D` to get past a refusal. Find out what is uncommitted or
-  unmerged first, and either commit and merge it or confirm with the user that it can go.
+  of the batch has reported or been stopped, and nothing has it open. On macOS and Linux, read the output of
+  `lsof +D <path>` (its exit code is 1 whether or not it finds anything), and ask the user about editors and
+  watch-mode runners, which it can miss; on Windows, ask about open terminals and editors. Ask the user before
+  removing any worktree this batch did not create.
+- A race's losing arm: remove its worktree with the commands above once its status is clean (the branch keeps the
+  commits). Its branch is unmerged, so `git branch -d` refuses it; keep it until the user says it can go, since a
+  losing arm can hold a part worth taking. On that yes, `git branch -D` on that losing branch is allowed, and only
+  there.
+- Otherwise, never use `git worktree remove --force` or `git branch -D` to get past a refusal. Find out what is
+  uncommitted or unmerged first, and either commit and merge it or confirm with the user that it can go.
 - After pruning, look for leftover folders git no longer tracks (prune only removes git's records) and delete them
   once you have checked their contents. Remove per-worktree env files, databases and Docker Compose projects you
   created.
@@ -254,8 +259,8 @@ database or container is left running.
 - Do not start pieces from different base commits without saying so in the plan.
 - Do not let an agent edit a file another piece owns, or regenerate a shared lockfile it does not own.
 - Do not merge all branches and run the tests once at the end.
-- Do not remove a worktree, or delete a branch, that has uncommitted or unmerged work (a race's losing arm included)
-  without the user's yes.
+- Do not remove a worktree that has uncommitted work, or delete a branch that has unmerged work (a race's losing
+  branch included), without the user's yes.
 - Do not treat "do not touch X" in a brief as a lock on shared state; separate it or lock it.
 - Do not copy secrets into a tracked file to save setup time.
 

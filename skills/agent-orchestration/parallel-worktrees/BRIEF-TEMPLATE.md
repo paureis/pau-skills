@@ -43,8 +43,9 @@ making it.
 - Port: [PORT=31xx and any other ports]
 - Database / services: [test database name, Compose project name, key prefix]
 
-(Give this worktree its own copy of every port, database, service and cache it writes. Shared state that cannot be
-separated gets a real lock or a sequence from the orchestrator, not a "do not touch" line here.)
+(Give this worktree its own copy of every port, database and service it writes, and of any cache that is not safe
+to write from two processes at once. Shared state that cannot be separated gets a real lock or a sequence from the
+orchestrator, not a "do not touch" line here.)
 
 ### Done when
 
