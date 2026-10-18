@@ -1,8 +1,8 @@
 # Principles in full
 
 One section per principle, in the order of the index in SKILL.md, under the same name. Each section gives the rule
-and why it holds, how to apply it, the sign you skipped it, and where it meets the other principles. Read the whole
-section of a principle before you cite it.
+and why it holds, how to apply it, the sign you skipped it, and, where it matters, how it meets the other principles.
+Read the whole section of a principle before you cite it.
 
 ## Build the lever
 
@@ -167,8 +167,8 @@ new code, offer to run `architect` if it is installed. Both use the same terms (
 locality), so a design and a review read the same way.
 
 **Sign you skipped it.** A new feature grows an existing if/else or switch chain by one more branch, or a second
-boolean must stay in sync with the first (`isDeleted` and then `isArchived`, where both true means nothing). Modules
-named after phases that repeat the same domain rules are the third sign.
+boolean must stay in sync with the first (`isPaid` and then `isRefunded`, where refunded but never paid means
+nothing). Modules named after phases that repeat the same domain rules are the third sign.
 
 ## Minimize reader load
 
@@ -215,8 +215,9 @@ now and then, are hard to reproduce, and cost the most to debug.
 
 Files edited by several agents are the one place where an owner per file is enough, provided each agent works on its
 own branch or worktree and every branch is read when it is merged: the merge shows any edit outside the owner's
-files. State outside the files leaves no such trace. A database, a port, a cache, the integration branch, remotes and
-tags are separated (one per agent) or locked, never protected by a line in a brief.
+files. State outside the files leaves no such trace. A database, a port or a cache is separated (one per agent) or
+locked. The integration branch, remotes and tags get a single writer, the one coordinating the work, who checks them
+after each agent reports. None of these is protected by a line in a brief.
 
 For agents working in parallel, see `parallel-worktrees` if it is installed: it gives each agent its own worktree,
 port and database.

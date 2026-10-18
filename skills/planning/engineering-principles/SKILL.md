@@ -23,17 +23,18 @@ offer to run `improve-codebase-architecture` if it is installed. To sketch new c
 ## How to use it
 
 1. **The user names a principle.** Match the name loosely (case, hyphens, a missing "the"). Read its section in
-   PRINCIPLES.md, then apply it to the work in front of you. A name that is not in the index is not a principle here:
+   PRINCIPLES.md to the end (the next `## ` heading; some run past 40 lines), then apply it to the work in front of
+   you. A name that is not in the index is not a principle here:
    say so, and work from the plain meaning of the words without citing anything.
 2. **You reach a decision yourself.** Before you pick a data shape, a type, a module split, the order of a change, or
    how to make one edit in many places, read the "When it applies" lines below. For each one that matches, read its
    section, then decide. When none matches, decide without them; do not stretch a principle to fit.
-3. **Citing a principle.** When you cite one, in a reply, a plan or a review, name the decision it changed: "model
-   the domain: one `status` field instead of a second boolean". Cite only a principle whose section in PRINCIPLES.md
-   you read in this session; the index line alone is not enough. A citation with no decision behind it is name
-   dropping, so leave it out.
-4. **Two principles pull apart.** Each section says where it meets the others. The common case: subtract before you
-   add asks for the smallest change, and redesign from first principles asks you to rebuild around the new
+3. **Citing a principle.** When you cite one, in a reply, a plan or a review, name the decision it changed: "subtract
+   before you add: deleted the unused adapter before writing the new one". Cite only a principle whose section in
+   PRINCIPLES.md you read in this session; the index line alone is not enough. A citation with no decision behind it
+   is name dropping, so leave it out.
+4. **Two principles pull apart.** Several sections say where they meet the others. The common case: subtract before
+   you add asks for the smallest change, and redesign from first principles asks you to rebuild around the new
    requirement. Think the whole redesign through, then deliver it in steps, each the smallest change that moves the
    code toward that shape.
 
