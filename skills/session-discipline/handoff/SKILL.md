@@ -49,10 +49,19 @@ Produce this structure (as the file contents in park mode, or the inline block i
 ```markdown
 ## Continue: [brief title of the project/task]
 
+**How to resume:** this file is the record of the earlier session. Do not redo work it lists as done. Before you build
+on a claim in "What's Been Done" or "Current State", run its "How to check" once: read the file, run the one named
+test, or look at the commit. A check reads or runs once; it does not redo the work. Ask me before a check that takes
+long or costs money. A check that fails means the claim is false: say so and treat that item as not done.
+
 **Before changing anything, tell me:**
-1. What you understand was already done
+1. What you understand was already done, and which claims you checked and how each came out
 2. Your proposed next steps
 3. Then wait for my approval. Reading files and running the read-only first commands listed below need no approval.
+
+### First commands (read-only)
+[Two to four commands that show where things stand, e.g. `git status`, `git log --oneline -5`. Nothing that writes,
+installs, pushes or costs money.]
 
 ---
 
@@ -60,13 +69,15 @@ Produce this structure (as the file contents in park mode, or the inline block i
 [What this project/task is about. 2 to 3 sentences.]
 
 ### What's Been Done
-[Specific deliverables and decisions, not vague.]
+[Specific deliverables and decisions, not vague. End each claim with "How to check:" and one cheap check: a file to
+read, one named test to run once, or `git log` on a commit. E.g. "Parser handles empty input. How to check: run
+the empty-input test once (`pytest tests/test_parser.py::test_empty`, `go test -run TestEmpty ./parser`)."]
 
 ### Key Learnings
 [Gotchas, constraints, preferences, corrections, so the next session doesn't repeat mistakes.]
 
 ### Current State
-[Exactly where things stand: what's complete, in progress, blocked.]
+[Exactly where things stand: what's complete, in progress, blocked. Each claim ends with "How to check:", as above.]
 
 ### Next Steps
 1. [User's stated priority, if given; always first]
@@ -87,6 +98,8 @@ Produce this structure (as the file contents in park mode, or the inline block i
 - **Assume no prior context**: the receiving session knows nothing about this conversation.
 - **User's direction comes first**: if the user said what to focus on next, it leads Next Steps.
 - **Concrete, not vague**: "drafted the proposal with 5 sections" not "worked on the proposal".
+- **Every claim is checkable**: each item in What's Been Done and Current State names how to check it once, without
+  redoing the work. If you cannot name a check, say the claim is unverified.
 - **Keep the approval gate**: the next session confirms its understanding before changing anything, and may read and run read-only checks first.
 - **Concise, not a transcript**: enough to continue effectively, no more.
 - **Preserve content that matters**: put specific text, code, specs, or decisions in Reference Material rather than just describing them.
