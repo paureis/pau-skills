@@ -1,13 +1,12 @@
 ---
 name: which-skill
-description: "Recommend which pau-skills skill, or sequence of skills, fits the user's situation (including the ones the user starts by typing /name), and explain what the installed hooks already do. Use when the user asks 'which skill should I use', 'what can these skills do', 'where do I start', 'is there a skill for this', 'help me pick', or seems unsure how to approach a task."
+description: "Recommend which pau-skills skill, or sequence of skills, fits the user's situation, and what the installed hooks already do. Use when the user asks 'which skill should I use', 'what can these skills do', 'where do I start', 'is there a skill for this', 'help me pick', or seems unsure how to approach a task."
 ---
 
 # Which Skill
 
 A router over every skill in this marketplace. Read the user's situation, pick the smallest set of skills that fits,
-and say in what order to run them. Do not run them yourself unless the user asks, and then only the ones that start
-on their own (see below).
+and say in what order to run them. Do not run them yourself unless the user asks.
 
 ## How to answer
 
@@ -23,13 +22,14 @@ on their own (see below).
 
 Keep the answer short. A list of every skill is not an answer.
 
-## Which skills start on their own
+## Which skills ask first
 
-- **Start on their own** when the situation fits, so the agent may run them: `which-skill`, `tdd`, `bug-fix`,
-  `verify-app`, `review-triage`, `evaluator`, `mutation-test`, `codebase-oracle`, `migration-review`,
-  `flaky-test-hunt`, `dependency-security-audit`, `safe-merge`.
-- **Typed by the user**: every other skill below. Their descriptions are not in the agent's context and the agent
-  cannot start them, so give the exact command to type, for example `/pau-skills:grill-me`.
+Every skill can start on its own when the situation fits, and the user can also type any of them, for example
+`/pau-skills:grill-me`. These ask first when the agent started them without the user asking for what they do, because
+they launch subagents or headless runs, commit, push or install with no other check, or change how the session works:
+`arena`, `codebase-oracle` (big questions only), `parallel-worktrees`, `agent-friendly-audit`, `hillclimb`,
+`skill-eval`, `verify-app`, `dependency-upgrade`, `rule-to-hook`, `architect`, `session-close`, `lean-subagent-dev`,
+`methodology`.
 
 ## Starting out
 
@@ -38,7 +38,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 
 ## The main flow: from an idea to merged work
 
-0. **`brainstorm`** (planning, typed: `/brainstorm`). With a goal but only one idea or none ("brainstorm this", "give
+0. **`brainstorm`** (planning). With a goal but only one idea or none ("brainstorm this", "give
    me ideas", "what are my options"), widen the options first: lenses, keep, kill or combine, a shortlist with a
    premortem each. Then run `grill-me` on the chosen direction.
 1. **`grill-me`** (planning). Settle every open decision before anything is built, one question at a time.
@@ -46,9 +46,9 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 2. **`to-prd`** (planning). Turn the decided conversation into a written spec, without interviewing again.
 3. **`to-issues`** (planning). Split the spec into vertical slices that can each be built and verified alone.
 4. **Build each slice with `tdd`** (verification): red, green, refactor, one behaviour at a time.
-   - A new interface, module layout or data model? **`architect`** (planning, typed: `/architect`) sketches two
+   - A new interface, module layout or data model? **`architect`** (planning) sketches two
      shapes before code, then builds against the one that survives.
-   - Unsure which of several approaches is best? **`arena`** (agent-orchestration, typed: `/arena`) has several
+   - Unsure which of several approaches is best? **`arena`** (agent-orchestration) has several
      subagents try it with different briefs and a blind judge help pick.
    - Several slices that touch different files? **`parallel-worktrees`** (agent-orchestration) runs them at the same
      time, each agent in its own git worktree, then integrates them one by one.
@@ -76,13 +76,13 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | A CVE announcement, "are we vulnerable", "is this package safe" | `dependency-security-audit` (guards) | `dependency-upgrade` to apply fixes |
 | CI is slow or expensive, "how much CI should we run" | `ci-cost-and-cadence` (verification) | |
 | Review comments to work through, "which of these should I fix", a review loop that keeps going | `review-triage` (verification) | |
-| A bug: wrong output, a crash, "this is broken", "fix this bug" (happens every time) | `bug-fix` (verification) | `evaluator` to attack the fix |
+| A bug whose cause is not obvious, a fix that did not hold, a bug that came back, "find the root cause" (happens every time; an obvious one-line fix needs no skill) | `bug-fix` (verification) | `evaluator` to attack the fix |
 | "Verify it in the app", "how can an agent test this app", no scripted way to drive the app | `verify-app` (verification) | `evaluator` cites its drives as evidence |
 | A question about how the codebase works, or why it is built that way | `codebase-oracle` (agent-orchestration) | `grill-me` if it leads to a change |
 | "The code is getting messy", hard-to-test modules | `improve-codebase-architecture` (planning) | `grill-me` on the candidate picked |
-| A task about to start, "make sure you understand this", "restate this first", a vague or over-constrained request | `sharpen` (planning, typed: `/sharpen`) | the skill that fits the task |
-| "Make it faster", "make it smaller", improve a number (run time, bundle size, memory, a score) over many attempts with proof for each step | `hillclimb` (verification, typed: `/hillclimb`) | `bug-fix` if a step uncovers a bug |
-| "Did this skill or prompt change help?", "A/B this prompt", does a new version of a skill behave differently | `skill-eval` (verification, typed: `/skill-eval`) | `arena` to pick between attempts at one task |
+| A task about to start, "make sure you understand this", "restate this first", a vague or over-constrained request | `sharpen` (planning) | the skill that fits the task |
+| "Make it faster", "make it smaller", improve a number (run time, bundle size, memory, a score) over many attempts with proof for each step | `hillclimb` (verification) | `bug-fix` if a step uncovers a bug |
+| "Did this skill or prompt change help?", "A/B this prompt", does a new version of a skill behave differently | `skill-eval` (verification) | `arena` to pick between attempts at one task |
 
 ## Improving the agent's environment
 
@@ -96,7 +96,7 @@ These change how future sessions go, not the product code.
   (types, lint or CI with a ratchet, a test, or a hook for what the agent does), instead of another sentence.
   The natural next step when `retrospective` or `instructions-audit` finds a rule that is already written down and
   still ignored.
-- **`agent-friendly-audit`** (planning, typed: `/agent-friendly-audit`): mine the whole history (review comments, fix
+- **`agent-friendly-audit`** (planning): mine the whole history (review comments, fix
   commits, transcripts, instruction files) for mistakes agents repeat, and get a plan that fixes each at the highest
   layer, proven on a past instance. `retrospective` covers one session; `rule-to-hook` builds one chosen rule.
 

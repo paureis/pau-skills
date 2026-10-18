@@ -1,10 +1,13 @@
 ---
 name: methodology
-description: "Install or apply an operating discipline for building software with AI agents, built on one idea (an agent cannot certify its own work): contracts with verify clauses, an evidence standard, generator and evaluator in separate contexts, convergence by adversary, mutation verification, falsified premises, and two-file state. Use when the user wants to set up this method in a new or existing project, asks \"how should agents verify their work\", \"set up a contract\", \"adopt the methodology\", or wants the PROJECT.md / log.md state protocol."
-disable-model-invocation: true
+description: "Install a discipline for building software with AI agents in which no agent certifies its own work: contracts with verify clauses, a separate evaluator, two state files. Use when the user says 'adopt the methodology', 'set up a contract', or wants PROJECT.md and log.md, or when they ask how agents should verify their work."
 ---
 
 # Methodology
+
+If you started this skill on your own, without the user typing its name or asking for what it does, first say in one
+or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only matches its
+description is not asking for it. If the user asked for it, or the brief you are working from does, go ahead.
 
 The method is in `${CLAUDE_SKILL_DIR}/METHODOLOGY.md`. Read it before doing anything else; every
 term below is defined there.

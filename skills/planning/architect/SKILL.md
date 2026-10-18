@@ -1,8 +1,7 @@
 ---
 name: architect
-description: "Design before building. Ground in the code the change touches, write the caller's usage first, sketch types, signatures and the module map with not-implemented bodies in the project's language, make at least two structurally different sketches, screen them against red flags for agent contributors, keep the deeper interface, then implement against the sketch test first, raising deviations instead of absorbing them, and scrap the sketch when deviations repeat. Use when the user types /architect or says 'architect this', 'design this first', 'sketch the types', or for non-trivial work where jumping to code would lock in the wrong shape."
+description: "Sketch new code in the repository before building it: types, signatures and module boundaries in the project's language, two different shapes compared, then implement the deeper one test first. Use when the user says 'architect this', 'design this first', 'sketch the types', or before non-trivial code whose shape is still open."
 argument-hint: "[what to design] [with checkpoint]"
-disable-model-invocation: true
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
@@ -16,6 +15,10 @@ What to design: $ARGUMENTS
 Sketch the shape of new code (types, signatures, module boundaries, with bodies left unimplemented) before writing
 it, compare at least two different shapes, then fill in the code against the one you chose. The sketch is cheap to
 throw away; the same shape found halfway through implementation is not.
+
+If you started this skill on your own, without the user typing its name or asking for what it does, first say in one
+or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only matches its
+description is not asking for it. If the user asked for it, or the brief you are working from does, go ahead.
 
 Bundled files, open them when you reach their phase:
 - `${CLAUDE_SKILL_DIR}/SKETCH-BRIEF.md`: how to write one sketch, and the brief for a subagent that writes one
@@ -86,12 +89,11 @@ How to get them:
 - **By default, write them yourself, one after the other.** Screen steps 2 and 3 then compare them. Before starting
   the second, write one sentence saying how its shape must differ from the first. If you cannot, pick another
   direction.
-- **For a larger design, or to get sketches that did not see each other:** if `arena` is installed, suggest the user
-  run `/arena` with the sketch task, `SKETCH-BRIEF.md` as the core of each candidate's brief, and your grounding notes.
-  It runs the sketches in parallel, has a blind judge score them, picks a base and grafts the others into it, and
-  returns one synthesized sketch with a synthesis note; continue here at Screen with that result. You cannot start
-  it yourself: the user types it. If it is not installed, you can brief two subagents with `SKETCH-BRIEF.md` in one
-  message, one direction each, and compare the results yourself.
+- **For a larger design, or to get sketches that did not see each other:** if `arena` is installed, run it with
+  the sketch task, `SKETCH-BRIEF.md` as the core of each candidate's brief, and your grounding notes. It runs the
+  sketches in parallel, has a blind judge score them, picks a base and grafts the others into it, and returns one
+  synthesized sketch with a synthesis note; continue here at Screen with that result. If it is not installed, you can
+  brief two subagents with `SKETCH-BRIEF.md` in one message, one direction each, and compare the results yourself.
 
 **Done when** at least two sketches of different shape exist, each with its usage example; or an arena run has
 returned one synthesized sketch and a synthesis note that compared at least two.

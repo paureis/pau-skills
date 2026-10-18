@@ -69,7 +69,8 @@ green by skipping the failing test.
   history, and checks that a pure refactor leaves the test green.
 - `evaluator` has a fresh agent, which did not build the change, grade it against its acceptance criteria.
 - `verify-app` writes the project's own recipe for starting the real app and proving a change in it, with evidence.
-- `bug-fix` finds the actual cause of a bug from runtime evidence and ships only the change that evidence justifies.
+- `bug-fix` finds the actual cause of a bug from runtime evidence and ships only the change that evidence justifies,
+  when the cause is not obvious or a first fix did not hold.
 - `hillclimb` makes a number better (run time, size, memory, a score) one measured change at a time, on a harness
   proven to notice a regression, and claims no win it did not measure.
 
@@ -170,19 +171,26 @@ will change, or how to make it remember how they like to work.
 
 ## What loads on its own
 
-Claude Code puts the description of every skill the model may start into the context of every session. To keep that
-cost small, only the skills an agent should reach for without being asked load on their own. The rest cost nothing
-until you type them. The agent cannot start them or see their descriptions; `which-skill` knows both groups and
-tells you which one to type.
-`tests/context-budget.test.mjs` holds the first group to 12 skills and 4,500 characters of descriptions.
+Every skill loads on its own: the agent can start it when your words fit its description ("let's brainstorm options
+for this", "wrap up this session", "is this test any good"), and you can still type any of them as
+`/pau-skills:<skill>` or `/<plugin>:<skill>`. Claude Code puts every description into the context of every session,
+so each one is a short list of the phrases that should start it. `tests/context-budget.test.mjs` holds each
+description to 400 characters and all of them to 12,000 together.
 
-- **Load on their own**: `which-skill`, `tdd`, `bug-fix`, `verify-app`, `review-triage`, `evaluator`,
-  `mutation-test`, `codebase-oracle`, `migration-review`, `flaky-test-hunt`, `dependency-security-audit`,
-  `safe-merge`.
-- **You type them** (`/pau-skills:<skill>` or `/<plugin>:<skill>`): `project-setup`, `session-close`, `handoff`,
-  `retrospective`, `instructions-audit`, `lean-subagent-dev`, `methodology`, `parallel-worktrees`, `grill-me`, `to-prd`,
-  `to-issues`, `improve-codebase-architecture`, `ci-cost-and-cadence`, `dependency-upgrade`, `rule-to-hook`, `arena`,
-  `architect`, `brainstorm`, `sharpen`, `agent-friendly-audit`, `hillclimb`, `skill-eval`.
+Some skills cost something when they run, and nothing else in them stops for your yes first: they launch subagents
+or headless runs, commit, push or install with no other check, or change how the whole session works. When the agent
+starts one of these on its own, without you asking for what it does, it first says in one or two lines what it will
+do and what it will cost, and waits for your yes. A remark that only matches a description ("the code is getting
+messy") does not count as asking.
+
+- `arena`, `codebase-oracle` (big questions only), `parallel-worktrees`, `agent-friendly-audit`, `hillclimb`,
+  `skill-eval`, `verify-app`;
+- `dependency-upgrade`, `rule-to-hook`, `architect`, `session-close`;
+- `lean-subagent-dev`, `methodology`.
+
+`tests/confirm-step.test.mjs` keeps this list and the skills in step.
+The other skills either cost little or already ask before they write (for example `retrospective` and `to-issues`
+show you their edits or issues and wait).
 
 ## Reference
 

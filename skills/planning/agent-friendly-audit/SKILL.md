@@ -1,8 +1,7 @@
 ---
 name: agent-friendly-audit
-description: "Mine a project's history for the mistakes agents keep making there: pull request review comments, fix and revert commits, this project's Claude Code transcripts and memory, and its instruction files, in parallel read-only slices. Group repeats into classes (a class counts once it has happened twice), and propose for each class a fix at the highest layer it can live in: architecture, then types, then a lint or CI check whose error names what to use instead, then a test, then prose. Prove each proposed check fails on a real past instance and back the plan with counts. Writes nothing without the user's yes. Use when the user types /agent-friendly-audit or says 'why do agents keep getting this wrong', 'make this repo agent friendly', 'find what agents keep breaking', 'mine our history for agent mistakes', or 'what should we enforce instead of review'."
+description: "Mine a project's history (reviews, fix commits, transcripts, instruction files) for mistakes agents repeat, and propose a check or design fix for each, backed by counts. Use when the user says 'make this repo agent friendly', 'find what agents keep breaking' or 'mine our history for agent mistakes', or when agents keep making the same mistake and review has to catch it."
 argument-hint: "[focus: a module, a mistake you keep correcting, or a time range]"
-disable-model-invocation: true
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
@@ -25,6 +24,10 @@ request is the problem this skill fixes.
 The output is a plan backed by counts. **Nothing in the project is written until the user says yes.** Prototypes and
 proofs run in a scratch folder outside the working tree.
 
+If you started this skill on your own, without the user typing its name or asking for what it does, first say in one
+or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only matches its
+description is not asking for it. If the user asked for it, or the brief you are working from does, go ahead.
+
 Bundled files:
 - `${CLAUDE_SKILL_DIR}/mine.mjs`: read-only helper (Node 20+, no dependencies). `commits` lists fix, revert and
   fixup commits with the files they touched; `transcripts` prints only what the user typed in this repository's
@@ -35,9 +38,9 @@ Bundled files:
 
 Related skills, all optional: `retrospective` learns from one session, this from the whole history;
 `instructions-audit` reviews the instruction files for cost and drift; `rule-to-hook` implements one rule as a hook
-or check, this finds which rules are needed. Each is typed, so suggest the user run `/<name>` (or `/<plugin>:<name>`
-from a plugin) if it is installed: `/retrospective`, `/instructions-audit`, `/rule-to-hook`. Without them, this
-skill covers what it needs inline.
+or check, this finds which rules are needed. None of them runs before the user's yes. After it, use `rule-to-hook`
+in step 8 if it is installed, and offer `retrospective` and `instructions-audit` as next steps if they are
+installed; without them, this skill covers what it needs inline.
 
 ## Privacy, for every step
 
@@ -61,9 +64,9 @@ Before mining, restate the audit in a few lines and confirm it with the user (As
 - the sources you will read, from step 2, and any you cannot reach;
 - constraints that change the work ("only the code we own", "no new tooling", "report only").
 
-Leave out how to fix things and any guess at the cause; the evidence decides those. If `sharpen` is installed, the
-user can run `/sharpen` (or `/<plugin>:sharpen` from a plugin) on the audit prompt first; it does this check in more
-depth. Ask nothing else up front: an open design question is answered later with a prototype (step 6).
+Leave out how to fix things and any guess at the cause; the evidence decides those. If `sharpen` is installed, you
+can run it on the audit prompt first; it does this check in more depth. Ask nothing else up front: an open design
+question is answered later with a prototype (step 6).
 
 **No one to answer** (a headless `claude -p` run, a scheduled job): do not assume a yes. If the prompt that started
 the run already says what to audit and to go ahead, write the restatement as the assumption you work under and
@@ -155,8 +158,7 @@ above the chosen one did not work.
    way. Typical shapes: two ways to do one task (keep one, move callers, delete the other); internals a caller can
    import (make them unreachable so the wrong import fails the build); a hand-synced list (keep one list and derive
    the rest, or fail the build when they disagree); several modules writing the same state; dead code or an old way
-   an agent would copy (delete it). If `architect` is installed, suggest the user run `/architect` (or
-   `/<plugin>:architect` from a plugin) when the fix is a new boundary.
+   an agent would copy (delete it). When the fix is a new boundary, propose `architect` for it if it is installed.
 2. **Types: make the bad state impossible to write.** A distinct type for a validated value, a closed set instead of
    a string, a required field instead of an optional one that is always set.
 3. **A lint or CI check whose error names what to use instead**: "use `config.load()` from `app/config`, not
@@ -211,9 +213,8 @@ For each chosen class, in count order, one commit each:
 - add or update the row in the instruction file's rule table. A rule that was already written and that nothing
   enforced is a repeat: fix it at the highest layer in the same commit. Drop a rule once its mistake cannot happen.
 
-If `rule-to-hook` is installed and a class is best enforced as a Claude Code hook, suggest the user run
-`/rule-to-hook` (or `/<plugin>:rule-to-hook` from a plugin) with that rule; without it, write the check as a CI step or lint rule as above. Do not push unless
-the user asks.
+If `rule-to-hook` is installed and a class is best enforced as a Claude Code hook, use `rule-to-hook` with that
+rule; without it, write the check as a CI step or lint rule as above. Do not push unless the user asks.
 
 ## Report
 

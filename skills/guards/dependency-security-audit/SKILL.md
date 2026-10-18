@@ -1,6 +1,6 @@
 ---
 name: dependency-security-audit
-description: "Audit dependencies for known vulnerabilities, fresh disclosures and supply-chain risk in any ecosystem, container images included, and rank what to do. Use when the user says 'security audit', 'are we vulnerable', 'scan dependencies', 'CVE check', 'is this package safe', 'npm audit', 'pip audit', 'Dependabot alerts', or mentions a supply-chain attack or a CVE in a library the project uses."
+description: "Audit third-party dependencies and container images in any ecosystem for known vulnerabilities, fresh disclosures and supply-chain risk, and rank what to do. Use when the user says 'security audit', 'are we vulnerable', 'scan dependencies', 'CVE check', 'is this package safe', 'npm audit', 'pip audit', 'Dependabot alerts', or mentions a supply-chain attack or a CVE in a library."
 ---
 
 # Dependency security audit
@@ -153,8 +153,8 @@ fixes it, and only to a semver-compatible version. ECOSYSTEMS.md lists the pin m
 
 Anything that crosses a major version, touches a runtime or toolchain, or bundles several upgrades is a planned
 upgrade, not a patch: one major version at a time, on a green baseline, with a commit and a full test run after each
-step. Put the steps in the report as the plan. If the `dependency-upgrade` skill is installed, suggest the user run
-`/dependency-upgrade` (or `/<plugin>:dependency-upgrade` from a plugin) to carry it out.
+step. Put the steps in the report as the plan, and offer to carry it out with the
+`dependency-upgrade` skill, if it is installed.
 
 If the user asks you to apply the patch-level fixes now: apply them through a supply-chain scanner if the project
 uses one, re-run the same audit commands from phase 2, confirm the finding is gone and nothing new appeared, then run

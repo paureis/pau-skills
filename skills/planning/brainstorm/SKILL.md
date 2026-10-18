@@ -1,8 +1,7 @@
 ---
 name: brainstorm
-description: "Widen the options for an engineering or product decision in a project before anything is settled. Frame the goal with at most three questions, generate 10 to 20 options through named lenses (invert the problem, remove the biggest constraint, 10x bigger and 10x cheaper, borrow from another field, combine, delete it, one wild option), let the user keep, kill or combine them, converge on 3 to 5, settle questions of fact by reading the code or a quick prototype, then rate each on value, effort, risk and reversibility with a premortem each, and end with a one-page summary ready for grill-me. Use when the user types /brainstorm or says 'brainstorm this', 'what are our options', 'give me alternatives', 'widen this before we decide', 'I only have one idea'. Works inside a codebase on a decision about it; run it before grill-me, which narrows."
+description: "Widen the options for an engineering or product decision in a codebase before settling it: options from named lenses, the user keeps or kills them, code settles the facts, 3 to 5 rated. Use when the user says 'brainstorm this', 'give me alternatives' or 'widen this before we decide', or when a costly decision has only one idea on the table."
 argument-hint: "[the question or goal] [with subagents]"
-disable-model-invocation: true
 ---
 
 # Brainstorm
@@ -203,13 +202,12 @@ in front when it was>
 <what is still undecided or unknown, each with who or what can answer it>
 ```
 
-Then suggest the next step. If `grill-me` is installed, suggest the user run `/grill-me`, or `/<plugin>:grill-me` from
-a plugin, on the chosen direction to settle the decisions it still leaves open. If it is not installed, ask the user
-the two or three decisions the chosen direction leaves open, one at a time, with a recommended answer for each.
+Then suggest the next step. If `grill-me` is installed, offer to run it on the chosen direction to settle the
+decisions it still leaves open. If it is not installed, ask the user the two or three decisions the chosen direction
+leaves open, one at a time, with a recommended answer for each.
 
-After that, if `to-prd` is installed, suggest the user run `/to-prd`, or `/<plugin>:to-prd` from a plugin, to write
-the spec from the conversation. If the direction is a new interface, module layout or data model and `architect` is
-installed, suggest the user run `/architect`, or `/<plugin>:architect` from a plugin, to sketch its shape before
+After that, if `to-prd` is installed, offer to run it to write the spec from the conversation. If the direction is a
+new interface, module layout or data model and `architect` is installed, offer to run it to sketch its shape before
 building. If neither is installed, the summary is the input for whatever spec or plan the user writes next.
 
 ## Do not

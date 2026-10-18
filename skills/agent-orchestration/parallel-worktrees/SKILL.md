@@ -1,7 +1,6 @@
 ---
 name: parallel-worktrees
-description: Split a body of work into independent pieces and run them in parallel, each in its own git worktree on its own branch, so several agents (subagents in one session, or several Claude Code sessions or terminals) never edit the same checkout; decide whether parallel work is safe at all, write a brief per piece, set up the worktrees, integrate the branches one at a time with the tests run after each merge, and clean up without losing uncommitted work. Use when the user says "run these in parallel", "split this across agents", "use worktrees", "spin up several sessions on this", "fan out", "parallelize the refactor", "work on several features at once", or when a task list has pieces that touch different parts of the codebase.
-disable-model-invocation: true
+description: "Run independent pieces of work at the same time, one git worktree and branch per agent, then merge them back one at a time testing after each. Use when the user says 'run these in parallel', 'split this across agents', 'use worktrees', 'spin up several sessions on this', 'fan out', 'parallelize the refactor', 'work on several features at once'."
 argument-hint: "[the work to split, e.g. 'issues 41, 42 and 47' or a path to a plan]"
 ---
 
@@ -22,6 +21,10 @@ Why worktrees and not one checkout: two agents in one folder share one index and
 `git add -A` commits the other's half-finished edit, a formatter run rewrites files the other is editing, and a
 branch switch pulls the floor out from under everyone. A worktree shares the repository's history but has its own
 files, index and checked-out branch, so none of that can happen.
+
+If you started this skill on your own, without the user typing its name or asking for what it does, first say in one
+or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only matches its
+description is not asking for it. If the user asked for it, or the brief you are working from does, go ahead.
 
 ## Phase 1: decide whether to parallelize at all
 

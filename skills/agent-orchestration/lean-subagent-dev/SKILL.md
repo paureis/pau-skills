@@ -1,7 +1,6 @@
 ---
 name: lean-subagent-dev
-description: "A way of working for a whole session. The main session plans, talks to the owner and does every push, pull request, merge and tag; code and test work goes to one subagent at a time with a written brief; the main session checks the result itself (reads the diff, reruns the checks, runs a control) and triages the review with one review round and one fix round. Adjusts to the usage budget (tight, normal or generous): how much to delegate, the subagent's model and effort, and how much review to buy. Use at the start of a session, or when the user says \"lean subagent\", \"work lean\", \"delegate this to a subagent\", \"one subagent per task\", \"brief a subagent\", \"how much should I delegate\", \"I am low on usage\", or asks how to split work between the main session and subagents."
-disable-model-invocation: true
+description: "A way of working for a whole session: one subagent at a time builds from a written brief, you check its work and keep every push and merge, scaled to the usage budget. Use when the user says 'work lean', 'lean subagent', 'delegate this to a subagent', 'brief a subagent', or when they ask how much to delegate or say they are low on usage."
 argument-hint: "[the work for this session, or a path to a plan]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
@@ -24,6 +23,10 @@ Bundled files, open each when you reach its step:
 
 This is the light way of working: one builder, one checker, a short review. For work under a written contract, or
 where a defect costs money, credentials or data, step up (see "When to step up").
+
+If you started this skill on your own, without the user typing its name or asking for what it does, first say in one
+or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only matches its
+description is not asking for it. If the user asked for it, or the brief you are working from does, go ahead.
 
 ## 1. At the start of the session
 
@@ -51,9 +54,8 @@ where a defect costs money, credentials or data, step up (see "When to step up")
 
 **One subagent at a time:**
 - the work the "Delegate" row of the budget table names for the session's budget; `config` prints the same rule
-- in sequence, never two in one checkout. For independent pieces in parallel, suggest the user run
-  `/parallel-worktrees` (or `/<plugin>:parallel-worktrees` from a plugin) if it is installed; without it, run the
-  pieces one after another.
+- in sequence, never two in one checkout. For independent pieces in parallel, use the
+  `parallel-worktrees` skill if it is installed; without it, run the pieces one after another.
 
 ### What the budget changes
 
@@ -174,7 +176,7 @@ missing.
 Use a heavier method when:
 - the work has a written contract or acceptance criteria that must all hold, or a defect would cost money,
   credentials or data. If the `evaluator` skill is installed, have it grade the change; if the `methodology` skill
-  is installed, suggest the user run `/methodology` (or `/<plugin>:methodology` from a plugin) for the full method.
+  is installed, start it for the full method.
   Without them, start a fresh subagent that has not seen the build, give it the criteria and the code, and have it
   show evidence for each one.
 - the second look found a must-fix. Stop and ask the owner.

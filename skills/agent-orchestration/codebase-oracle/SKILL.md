@@ -128,10 +128,14 @@ candidates you ruled out and why. For a speed question, a measurement beats a re
 
 ### Step 4: Big questions: explorers, then one explanation
 
+If you started this skill on your own, without the user typing its name or asking for what it does, first say in one
+or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only matches its
+description is not asking for it. If the user asked for it, or the brief you are working from does, go ahead.
+
 1. **Say the cost** in one line, before any explorer is launched, so a user on a tight budget can say no: "This is a
    big question, so I will run N read-only explorers on separate angles; they each read the code again, which costs
-   roughly N extra passes over the area." When the user has said their usage budget is tight, wait for a yes. If the
-   user declines, answer on the single-agent path in Step 3.
+   roughly N extra passes over the area." Wait for a yes when the paragraph above says so, or when the user has said
+   their usage budget is tight. If the user declines, answer on the single-agent path in Step 3.
 2. **Split it into 2 to 4 angles**, each a separate slice with its own starting point: for example the entry point
    and request path, the data model and storage, configuration, build and deployment, error handling and edge cases,
    or the history of the area. Angles should not overlap. For a list of questions, group the questions by area and

@@ -1,7 +1,6 @@
 ---
 name: to-issues
-description: "Break any plan, spec, or PRD into independently-grabbable issues using vertical slices. Use when user says 'break this into tasks', 'create issues', 'create tickets', 'to-issues', 'make tasks from this', 'split this into slices', 'break this down', or wants to decompose a PRD, plan, or feature description into trackable work items. Works on any written plan, spec or PRD, whatever produced it."
-disable-model-invocation: true
+description: "Break a plan, spec or PRD into independently grabbable issues, each a thin vertical slice through every layer, ordered by dependency and filed after approval. Use when the user says 'break this into tasks', 'create issues', 'create tickets', 'make tasks from this', 'split this into slices' or 'break this down'."
 license: MIT (adapted from mattpocock/skills; see NOTICE)
 metadata:
   upstream: https://github.com/mattpocock/skills/tree/main/skills/engineering/to-issues
