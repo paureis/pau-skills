@@ -1,6 +1,6 @@
 ---
 name: flaky-test-hunt
-description: "Find why a test or CI job fails only sometimes instead of retrying it: measure the failure rate, find and fix the cause, prove the fix with enough clean runs. Any language. Use when the user says 'this test is flaky', 'fails intermittently', 'passes locally but fails in CI', 'can we just retry it', 'quarantine this test'."
+description: "Find why a test or CI job fails only sometimes instead of retrying it: measure the failure rate, find and fix the cause, prove the fix with enough clean runs. Any language. Use when the user says 'this test is flaky', 'fails intermittently', 'passes locally but fails in CI', 'can we just retry it', 'quarantine this test', or wants to retry a failed CI run."
 argument-hint: "<test id, failing CI job or run link, and anything known about how often it fails>"
 ---
 
@@ -36,7 +36,7 @@ Reference files, read when you reach their phase:
 ## Phase 1. Capture the evidence
 
 Before running anything, collect what already exists. Read it from the repository and CI; ask the user only what
-those cannot answer.
+those cannot answer. For a CI failure, do "Is it a flake at all?" below first.
 
 - [ ] The exact test id (file, class, name, parameters) and the full failure output of at least one failing run:
       assertion message, stack trace, and the lines before it. Save it; later phases compare against it.
@@ -50,8 +50,42 @@ those cannot answer.
 - [ ] Whether the failure output is the same every time. Two different messages are often two different problems.
 - [ ] The test runner and how CI invokes it (the actual command in the workflow, with its flags, env and parallelism).
 
+### Is it a flake at all?
+
+When the failure is in CI, and above all when the question is "can we just retry it" or "it passes locally", classify
+it before treating it as flaky, in this order:
+
+1. **Is the failing code in the diff?** Run `git fetch` first, so the commands below see the current base. If
+   `git rev-parse --is-shallow-repository` prints `true`, deepen first (`git fetch --deepen=<n>` or `--unshallow`):
+   a shallow clone gives no merge base, a wrong ancestry answer, and lists the boundary commit as touching every file.
+   Then compare the failing test and the code it covers with the branch's changes
+   (`git diff --name-only origin/<base>...HEAD`). If they do not overlap, suspect a stale base, even when the failure
+   reproduces locally: a branch that lacks the base's fix fails the same way everywhere.
+   - For a GitHub `pull_request` run (and any CI that tests a merged result), CI did not test the branch. It tested a
+     merge commit whose message names the base (`Merge <head> into <base sha>`, in the checkout step's log), so check
+     for the base's fix against that base SHA, not against `origin/<base>`. The merge commit is not in an ordinary
+     clone: `git fetch origin pull/<N>/merge` (or `git fetch origin <sha>`); exit 128 means the server no longer has
+     it, so read the base SHA from the log instead. Also check whether the base branch itself is red at that SHA; if it
+     is, the failure is not this branch's.
+   - Otherwise run `git merge-base --is-ancestor origin/<base> HEAD`: exit 0 means the branch contains the base tip,
+     exit 1 means it is behind, so look at what the base has for the failing code
+     (`git log HEAD..origin/<base> -- <files>`).
+   A fix on the base means the answer is to update the branch, not to retry and not to patch outside the diff what the
+   base already fixed. Offer to bring the branch up to date the way the project does (merge or rebase), so CI runs
+   once on the result.
+2. **One re-run at most, as a diagnostic.** A single re-run shows whether the failure repeats. It is never the fix
+   (see the rules above). Running the same test locally is free and counts. A CI re-run costs runner minutes, so ask
+   before starting it unless the user asked for a re-run; a question such as "can we just retry it?" is not that
+   request. Do not re-run CI a second time.
+3. **Two identical failures are not proof of a consistent failure.** A test that fails one run in three fails twice
+   in a row one time in nine. Read the test's CI history first. End the hunt as a consistent failure only when history
+   shows no pass for this test at this commit and a few local runs (for example 3 of 3) fail the same way. Then say
+   what failed and stop, and offer to run `bug-fix` if it is installed; with or without it, ask before debugging.
+4. Everything else (a pass on a re-run of the same commit, a message that changes between runs, a history of
+   occasional failures) goes on to Phase 2.
+
 Done when you can state the failing test, one or more saved failure outputs, the historical frequency (or "unknown"),
-the environments it fails in, and the CI command.
+the environments it fails in, and the CI command, and, for a CI failure, which of the cases above it is.
 
 ## Phase 2. Reproduce by repetition, with a measured rate
 
@@ -109,8 +143,10 @@ reproduction is a hypothesis, not a classification; say so if that is where you 
 
 ## Phase 4. Fix the root cause and prove it
 
-Apply the right fix for the category from `TAXONOMY.md`. If the cause is in the product (a real race, a missing
-await in application code, a date bug), fix the product and tell the user plainly that the test was right.
+Apply the right fix for the category from `TAXONOMY.md`, where the cause is, even in code the branch never touched.
+If the cause is in the product (a real race, a missing await in application code, a date bug), fix the product and
+tell the user plainly that the test was right. If the fix chooses a product behaviour (a tie-break order, a rounding
+rule, which of two results wins), describe the choice and get the user's yes before the edit.
 
 Then prove it, in this order:
 

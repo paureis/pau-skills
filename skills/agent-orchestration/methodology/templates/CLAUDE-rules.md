@@ -60,11 +60,18 @@ On failure, read the trace first, then choose one:
 
 Running the same thing again hoping for a different sample is forbidden.
 
+A plateau (no progress toward the finish condition) is not a stop and not
+convergence: change the approach. Never relax a finish condition to make a run
+end; that is contract-wrong and goes to the owner. Every unattended or
+open-ended run has a dead-end and budget stop, set in `PROJECT.md` before it
+starts; reaching it stops the run and escalates. Only the owner moves it.
+
 ## State protocol
 
 - `PROJECT.md`: mutable. Current phase, open gate, next action, done / in-flight
   / blocked.
-- `log.md`: append-only. `## [YYYY-MM-DD] phase | event`.
+- `log.md`: append-only. `## [YYYY-MM-DD] phase | event`. Never edit a past line;
+  a wrong entry is corrected by a new entry that names the one it supersedes.
 
 After any meaningful step, update both, so a **zero-context agent can resume from
 these two files alone.** Cite run IDs, agent IDs, and commit SHAs so every finding

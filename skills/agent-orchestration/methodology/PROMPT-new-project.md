@@ -109,7 +109,8 @@ Stop. Commit the plan. New session.
 4. Hand to an independent evaluator in a **fresh session** using
    `PROMPT-evaluator.md`. Give it the contract slice and the repo. Give it
    nothing about how or why you built it.
-5. Fix what it finds. Run it again.
+5. Fix what it finds. Run it again, until it converges or the run reaches its
+   stop in `PROJECT.md`; at the stop, escalate instead of continuing.
 6. **Converged = two consecutive clean rounds.** Only then does the increment
    count as done, and only then does anything get written down as complete.
 7. Update `PROJECT.md`; append to `log.md`; commit.

@@ -81,6 +81,11 @@
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verification/test-tamper-guard.mjs\"",
                 "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verification/suppression-reason.mjs\"",
+                "timeout": 5
               }
             ]
           },
@@ -224,6 +229,11 @@
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verification/test-tamper-guard.mjs\"",
+                "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verification/suppression-reason.mjs\"",
                 "timeout": 5
               }
             ]
@@ -403,6 +413,11 @@
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verification/test-tamper-guard.mjs\"",
+                "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verification/suppression-reason.mjs\"",
                 "timeout": 5
               }
             ]

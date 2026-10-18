@@ -111,6 +111,12 @@ On failure, read the trace first, then choose exactly one:
 Running the same thing again hoping for a different sample is forbidden. If you
 cannot say which category you are in, you have not read the trace.
 
+A plateau (no progress toward the finish condition) is not a stop and not
+convergence: change the approach. Never relax a finish condition to make a run
+end; that is contract-wrong and goes to the owner. Every unattended or
+open-ended run has a dead-end and budget stop, set in `PROJECT.md` before it
+starts; reaching it stops the run and escalates. Only the owner moves it.
+
 ## Never downgrade a standing step silently
 
 If you skip, compress, or substitute anything these rules require (a tier, an
@@ -124,7 +130,8 @@ If a step was skipped, the status is "done except X", never "done".
 
 - `PROJECT.md`: mutable. Current increment, open gate, next action, done /
   in-flight / blocked, and the honest-accounting block (trust line + residuals).
-- `log.md`: append-only. `## [YYYY-MM-DD] phase | event`. Never edit a past line.
+- `log.md`: append-only. `## [YYYY-MM-DD] phase | event`. Never edit a past line;
+  a wrong entry is corrected by a new entry that names the one it supersedes.
 
 [If the project already keeps a backlog, roadmap, or per-feature summary docs,
 name them here as the source of truth. `PROJECT.md` points at them and does not
