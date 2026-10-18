@@ -121,7 +121,12 @@ in any typed language; in a dynamic one, each rule becomes a rule about the mode
   without a catch-all in Rust, `when` on a sealed class in Kotlin, `assert_never` with a type checker in Python).
 - **Brand values that share a primitive.** A user id and an order id are both strings underneath but must not be
   interchangeable. Give each its own type (a newtype in Rust or Haskell, a value class in Kotlin, a defined type in
-  Go, `NewType` in Python, a branded type in TypeScript). Check once at creation, trust the type afterwards.
+  Go, `NewType` in Python, a branded type in TypeScript). Check once at creation and trust the type afterwards, but
+  only where creation is restricted: an unexported field, a private constructor, or a smart constructor that is the
+  only way to build the value (a Rust newtype with a private field, a Kotlin value class with a private constructor,
+  a Go struct with an unexported field). A Go defined type, a Python `NewType` and a TypeScript brand can be made
+  anywhere by a plain conversion or a cast, so they stop mix-ups but prove no check ran; pair them with one
+  constructor function and make it the only place that converts.
 - **Parse outside data at the seam where it enters.** Request bodies, JSON, messages, command-line arguments, config
   files, environment variables and database rows are untyped until parsed. At each place they enter, one parse
   function turns them into the typed model or returns an error. Inside, trust the model: no second check of the same
