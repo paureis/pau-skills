@@ -26,8 +26,9 @@ Check the project's state only when it changes the answer, and mention it only t
 (without one, `verify-app` comes first); whether `PROJECT.md` and a contract exist matters when the question is about
 `methodology`. Do not inspect the repository for a question the tables already answer.
 
-If a skill from this marketplace is installed but missing from the tables below, read the frontmatter of its
-`SKILL.md` and route by its description. Where a table and a skill's own `SKILL.md` disagree, the skill wins.
+If an installed skill that fits the situation is missing from the tables below, read the frontmatter of its
+`SKILL.md` and route by its description (a skill uploaded to claude.ai is under `~/.claude/skills/synced/*/<name>/`).
+Where a table and a skill's own `SKILL.md` disagree, the skill wins.
 
 Keep the answer short. A list of every skill is not an answer.
 
@@ -97,23 +98,26 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 
 | Symptom | What to do |
 |---|---|
-| A skill did not start on its own from the user's words | The skill listing may be over budget, so Claude Code dropped its description. Type the skill's name for now; ask the user to run `/context` and, if skills show with no description, raise `SLASH_COMMAND_TOOL_CHAR_BUDGET` or turn off unused plugins (`docs/INSTALL.md` in the repository) |
-| A skill asked first although the user had asked for it, or started work the user never asked for | The ask-first rule counts the user's request or a brief naming the skill as a yes, and a remark that only matches a description as no. Say plainly which it was; if the skill got it wrong, that is a bug in the skill to report |
+| A skill did not start on its own from the user's words | The skill listing may be over budget, so Claude Code dropped its description. Type the skill's name for now; in a new session, ask "List every skill in your skill listing that has no description" and, if any are listed, raise `SLASH_COMMAND_TOOL_CHAR_BUDGET` or turn off unused plugins (`docs/INSTALL.md` in the repository) |
+| One of the skills under "Which skills ask first" asked although the user had asked for it, or started its costly step on a remark | Those skills count a request for them or for what they do, or a brief that asks for it, as a yes, and a remark that only matches the description as no. Say plainly which it was; if the skill got it wrong, that is a bug to report. Every other skill is meant to start on its own when the situation fits |
 | Parallel agents overwrote each other's files | `parallel-worktrees`: one worktree and branch per agent. Telling agents "do not touch X" is not enough |
 | The agent claimed success from a green build or from reading the code | Ask for the real command, the stored value read back, or a drive of the app. `evaluator` grades the change with evidence; `verify-app` gives the project a way to drive the app |
 | The review and fix loop keeps going | `review-triage`: one review round, one fix round, then the rest goes to the owner or an issue |
-| The same correction keeps being made, session after session | `retrospective` for this session's lessons; `rule-to-hook` once a written rule is still broken |
+| The same correction keeps being made, session after session | `retrospective` for this session's lessons; `rule-to-hook` once a written rule is still broken; `agent-friendly-audit` for mistakes that repeat across the whole history |
 | A fix did not hold, or two fixes in a row failed | `bug-fix`: attack the premise both fixes shared before trying a third |
-| A long or unattended run kept going but finished nothing | It needs a finish condition a script can check, not a duration, and a plateau is not a stop. `methodology` for work under contract; `hillclimb` when the goal is a number |
+| A long or unattended run kept going but finished nothing | Before the next run, set a finish condition a script can check and a stop that ends it and reports to the user: a dead end, or a budget of time, attempts or money. Progress stalling is not a finish condition; without a stop the run spins. `methodology` for work under contract; `hillclimb` when the goal is a number |
 | A subagent's report was taken at its word and the work was wrong | `lean-subagent-dev`: reread the diff and rerun the checks after every subagent |
 | Context was lost after a compaction or a new session | `handoff` before the session ends; the `compact-snapshot` hook keeps the last messages and edited files across a compaction |
 
 ## Wording the request
 
-When the user asks how to phrase a task for the agent, a good request names the goal, how to tell it is done, what
-counts as proof, the facts already known, and the real constraints. It leaves out the how, a list of skills to run, and
-the user's own theory of the cause, which the agent will otherwise follow instead of testing. Offer to run `sharpen`
-if it is installed: it restates the task this way and confirms it before the work starts.
+When the user asks how to phrase a task for the agent, a good request names the goal, a done check that can pass or
+fail, what counts as proof, the facts already known, and the real constraints. It leaves out the step-by-step how. It
+names a skill only when the user wants that one (naming it is also the yes a skill under "Which skills ask first"
+waits for). A theory of the cause goes in as a lead to test, not as the answer, or the agent follows it instead of
+testing it. For a task the agent is about to do in this session, offer to run `sharpen` if it is installed: it
+restates the task this way and confirms it before starting the work. For wording to paste elsewhere, give the
+checklist above.
 
 ## Improving the agent's environment
 
@@ -170,7 +174,7 @@ Hooks act on every session where their plugin is installed. Each can be turned o
 - **`bug-fix` or `flaky-test-hunt`?** `bug-fix` is for a failure that happens every time. `flaky-test-hunt` is for
   one that comes and goes; measure its rate first.
 - **`architect` or `improve-codebase-architecture`?** `architect` designs something new before it is built.
-  `improve-codebase-architecture` finds refactors in code that already exists.
+  `improve-codebase-architecture` finds refactors in code that already exists, and carries one out when asked.
 - **`handoff` or `session-close`?** `session-close` includes the handoff. Use `handoff` alone when there is no time
   for the rest, or when the work moves to another person or tool.
 - **`dependency-upgrade` or `dependency-security-audit`?** The audit finds what is risky now. The upgrade skill
