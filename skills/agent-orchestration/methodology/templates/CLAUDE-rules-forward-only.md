@@ -113,8 +113,9 @@ cannot say which category you are in, you have not read the trace.
 
 A plateau (no progress toward the finish condition) is not a stop and not
 convergence: change the approach. Never relax a finish condition to make a run
-end; that is contract-wrong and goes to the owner. A long run has a dead-end or
-budget stop, set before it starts, that stops and escalates to the owner.
+end; that is contract-wrong and goes to the owner. Every unattended or
+open-ended run has a dead-end and budget stop, set in `PROJECT.md` before it
+starts; reaching it stops the run and escalates. Only the owner moves it.
 
 ## Never downgrade a standing step silently
 

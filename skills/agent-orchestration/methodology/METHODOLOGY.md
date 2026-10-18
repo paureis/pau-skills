@@ -197,11 +197,13 @@ turning a MUST into a SHOULD or lowering a threshold because the run is stuck is
 the contract-wrong branch above, so it goes to the human, who amends the
 contract or does not.
 
-**Set a stop before a long run starts**, so "keep going" never means "forever",
-and write it in `PROJECT.md`: a dead end (a set number of different approaches
-with no progress, or no untried hypothesis left, whichever comes first) or a
-budget (time, iterations, money). Reaching either stops the run, appends what
-was tried and what each attempt showed to `log.md`, and escalates to the human.
+**Every unattended or open-ended run has a stop, set before it starts**, so
+"keep going" never means "forever". Write it in `PROJECT.md`: a dead end (a set
+number of different approaches with no progress, or no untried hypothesis left,
+whichever comes first) and a budget (time, iterations, money). Reaching either
+stops the run, appends what was tried and what each attempt showed to `log.md`,
+and escalates to the human. The stop belongs to the human: the agent never
+raises its own budget or moves its own stop.
 
 ---
 
