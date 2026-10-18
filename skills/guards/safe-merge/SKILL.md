@@ -41,9 +41,9 @@ treat the verdict as stale.
   gone; recompute it with the recorded base only to confirm it. No recorded id and no old SHA: the verdict is stale.
 - **The current id**: `<base>` is `origin/<base>` from the dry run's `PR #<n>: <head> -> <base>` line (a dry run
   refused as stacked, draft or closed prints it too; for a promotion PR it is the target, not the trunk), or
-  `origin/<default branch>` for a branch with no PR yet. `<sha>` is `git rev-parse origin/<head>` after the fetch; if
-  it differs from the SHA after `--match-head-commit` in the dry run's `Would run:` line, someone pushed: run the dry
-  run again.
+  `origin/<default branch>` for a branch with no PR yet. `<sha>` is `git rev-parse origin/<head>` after the fetch
+  (for a fork, `git rev-parse FETCH_HEAD` right after fetching `pull/<number>/head`); if it differs from the SHA after
+  `--match-head-commit` in the dry run's `Would run:` line, someone pushed: run the dry run again.
 - **Same id**: the verdict holds. **Different id**: the verdict is stale; see what changed with
   `git range-diff <old base>...<old sha> <base>...<sha>` (or diff the two patches), then redo the review or the
   evaluation at the current head before merging. **An empty current id** (a SHA that is not there, or no diff at all)

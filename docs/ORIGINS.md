@@ -193,6 +193,12 @@ it runs with `context: fork`, so it starts without the builder's conversation by
 **Changes for this release.** Converted from a paste-in prompt to a forked skill with `$ARGUMENTS` for the scope; it
 points at `mutate.sh` for mutation checks; the notes for the human running it moved to the end.
 
+**Later changes (2026-10-18).** Ideas from pstack (`docs/guide/06-verify-and-ship.md`,
+`skills/poteto-mode/playbooks/shipping.md`), in new words (0 of 630 word 6-grams): what counts as a live reproduction
+for each change type (a storage assertion about the stored form reads the raw value), a check that could not run marked
+UNVERIFIED with `inconclusive:` (a resource the change requires is not a FAIL), and an `Evaluated:` line naming the
+commit, base and patch id the verdict covers, withheld on a dirty tree.
+
 ### tdd (Adapted from [mattpocock/skills `tdd`](https://github.com/mattpocock/skills/tree/main/skills/engineering/tdd) and [pstack](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/principle-test-behavior-not-implementation/SKILL.md))
 
 Closest upstream: `skills/engineering/tdd`, versions from 2026-02-04 to 2026-04-28. Before the pstack changes, about
@@ -726,6 +732,13 @@ deletion, and deletes the branch afterwards only if no open PR uses it as its ba
 reads the trunk from the repository's default branch, with environment variables for an expected repository,
 promotion pairs (`develop->main`), protected branches and the merge method; it is translated, and the guard's message
 prints the script's real path.
+
+**Later changes (2026-10-18).** An idea from pstack's `skills/poteto-mode/playbooks/shipping.md` ("a verdict covers a
+patch"), in new words (0 of 520 word 6-grams in upstream): before merging on an older review or evaluator verdict,
+compare the patch id (`git -c core.quotePath=true diff-tree -p --full-index` piped to `git patch-id --verbatim`) of the
+verdict against the current head's; a different or missing id means the verdict is redone. A review and a cold run
+found that `--stable` ignores indentation, that abbreviated blob ids made binary patches differ between clones,
+and that promotion and stacked PRs need their own base.
 
 ### dependency-security-audit (Original)
 
