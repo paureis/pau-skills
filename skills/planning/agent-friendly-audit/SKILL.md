@@ -1,6 +1,6 @@
 ---
 name: agent-friendly-audit
-description: "Mine a project's history (review comments, fix commits, transcripts, instruction files) for the mistakes agents repeat, and propose a check or design fix for each, backed by counts. Use when the user says 'why do agents keep getting this wrong', 'make this repo agent friendly', 'find what agents keep breaking' or 'what should we enforce instead of review'."
+description: "Mine a project's history (reviews, fix commits, transcripts, instruction files) for mistakes agents repeat, and propose a check or design fix for each, backed by counts. Use when the user says 'make this repo agent friendly', 'find what agents keep breaking' or 'mine our history for agent mistakes', or when agents keep making the same mistake and review has to catch it."
 argument-hint: "[focus: a module, a mistake you keep correcting, or a time range]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)

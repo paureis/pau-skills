@@ -1,6 +1,6 @@
 ---
 name: brainstorm
-description: "Widen the options for an engineering or product decision in a codebase before settling it: options from named lenses, the user keeps or kills them, code settles the facts, 3 to 5 rated. Use when the user says 'brainstorm this', 'what are our options', 'give me alternatives', 'widen this before we decide' or 'I only have one idea'."
+description: "Widen the options for an engineering or product decision in a codebase before settling it: options from named lenses, the user keeps or kills them, code settles the facts, 3 to 5 rated. Use when the user says 'brainstorm this', 'give me alternatives' or 'widen this before we decide', or when a costly decision has only one idea on the table."
 argument-hint: "[the question or goal] [with subagents]"
 ---
 
