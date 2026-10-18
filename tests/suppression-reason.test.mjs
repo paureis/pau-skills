@@ -213,7 +213,7 @@ describe('suppression-reason: review fixes', () => {
 
   // S3: vendored and generated folders are judged relative to the project root.
   test('a project inside a folder named build is checked', () => {
-    const root = '/home/me/build/proj';
+    const root = '/opt/build/proj';
     const out = decide({ tool_name: 'Edit', tool_input: { file_path: `${root}/src/a.ts`, old_string: 'x', new_string: '// @ts-ignore\nx' } }, { root });
     assert.ok(out);
   });
@@ -223,7 +223,7 @@ describe('suppression-reason: review fixes', () => {
   test('build output and vendored folders are judged from the project root, given absolute paths', () => {
     const at = (root, p) => decide({ tool_name: 'Edit', tool_input: { file_path: `${root}/${p}`, old_string: 'x', new_string: '// @ts-ignore\nx' } }, { root });
     assert.equal(at('/repo', 'dist/app.js'), null);
-    assert.ok(at('/home/me/vendor/proj', 'src/a.ts'));
+    assert.ok(at('/opt/vendor/proj', 'src/a.ts'));
   });
   test('build output at the project root is still skipped', () => {
     for (const p of ['build/a.ts', 'out/a.js', 'gen/a.go', 'target/debug/a.rs', 'dist/a.js']) assert.equal(isCodeFile(p), false, p);
