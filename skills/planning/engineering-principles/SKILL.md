@@ -1,6 +1,6 @@
 ---
 name: engineering-principles
-description: "Named engineering principles to steer a design or code decision by: build the lever, model the domain, subtract before you add and more, each with when it applies and the sign you skipped it. Use when the user says 'apply build the lever', 'which principle applies here', or before such a decision. Not a code review or a design sketch."
+description: "Named engineering principles to steer a design or code decision by: build the lever, model the domain, subtract before you add and more. Use when the user says 'apply build the lever' or 'which principle applies here', or before choosing a data shape, a new flag or type, or how to change many files. Not a code review or a design sketch."
 argument-hint: "[a principle name, or the decision to steer]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
