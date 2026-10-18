@@ -254,6 +254,7 @@ describe('calls', () => {
       { type: 'system', subtype: 'init' },
       { type: 'assistant', timestamp: '2026-10-18T23:47:00Z', message: { content: [{ type: 'text', text: 'hi' }, { type: 'tool_use', name: 'Bash', input: { command: 'python3 -m unittest -q' } }] } },
       { type: 'user', message: { content: [{ type: 'tool_result', is_error: true, content: 'Exit code 1' }] } },
+      { type: 'user', message: { content: [{ type: 'tool_result', is_error: false, content: 'Ran 3 tests' }] } },
       { type: 'user', message: { content: 'a plain prompt' } },
       { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit', input: { file_path: 'calc.py', old_string: 'x'.repeat(500) } }] } },
     ];
@@ -264,7 +265,7 @@ describe('calls', () => {
     assert.equal(lines.length, 3);
     assert.equal(lines[0], '2 2026-10-18T23:47:00Z Bash {"command":"python3 -m unittest -q"}');
     assert.equal(lines[1], '3 ERROR "Exit code 1"');
-    assert.match(lines[2], /^5 Edit \{"file_path":"calc.py"/);
+    assert.match(lines[2], /^6 Edit \{"file_path":"calc.py"/);
     assert.ok(lines[2].length < 330, 'a long input is cut');
   });
 
