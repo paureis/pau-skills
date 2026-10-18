@@ -138,7 +138,8 @@ test('CLI --check: one skill name under two synced ids is two units, each scored
   assert.match(runNode(AUDIT, { args: ['--home', home], cwd: project }).stdout, /2 synced skills/);
   for (const [text, id] of [[restateA, 'aaa'], [restateB, 'bbb']]) {
     const out = check(text);
-    assert.ok(out.split('\n').find((l) => l.startsWith('  1.000')).includes(join(synced, id, 'dup', 'SKILL.md')), out);
+    // The closest unit is the first scored line.
+    assert.ok(out.split('\n').find((l) => /^ {2}\d/.test(l)).includes(join(synced, id, 'dup', 'SKILL.md')), out);
   }
 
   mkdirSync(join(home, '.claude', 'skills', 'dup'), { recursive: true });

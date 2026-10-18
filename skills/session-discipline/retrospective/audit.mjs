@@ -166,7 +166,8 @@ function main(args) {
       return { u, score, v: verdict(score), note: '' };
     }).sort((a, b) => RANK[b.v] - RANK[a.v] || b.score - a.score).slice(0, 8);
     console.log(`Proposed learning: ${CHECK} (${tokens(text).length} content words). Closest existing units (bigram containment; short CLAUDE.md units by word score):`);
-    for (const { u, score, note } of scored) console.log(`  ${score.toFixed(3)}  [${u.store}] ${u.name}${note}`);
+    // A synced copy's path has an <id> level that is easy to guess wrong, so it is printed.
+    for (const { u, score, note } of scored) console.log(`  ${score.toFixed(3)}  [${u.store}] ${u.name}${note}${u.file ? `  (${u.file})` : ''}`);
     const v = scored[0]?.v ?? 'NEW';
     // A verdict that rests on a word score is a candidate: the bullet is one line, so the agent reads it and decides.
     if (v !== 'NEW' && scored[0].u.short) console.log(`\nVERDICT: ${v}, by word score: a candidate. Read that bullet (it is one line) and confirm DUPLICATE or RELATED before you drop or merge the learning.`);
