@@ -348,8 +348,10 @@ docs and examples still describe the design without it.
 When implementation convenience conflicts with the experience of the people who use the work, choose the experience.
 
 **How to apply it.**
-- Every feature, control and option must justify itself. An option is a decision handed to the user; make it
-  yourself when you can.
+- Every feature, control and option must justify itself. A setting in the product hands a design decision to every
+  person who uses it; settle that decision in the design when you can, instead of adding a setting. This is about the
+  people who use the product, not about the person you are working with: a choice that is theirs to make, you still
+  ask them.
 - Ship less and finish it: three polished features beat ten rough ones.
 - Try a design cheaply before you commit to it. A throwaway prototype costs less than the same decision changed in
   production code.
