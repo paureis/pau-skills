@@ -148,7 +148,7 @@ function parseDescription(front) {
 
 // The frontmatter line that hides a skill from the model, with any value: `false` changes nothing but still says the
 // skill might be hidden, so it goes too.
-const hasFlag = (front) => front.some((l) => /^disable-model-invocation\s*:/.test(l));
+const hasFlag = (front) => front.some((l) => /^(["']?)disable-model-invocation\1\s*:/.test(l));
 
 function readSkills() {
   const out = [];
@@ -267,7 +267,7 @@ test('each check flags one character or one skill over its limit, and nothing at
 });
 
 test('the flag is found in any form a frontmatter line can take', () => {
-  for (const line of ['disable-model-invocation: true', 'disable-model-invocation:true', 'disable-model-invocation : "true"', 'disable-model-invocation: false']) {
+  for (const line of ['disable-model-invocation: true', 'disable-model-invocation:true', 'disable-model-invocation : "true"', 'disable-model-invocation: false', '"disable-model-invocation": true', "'disable-model-invocation': true"]) {
     assert.ok(hasFlag(['name: x', line]), line);
   }
   assert.ok(!hasFlag(['description: "mentions disable-model-invocation: true in the text"', '  disable-model-invocation: true']));

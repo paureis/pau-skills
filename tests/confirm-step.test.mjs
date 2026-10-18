@@ -65,7 +65,8 @@ function readSkills() {
       const dir = join(ROOT, 'skills', plugin.name, s.name);
       const skillMd = readFileSync(join(dir, 'SKILL.md'), 'utf8');
       const elsewhere = markdownFiles(dir).filter((f) => !f.endsWith(`${s.name}/SKILL.md`)).flatMap((f) => paragraphs(readFileSync(f, 'utf8')));
-      out.push({ id: `${plugin.name}/${s.name}`, paragraphs: paragraphs(skillMd), elsewhere });
+      const text = markdownFiles(dir).map((f) => readFileSync(f, 'utf8')).join('\n\n');
+      out.push({ id: `${plugin.name}/${s.name}`, paragraphs: paragraphs(skillMd), elsewhere, text });
     }
   }
   return out;
@@ -75,7 +76,9 @@ function readSkills() {
 const checks = {
   missing: (skills, list) => skills.filter((s) => list.includes(s.id) && !s.paragraphs.includes(CONFIRM_PARAGRAPH)).map((s) => s.id),
   repeated: (skills) => skills.filter((s) => s.paragraphs.filter((p) => p === CONFIRM_PARAGRAPH).length > 1).map((s) => s.id),
-  unlisted: (skills, list) => skills.filter((s) => !list.includes(s.id) && [...s.paragraphs, ...s.elsewhere].some((p) => p.startsWith(OPENING))).map((s) => s.id),
+  // Anywhere in the skill's Markdown, not only at the start of a paragraph: a copy in a list item, a quote or the
+  // tail of another paragraph asks for a yes just the same.
+  unlisted: (skills, list) => skills.filter((s) => !list.includes(s.id) && normalize(s.text).includes(OPENING)).map((s) => s.id),
   drifted: (skills) => skills.flatMap((s) => [...s.paragraphs, ...s.elsewhere].filter((p) => p.startsWith(OPENING) && p !== CONFIRM_PARAGRAPH).map((p) => `${s.id}: ${p.slice(0, 120)}`)),
   outsideSkillMd: (skills) => skills.filter((s) => s.elsewhere.some((p) => p.startsWith(OPENING))).map((s) => s.id),
   unknown: (skills, list) => list.filter((id) => !skills.some((s) => s.id === id)),
@@ -131,7 +134,7 @@ test('each check catches its case on fixtures, and a wrapped copy still counts',
   const fenced = paragraphs(`\`\`\`\n${CONFIRM_PARAGRAPH}\n\`\`\`\n\nAfter.`);
   assert.deepEqual(fenced, ['After.'], 'a copy inside a fence is not a paragraph');
 
-  const skill = (id, paras, elsewhere = []) => ({ id, paragraphs: paras, elsewhere });
+  const skill = (id, paras, elsewhere = [], text = paras.join('\n\n')) => ({ id, paragraphs: paras, elsewhere, text });
   const good = [skill('a/listed', ['Intro.', CONFIRM_PARAGRAPH]), skill('b/other', ['Intro.'])];
   const list = ['a/listed'];
   for (const [name, check] of Object.entries(checks)) assert.deepEqual(check(good, list), [], name);
@@ -144,4 +147,10 @@ test('each check catches its case on fixtures, and a wrapped copy still counts',
   assert.deepEqual(checks.missing([skill('a/listed', [reworded])], list), ['a/listed']);
   assert.deepEqual(checks.outsideSkillMd([skill('a/listed', [CONFIRM_PARAGRAPH], [CONFIRM_PARAGRAPH])]), ['a/listed']);
   assert.deepEqual(checks.unknown(good, ['a/listed', 'z/gone']), ['z/gone']);
+
+  // A copy hidden in a list item, a quote or the tail of another paragraph still counts as carrying the paragraph.
+  for (const hidden of [`- ${CONFIRM_PARAGRAPH}`, `> ${CONFIRM_PARAGRAPH}`, `Intro line.\n${CONFIRM_PARAGRAPH}`]) {
+    const text = `# Title\n\n${hidden}\n`;
+    assert.deepEqual(checks.unlisted([skill('c/extra', paragraphs(text), [], text)], list), ['c/extra'], hidden.slice(0, 12));
+  }
 });

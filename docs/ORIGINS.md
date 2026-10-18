@@ -910,9 +910,9 @@ prose rewritten), `SKETCH-BRIEF.md` 3%, `RATIONALE-TEMPLATE.md` 5% (the same sec
 contributors then copy whatever shape exists.
 
 **What this version changes.**
-- The sketch phase no longer requires arena: by default it writes two sketches in sequence; because `arena` is a
-  typed skill, it suggests the user run `/arena`, or briefs two subagents. With an arena result, Screen runs only the
-  red flags.
+- The sketch phase no longer requires arena: by default it writes two sketches in sequence; for a larger design it
+  runs `arena` if that is installed (since P0.5; before, `arena` was typed and the skill suggested the user run it),
+  or briefs two subagents. With an arena result, Screen runs only the red flags.
 - Grounding uses `codebase-oracle` if it is installed, instead of pstack's how and why skills.
 - A table of not-implemented stubs for 13 languages.
 - Screen is its own phase, with the deletion test and the agent-contributor test; the red flags gain the vocabulary of
