@@ -46,9 +46,12 @@ reads it. Growth is the cost; a learning has to buy its place.
    For each learning that passes, put it in a scratch file (in the session's scratch folder, or a temporary folder
    you remove afterwards; never stash or touch the user's uncommitted work) and run
    `node "${CLAUDE_SKILL_DIR}/audit.mjs" --check <file>` from the project root. It scores the text against every unit
-   of both CLAUDE.md files, every memory and every skill, but cannot see a CLAUDE.md bullet of about a dozen content
-   words or fewer, so also read the short bullets of the project and global CLAUDE.md yourself every time. Its
-   RELATED verdict is a candidate EXTENDS: read that unit and decide. Classify against the closest unit:
+   of both CLAUDE.md files, every memory, every skill and every skill synced from claude.ai (`[synced skill]`). A
+   CLAUDE.md unit of 12 or fewer content words gets a word score (the share of its words found in your text) instead.
+   That score never makes a bullet of one or two content words a DUPLICATE, loses negation ("never", "not") and
+   treats "test" and "tests" as different words, so still read the short bullets of the project and global CLAUDE.md
+   yourself every time. Its RELATED verdict is a candidate EXTENDS: read that unit and decide. Classify against the
+   closest unit:
    - **DUPLICATE** (already stated): drop it. If it happened anyway, the existing rule failed as a rule, so the
      retrospective item becomes "make that rule enforceable" (Step 4), never a restatement.
    - **EXTENDS** (an existing unit covers the class; this is a new instance or mechanism): edit that unit in
@@ -92,7 +95,7 @@ Route each approved learning and make the edit:
 
 - **Behavioral rule / process change / anti-pattern** -> `CLAUDE.md` (project `./CLAUDE.md` for project rules, global `~/.claude/CLAUDE.md` for cross-project).
 - **Feedback, preference, or project fact** -> the **memory system**: write a memory file in the project's memory directory using the documented frontmatter, and add the one-line pointer to `MEMORY.md`. First check for an existing memory that already covers it and update that instead of duplicating.
-- **Skill improvement** -> edit the specific `SKILL.md` (project `.claude/skills/<name>/` or global `~/.claude/skills/<name>/`). Describe the exact edit, then make it on approval.
+- **Skill improvement** -> edit the specific `SKILL.md` (project `.claude/skills/<name>/` or global `~/.claude/skills/<name>/`). Describe the exact edit, then make it on approval. A DUPLICATE or EXTENDS whose closest unit is a `[synced skill]` is edited at that skill's source, never in the synced copy under `~/.claude/skills/synced/`, as for descriptions below.
 - **Project-specific context that isn't a rule** -> a project reference doc or a `reference`-type memory.
 - **A rule that failed as a rule (DUPLICATE)** -> a check where one can exist: a test, a lint rule, a script or a hook. Use `rule-to-hook` if it is installed; otherwise write the check and show it failing on the past mistake. A judgment rule with no mechanical check becomes a required step in the skill or workflow where it applies. A global rule's check is proposed where that rule lives, or say plainly that none fits.
 - **A skill that did not start** -> that skill's `description:` line: add the words the user actually said, rather than a rule elsewhere telling the agent to use it. Keep it within the limits of where the skill lives (the repository's own test, if it has one; otherwise short, since every description loads in every session and an over-budget listing drops other skills' descriptions); the growth counts under "Pay for growth". Edit the source (its repository, or the file the user uploads), never a synced copy under `~/.claude/skills/synced/` or a plugin cache, which an update overwrites; when the source is out of reach, give the edit as text. Never edit another author's plugin.

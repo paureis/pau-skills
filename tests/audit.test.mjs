@@ -107,7 +107,7 @@ test('CLI report: short units and synced skills stay out of the pairs and the la
   const r = runNode(AUDIT, { args: ['--home', home], cwd: project });
   assert.equal(r.code, 0, r.stderr);
   assert.doesNotMatch(r.stdout, /pnpm|linter/);
-  assert.doesNotMatch(r.stdout, /big-copy|deploy-notes|synced skill\]/);
+  assert.doesNotMatch(r.stdout, /big-copy|deploy-notes|\[synced skill\]/);
   assert.doesNotMatch(r.stdout, /shared-skill\/SKILL\.md\n\s*<-> \[[^\]]*\] shared-skill/);
   assert.match(r.stdout, /3 synced skills/);
   assert.match(r.stdout, /local-original\/SKILL\.md/);
