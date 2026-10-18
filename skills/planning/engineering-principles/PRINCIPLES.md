@@ -75,13 +75,21 @@ finds nothing left to do.
 **How to apply it.**
 - Anything a run leaves behind (a lock, a temporary file, a half-written record, a claimed job) must be recognizable
   as stale by the next run. Judge staleness by evidence that stays true wherever the previous run could have stopped,
-  not only in the common case. A lock file alone says nothing after a crash; a lock that records its process id,
-  checked against the running processes, does. A marker the next run cannot judge turns every crash into manual
-  cleanup.
-- Write to a temporary path and rename it into place, so a reader never sees half a file. Compare artifacts by
-  content, not by creation order or timestamp.
-- Prefer the forms that converge: create if missing (`mkdir -p`, `CREATE TABLE IF NOT EXISTS`), insert or update on
-  a key instead of a blind insert, set a value instead of appending to it.
+  not only in the common case. A lock file alone says nothing after a crash. A process id written into it is not
+  enough either: on storage shared by two hosts or containers, the other host sees no such process and takes a live
+  lock, and after a restart the id can belong to a new process, so a stale lock looks alive. Prefer a lock the
+  operating system drops when the process dies (`flock` or `fcntl` locks on Unix, `LockFileEx` on Windows, or the
+  database's own advisory lock); if the lock must be a file, record the process id, its start time and the host, and
+  check all three. A marker the next run cannot judge turns every crash into manual cleanup.
+- Write to a temporary file in the same folder as the target, then rename it into place, so a reader never sees half
+  a file. The rename is atomic only within one filesystem: from another folder, such as the system temporary folder,
+  it fails or becomes a copy that a reader can see half done. Compare artifacts by content, not by creation order or
+  timestamp.
+- Prefer the forms that converge: create if missing (`mkdir -p`), insert or update on a key instead of a blind
+  insert, set a value instead of appending to it. Existence is not the goal, though. `CREATE TABLE IF NOT EXISTS`
+  checks only that a table of that name exists: a table in an older shape passes, and the step "succeeds" with the
+  wrong schema. The convergent form compares the shape with the goal (the columns, types and indexes, or the version
+  a migration tool records) and applies the difference.
 - Ask the three questions: what happens if this runs twice in a row? What happens if the previous run crashed at
   each possible point? Does running it again reach the same end state? If any answer is "it depends on what was left
   behind", the operation needs a step that reconciles the current state with the goal.
