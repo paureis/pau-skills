@@ -123,9 +123,10 @@ function main(args) {
   const skillFiles = skillDirs.filter((d) => existsSync(d))
     .flatMap((d) => readdirSync(d).map((s) => join(d, s, 'SKILL.md')))
     .filter((f) => existsSync(f));
-  // Synced from claude.ai: synced/<id>/<name>/SKILL.md, with files such as manifest.json beside the folders.
+  // Synced from claude.ai: synced/<id>/<name>/SKILL.md, with files such as manifest.json beside the folders, so an
+  // entry that is not a folder is skipped, never read as one.
   const isDir = (p) => { try { return statSync(p).isDirectory(); } catch { return false; } };
-  const subdirs = (d) => (isDir(d) ? readdirSync(d).filter((n) => isDir(join(d, n))).map((n) => join(d, n)) : []);
+  const subdirs = (d) => (isDir(d) ? readdirSync(d).map((n) => join(d, n)) : []);
   const syncedFiles = subdirs(join(home, '.claude', 'skills', 'synced')).flatMap(subdirs)
     .map((d) => join(d, 'SKILL.md')).filter((f) => existsSync(f));
   const skillName = (f) => basename(dirname(f)) + '/SKILL.md';
