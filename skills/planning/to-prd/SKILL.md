@@ -10,8 +10,6 @@ metadata:
 
 This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user. Just synthesize what you already know.
 
-If you started this skill on your own, without the user typing its name or asking for it, first say in one or two lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
-
 ## Process
 
 1. **Explore the repo** to understand the current state of the codebase, if you haven't already.

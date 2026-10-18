@@ -34,8 +34,9 @@ pau-skills repository (no-verify, merge, destructive, secret and inline-backtick
 they are at https://github.com/paureis/pau-skills/tree/main/hooks/guards. Each has a pure decision function, a
 fail-open main block, and a table of commands to deny and to pass.
 
-If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
-lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
+If you started this skill on your own, without the user typing its name or asking for what it does, first say in one
+or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only matches its
+description is not asking for it. If the user asked for it, or the brief you are working from does, go ahead.
 
 ## 1. Pin the rule down
 

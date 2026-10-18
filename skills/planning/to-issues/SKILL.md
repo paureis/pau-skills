@@ -42,8 +42,6 @@ Ask: "Do these slices look right? Want to add, remove, or reorder any?"
 
 ### 4. Create the issues
 
-If you started this skill on your own, without the user typing its name or asking for it, first say in one or two lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
-
 Once approved, create each issue (as a file, a GitHub issue, or a ticket in whatever tracker the project uses). For each issue:
 
 #### Issue Template

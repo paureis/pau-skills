@@ -7,9 +7,6 @@ description: "Write a handoff so a fresh session or another tool can resume with
 
 Capture the full working context of this session into a structured handoff so a future session (a fresh Claude Code session, a new chat, or another tool) can pick up exactly where this one stopped, with no prior context.
 
-If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
-lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
-
 ## Modes
 
 - **Park (default in Claude Code)**: write the handoff to a file the next session reads. Default path: `HANDOFF.md` in the current working directory (mention it can be gitignored or deleted after use; the user may specify a different path). To resume: a new session reads that file and follows the instructions at its top.

@@ -9,21 +9,23 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT } from './helpers.mjs';
 
-const CONFIRM_PARAGRAPH = 'If you started this skill on your own, without the user typing its name or asking for it, first '
-  + 'say in one or two lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.';
+const CONFIRM_PARAGRAPH = 'If you started this skill on your own, without the user typing its name or asking for what it does, first '
+  + 'say in one or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that '
+  + 'only matches its description is not asking for it. If the user asked for it, or the brief you are working from '
+  + 'does, go ahead.';
 
-// Settled in the P0.5 plan check. Grouped by why the skill asks.
+// Settled with the owner after the P0.5 review: only skills whose cost has no other gate. Skills that already stop
+// for the user's yes before they write (retrospective, instructions-audit, to-issues, ci-cost-and-cadence,
+// project-setup), conversations the user can stop with a word (brainstorm, grill-me) and skills that write only a
+// local file or a proposal (handoff, to-prd, improve-codebase-architecture) do not ask twice.
 const CONFIRM_LIST = [
   // launches subagents or headless runs
   'agent-orchestration/arena', 'agent-orchestration/codebase-oracle', 'agent-orchestration/parallel-worktrees',
   'planning/agent-friendly-audit', 'verification/hillclimb', 'verification/skill-eval', 'verification/verify-app',
-  // takes over the session or sets a way of working
-  'agent-orchestration/lean-subagent-dev', 'agent-orchestration/methodology', 'planning/brainstorm', 'planning/grill-me',
-  // writes, commits or files outside the conversation
-  'guards/dependency-upgrade', 'guards/rule-to-hook', 'planning/architect', 'planning/improve-codebase-architecture',
-  'planning/to-issues', 'planning/to-prd', 'session-discipline/handoff', 'session-discipline/instructions-audit',
-  'session-discipline/project-setup', 'session-discipline/retrospective', 'session-discipline/session-close',
-  'verification/ci-cost-and-cadence',
+  // commits, pushes or installs with no other gate
+  'guards/dependency-upgrade', 'guards/rule-to-hook', 'planning/architect', 'session-discipline/session-close',
+  // sets the whole session's way of working
+  'agent-orchestration/lean-subagent-dev', 'agent-orchestration/methodology',
 ];
 
 // The words every copy starts with: a paragraph that starts this way but differs is a copy that drifted.

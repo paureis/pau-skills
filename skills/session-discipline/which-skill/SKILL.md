@@ -25,12 +25,11 @@ Keep the answer short. A list of every skill is not an answer.
 ## Which skills ask first
 
 Every skill can start on its own when the situation fits, and the user can also type any of them, for example
-`/pau-skills:grill-me`. These ask first when the agent started them without the user asking, because they launch
-subagents or headless runs, take over the session, or write outside the conversation: `arena`, `codebase-oracle` (big
-questions only), `parallel-worktrees`, `agent-friendly-audit`, `hillclimb`, `skill-eval`, `verify-app`,
-`lean-subagent-dev`, `methodology`, `brainstorm`, `grill-me`, `dependency-upgrade`, `rule-to-hook`, `architect`,
-`improve-codebase-architecture`, `to-issues` (before filing), `to-prd`, `handoff`, `instructions-audit` (before
-editing), `project-setup`, `retrospective`, `session-close`, `ci-cost-and-cadence` (before building).
+`/pau-skills:grill-me`. These ask first when the agent started them without the user asking for what they do, because
+they launch subagents or headless runs, commit, push or install with no other check, or change how the session works:
+`arena`, `codebase-oracle` (big questions only), `parallel-worktrees`, `agent-friendly-audit`, `hillclimb`,
+`skill-eval`, `verify-app`, `dependency-upgrade`, `rule-to-hook`, `architect`, `session-close`, `lean-subagent-dev`,
+`methodology`.
 
 ## Starting out
 

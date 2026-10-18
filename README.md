@@ -176,18 +176,20 @@ for this", "wrap up this session", "is this test any good"), and you can still t
 so each one is a short list of the phrases that should start it. `tests/context-budget.test.mjs` holds each
 description to 400 characters and all of them to 12,000 together.
 
-Some skills cost something when they run: they launch subagents or headless runs, take over the session, or write
-outside the conversation. When the agent starts one of these on its own, without you asking for it, it first says in
-one or two lines what it will do and what it will cost, and waits for your yes:
+Some skills cost something when they run, and nothing else in them stops for your yes first: they launch subagents
+or headless runs, commit, push or install with no other check, or change how the whole session works. When the agent
+starts one of these on its own, without you asking for what it does, it first says in one or two lines what it will
+do and what it will cost, and waits for your yes. A remark that only matches a description ("the code is getting
+messy") does not count as asking.
 
 - `arena`, `codebase-oracle` (big questions only), `parallel-worktrees`, `agent-friendly-audit`, `hillclimb`,
   `skill-eval`, `verify-app`;
-- `lean-subagent-dev`, `methodology`, `brainstorm`, `grill-me`;
-- `dependency-upgrade`, `rule-to-hook`, `architect`, `improve-codebase-architecture`, `to-issues` (before filing),
-  `to-prd`, `handoff`, `instructions-audit` (before editing), `project-setup`, `retrospective`, `session-close`,
-  `ci-cost-and-cadence` (before building).
+- `dependency-upgrade`, `rule-to-hook`, `architect`, `session-close`;
+- `lean-subagent-dev`, `methodology`.
 
 `tests/confirm-step.test.mjs` keeps this list and the skills in step.
+The other skills either cost little or already ask before they write (for example `retrospective` and `to-issues`
+show you their edits or issues and wait).
 
 ## Reference
 

@@ -24,8 +24,9 @@ Bundled files, open each when you reach its step:
 This is the light way of working: one builder, one checker, a short review. For work under a written contract, or
 where a defect costs money, credentials or data, step up (see "When to step up").
 
-If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
-lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
+If you started this skill on your own, without the user typing its name or asking for what it does, first say in one
+or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only matches its
+description is not asking for it. If the user asked for it, or the brief you are working from does, go ahead.
 
 ## 1. At the start of the session
 

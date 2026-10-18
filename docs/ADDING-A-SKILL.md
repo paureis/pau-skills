@@ -19,14 +19,17 @@ order; the scrub check and the validator at the end catch most of what gets forg
    skill could be picked for the same words, what makes this one different. At most 400 characters, all descriptions
    together at most 12,000, no XML-like tag such as `<word>`, and no other skill's name in backticks. Leave out what
    the body already says.
-   If the skill launches subagents or headless runs, takes over the session, or writes outside the conversation, add
-   it to `CONFIRM_LIST` in `tests/confirm-step.test.mjs` and to the lists in the README ("What loads on its own") and
+   If the skill launches subagents or headless runs, commits, pushes or installs with no other check, or changes how
+   the whole session works, and nothing in it already stops for the user's yes before that cost, add it to
+   `CONFIRM_LIST` in `tests/confirm-step.test.mjs` and to the lists in the README ("What loads on its own") and
    `which-skill`, and paste this paragraph into its `SKILL.md`, word for word, near the top (or at the start of the
    step that costs, when only one step does):
 
    ```
-   If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
-   lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
+   If you started this skill on your own, without the user typing its name or asking for what it does, first say in
+   one or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only
+   matches its description is not asking for it. If the user asked for it, or the brief you are working from does,
+   go ahead.
    ```
 
    Any skill can start another, so a mention of another skill says "use `<name>` if it is installed" for a step

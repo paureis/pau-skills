@@ -63,9 +63,6 @@ Two findings that usually matter:
 
 ## 4. Build with safeguards
 
-If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
-lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
-
 If the choice is the nightly model, `NIGHTLY.md` is the design and `templates/` the skeletons. For any option, read
 `TRAPS.md` before writing a workflow: most of the traps produce a green check that ran nothing.
 

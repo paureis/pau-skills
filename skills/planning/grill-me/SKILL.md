@@ -12,8 +12,6 @@ Interview the user relentlessly about every aspect of the plan or design until y
 
 If there is no plan yet, only a goal, grilling would lock in the first idea before any alternative exists. If `brainstorm` is installed, offer to run it first to widen the options. If it is not installed, ask the user for two or three ways to reach the goal (offer your own if they have none), then grill the one they pick. If the user would rather be grilled now, grill the idea they have, as they asked.
 
-If you started this skill on your own, without the user typing its name or asking for it, first say in one or two lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
-
 ## How to run it
 
 - **One question at a time.** Never dump a list. Resolve each branch before opening the next.

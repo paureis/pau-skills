@@ -11,9 +11,6 @@ This improves *process and skills*, which is different from documenting a delive
 
 The audit script used below is `${CLAUDE_SKILL_DIR}/audit.mjs`. Run it with `node` from the project root.
 
-If you started this skill on your own, without the user typing its name or asking for it, first say in one or two
-lines what it will do and what it will cost, and wait for a yes. If the user asked for it, go ahead.
-
 ## When to Use
 
 - After a multi-step task where corrections were needed, or the user says "retrospective", "what did we learn", "what should we improve".
