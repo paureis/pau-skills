@@ -123,7 +123,7 @@ premise have failed, write the premise down and test it before a third fix.
 ### Redesign from first principles
 - **When it applies:** Fitting a new requirement into an existing design.
 - **Rule:** Design as if the requirement had been known from the start, within the decisions the project has
-  recorded, then deliver that design in steps.
+  recorded, then deliver that design in steps; a restructure beyond the request waits for the user's yes.
 - **Sign you skipped it:** The requirement lives in a flag, a branch or an adapter beside the old design, and the
   docs and examples still describe the design without it.
 

@@ -327,6 +327,10 @@ from the start.
 - Work within the decisions the project has recorded (architecture decision records, a `docs/adr/` folder, a design
   document). Do not reopen one unless the new requirement makes it wrong; when it does, say so and let the user
   decide.
+- Keep to the size of the request. When the redesign goes beyond what the user asked for (a request to add one field
+  that would restructure a module), propose it with what it changes and what it costs, and wait for the user's yes
+  before you start it. If the answer is no, make the requested change in the current design, and say what the
+  redesign would have changed.
 - Carry the change through every reference: types, docs, examples, comments that explain the design.
 - Think through the whole redesign, then deliver it in steps. Each step is the smallest change that moves the code
   toward the target shape and leaves it working.
