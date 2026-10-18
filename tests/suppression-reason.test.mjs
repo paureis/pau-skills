@@ -2,7 +2,7 @@
 // suppression with no reason. It never blocks or approves.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import { isCodeFile, unexplained, decide } from '../hooks/verification/suppression-reason.mjs';
@@ -179,4 +179,117 @@ describe('suppression-reason: as a hook', () => {
       assert.equal(r.code, 0); assert.equal(r.stdout, ''); assert.equal(r.stderr, '');
     });
   }
+});
+
+describe('suppression-reason: review fixes', () => {
+  const edit = (file, after, before = '') => decide({ tool_name: 'Edit', tool_input: { file_path: file, old_string: before, new_string: after } });
+
+  // S1: a marker counts only where the tool honours it.
+  test('a comment that explains and names the directive is a reason, not a suppression', () => {
+    assert.equal(edit('src/a.ts', '// We need eslint-disable-next-line here: the CLI prints to stdout.\n// eslint-disable-next-line no-console\nrun();'), null);
+  });
+  test('a directive inside a string literal is not a suppression', () => {
+    assert.equal(edit('src/a.ts', 'const help = "// eslint-disable-next-line is banned here";\nconst t = \'// @ts-ignore\';'), null);
+    assert.equal(edit('app/a.py', 'msg = "use # noqa sparingly"\nother = \'# type: ignore\''), null);
+  });
+  test('prose in a comment that mentions a directive is not a suppression', () => {
+    assert.equal(edit('src/a.ts', '// Do not use @ts-ignore\nx.y();'), null);
+  });
+  test("writing the hook's own source reports nothing", () => {
+    const source = readFileSync(HOOK, 'utf8');
+    assert.equal(decide({ tool_name: 'Write', tool_input: { file_path: 'hooks/x.mjs', content: source } }, { readFile: () => null }), null);
+  });
+
+  // S2: the closer of an HTML comment is not a "-- reason".
+  test('a bare eslint directive in an HTML comment is reported', () => {
+    assert.ok(edit('web/A.vue', '<!-- eslint-disable-next-line vue/no-v-html -->\n<div v-html="x" />'));
+    assert.ok(edit('web/A.svelte', '<!-- eslint-disable-next-line -->\n{@html x}'));
+  });
+  test('an eslint directive with a reason in an HTML comment is silent', () => {
+    assert.equal(edit('web/A.vue', '<!-- eslint-disable-next-line vue/no-v-html -- trusted markdown from our CMS -->\n<div v-html="x" />'), null);
+  });
+
+  // S3: vendored and generated folders are judged relative to the project root.
+  test('a project inside a folder named build is checked', () => {
+    const root = '/home/me/build/proj';
+    const out = decide({ tool_name: 'Edit', tool_input: { file_path: `${root}/src/a.ts`, old_string: 'x', new_string: '// @ts-ignore\nx' } }, { root });
+    assert.ok(out);
+  });
+  test('source folders named build, out, gen or target below the root are checked', () => {
+    for (const p of ['src/build/a.ts', 'src/out/a.ts', 'lib/gen/a.py', 'src/target/a.rs']) assert.ok(isCodeFile(p), p);
+  });
+  test('build output at the project root is still skipped', () => {
+    for (const p of ['build/a.ts', 'out/a.js', 'gen/a.go', 'target/debug/a.rs', 'dist/a.js']) assert.equal(isCodeFile(p), false, p);
+  });
+
+  // S4: an error code alone is not a reason.
+  test('a TypeScript error code alone is not a reason', () => {
+    assert.ok(edit('src/a.ts', '// @ts-expect-error TS2322\nconst n: number = "x";'));
+    assert.ok(edit('src/a.ts', '// @ts-ignore: TS2339, TS2345\nx.y();'));
+  });
+
+  // S6: each edit of a MultiEdit is judged on its own; doc comments, license and encoding lines are not reasons.
+  test('a comment at the end of one MultiEdit edit does not explain a suppression in the next', () => {
+    const input = { tool_name: 'MultiEdit', tool_input: { file_path: 'src/a.ts', edits: [
+      { old_string: 'a()', new_string: 'a()\n// Load the config before anything else.' }, { old_string: 'b()', new_string: '// @ts-ignore\nb()' },
+    ] } };
+    assert.ok(decide(input));
+  });
+  test('a doc comment, a license header or an encoding line above is not a reason', () => {
+    assert.ok(edit('src/lib.rs', '/// Returns the answer.\n#[allow(dead_code)]\nfn f() {}'));
+    assert.ok(edit('src/a.ts', '/** The answer. */\n// @ts-ignore\nx.y();'));
+    assert.ok(edit('src/a.ts', '// SPDX-License-Identifier: MIT\n// eslint-disable-next-line no-console\nrun();'));
+    assert.ok(edit('app/a.py', '# -*- coding: utf-8 -*-\nimport os  # noqa'));
+  });
+
+  // S7: multi-line attributes carry their reason further down.
+  test('a multi-line Rust allow with a reason is silent; without one it is reported', () => {
+    assert.equal(edit('src/lib.rs', '#[allow(\n    dead_code,\n    reason = "used by the wasm build only"\n)]\nfn f() {}'), null);
+    assert.ok(edit('src/lib.rs', '#[allow(\n    dead_code,\n    unused_imports\n)]\nfn f() {}'));
+  });
+  test('a multi-line SuppressWarnings with a trailing comment is silent', () => {
+    assert.equal(edit('src/A.java', '@SuppressWarnings({\n    "unchecked",\n    "rawtypes"\n}) // raw lists from the legacy API\nvoid f() {}'), null);
+    assert.ok(edit('src/A.java', '@SuppressWarnings({\n    "unchecked",\n    "rawtypes"\n})\nvoid f() {}'));
+  });
+
+  // S8: big inputs stay inside the hook's 5 second timeout.
+  test('an input over the size cap is skipped silently', () => {
+    const big = '// @ts-ignore\n'.repeat(80000);
+    const t = Date.now();
+    assert.equal(edit('src/a.ts', big), null);
+    assert.ok(Date.now() - t < 1000);
+  });
+  test('a crafted input under the cap finishes quickly', () => {
+    const crafted = '// ' + 'word '.repeat(80000) + '\n' + '//nolint '.repeat(20000) + '\n';
+    const t = Date.now();
+    edit('pkg/a.go', crafted);
+    assert.ok(Date.now() - t < 2000, `took ${Date.now() - t} ms`);
+  });
+});
+
+// S5: the real Write path reads the file on disk.
+describe('suppression-reason: Write over a real file', () => {
+  const setup = () => {
+    const p = tempDir(); mkdirSync(join(p, 'src'));
+    writeFileSync(join(p, 'src', 'a.ts'), '// @ts-ignore\nx.y();\n// @ts-ignore\nz.w();\n');
+    return p;
+  };
+  const run = (p, content) => runNode(HOOK, { input: JSON.stringify({ tool_name: 'Write', cwd: p,
+    tool_input: { file_path: join(p, 'src', 'a.ts'), content } }), env: { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: '', PAU_SKILLS_DISABLE: '' } });
+  test('rewriting a file that already has bare suppressions is silent', () => {
+    const p = setup();
+    const r = run(p, '// @ts-ignore\nx.y();\n// @ts-ignore\nz.w();\nconst added = 1;\n');
+    assert.equal(r.code, 0); assert.equal(r.stdout, '');
+  });
+  test('adding one more is reported', () => {
+    const p = setup();
+    const r = run(p, '// @ts-ignore\nx.y();\n// @ts-ignore\nz.w();\n// @ts-ignore\nq.r();\n');
+    assert.match(JSON.parse(r.stdout).hookSpecificOutput.additionalContext, /adds 1 /);
+  });
+  test('a project under a folder named build is checked end to end', () => {
+    const base = tempDir(); const p = join(base, 'build', 'proj'); mkdirSync(join(p, 'src'), { recursive: true });
+    writeFileSync(join(p, 'src', 'a.ts'), 'x.y();\n');
+    const r = run(p, '// @ts-ignore\nx.y();\n');
+    assert.match(r.stdout, /suppression-reason/);
+  });
 });

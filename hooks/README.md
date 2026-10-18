@@ -98,14 +98,17 @@ It runs `git` read-only (status and the current branch) only when a command need
 
 | Option | Default | Meaning |
 |---|---|---|
-| `ignorePaths` | `[]` | Globs of files never checked. Vendored and generated paths (`node_modules/`, `vendor/`, `third_party/`, `dist/`, `build/`, `target/`, `generated/`, `*.min.*`, protobuf output) are always skipped. |
+| `ignorePaths` | `[]` | Globs (relative to the project) of files never checked. Always skipped: `node_modules/`, `vendor/`, `third_party/` and `generated/` folders anywhere, `dist/`, `build/`, `out/`, `target/`, `coverage/` and `gen/` at the project root, `*.min.*` and protobuf output. |
 
-It only adds a note to the agent's context; it never asks, denies or approves. "No reason" is this hook's own
-criterion: a reason is free text in the tool's own syntax (`-- why` for eslint, rubocop and phpcs, text after
-`@ts-expect-error` or `@ts-ignore`, text after the codes for `# noqa`, `# type: ignore`, `pylint: disable`, `//nolint`,
-`NOLINT` and `#pragma warning disable`, Rust `reason = "..."`), a trailing comment after an attribute or annotation, or
-a comment on the line just above. A rule code alone is not a reason. Formatter directives such as `prettier-ignore`
-are not counted. Only an increase is reported, so existing suppressions stay quiet until someone adds another.
+It only adds a note to the agent's context; it never asks, denies or approves. A directive counts only where the tool
+honours it: at the start of a comment, outside string literals, or as the attribute or annotation itself. "No reason"
+is this hook's own criterion: a reason is free text in the tool's own syntax (`-- why` for eslint, rubocop and phpcs,
+text after `@ts-expect-error` or `@ts-ignore`, text after the codes for `# noqa`, `# type: ignore`, `pylint: disable`,
+`//nolint`, `NOLINT` and `#pragma warning disable`, Rust `reason = "..."` anywhere in the attribute), a trailing
+comment after an attribute or annotation, or a plain comment on the line just above (a doc comment, license header,
+shebang or encoding line does not count). Rule and error codes alone (`TS2322`, `E501`, `no-console`) are not a
+reason. Formatter directives such as `prettier-ignore` are not counted. Only an increase is reported, so existing
+suppressions stay quiet until someone adds another. Edits over 1 MB are skipped.
 
 ### verify-before-done
 
