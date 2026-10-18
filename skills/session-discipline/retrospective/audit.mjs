@@ -18,12 +18,14 @@
  *
  * Short CLAUDE.md units (12 or fewer content words) have too few bigrams for that: "Use pnpm, never npm." has two,
  * and an unrelated sentence sharing one scores 0.500. --check scores them instead by the share of the unit's
- * distinct content words found in the proposal, code spans included (a word score: DUPLICATE at 3 or more shared
- * words and a share of 0.75, RELATED at 2 and 0.5). Known limits: a unit of one or two content words can never be
- * DUPLICATE (read those yourself), negation is lost ("never" and "not" are stopwords), and word forms differ ("test"
- * against "tests"). Synced skills are scored by --check, labelled [synced skill]; a skill that is both local and
- * synced is one unit with both labels. Short units and synced skills stay out of the pairs report and the largest
- * units: synced skills are edited at their source, and synced files run to tens of KB.
+ * distinct content words found in the proposal, every word inside a code span included whatever its length (a word
+ * score: DUPLICATE at 3 or more shared words and a share of 0.75, RELATED at 2 and 0.5). A word-score verdict is a
+ * candidate: the agent reads the bullet (one line) and confirms it before dropping or merging a learning. Known
+ * limits: a unit of one or two content words can never be DUPLICATE (read those yourself), negation is lost ("never"
+ * and "not" are stopwords), and word forms and synonyms differ ("test" against "tests", "ask" against "asking",
+ * "before" against "first"). Synced skills are scored by --check, labelled [synced skill]; a skill that is both
+ * local and synced is one unit with both labels. Short units and synced skills stay out of the pairs report and the
+ * largest units: synced skills are edited at their source, and synced files run to tens of KB.
  */
 import { readFileSync, readdirSync, existsSync, statSync, realpathSync } from 'node:fs';
 import { join, basename, dirname } from 'node:path';
@@ -47,14 +49,19 @@ export function verdict(top) {
   return top >= DUPLICATE_AT ? 'DUPLICATE/EXTENDS' : top >= RELATED_AT ? 'RELATED' : 'NEW';
 }
 
-// Short units: the same words as tokens(), but a code span keeps its words ("`pnpm`" is "pnpm", not "code"), because
-// in a short bullet the tool named in the span is often the whole rule.
+// Short units: the same words as tokens(), but a code span keeps its words ("`pnpm`" is "pnpm", not "code"), of any
+// length ("`rg`" is "rg"), because in a short bullet the tool named in the span is often the whole rule. The proposal
+// keeps words of any length, so a plain "rg" in it matches.
 export const SHORT_MAX = 12;
-export const words = (s) => s.toLowerCase().replace(/`/g, ' ').replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((w) => w && !STOP.has(w) && w.length > 2);
+const plainWords = (s) => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((w) => w && !STOP.has(w));
+export const words = (s) => [
+  ...plainWords(s.replace(/`[^`]*`/g, ' ')).filter((w) => w.length > 2),
+  ...[...s.matchAll(/`([^`]*)`/g)].flatMap((m) => plainWords(m[1])),
+];
 
 /** Word score of a short unit against a proposal: { shared, total, score } over the unit's distinct content words. */
 export function wordScore(unitText, proposalText) {
-  const mine = new Set(words(unitText)); const theirs = new Set(words(proposalText));
+  const mine = new Set(words(unitText)); const theirs = new Set(plainWords(proposalText));
   let shared = 0; for (const w of mine) if (theirs.has(w)) shared++;
   return { shared, total: mine.size, score: mine.size ? shared / mine.size : 0 };
 }
