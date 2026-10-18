@@ -18,6 +18,7 @@ const NO_REASON = [
   ['@ts-expect-error bare', 'src/a.tsx', 'x.y();', '// @ts-expect-error\nx.y();'],
   ['@ts-ignore with only a colon', 'src/a.ts', 'x.y();', '// @ts-ignore:\nx.y();'],
   ['//nolint with an empty comment', 'pkg/a.go', 'f()', 'f() //nolint:errcheck //'],
+  ['eslint with dots for a reason', 'src/a.ts', 'run();', '// eslint-disable-next-line no-console -- ...\nrun();'],
   ['# noqa', 'app/a.py', 'import os', 'import os  # noqa'],
   ['# noqa with codes only', 'app/a.py', 'import os', 'import os  # noqa: F401, E501'],
   ['# type: ignore', 'app/a.py', 'x = f()', 'x = f()  # type: ignore'],
