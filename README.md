@@ -122,7 +122,8 @@ context was compacted.
 - `to-prd` and `to-issues` turn the decided plan into a spec and vertical-slice issues.
 - `codebase-oracle` answers questions about the code from the code and its history, and labels how strong the
   evidence is for each answer.
-- `improve-codebase-architecture` finds refactors that make modules deeper and easier to test.
+- `improve-codebase-architecture` finds refactors that make modules deeper and easier to test, and carries one out
+  behind a characterization test when you ask.
 - `architect` sketches the types and signatures in two different shapes before any code is written, and builds
   against the one that survives the red flags.
 
@@ -202,9 +203,11 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 
 ### session-discipline
 
-- **[which-skill](skills/session-discipline/which-skill/SKILL.md)**: Recommends the skill or sequence of skills that fits your situation.
-- **[retrospective](skills/session-discipline/retrospective/SKILL.md)**: Turns a session's corrections into rule, memory or skill edits, gated by `audit.mjs`; `--stale`
-  finds rules that cite files that are gone.
+- **[which-skill](skills/session-discipline/which-skill/SKILL.md)**: Recommends the skill or sequence of skills that fits your situation, and what
+  to do about a run that went wrong.
+- **[retrospective](skills/session-discipline/retrospective/SKILL.md)**: Turns a session's corrections into rule, memory or skill edits, gated by `audit.mjs`; drops
+  an edit that would not change what a future agent does, and catches decisions that were right for the wrong reason;
+  `--stale` finds rules that cite files that are gone.
 - **[session-close](skills/session-discipline/session-close/SKILL.md)**: Closes a session in a fixed order: clean tree, retrospective, roadmap and log, handoff, commit
   and push.
 - **[handoff](skills/session-discipline/handoff/SKILL.md)**: Writes a handoff the next session can resume from, after a retrospective gate.
@@ -221,7 +224,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[mutation-test](skills/verification/mutation-test/SKILL.md)**: `mutate.sh` applies one mutation (a real past fix reversed, when there
   is one) and checks by script that it applied, changed behaviour, and was restored; `--refactor` checks that a pure
   refactor leaves the test green.
-- **[evaluator](skills/verification/evaluator/SKILL.md)**: A hostile evaluator in a forked context grades each contract assertion with reproducible evidence.
+- **[evaluator](skills/verification/evaluator/SKILL.md)**: A hostile evaluator in a forked context grades each contract assertion with reproducible evidence of
+  the right kind for the change, marks a check that could not run as inconclusive, and names the patch its verdict
+  covers.
 - **[flaky-test-hunt](skills/verification/flaky-test-hunt/SKILL.md)**: Reproduces an intermittent failure with `repeat.mjs`, classifies the cause, and proves the
   fix with a measured failure rate.
 - **[migration-review](skills/verification/migration-review/SKILL.md)**: Reviews a schema or data migration for locks, compatibility with running code, data safety
@@ -270,7 +275,8 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   highest layer that holds it (architecture, types, lint or CI with a ratchet, a test, or a hook for what the agent
   does), tested, proven on a past mistake and recorded in a rule table, with hook templates in JavaScript and Python
   and `ratchet.mjs` for patterns already common.
-- **[safe-merge](skills/guards/safe-merge/SKILL.md)**: Merges a PR pinned to its head commit and deletes the branch only if no open PR is based on it.
+- **[safe-merge](skills/guards/safe-merge/SKILL.md)**: Merges a PR pinned to its head commit and deletes the branch only if no open PR is based on it;
+  before merging on an older review or evaluator verdict, compares patch ids to see whether the verdict still holds.
 - **[dependency-upgrade](skills/guards/dependency-upgrade/SKILL.md)**: Plans and applies dependency and toolchain upgrades in any ecosystem, step by step.
 - **[dependency-security-audit](skills/guards/dependency-security-audit/SKILL.md)**: A ranked vulnerability, reachability and supply-chain audit for any ecosystem and
   container image, built on native audit tools and OSV-based scanners, not a raw scanner dump.
@@ -281,7 +287,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[grill-me](skills/planning/grill-me/SKILL.md)** (adapted): Interviews you one question at a time until every branch of a plan is decided.
 - **[to-prd](skills/planning/to-prd/SKILL.md)** (adapted): Synthesizes the conversation into a PRD without re-interviewing.
 - **[to-issues](skills/planning/to-issues/SKILL.md)** (adapted): Splits a plan into vertical-slice issues for any tracker.
-- **[improve-codebase-architecture](skills/planning/improve-codebase-architecture/SKILL.md)** (adapted): Finds refactors that turn shallow modules into deep ones.
+- **[improve-codebase-architecture](skills/planning/improve-codebase-architecture/SKILL.md)** (adapted): Finds refactors that turn shallow modules into deep ones,
+  screened for red flags for agent contributors and for reader load, talks the chosen one through, and on request
+  carries it out behind a characterization test, on its own branch.
 - **[architect](skills/planning/architect/SKILL.md)** (adapted): Sketches types and signatures with not-implemented bodies before
   writing code, compares at least two shapes against red flags for agent contributors, then implements against the
   sketch test first and scraps it when deviations repeat.
