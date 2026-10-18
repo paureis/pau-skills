@@ -8,6 +8,9 @@ import { repo } from './helpers.mjs';
 
 const DIR = repo('skills', 'planning', 'engineering-principles');
 const PARTS = ['When it applies', 'Rule', 'Sign you skipped it'];
+// What the opening of PRINCIPLES.md promises for every section: the rule and why it holds (a plain paragraph before
+// the first labelled one), how to apply it, and the sign you skipped it.
+const SECTION_LABELS = ['How to apply it', 'Sign you skipped it'];
 
 // Lines outside fenced code blocks, so an example in a fence is never read as a heading.
 function outsideFences(text) {
@@ -85,7 +88,15 @@ export function problems(skillText, principlesText) {
   const shared = names.filter((n) => titles.includes(n));
   const order = titles.filter((t) => names.includes(t));
   if (shared.join('\n') !== order.join('\n')) out.push('the index and PRINCIPLES.md list the principles in different orders');
-  for (const s of sections) if (!s.body.trim()) out.push(`PRINCIPLES.md section "${s.name}" is empty`);
+  for (const s of sections) {
+    if (!s.body.trim()) { out.push(`PRINCIPLES.md section "${s.name}" is empty`); continue; }
+    const first = s.body.trim().split(/\n\s*\n/)[0];
+    if (/^\*\*/.test(first)) out.push(`PRINCIPLES.md section "${s.name}" has no rule paragraph before its labelled parts`);
+    for (const label of SECTION_LABELS) {
+      const n = s.body.split('\n').filter((l) => l.startsWith(`**${label}.**`)).length;
+      if (n !== 1) out.push(`PRINCIPLES.md section "${s.name}" has ${n} "${label}" paragraphs, not one`);
+    }
+  }
   return out;
 }
 
@@ -96,10 +107,11 @@ test('every principle in the index has a section of the same name in PRINCIPLES.
   assert.ok(parseIndex(skill).length >= 10, 'the index lists the principles');
 });
 
-test('the check catches a missing part, a renamed section, a reordering and an empty section', () => {
+test('the check catches a missing part, a renamed section, a reordering, an empty section and a missing paragraph', () => {
   const entry = (name, parts = PARTS) => [`### ${name}`, ...parts.map((p) => `- **${p}:** text for ${p}.`), ''].join('\n');
   const skill = ['# X', '', '## Index', '', entry('Alpha'), entry('Beta'), '## After', '', '### Not an entry', ''].join('\n');
-  const principles = '# Detail\n\n## Alpha\n\nBody.\n\n## Beta\n\nBody.\n';
+  const body = 'Body.\n\n**How to apply it.** Steps.\n\n**Sign you skipped it.** A sign.\n';
+  const principles = `# Detail\n\n## Alpha\n\n${body}\n## Beta\n\n${body}`;
   assert.deepEqual(problems(skill, principles), [], 'a matching pair passes');
   assert.deepEqual(parseIndex(skill).map((e) => e.name), ['Alpha', 'Beta'], 'only entries under ## Index count');
 
@@ -112,11 +124,20 @@ test('the check catches a missing part, a renamed section, a reordering and an e
     'PRINCIPLES.md section "Gamma" is not in the index',
   ]);
 
-  const reordered = '# Detail\n\n## Beta\n\nBody.\n\n## Alpha\n\nBody.\n';
+  const reordered = `# Detail\n\n## Beta\n\n${body}\n## Alpha\n\n${body}`;
   assert.deepEqual(problems(skill, reordered), ['the index and PRINCIPLES.md list the principles in different orders']);
 
-  const empty = principles.replace('## Beta\n\nBody.\n', '## Beta\n\n');
+  const empty = `# Detail\n\n## Alpha\n\n${body}\n## Beta\n\n`;
   assert.deepEqual(problems(skill, empty), ['PRINCIPLES.md section "Beta" is empty']);
+
+  const noSignParagraph = `# Detail\n\n## Alpha\n\n${body}\n## Beta\n\n${body.replace('**Sign you skipped it.** A sign.\n', '')}`;
+  assert.deepEqual(problems(skill, noSignParagraph), ['PRINCIPLES.md section "Beta" has 0 "Sign you skipped it" paragraphs, not one']);
+
+  const noHow = `# Detail\n\n## Alpha\n\n${body.replace('**How to apply it.** Steps.\n\n', '')}\n## Beta\n\n${body}`;
+  assert.deepEqual(problems(skill, noHow), ['PRINCIPLES.md section "Alpha" has 0 "How to apply it" paragraphs, not one']);
+
+  const noRule = `# Detail\n\n## Alpha\n\n${body.replace('Body.\n\n', '')}\n## Beta\n\n${body}`;
+  assert.deepEqual(problems(skill, noRule), ['PRINCIPLES.md section "Alpha" has no rule paragraph before its labelled parts']);
 
   const wrapped = skill.replace('- **Rule:** text for Rule.', '- **Rule:**\n  text on the next line.');
   assert.deepEqual(problems(wrapped, principles), [], 'a part may wrap onto indented lines');
