@@ -60,7 +60,7 @@ for turn in $(seq 1 "$MAX_TURNS"); do
   if [ "$(git hash-object "$STATE/done.sh")" != "$HASH" ]; then reason='predicate changed'; break; fi
   if bash "$STATE/done.sh" > "$STATE/done.out" 2>&1; then reason='predicate met'; break; fi
   if [ "$turn" = 1 ]; then session=(--session-id "$SID"); else session=(--resume "$SID"); fi
-  claude -p "${session[@]}" --permission-mode acceptEdits --strict-mcp-config \
+  claude -p "${session[@]}" --permission-mode acceptEdits --strict-mcp-config --add-dir "$STATE" \
     --allowedTools "${ALLOW[@]}" --disallowedTools "${DENY[@]}" \
     --max-budget-usd "$TURN_USD" --output-format stream-json --verbose \
     "Overnight run, turn $turn. Read $STATE/RUN.md and follow it (with the overnight-run skill, step 5, if it is available). Do at most $PER_TURN iterations, then end the turn." \
@@ -68,7 +68,7 @@ for turn in $(seq 1 "$MAX_TURNS"); do
   echo "$(date -u +%FT%TZ) turn $turn exit $?" >> "$STATE/loop.out"
 done
 echo "$(date -u +%FT%TZ) loop ended: $reason" >> "$STATE/loop.out"
-claude -p --resume "$SID" --permission-mode acceptEdits --strict-mcp-config \
+claude -p --resume "$SID" --permission-mode acceptEdits --strict-mcp-config --add-dir "$STATE" \
   --allowedTools "${ALLOW[@]}" 'Agent' --disallowedTools "${DENY[@]}" \
   --max-budget-usd "$TURN_USD" --output-format stream-json --verbose \
   "The overnight loop ended: $reason. Follow steps 6 to 8 of the overnight-run skill (stop, morning audit, summary), and write $STATE/summary.md." \
@@ -80,6 +80,8 @@ Notes on the script:
 - The allow rules: one per command the run needs. A rule covers one command, so `a && b` needs both allowed. Add
   the bare form too (`'Bash(pytest)'` beside `'Bash(pytest *)'`) when the command runs with no arguments. Deny rules
   win over allow rules. Add the project's own deploy, release and data commands to `DENY`.
+- `--add-dir "$STATE"` lets the file tools read and write `RUN.md`, `resume.md` and `summary.md`, which sit outside
+  the worktree. Without it, a turn's writes there are refused.
 - `--strict-mcp-config` with no `--mcp-config` gives the turns no MCP server, which removes every mail, chat and
   tracker tool in one step (and any `send_later`-style tool with them). Leave it off only for a server the task
   needs, and deny that server's sending tools.

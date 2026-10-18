@@ -77,7 +77,10 @@ whole run.
    `rm -rf` outside the worktree); and messaging people (mail, chat, issue and pull request comments, `gh`). Never a
    blanket bypass: no `--dangerously-skip-permissions`, no `bypassPermissions` mode. In a session that stays open, a
    permission prompt waits until morning, so the same rules go into `.claude/settings.local.json`
-   (`permissions.allow` and `permissions.deny`) before the user leaves.
+   (`permissions.allow` and `permissions.deny`) before the user leaves. A run cannot read the flags it was started
+   with: take them from the user's message or from the settings file, and copy them into `RUN.md`. The state folder
+   and the worktree are outside the repository, so a headless run also needs `--add-dir` for their parent folder,
+   or its file tools cannot write there.
 6. **The work can be thrown away**: a fresh worktree on its own branch (step 3) and nothing pushed, so a bad night
    costs one branch.
 
