@@ -275,7 +275,10 @@ Facts (Claude Code documentation, skills page, checked 2026-10-17):
   quoted; remarks and questions are written as situations.
 - A skill starts another one directly ("use `x` if it is installed") for a step inside the work the user asked for,
   and offers it ("offer to run `x` if it is installed") for a next step or while the current skill is read-only.
-- After each upload, a new session measures the listing with `/context`.
+- After each upload, a new session measures the listing with `/context`, and asks "List every skill in your skill
+  listing that has no description"; the answer should be none.
+- The listing's budget is 1% of the context window unless `SLASH_COMMAND_TOOL_CHAR_BUDGET` (characters) raises it.
+  The owner sets it to 80000 on each computer and in the default cloud environment (see `docs/INSTALL.md`).
 
 ## Work items
 
@@ -301,7 +304,7 @@ section with the MIT text, copyright 2026 Lauren Tan, listing adapted files as t
 "not just X but Y"; chatbot phrases; filler), skipping code blocks and inline code. Check `evals/project-setup/grade.mjs`
 for regexes to reuse. Keep this repository's punctuation rules. Fix whatever the new rules find.
 
-**P0.5 Every skill loads on its own** (`in progress`, orchestrator plus builders, touches every skill). Decision 7.
+**P0.5 Every skill loads on its own** (`done`, orchestrator plus builders, touches every skill). Decision 7.
 
 Why. Typed skills cost the owner effort: they must remember each skill's name and what it does. A skill the agent can
 start from the user's own words ("help me brainstorm", "close the session") is used more. The tier limits came from
@@ -664,9 +667,8 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 2. Done: N1 verify-app, N2 arena with N3 architect, N4 bug-fix.
 3. Done: N5 hillclimb, N6 agent-friendly-audit with N10 sharpen, N7 skill-eval, P1.1 pack-skills, N11 brainstorm.
 4. Done: M1 with M3, M4 with M6, M2 rule-to-hook, M7 codebase-oracle (the third batch).
-5. **Next: P0.5, every skill loads on its own** (decision 7), before any new work, so the fourth batch is built
-   under the new rule. Part B, trimming the owner's plugins, runs in the same session.
-6. **Then the fourth batch:** M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M11
+5. Done: P0.5, every skill loads on its own (decision 7), with Part B, trimming the owner's plugins.
+6. **Next: the fourth batch:** M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M11
    small additions (one builder). M10 `which-skill` is a shared file the orchestrator owns, so the orchestrator does it
    in that batch's integration pass. P1.2 and P1.3 can ride along as a small fifth builder.
 7. N8 overnight-run, N9 engineering-principles.
@@ -723,3 +725,20 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   Still open for the owner, from the pull request: whether `lean-subagent-dev` is "adapted" (only its copy of
   `TRIAGE.md` shares pstack text), the effort split per role, the new `metadata.upstream-pstack` key in `tdd`, and the
   ratchet failing when the count drops until the baseline is lowered.
+- 2026-10-18: P0.5 every skill loads on its own, merged as [pull request 19](https://github.com/paureis/pau-skills/pull/19).
+  Four builders by plugin group, each brief checked by a read-only subagent first; a fresh reviewer, a cold run of 20
+  headless sessions (10 plain requests, half with stubs of the owner's other plugins), one fix round and a second look
+  of six more runs. The owner chose the confirm wording and trimmed the confirm list to 13. Descriptions went from
+  18,298 to 11,559 characters. All 34 skills were zipped with `pack-skills --all`, uploaded and confirmed synced.
+  Part B, measured locally on the owner's 1M window:
+  - before: Skills 9.9k tokens (1.0%, at the cap), 125 skills listed with no description; the upload alone did not
+    move the number, because the listing was still full;
+  - after turning off 18 synced plugins (sales, legal, finance, human-resources, marketing, common-room, apollo,
+    brand-voice, customer-support, slack-by-salesforce, enterprise-search, engineering, operations, product-management,
+    data, design, productivity, cowork-plugin-management) and four marketplace plugins (superpowers,
+    claude-md-management, code-review, context7), plus Vercel's 33 skills, and moving 13 stale local copies of uploaded
+    skills out of `~/.claude/skills/`: 10k (still at the cap), 75 with no description;
+  - after `SLASH_COMMAND_TOOL_CHAR_BUDGET=80000`: Skills 16.8k (1.7%), none with no description, locally and in a new
+    cloud session (the variable set in the default cloud environment).
+  A synced plugin disabled only with `claude plugin disable <name>@synced` still listed its skills; turning it off on
+  claude.ai (Customize, Plugins) removed them. The skill count stays at 34, so the profile README did not change.

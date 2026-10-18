@@ -92,6 +92,24 @@ example `skills/session-discipline/project-setup/`) to `~/.claude/skills/project
 `.claude/skills/project-setup/` in one repository. It then runs as `/project-setup`. When a skill mentions another
 skill, it is an optional extra, and the skill says what to do without it.
 
+## When skills show without a description
+
+Claude Code puts every skill's description into each session, in a listing capped at 1% of the context window. When
+the listing is full, it drops the descriptions of the least used skills and keeps only their names, and the agent can
+then start those skills only when you name them. To check, ask a new session: "List every skill in your skill listing
+that has no description." If the list is not empty:
+
+1. Turn off plugins you do not use. On claude.ai, Customize, Plugins, open the plugin and turn it off; that reaches
+   every session. `claude plugin disable <name>@<source>` turns off one on a single computer, but a plugin synced
+   from claude.ai keeps its skills listed until it is also turned off there.
+2. Remove old local copies of skills you also uploaded: a folder in `~/.claude/skills/` with the same name as one in
+   `~/.claude/skills/synced/` loads the same skill twice.
+3. Raise the budget with the `SLASH_COMMAND_TOOL_CHAR_BUDGET` environment variable, in characters (80000 is about 2%
+   of a 1M window). On a computer, set it as a user environment variable and restart Claude; on Windows,
+   `[Environment]::SetEnvironmentVariable('SLASH_COMMAND_TOOL_CHAR_BUDGET', '80000', 'User')`. For cloud sessions,
+   add it to the cloud environment's variables (the environment menu in a session's title bar, then Edit); every new
+   session in that environment picks it up.
+
 ## Turning things off
 
 ```bash
