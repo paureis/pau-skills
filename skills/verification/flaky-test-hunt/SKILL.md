@@ -36,7 +36,7 @@ Reference files, read when you reach their phase:
 ## Phase 1. Capture the evidence
 
 Before running anything, collect what already exists. Read it from the repository and CI; ask the user only what
-those cannot answer.
+those cannot answer. For a CI failure, do "Is it a flake at all?" below first.
 
 - [ ] The exact test id (file, class, name, parameters) and the full failure output of at least one failing run:
       assertion message, stack trace, and the lines before it. Save it; later phases compare against it.
@@ -50,8 +50,35 @@ those cannot answer.
 - [ ] Whether the failure output is the same every time. Two different messages are often two different problems.
 - [ ] The test runner and how CI invokes it (the actual command in the workflow, with its flags, env and parallelism).
 
+### Is it a flake at all?
+
+When the failure is in CI, and above all when the question is "can we just retry it" or "it passes locally", classify
+it before treating it as flaky, in this order:
+
+1. **Is the failing code in the diff?** Compare the failing test and the code it covers with the branch's changes
+   (`git diff --name-only origin/<base>...HEAD`). If they do not overlap, suspect a stale base and check it before
+   anything else. A local run that fails the same way does not rule it out: a branch that lacks the base's fix fails
+   the same way everywhere. Run `git fetch`, then `git merge-base --is-ancestor origin/<base> HEAD`. Exit 0 means
+   the branch contains the base tip; exit 1 means the branch is behind, so look at what the base has for the failing
+   code (`git log HEAD..origin/<base> -- <files>`). A fix there means the answer is to update the branch, not to
+   retry or to fix it again; offer to bring the branch up to date the way the project does (merge or rebase), so CI
+   runs once on the result. Do not edit code outside the branch's diff in this hunt. For a GitHub `pull_request` run
+   (and any CI that tests a merged result), CI did not test the branch: it tested a merge of the branch into the
+   base as it was then. The checkout step's log names that commit (`HEAD is now at <sha> Merge <head> into <base>`);
+   compare against that SHA and its first parent, not against your local branch, and check whether the base branch
+   itself is red at that commit. If it is, the failure is not this branch's.
+2. **One re-run at most, as a diagnostic.** A single re-run shows whether the failure repeats. It is never the fix
+   (see the rules above). Running the same test once locally is free and counts. A CI re-run costs runner minutes,
+   so ask before starting it unless the user asked for a re-run; a question such as "can we just retry it?" is not
+   that request. Do not re-run a second time.
+3. **An identical second failure is not a flake.** Same test, same message, same commit, and step 1 found no stale
+   base: it fails every time. End the hunt, report it as a consistent failure, and offer to run `bug-fix` if it is
+   installed; without it, debug it as an ordinary failing test from the saved output.
+4. Only a failure that passes on a re-run of the same commit, changes between runs, or fails only sometimes in CI
+   history goes on to Phase 2.
+
 Done when you can state the failing test, one or more saved failure outputs, the historical frequency (or "unknown"),
-the environments it fails in, and the CI command.
+the environments it fails in, and the CI command, and, for a CI failure, which of the cases above it is.
 
 ## Phase 2. Reproduce by repetition, with a measured rate
 
