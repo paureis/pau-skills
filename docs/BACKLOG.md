@@ -777,5 +777,6 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   parallel, each brief checked by a read-only subagent first; every item had a fresh reviewer, one fix round and a
   second look, and M5, M8, M9 and M11 had cold runs as headless sessions. Reviewers found a must-fix or serious finding
   in every item. The 10 changed skills were zipped with `pack-skills --since 7e06226` and sent to the owner; all
-  replace an existing skill. `pau-skills-hooks` went to 0.2.0 for the hook. The skill count stays at 34, so the
+  replace an existing skill, and the owner uploaded them to claude.ai. `pau-skills-hooks` went to 0.2.0 for the hook,
+  and the owner updated it on their computers. The skill count stays at 34, so the
   profile README did not change. Follow-ups: P1.6 to P1.8.
