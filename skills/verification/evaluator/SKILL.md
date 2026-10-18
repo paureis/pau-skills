@@ -33,12 +33,13 @@ What a live reproduction is depends on what changed:
 | --- | --- |
 | CLI | Run the real command the way a user would; show the command line, its output and its exit code. |
 | Parser, serializer or migration | Run a saved real input (a captured file, a copy of real data with secrets removed) through the real code; show the output or the resulting schema. |
-| Storage | Write a value through the system, then read it back through the system; show both. |
+| Storage | Write a value through the system, then read it back through the system; when the assertion is about the stored form (encrypted, in UTC, a column another reader uses), also read the raw stored value (SQL, file bytes). Show both. |
 | HTTP or UI | Drive the running app: requests with `curl` or the project's own client, or the changed flow in a browser. |
 | Config or build | Run the build or the program that reads the config (the project's own build: `make`, `cargo build`, `go build ./...`, `mvn package`, `npm run build`, `docker build`) and show the change take effect. |
 
-A saved real input run through the real parser counts as live behavior of that parser; a recording that stands in for
-a live dependency (a replayed HTTP cassette, a mocked database) does not.
+A saved real input run through the real parser counts as live behavior of that parser; a recording or a local
+stand-in for a live dependency the assertion names (a replayed HTTP cassette, a mocked database, a local echo server)
+does not.
 
 If the project has a verification skill (`.claude/skills/verify-<app>/`), a drive through it counts as a live
 reproduction: follow its Launch, Doctor, Drive and Cleanup sections, and cite the files in the evidence folder it
@@ -97,28 +98,32 @@ The builder tested the happy path. Assume it works. Spend your effort where it d
 Start with the commit you evaluated:
 
 ```
-Evaluated:     <commit sha>, patch id <id> against <base>   (or: patch id not computed: <why>)
+Evaluated:     <commit sha>, patch id <id> against <base>   (or: <commit sha>, patch id not computed: <why>)
 ```
 
-Compute it in the repository under evaluation:
+Compute it in the repository under evaluation, before you run anything that writes files there. If
+`git status --porcelain` prints anything, the id would describe code you did not evaluate: write
+`patch id not computed: uncommitted changes`. Otherwise:
 
 ```bash
 git rev-parse HEAD
-git ls-remote --symref origin HEAD   # first line: ref: refs/heads/<default branch>  HEAD
-git fetch origin <base>
-B=$(git merge-base origin/<base> HEAD); git diff-tree -p "$B" HEAD | git patch-id --verbatim
+git fetch origin "+<base>:refs/remotes/origin/<base>"
+B=$(git merge-base origin/<base> HEAD); git -c core.quotePath=true diff-tree -p --full-index "$B" HEAD | git patch-id --verbatim
 ```
 
-`<base>` is the base branch the arguments or the contract name, otherwise the default branch from `ls-remote`. The id
-is the first field of the last command's output. If there is no remote, the base cannot be found, git does not know
-`--verbatim` or the output is empty, give the SHA alone and the reason. If the working tree has uncommitted changes,
-say so: the verdict then covers no commit. Do not ask anyone for the base.
+`<base>` is the PR's base branch when the arguments or the contract name it (for a stacked PR, the branch below it).
+Otherwise it is the default branch: the last part of `git symbolic-ref refs/remotes/origin/HEAD` (offline), or
+failing that of the first line of `git ls-remote --symref origin HEAD`. The id is the first field of the last
+command's output. If `merge-base` finds nothing in a shallow clone, run `git fetch --deepen=100 origin` and try
+again. If there is still no base, no remote, no `--verbatim` in this git, or no output, write
+`patch id not computed: <why>`. Do not ask anyone for the base.
 
 For each assertion in scope:
 
 ```
 [ID] - PASS | FAIL | UNVERIFIED
 Evidence:      <what you ran; what you observed; how to reproduce>
+               (UNVERIFIED: begin with "inconclusive: <what could not run and why>")
 Mutation:      <the defect you injected; whether the test caught it>
 ```
 
@@ -130,16 +135,20 @@ Then, separately:
 - **Contract gaps**: assertions through which *a broken build would pass*. This is the finding that upgrades the
   contract, and it is often the most valuable thing you produce. Propose the tightened wording.
 - **Verdict:** `holds` only if every MUST in scope is PASS with named, reproducible evidence and every test you relied
-  on has been mutation-verified. End it with one line: `This verdict covers only patch <id> (commit <sha>); any
-  change to that patch needs a new evaluation.`
+  on has been mutation-verified. End it with one line: with an id, `This verdict covers only patch <id> against
+  <base> (commit <sha>); any change to that patch needs a new evaluation.`; without one, `This verdict covers no
+  recorded patch and cannot be reused after any change.`
 
 If you cannot settle an assertion without a resource you don't have (live credentials, a real dataset, a second
 tenant), or a check could not run (a tool not installed, the app would not start for a reason that also happens at
-the base commit), mark it UNVERIFIED, write `inconclusive: <what could not run and why>` in its Evidence line, and
-name exactly what you'd need. It is never PASS. To tell whether a failure to start also happens at the base, start
-the base commit in a temporary `git worktree add` folder and remove it afterwards. If the change itself stops the app
-from starting, that is FAIL. Do not simulate a missing resource and call it settled. An honest UNVERIFIED is worth
-more than a manufactured PASS, and it is the only kind of gap that gets fixed.
+the base commit), mark it UNVERIFIED, begin its Evidence line with `inconclusive: <what could not run and why>`, and
+name exactly what you'd need. It is never PASS. An app that fails to start only for want of something the change
+requires (a new secret, environment variable or service) is UNVERIFIED too; FAIL is when it fails to start with
+everything it needs present. To see whether the base starts, use
+`git worktree add --detach <a folder outside the repository> <merge-base sha>`, start it there without writing to
+anything it shares with the head (a virtualenv, a dev database, a port) or call that check inconclusive, then
+`git worktree remove --force <folder>`. Do not simulate a missing resource and call it settled. An honest
+UNVERIFIED is worth more than a manufactured PASS, and it is the only kind of gap that gets fixed.
 
 Report defects ranked most-severe first. Do not fix anything. You are the adversary, not the repair crew.
 
