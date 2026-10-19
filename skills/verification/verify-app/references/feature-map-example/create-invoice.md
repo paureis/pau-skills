@@ -63,5 +63,8 @@ The `Invoices` list page, which this feature starts from and ends on.
   alert reads `Could not load invoices` with a `Try again` button, and no skeleton is left on screen. Screenshot
   `$EV/create-invoice/10-error.png`.
 - **Skeleton.** Skeleton rows carry `data-skeleton-for="invoice-row"` and real rows `data-skeleton-name="invoice-row"`.
-  Measured with "States and skeletons" in `SKILL.md` at 390 by 844 and 1280 by 800: no box off by more than 4 px, and
-  a layout-shift score of at most 0.1.
+  The baseline has no invoices and the skeleton has five rows, so hold the request as in Loading and answer it with
+  five invoices: `r.fulfill({ json: FIVE_INVOICES })`, the list kept in the scratch script (`INV-0001` to `INV-0005`
+  for `Acme Ltd`). Measure with "States and skeletons" in `SKILL.md` at 390 by 844 and 1280 by 800, and keep the
+  report as `$EV/create-invoice/11-skeleton-<viewport>.txt`. It passes when no box is off by more than 4 px, no box is
+  unpaired and the layout-shift score is at most 0.1.
