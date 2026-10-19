@@ -24,7 +24,8 @@ Bundled files, open each when its mode needs it:
 ## Rules for every mode
 
 - **Show before you write, and write on a yes.** Show each file in full before creating it, and the exact diff before
-  changing one: agent files, the `.gitignore` line, Audit fixes and Update merges alike. One yes may cover a set you
+  changing one: agent files, the `.gitignore` line, Audit fixes and Update merges alike. The covenant block is the
+  one exception: it is the same in every file, so show it once in full and name it where it goes in each file. One yes may cover a set you
   showed together; a partial yes ("only builder and reviewer") covers only what it names. Approval of a plan or a
   report is not approval of a write.
 - **Never overwrite an existing agent file.** Show the diff and merge on a yes instead.
@@ -55,6 +56,8 @@ Checked against the Claude Code docs (`sub-agents`, `tools-reference`, `worktree
   default branch (not the session's branch) unless `worktree.baseRef` is `head`.
 - Agents can start agents, three layers deep by default; `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` set to 1 turns that
   off. Agents have no AskUserQuestion tool: an agent that needs a yes stops, returns, and is continued by a message.
+- An agent continued with SendMessage resumes in the background. The main session is told when it finishes; an agent
+  that sent the message has no tool to wait for it.
 
 ## Pick the mode
 
@@ -103,7 +106,8 @@ skill changed is **Update**. If you cannot tell, ask which one, in one line.
 3. Look at what is there: list `.claude/agents/` (it may not exist) and read every file in it, and run
    `git check-ignore -q .claude/worktrees/x` to see whether `.claude/worktrees/` is already ignored.
 4. Show the plan and every file:
-   - each roster file that is new, in full, with any `skills:` line you added;
+   - each roster file that is new, in full, with any `skills:` line you added (the covenant block shown once, as the
+     rules above say);
    - for each roster agent whose `name` is already in use, the diff between that file and the bundled one, and no
      write (offer Update or a merge);
    - the line `.claude/worktrees/` to add to `.gitignore` when it is not ignored (builder works in worktrees there);
@@ -115,15 +119,21 @@ skill changed is **Update**. If you cannot tell, ask which one, in one line.
 7. Report: what was written, what was skipped and why, the check's result, and these next steps:
    - Restart Claude Code if this created `.claude/agents/`; the folder loads only after a restart.
    - Commit `.claude/agents/` and `.gitignore`.
-   - To use the roster: ask for `eng-lead` with the work to plan; it returns slices and briefs and waits for a yes.
-     For one small change, use `builder` and then `reviewer` directly. `writer` edits docs, `sweeper` frees disk space.
+   - To use the roster: ask for `eng-lead` with the work to plan; it returns slices, briefs and a cost, and waits for
+     a yes. Continued with the yes, it starts the builders, then a reviewer per slice, and returns each slice's
+     branch, the review verdicts and a fix-round message addressed to that slice's builder. The main session sends
+     those messages, waits for each builder's reply, then merges and pushes. For one small change, use `builder` and
+     then `reviewer` directly. `writer` edits docs, `sweeper` frees disk space.
    Offer `eng-lead`; do not start it.
 
 ## Audit
 
 1. Run `node "${CLAUDE_SKILL_DIR}/check-agents.mjs" --project .` (add `--json` to read it as data). It reads the
    project's and the user's agents and reports errors and warnings; the comment at the top of the script lists every
-   check and the overlap score's threshold. For YAML it does not read, also run `claude plugin validate .claude/agents`.
+   check and the overlap score's threshold. When `claude` is installed, also run `claude plugin validate .claude/agents`
+   (and `claude plugin validate ~/.claude/agents` for the user scope). It reads the files with Claude Code's own
+   parser: a parse error there is an error, since Claude Code skips that file, whatever the script said. The script
+   reports what it cannot parse as a warning and points at this command.
 2. Add what the script cannot judge, agent by agent, from the body. For a roster agent, first diff the installed
    copy against its bundled file and judge only the lines that differ: the bundled settings (such as `effort: xhigh`
    on eng-lead) are the design, not findings.
