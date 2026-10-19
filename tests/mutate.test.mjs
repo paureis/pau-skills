@@ -6,7 +6,7 @@
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync, execFileSync } from 'node:child_process';
-import { writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { writeFileSync, readFileSync, existsSync, rmSync, mkdirSync, chmodSync, lstatSync, readlinkSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo as repoPath, tempDir, findBash } from './helpers.mjs';
 
@@ -205,9 +205,10 @@ test('the harness turns off Python bytecode writing for its commands, whatever t
 
 // A repository where git compares only a file's whole-second modification time and size with what the index recorded
 // (core.checkStat minimal, in the repository's own config; the global config is an empty file, as on a CI runner).
-// The command sets mod.js's times to 2020-01-01, keeps its size, and passes only on the original content. It runs
-// once before the harness, so the index already holds that past time when the harness mutates the file.
-function pastTimeRepo(extra = '') {
+// The command sets the file's times to 2020-01-01, keeps its size, and passes only on the original content (`extra`
+// runs before that, with `ok` false on the mutant). It runs once before the harness, so the index already holds that
+// past time when the harness mutates the file.
+function pastTimeRepo(extra = '', { file = 'mod.js', content = 'export const v = 1;\n' } = {}) {
   const dir = tempDir('mutate-stat-');
   const empty = join(tempDir('mutate-gitconfig-'), 'empty');
   writeFileSync(empty, '');
@@ -219,10 +220,13 @@ function pastTimeRepo(extra = '') {
   sgit('config', 'commit.gpgsign', 'false');
   sgit('config', 'core.autocrlf', 'false');
   sgit('config', 'core.checkStat', 'minimal');
-  writeFileSync(join(dir, 'mod.js'), 'export const v = 1;\n');
-  writeFileSync(join(dir, 'touch.mjs'), "import { utimesSync, readFileSync, writeFileSync } from 'node:fs';\n" +
-    "const ok = readFileSync('mod.js', 'utf8').includes('v = 1');\n" + extra +
-    "const t = new Date('2020-01-01T00:00:00Z');\nutimesSync('mod.js', t, t);\nprocess.exit(ok ? 0 : 1);\n");
+  mkdirSync(join(dir, file, '..'), { recursive: true });
+  writeFileSync(join(dir, file), content);
+  const F = JSON.stringify(file);
+  writeFileSync(join(dir, 'touch.mjs'), "import { utimesSync, readFileSync, writeFileSync, rmSync, symlinkSync, chmodSync } from 'node:fs';\n" +
+    "import { execFileSync } from 'node:child_process';\n" +
+    `const ok = readFileSync(${F}, 'utf8').includes('v = 1');\n` + extra +
+    `const t = new Date('2020-01-01T00:00:00Z');\nutimesSync(${F}, t, t);\nprocess.exit(ok ? 0 : 1);\n`);
   sgit('add', '.');
   sgit('commit', '-q', '-m', 'init');
   execFileSync(process.execPath, ['touch.mjs'], { cwd: dir, env });
@@ -272,6 +276,115 @@ test('a restore that cannot happen exits 2 with the recovery, never RESTORED', (
     sgit('checkout', '--', 'mod.js');
   }
   assert.equal(readFileSync(join(dir, 'mod.js'), 'utf8'), 'export const v = 1;\n');
+});
+
+test('an uncommitted edit that git status does not show is refused and kept', () => {
+  // A same-size edit, then a run of the command that sets the past time again: size and time match what the index
+  // recorded, so git status is empty. The restore would erase the edit.
+  const { dir, env, sgit } = pastTimeRepo('', { content: 'export const v = 1;\nexport const w = 5;\n' });
+  const edit = 'export const v = 1;\nexport const w = 7;\n';
+  writeFileSync(join(dir, 'mod.js'), edit);
+  execFileSync(process.execPath, ['touch.mjs'], { cwd: dir, env });
+  assert.equal(sgit('status', '--porcelain'), '', 'the fixture hides the edit from git status');
+  const r = harness(['--sed', 's/v = 1/v = 2/', 'mod.js', process.execPath, 'touch.mjs'], '', { env, cwd: dir });
+  assert.equal(r.code, 2, r.out);
+  assert.match(r.out, /NOT MUTATED: mod\.js differs from the committed content/);
+  assert.doesNotMatch(r.out, /CONTROL|MUTATION APPLIED/);
+  assert.equal(readFileSync(join(dir, 'mod.js'), 'utf8'), edit, 'the uncommitted edit is kept');
+});
+
+test('a file marked skip-worktree or assume-unchanged is refused and its local edit kept', () => {
+  for (const [flag, word] of [['--skip-worktree', /skip-worktree/], ['--assume-unchanged', /assume-unchanged/]]) {
+    const { dir, env, sgit } = pastTimeRepo();
+    sgit('update-index', flag, 'mod.js');
+    const edit = 'export const v = 1; // local edit\n';
+    writeFileSync(join(dir, 'mod.js'), edit);
+    const r = harness(['--sed', 's/v = 1/v = 2/', 'mod.js', process.execPath, 'touch.mjs'], '', { env, cwd: dir });
+    assert.equal(r.code, 2, r.out);
+    assert.match(r.out, word);
+    assert.doesNotMatch(r.out, /CONTROL|MUTATION APPLIED/);
+    assert.equal(readFileSync(join(dir, 'mod.js'), 'utf8'), edit, `${flag}: the local edit is kept`);
+  }
+});
+
+test('a stale .git/index.lock makes an early restore fail without deleting the untouched file', () => {
+  const { dir, env } = pastTimeRepo();
+  const lock = join(dir, '.git', 'index.lock');
+  writeFileSync(lock, '');
+  try {
+    const nomatch = harness(['--sed', 's/does-not-occur/x/', 'mod.js', process.execPath, 'touch.mjs'], '', { env, cwd: dir });
+    assert.equal(nomatch.code, 2, nomatch.out);
+    assert.equal(readFileSync(join(dir, 'mod.js'), 'utf8'), 'export const v = 1;\n', 'a sed that changed nothing');
+    const patch = 'diff --git a/mod.js b/mod.js\n--- a/mod.js\n+++ b/mod.js\n@@ -1 +1 @@\n-export const q = 1;\n+export const q = 2;\n';
+    const bad = harness(['mod.js', process.execPath, 'touch.mjs'], patch, { env, cwd: dir });
+    assert.equal(bad.code, 2, bad.out);
+    assert.equal(readFileSync(join(dir, 'mod.js'), 'utf8'), 'export const v = 1;\n', 'a patch that did not apply');
+  } finally {
+    rmSync(lock, { force: true });
+  }
+});
+
+test('a command that replaces the folder with a symlink cannot make the restore delete a file outside', { skip: process.platform === 'win32' ? 'symlinks need extra rights on Windows' : false }, () => {
+  const outside = tempDir('mutate-outside-');
+  writeFileSync(join(outside, 'mod.js'), 'keep me\n');
+  const { dir, env, sgit } = pastTimeRepo(`if (!ok) { rmSync('sub', { recursive: true }); symlinkSync(${JSON.stringify(outside)}, 'sub'); process.exit(1); }\n`, { file: 'sub/mod.js' });
+  const r = harness(['--sed', 's/v = 1/v = 2/', 'sub/mod.js', process.execPath, 'touch.mjs'], '', { env, cwd: dir });
+  assert.equal(readFileSync(join(outside, 'mod.js'), 'utf8'), 'keep me\n', 'the file outside the repository is kept');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /RESTORED sub\/mod\.js[\s\S]*RESULT: CAUGHT/);
+  assert.ok(lstatSync(join(dir, 'sub')).isDirectory(), 'sub is a real folder again');
+  assert.equal(readFileSync(join(dir, 'sub', 'mod.js'), 'utf8'), 'export const v = 1;\n');
+  assert.equal(sgit('status', '--porcelain'), '');
+});
+
+const asRoot = typeof process.getuid === 'function' && process.getuid() === 0;
+test('a restore that leaves the mutant in place behind matching stat data exits 2, never RESTORED', { skip: process.platform === 'win32' ? 'no read-only folders on Windows' : asRoot ? 'root can delete in a read-only folder' : false }, () => {
+  // The command makes the file's folder read only: the restore cannot delete the mutant, git checkout skips it (size
+  // and time match the index), and git diff and git status are both empty. Only the content check sees it.
+  const { dir, env } = pastTimeRepo("if (!ok) chmodSync('sub', 0o555);\n", { file: 'sub/mod.js' });
+  try {
+    const r = harness(['--sed', 's/v = 1/v = 2/', 'sub/mod.js', process.execPath, 'touch.mjs'], '', { env, cwd: dir });
+    assert.equal(r.code, 2, r.out);
+    assert.doesNotMatch(r.out, /RESTORED|RESULT/);
+    assert.match(r.out, /restoring sub\/mod\.js did not work/);
+  } finally {
+    chmodSync(join(dir, 'sub'), 0o755);
+  }
+});
+
+test('a tracked symlink mutated with sed restores as clean', { skip: process.platform === 'win32' ? 'symlinks need extra rights on Windows' : false }, () => {
+  const { dir, env, sgit } = pastTimeRepo('', { file: 'real.js' });
+  symlinkSync('real.js', join(dir, 'link.js'));
+  sgit('add', 'link.js');
+  sgit('commit', '-q', '-m', 'link');
+  const r = harness(['--sed', 's/v = 1/v = 2/', 'link.js', process.execPath, 'touch.mjs'], '', { env, cwd: dir });
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /RESTORED link\.js[\s\S]*RESULT: CAUGHT/);
+  assert.equal(readlinkSync(join(dir, 'link.js')), 'real.js');
+  assert.equal(sgit('status', '--porcelain'), '');
+});
+
+test('an absolute path or one with .. is refused before anything runs', () => {
+  const { dir, env } = pastTimeRepo('', { file: 'sub/mod.js' });
+  for (const file of [join(dir, 'sub', 'mod.js'), 'sub/../sub/mod.js']) {
+    const r = harness(['--sed', 's/v = 1/v = 2/', file, process.execPath, 'touch.mjs'], '', { env, cwd: dir });
+    assert.equal(r.code, 2, r.out);
+    assert.match(r.out, /relative to the repository root/);
+    assert.doesNotMatch(r.out, /CONTROL|MUTATION APPLIED/);
+    assert.equal(readFileSync(join(dir, 'sub', 'mod.js'), 'utf8'), 'export const v = 1;\n');
+  }
+});
+
+test('a command that stages or commits the mutant exits 2 with a recovery from the starting commit', () => {
+  for (const git of [['add', 'mod.js'], ['commit', '-q', '-am', 'mutant']]) {
+    const { dir, env, sgit } = pastTimeRepo(`if (!ok) execFileSync('git', ${JSON.stringify(git)});\n`);
+    const start = sgit('rev-parse', 'HEAD').trim();
+    const r = harness(['--sed', 's/v = 1/v = 2/', 'mod.js', process.execPath, 'touch.mjs'], '', { env, cwd: dir });
+    assert.equal(r.code, 2, r.out);
+    assert.doesNotMatch(r.out, /RESTORED|RESULT/);
+    assert.match(r.out, /the command changed what git holds for mod\.js/);
+    assert.match(r.out, new RegExp(`git checkout ${start} -- mod\\.js`));
+  }
 });
 
 const python = ['python3', 'python'].find((p) => spawnSync(p, ['--version'], { encoding: 'utf8' }).status === 0);
