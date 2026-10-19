@@ -523,9 +523,10 @@ function checkAgent(a, ctx) {
   }
 
   const cov = covenantOf(a.body);
-  // A personal agent in the user's folder that carries no roster marker was not made by geppetto: the covenant is a
-  // suggestion there. Everywhere else, and on any file that carries the marker, it is required.
-  const required = a.scope !== 'user' || cov.version !== null;
+  // A personal agent in the user's folder with no covenant was not made by geppetto: the covenant is a suggestion
+  // there. A file that carries the roster marker is held to the roster in every scope, by the unclosed and reworded
+  // checks below.
+  const required = a.scope !== 'user';
   if (cov.error) add('error', 'covenant', cov.error);
   else if (cov.block === null) {
     if (required) add('error', 'covenant', 'no covenant block: paste the block from COVENANT.md');
