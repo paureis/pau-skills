@@ -1,6 +1,6 @@
 ---
 name: brainstorm
-description: "Widen the options for an engineering or product decision in a codebase before settling it: options from named lenses, the user keeps or kills them, code settles the facts, 3 to 5 rated. Use when the user says 'brainstorm this', 'give me alternatives' or 'widen this before we decide', or when a costly decision has only one idea on the table."
+description: "Widen the options for an engineering or product decision in a codebase before settling it: options from named lenses, the agent recommends picks, code settles the facts, 3 or 4 rated. Use when the user says 'brainstorm this', 'give me alternatives' or 'widen this before we decide', or when a costly decision has only one idea on the table."
 argument-hint: "[the question or goal] [with subagents]"
 ---
 
@@ -18,43 +18,63 @@ feature should work, where a responsibility should live, how to solve a recurrin
 it for a change with one obvious answer, for a bug (the evidence decides), or for a choice between two options that
 are already well defined (go straight to the interview).
 
-Make a task list with one entry per phase (Frame, Diverge, React, Converge, Decide) before starting. If the session
+Make a task list with one entry per phase (Frame, Diverge, Pick, Converge, Decide) before starting. If the session
 has no task tool, post the five phases as a short checklist in the conversation and tick each one off as you go.
+
+## How to ask
+
+Keep the user's work to a tap or a word. Every question in this skill offers answers to choose from.
+
+- **With a question tool** (AskUserQuestion in Claude Code), ask through it: up to 4 questions in one call, 2 to 4
+  answers each, a header of at most 12 characters. Count the characters of every header: "Great outcome" is 13,
+  "Outcome" fits. The tool adds an "Other" choice for a typed answer, so do not add
+  one. When you recommend an answer, put it first and end its label with "(Recommended)".
+- **Without one** (a headless run, a background subagent, another client), write the same questions as text:
+  numbered questions, lettered answers, the recommended answer first and marked "(Recommended)". End with one line
+  that says how to reply, for example "Reply ok to take the recommended answers, or type yours." Pick is the
+  exception: there the option list is the question (see Pick).
+
+**Blind.** If the user says "blind", in the question or at any point before Pick, show no picks and no reasons in
+Pick, and recommend nothing until the finalists are rated. Without "blind", show your picks: holding them back only
+makes the user ask for them.
 
 ## Phase 1: Frame (light, not a grill)
 
 1. **Look before asking.** Read just enough of the project to know what already exists around the question: the
    files, scripts, docs or configuration it touches. A quick read, not a study. Do not ask what the code can tell.
-2. **Restate the goal** in your own words, in one or two sentences, and show it with your first question. A
-   restatement that surprises the user is the most useful thing this phase can produce.
-3. **Ask at most three questions, one at a time**, and only ones whose answer changes which ideas are worth having.
+2. **Ask at most three questions, all at once**, and only ones whose answer changes which ideas are worth having.
    The usual three: the goal behind the ask (what the user needs once this works), which constraints are hard, and
-   what a great outcome would look like. Skip any the user has already answered. Recommend nothing yet. Showing the
-   frame below and asking for corrections does not count against the three.
-4. **Sort the constraints.** A hard constraint is one the user confirmed, or that the code, a contract or the
+   what a great outcome would look like (headers "Goal", "Hard limits" and "Outcome"). Give each 2 to 4 proposed
+   answers drawn from what you read, and mark none as recommended: the frame is the user's. Skip any the user has
+   already answered; with none left, go to step 3. Send the questions alone and wait for the answers: the frame
+   comes after them, never as a draft beside the questions.
+3. **Sort the constraints.** A hard constraint is one the user confirmed, or that the code, a contract or the
    platform enforces. Everything else is assumed: inherited from the first idea, from habit, or from a guess.
    A check in the code that is itself what the question is about is assumed, not hard: when the question is how to
    keep copied files in sync, the test that forces the copies to be identical is one possible answer, not a limit.
    Assumed constraints are open to loosening in Diverge. Treat removing one as readily as adding one: a constraint
    that does not serve the goal goes, and one that would serve it is worth adding even if nobody asked for it.
-5. **Park the user's own idea.** If they came with one, write it down as a candidate. It goes into Diverge like any
+4. **Park the user's own idea.** If they came with one, write it down as a candidate. It goes into Diverge like any
    other option and is never the default.
-
-Write the frame down and show it:
+5. **Once the answers are in, show the frame in five short lines**, built from them, with the goal restated in
+   your own words (a restatement that surprises the user is the most useful thing this phase can produce). In the
+   same message, ask one question: is it right? Offer "Looks right" and "Change it", and wait for the answer before
+   Diverge.
 
 ```
-Goal: <one or two sentences, in your words>
-Hard constraints: <each, and what enforces it>
-Assumed constraints: <each; open to loosening>
-A great outcome: <what the user said, concretely>
-The user's idea: <one line, or "none">
+Goal: <one sentence, in your words>
+Hard: <each hard constraint, and what enforces it>
+Assumed: <each assumed constraint; open to loosening>
+Outcome: <the great outcome the user described, concretely>
+Your idea: <one line, or "none">
 ```
 
-**Done when** the user has seen the frame and not corrected it, or has corrected it and you have rewritten it.
+**Done when** the user has accepted the frame, or has corrected it and you have rewritten it.
 
 ## Phase 2: Diverge (no judging)
 
-Generate 10 to 20 options, spread on purpose through these lenses. Every lens gives at least one option.
+The lenses are for you, not for the user: work through them to find options nobody had in mind, then show only the
+options. Every lens gives at least one candidate; merging and trimming them (rules below) leaves the 8 to 12 shown.
 
 | Lens | How to use it |
 |---|---|
@@ -69,14 +89,19 @@ Generate 10 to 20 options, spread on purpose through these lenses. Every lens gi
 | Wild | One option that breaks an assumption nobody stated. It does not need to be practical. |
 
 Rules for this phase:
-- Each option is a short name and one sentence that says concretely what it is. "Use a manifest" is not an option;
-  "write a hash of each skill folder into a manifest at pack time and compare it with the installed copy" is.
+- Show 8 to 12 options, grouped by the approach underneath them into 3 or 4 clusters of 2 to 4 options each. Give
+  each cluster a name of at most 12 characters, counted (it becomes a question header): "Built-in sync" is 13, too
+  long; "Built-in" fits. Number the options across all
+  clusters.
+- Each option is one line: a short name and what it is, concretely. "Use a manifest" is not an option; "hash each
+  skill folder into a manifest at pack time and compare it with the installed copy" is. No lens tags.
 - No ratings, no "but", no pros and cons, and do not drop an option for being impractical. Judging now kills the
   options that would have led somewhere.
-- Two options that differ only in a detail count as one. Replace the duplicate.
-- Tag each option with its lens, for example `[invert]`.
-- If the user came with an idea, add it as one more option under the lens it fits (often Baseline) and tag it
-  `[yours]` as well. It counts like any other option.
+- Two candidates that differ only in a detail count as one: merge them. Then drop the weakest (the vaguest, or a
+  small variant of another) until 12 or fewer are left, never one for being impractical. Keep the options from the
+  less obvious lenses (Invert, Remove the biggest constraint, Borrow, Wild) over a second take on the Baseline.
+- If the user came with an idea, it is one of the options, marked "(your idea)". It counts like any other.
+- Keep a note of which lens gave each option, for yourself. It is not shown.
 
 **With subagents (optional).** One model's ideas tend to cluster. Separate briefs spread them out. When the user asked
 for subagents ("with subagents", "go wide") or the question is large, say the cost first (one subagent run per lens
@@ -97,53 +122,45 @@ Return 1 or 2 options. For each: a short name, then one sentence saying concrete
 No ratings, no pros and cons, no preamble.
 ```
 
-Merge their options, add the user's idea if they came with one, remove duplicates, then do Combine. If the set is
-still under 10, add options of your own to the lenses with the fewest.
+Merge their options, add the user's idea if they came with one, remove duplicates, do Combine, then cluster and trim
+to 8 to 12 as above.
 
-**Done when** there are 10 to 20 distinct options, every lens has at least one, and none has been judged.
+**Done when** every lens has given at least one candidate, 8 to 12 distinct options from them are shown in 3 or 4
+clusters, and none has been judged.
 
-## Phase 3: React
+## Phase 3: Pick (one round)
 
-Every option has one of these statuses at a time, and the summary uses the same words. When a status changes, the
-latest one counts, except that an option brought back keeps that word in front of its final status, for example
-"brought back, shortlisted".
+Show the whole list first. Then, in the same message, ask one multiple-choice question per cluster (several answers
+allowed, the cluster name as its header, its options as the answers). Four clusters of up to four options fit in one
+call of the question tool.
 
-| Status | Meaning |
-|---|---|
-| `killed` | The user killed it, in either round. |
-| `not taken up` | The user left it unmarked, in either round, and it was not merged. This includes a round-one keeper left unmarked in round two. |
-| `merged into <name>` | A combine mark or a round-two option took it in, and the user did not keep or kill it on its own in round two. |
-| `kept` | Kept in round two: it is in the pool for the shortlist. |
-| `brought back` | Added to the pool in Converge after it had another status (see Converge step 1). |
-| `not shortlisted: <reason>` | In the pool, but left out of the shortlist or ruled out by a fact. |
-| `shortlisted` | A finalist that was not chosen. |
-| `chosen` | The direction the user picked. |
+Your picks are the options you would take forward: 3 to 5 in all, from at least two clusters, and at least one that
+is neither the Baseline nor Do nothing. Put each pick first in its cluster's question, with "(Recommended)" at the end
+of its label and a one-line reason (in the answer's description, or after it in text). Without a question tool, list
+the options once, under their clusters, with your picks marked "(Recommended)" and a reason each; do not repeat
+them as lettered questions. End with: "Reply ok to take my picks, or type your own, for
+example: keep 3, 7; drop 1; combine 2 and 9." With "blind", mark no picks and give no reasons.
 
-1. **Cluster** the options by the approach underneath them, not by lens: 3 to 6 clusters, each with a short name.
-   Number every option across all clusters and show each on one line with its lens tag.
-2. **Ask the user to mark them**: keep, kill or combine, for example "keep 3, 7; kill 1, 4; combine 2 and 9". An
-   unmarked option is `not taken up`. A combine mark that matches an option the Combine lens already made is that
-   option: record it under its existing number and treat the mark as a keep for it.
-3. **Second round, smaller: build on the keepers.** Write 3 to 6 new options, one line each, without judging. Each
-   one makes a keeper stronger (removes its biggest cost, fixes the weakness the Invert lens would find in it), merges
-   two keepers, or carries out a combine mark.
-4. **Show the round-one keepers again with the new options**, numbered as one list, and ask for one more round of
-   marks. What the user keeps here is the pool for the shortlist. Converge adds to it only in the two ways step 1
-   there describes, each marked `brought back`. Then stop diverging.
+Every option now has one status, and the summary uses the same words:
+- `kept`: the user picked it, or it was made from a combine the user asked for. It goes to Converge.
+- `dropped`: not picked, or ruled out later by a fact (then add the fact: "dropped: <fact>").
+- `chosen`: the direction the user picks at the end.
 
-If the user kills everything in round one, the frame was wrong. Ask what all the options got wrong, rewrite the
-frame, and diverge again once.
+If the user drops everything, the frame was wrong. Ask what all the options got wrong, rewrite the frame, and diverge
+again once.
 
-**Done when** the user has marked both rounds.
+**Done when** the user has answered the pick question (an "ok" counts).
 
 ## Phase 4: Converge
 
-1. **Shortlist 3 to 5** from the pool. Say in one line why each option in the pool that is not on the shortlist is
-   out. The pool grows in two cases only, and each added option is `brought back`:
-   - fewer than three options survive: add the baseline so there is always something to beat, or "do nothing" when
-     the baseline is already a finalist or was merged into one;
-   - no finalist reaches "A great outcome" from the frame: say so plainly and offer to bring back the option outside
-     the pool that came closest. The user decides.
+1. **Shortlist 3 or 4 finalists** from the kept options. Do not run a second round of marks. Fold what would make a
+   finalist stronger into it instead: remove its biggest cost, fix the weakness the Invert lens would find in it,
+   merge two kept options that fit together, or carry out a combine the user asked for. Say in one line what you
+   folded into each finalist, and in one line why each kept option that is not a finalist is out.
+   - Fewer than three kept: add the Baseline so there is always something to beat, or Do nothing when the Baseline
+     is already a finalist. More than four: merge the closest, or drop the weakest with its reason.
+   - No finalist reaches the great outcome from the frame: say so plainly and offer to bring back the dropped option
+     that came closest, in place of the weakest finalist, so there are never more than four. The user decides.
 2. **Settle questions of fact, do not debate them.** A question of fact is one the world can answer: does the tool
    expose this, how slow is it, does this file already exist, what do callers do today. Settle each one that would
    change how a finalist rates or which one wins:
@@ -154,11 +171,11 @@ frame, and diverge again once.
      folder outside the repository. Observe the result, do not polish it, and delete it afterwards. Build two
      variants side by side when the question is which of two behaves better.
 
-   A finalist a fact rules out becomes `not shortlisted: <the fact>`; replace it from the pool if fewer than three are
-   left. A fact you cannot settle now goes to "Open questions". A question of taste or priority is the user's, not a
-   prototype's.
+   A finalist a fact rules out becomes `dropped: <the fact>`; replace it from the kept options if fewer than three
+   are left. A fact you cannot settle now goes to "Open questions". A question of taste or priority is the user's,
+   not a prototype's.
 3. **Weigh each finalist**, with the facts in hand, on value, effort, risk and reversibility, unless the user picked
-   other criteria. Rate each low, medium or high, with a one-line reason. For value and reversibility, high is good;
+   other criteria. Rate each low, medium or high, with a short reason. For value and reversibility, high is good;
    for effort and risk, low is good. Never add the ratings into a score: they are not on one scale, and a total
    hides the tradeoff the user has to make.
 
@@ -166,40 +183,27 @@ frame, and diverge again once.
    |---|---|---|---|---|
    | <name> | high: <why> | low: <why> | medium: <why> | high: <why> |
 
-4. **Premortem each finalist.** "It is six months from now and this failed. Why?" Write the most likely cause in one
-   or two lines, and the first sign that would show it early.
-5. **Recommend one finalist**, with the reason in a sentence, and let the user choose. The choice is theirs.
+4. **Premortem each finalist in one line.** "It is six months from now and this failed. Why?" The most likely cause,
+   and the first sign that would show it early.
+5. **Ask for the choice** in one question: the 3 or 4 finalists as its answers, your recommendation first with
+   "(Recommended)" and its reason in a sentence. The choice is the user's.
 
 **Done when** the user has chosen a direction, or has said none of the finalists is good enough (then go back to
-Phase 3 with what they said, once).
+Pick with what they said, once).
 
 ## Phase 5: Decide and hand off
 
-Write the one-page summary in the conversation. Save it to a file only if the user asks, where the project keeps
-design notes if it has a place.
+Write the summary in the conversation. Save it to a file only if the user asks, where the project keeps design notes
+if it has a place.
 
 ```
 # Brainstorm: <the question>
 
-## Problem
-<the goal from the frame, the hard constraints, what a great outcome looks like>
-
-## Options considered
-<every option from both rounds, grouped by cluster, one line each, with its final status from the table in Phase 3:
-killed, not taken up, merged into <name>, not shortlisted: <reason>, shortlisted, or chosen, with "brought back, "
-in front when it was>
-
-## Facts settled
-<each question of fact, how it was settled (code read, prototype), and the answer>
-
-## Shortlist
-<the ratings table, then one premortem line per finalist>
-
-## Chosen direction
-<the option, why it won, and what it gives up>
-
-## Open questions
-<what is still undecided or unknown, each with who or what can answer it>
+Chosen: <the option, and why it won, with the facts that settled it>
+Gives up: <what this direction costs or rules out>
+Runner-up: <the option, and what would make it the better choice>
+Options: <one line per cluster: each option with kept, dropped or chosen>
+Open questions: <each, with who or what can answer it, or "none">
 ```
 
 Then suggest the next step. If `grill-me` is installed, offer to run it on the chosen direction to settle the
@@ -214,7 +218,9 @@ building. If neither is installed, the summary is the input for whatever spec or
 
 - Do not grill in Frame: three questions at most, and only ones that change which ideas are worth having.
 - Do not make the user's idea the default, or show it to subagents.
-- Do not judge during Diverge, and do not skip a lens because it feels silly.
+- Do not judge during Diverge, do not skip a lens because it feels silly, and do not show lens tags.
+- Do not hold your picks back unless the user said "blind".
+- Do not run a second round of marks: fold the improvements into the finalists.
 - Do not add the ratings into a score.
 - Do not settle a question of fact by argument when the code or a prototype can settle it.
 - Do not start building. This skill ends at a decision and a summary.
