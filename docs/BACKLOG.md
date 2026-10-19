@@ -862,7 +862,8 @@ count on the profile README is updated.
   count of tests kept, in the owner's words.
 - Changed at the start of batch 7 (2026-10-19), after a review against the code:
   - The suite now has 1,166 tests in 39 files (1,165 pass, 1 skipped as root), not 1,069. The count is the `# tests`
-    line of `npm test` minus skipped tests. The profile README says "with over 500 tests" today.
+    line of `npm test`, skipped tests included, because skips differ by machine (root, python3, unzip); the owner
+    chose this on 2026-10-19. The profile README says "with over 500 tests" today.
   - "Redundant" joins the list (from `tdd`'s rules: "A redundant or brittle test is a cost"): a test that catches
     only mutations another test in the file also catches and checks nothing else. Table-driven cases that each cover a
     different input the code treats differently are not redundant.
