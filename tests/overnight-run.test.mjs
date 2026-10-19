@@ -4,7 +4,7 @@
 // command line.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync, mkdirSync, existsSync, symlinkSync, realpathSync } from 'node:fs';
+import { writeFileSync, readFileSync, appendFileSync, mkdirSync, existsSync, symlinkSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
@@ -38,16 +38,19 @@ describe('the formula guard', () => {
     for (const v of ['=1+1', '+SUM(A1)', '-2', '@cmd', '=HYPERLINK("http://x")']) assert.equal(guardCell(v), `'${v}`);
   });
 
-  test('also after leading whitespace, and when a tab or carriage return comes first', () => {
+  test('also after leading whitespace or control characters, and inside a leading double quote', () => {
     assert.equal(guardCell('  =1+1'), "'  =1+1");
     assert.equal(guardCell('\t=1'), "'\t=1");
-    assert.equal(guardCell('\tplain'), "'\tplain");
-    assert.equal(guardCell('\rplain'), "'\rplain");
     assert.equal(guardCell('\n-1'), "'\n-1");
+    assert.equal(guardCell('\x01=1'), "'\x01=1");
+    assert.equal(guardCell('\u0085=1'), "'\u0085=1");
+    // A quote-aware TSV reader strips the quotes and sees =1+1.
+    assert.equal(guardCell('"=1+1"'), `'"=1+1"`);
+    assert.equal(guardCell(' " @x'), `' " @x`);
   });
 
   test('leaves other cells alone, including those signs later in the text', () => {
-    for (const v of ['commit 3a9f1c2', 'a=b', '5 - 3', 'mail me @ noon', "'already quoted", '']) assert.equal(guardCell(v), v);
+    for (const v of ['commit 3a9f1c2', 'a=b', '5 - 3', 'mail me @ noon', "'already quoted", '"quoted text"', '\tplain', '']) assert.equal(guardCell(v), v);
   });
 });
 
@@ -58,8 +61,12 @@ describe('flattening', () => {
     assert.equal(flatten('plain text'), 'plain text');
   });
 
-  test('cleanCell guards on the raw value, then flattens, so a leading tab cannot hide a formula', () => {
+  test('cleanCell flattens, then guards, so no control character can hide a formula', () => {
     assert.equal(cleanCell('\t=1'), "' =1");
+    assert.equal(cleanCell('\x01=1'), "' =1");
+    assert.equal(cleanCell('\u0085=1'), "' =1");
+    assert.equal(cleanCell('"=1+1"'), `'"=1+1"`);
+    assert.equal(cleanCell('\tplain'), ' plain');
     assert.equal(cleanCell('one\ttwo'), 'one two');
     assert.equal(cleanCell('-0.5s'), "'-0.5s");
   });
@@ -123,7 +130,7 @@ describe('append', () => {
 
   test('refuses a row with a required field missing or empty, and writes nothing', () => {
     for (const name of ['run', 'phase', 'decision', 'reason', 'evidence', 'result']) {
-      for (const value of [undefined, '', '   ', '\n\t']) {
+      for (const value of [undefined, '', '   ', '\n\t', '\t', '\r', '\u0085', '\x01']) {
         const log = newLog();
         const r = append(log, { [name]: value });
         assert.equal(r.code, 1, `${name}=${JSON.stringify(value)} was accepted`);
@@ -171,6 +178,17 @@ describe('append', () => {
       assert.ok(now.startsWith(prev) && now.length > prev.length, `append ${i} changed earlier bytes`);
       prev = now;
     }
+  });
+
+  test('bytes another writer appends between the read and the write survive: append never rewrites the file', () => {
+    const log = newLog();
+    append(log);
+    const other = ['77', '2026-10-18T23:00:00Z', 'other-writer', 'audit', 'd', 'r', 'e', 'gap', ''].join('\t') + '\n';
+    const { id } = appendRow(log, ROW, new Date(), { beforeWrite: () => appendFileSync(log, other) });
+    assert.equal(id, 2);
+    const text = readFileSync(log, 'utf8');
+    assert.ok(text.includes(other), 'the row the other writer appended was lost');
+    assert.deepEqual(rows(log).map((r) => r[col('id')]), ['1', '77', '2']);
   });
 
   test('refuses a file that is not a decision log, was cut, or has a row with the wrong field count', () => {
@@ -252,21 +270,22 @@ describe('calls', () => {
     const file = join(tempDir('overnight-'), 'session.jsonl');
     const events = [
       { type: 'system', subtype: 'init' },
-      { type: 'assistant', timestamp: '2026-10-18T23:47:00Z', message: { content: [{ type: 'text', text: 'hi' }, { type: 'tool_use', name: 'Bash', input: { command: 'python3 -m unittest -q' } }] } },
-      { type: 'user', message: { content: [{ type: 'tool_result', is_error: true, content: 'Exit code 1' }] } },
-      { type: 'user', message: { content: [{ type: 'tool_result', is_error: false, content: 'Ran 3 tests' }] } },
+      { type: 'assistant', timestamp: '2026-10-18T23:47:00Z', message: { id: 'msg_1', content: [{ type: 'text', text: 'hi' }, { type: 'tool_use', id: 'toolu_1', name: 'Bash', input: { command: 'python3 -m unittest -q' } }] } },
+      { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'toolu_1', is_error: true, content: 'Exit code 1' }] } },
+      { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'toolu_2', is_error: false, content: 'Ran 3 tests' }] } },
       { type: 'user', message: { content: 'a plain prompt' } },
-      { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit', input: { file_path: 'calc.py', old_string: 'x'.repeat(500) } }] } },
+      { type: 'assistant', message: { id: 'msg_2', content: [{ type: 'tool_use', id: 'toolu_3', name: 'Edit', input: { file_path: 'calc.py', old_string: 'x'.repeat(500) } }] } },
     ];
     writeFileSync(file, events.map((e) => JSON.stringify(e)).join('\n') + '\nnot json\n');
     const r = run(['calls', file]);
     assert.equal(r.code, 0, r.err);
     const lines = r.out.split('\n');
     assert.equal(lines.length, 3);
-    assert.equal(lines[0], '2 2026-10-18T23:47:00Z Bash {"command":"python3 -m unittest -q"}');
-    assert.equal(lines[1], '3 ERROR "Exit code 1"');
-    assert.match(lines[2], /^6 Edit \{"file_path":"calc.py"/);
-    assert.ok(lines[2].length < 330, 'a long input is cut');
+    // The message id tells calls sent together in one message from calls sent one after another.
+    assert.equal(lines[0], '2 2026-10-18T23:47:00Z msg_1 Bash {"command":"python3 -m unittest -q"}');
+    assert.equal(lines[1], '3 ERROR toolu_1 "Exit code 1"');
+    assert.match(lines[2], /^6 msg_2 Edit \{"file_path":"calc.py"/);
+    assert.ok(lines[2].length < 340, 'a long input is cut');
   });
 
   test('a missing transcript is an error, and calls takes no options', () => {
