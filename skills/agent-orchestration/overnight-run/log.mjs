@@ -17,20 +17,24 @@
  *   node log.mjs calls <transcript.jsonl>
  *       Lists the tool calls and the failed tool results of a Claude Code transcript (a session file under
  *       ~/.claude/projects/, or a --output-format stream-json capture), one per line: the line number in the file,
- *       the time when the event has one, the tool and its input cut to 300 characters, or ERROR and the result. The
+ *       the time when the event has one, the message id (calls with the same id were sent together, in one message),
+ *       the tool and its input cut to 300 characters; or ERROR, the id of the call it answers, and the result. The
  *       morning reviewer cites <file>:<line> from it. Read only; lines that are not JSON are skipped.
  *
- * Every free text field (run, phase, decision, reason, evidence, result) is cleaned the way upstream log.sh does:
- * a value whose first character a spreadsheet would read as a formula (=, +, - or @, also after leading whitespace,
- * or a tab or carriage return first) gets a single quote in front, and then tabs, carriage returns, newlines and
- * other control characters become spaces, so a row stays one line with the right number of fields.
+ * Every free text field (run, phase, decision, reason, evidence, result) is cleaned, as upstream log.sh does, in this
+ * order: tabs, carriage returns, newlines and other control or line separator characters become spaces, so a row
+ * stays one line with the right number of fields; then a value a spreadsheet would read as a formula gets a single
+ * quote in front. That is a value matching FORMULA: =, +, - or @ first, after any spaces and after one double quote
+ * (a quote-aware TSV reader strips the quotes from "=1+1"). Guarding after flattening means no control character in
+ * front can hide the sign.
  *
- * append refuses, and writes nothing, when: a required field is missing or empty after cleaning; --supersedes names
+ * append refuses, and writes nothing, when: a required field is missing or empty after flattening; --supersedes names
  * no row in the log; the log is inside a git work tree (a .git folder or file at or above the path, its resolved
  * folder, or where a link leads), where git reset --hard or git clean -fdx could erase it; the file's first line is
  * not the header, its last line has no newline, or a row has the wrong number of fields.
  *
- * Earlier rows are never rewritten: the file is only ever opened for appending, with one append call per row.
+ * Earlier rows are never rewritten: the file is only ever opened for appending, with one append call per row, so a
+ * row another writer appends between this call's read and its write survives.
  * Two writers at once (the run and the morning reviewer) can read the same highest id and both write the next one.
  * That risk is accepted: the two rows still both land, and a duplicate id is visible in show. Let one writer at a
  * time append.
@@ -54,10 +58,13 @@ const at = (row, name) => row[HEADER.indexOf(name)];
 // Pure functions
 // ---------------------------------------------------------------------------------------------------------------
 
-/** A single quote in front of a value a spreadsheet would run as a formula. Checks the raw value, before flatten. */
+/** A value a spreadsheet would run as a formula, once flattened: a sign first, after spaces and one double quote. */
+export const FORMULA = /^\s*"?\s*[=+\-@]/;
+
+/** A single quote in front of a value a spreadsheet would run as a formula. The check reads the value flattened. */
 export function guardCell(value) {
   const v = String(value);
-  return /^[=+\-@\t\r]/.test(v) || /^\s+[=+\-@]/.test(v) ? `'${v}` : v;
+  return FORMULA.test(flatten(v)) ? `'${v}` : v;
 }
 
 /** Tabs, carriage returns, newlines and other control or line separator characters become spaces. */
@@ -65,9 +72,9 @@ export function flatten(value) {
   return String(value).replace(/[\u0000-\u001f\u007f\u0085\u2028\u2029]/g, ' ');
 }
 
-/** What append writes for a free text field: guarded first, so a leading tab cannot hide a formula, then flattened. */
+/** What append writes for a free text field: flattened first, so no control character can hide a formula, then guarded. */
 export function cleanCell(value) {
-  return flatten(guardCell(value));
+  return guardCell(flatten(value));
 }
 
 /**
@@ -104,8 +111,11 @@ const stamp = (now) => now.toISOString().replace(/\.\d{3}Z$/, 'Z');
 
 /** Read and check an existing log: its rows as arrays of fields (no header); [] when the file is missing or empty. */
 export function readLog(log) {
-  if (!existsSync(log)) return [];
-  const text = readFileSync(log, 'utf8');
+  return parseLog(log, existsSync(log) ? readFileSync(log, 'utf8') : '');
+}
+
+/** Check the text of a log and return its rows. */
+function parseLog(log, text) {
   if (text === '') return [];
   if (!text.endsWith('\n')) throw new Refusal(`${log} does not end with a newline; the last row was cut or edited by hand, so appending would join two rows`);
   const lines = text.slice(0, -1).split('\n');
@@ -119,18 +129,20 @@ export function readLog(log) {
 
 /**
  * Append one row. fields holds the free text fields and an optional supersedes id (a string of digits). now is the
- * clock; only a caller in code can pass another one. Returns { id, row }.
+ * clock; only a caller in code can pass another one. beforeWrite, for tests, runs between the read and the write.
+ * Returns { id, row }.
  */
-export function appendRow(log, fields, now = new Date()) {
+export function appendRow(log, fields, now = new Date(), { beforeWrite } = {}) {
   const cells = {};
   for (const name of REQUIRED) {
     const value = cleanCell(fields[name] ?? '');
-    if (!value.trim()) throw new Refusal(`--${name} is missing or empty; every row needs ${REQUIRED.map((n) => `--${n}`).join(', ')}`);
+    if (!flatten(fields[name] ?? '').trim()) throw new Refusal(`--${name} is missing or empty; every row needs ${REQUIRED.map((n) => `--${n}`).join(', ')}`);
     cells[name] = value;
   }
   const repo = insideGitTree(log);
   if (repo) throw new Refusal(`${resolve(log)} is inside the git work tree at ${repo}; git reset --hard or git clean -fdx could erase it. Put the log in a folder outside any git repository`);
-  const rows = readLog(log);
+  const text = existsSync(log) ? readFileSync(log, 'utf8') : '';
+  const rows = parseLog(log, text);
   const ids = rows.map((r) => Number(at(r, 'id'))).filter(Number.isInteger);
   const supersedes = fields.supersedes ?? '';
   if (supersedes && !rows.some((r) => at(r, 'id') === supersedes)) {
@@ -138,8 +150,9 @@ export function appendRow(log, fields, now = new Date()) {
   }
   const id = Math.max(0, ...ids) + 1;
   const row = [String(id), stamp(now), cells.run, cells.phase, cells.decision, cells.reason, cells.evidence, cells.result, supersedes];
-  const fresh = rows.length === 0 && (!existsSync(log) || readFileSync(log, 'utf8') === '');
+  const fresh = text === '';
   mkdirSync(dirname(resolve(log)), { recursive: true });
+  beforeWrite?.();
   appendFileSync(log, (fresh ? HEADER.join('\t') + '\n' : '') + row.join('\t') + '\n');
   return { id, row };
 }
@@ -192,8 +205,8 @@ function calls(file, out) {
     const content = e?.message?.content;
     if (!Array.isArray(content)) return;
     for (const c of content) {
-      if (c?.type === 'tool_use') out([i + 1, e.timestamp, c.name, cut(c.input)].filter((x) => x !== undefined && x !== '').join(' '));
-      else if (c?.type === 'tool_result' && c.is_error) out(`${i + 1} ERROR ${cut(c.content)}`);
+      if (c?.type === 'tool_use') out([i + 1, e.timestamp, e.message.id, c.name, cut(c.input)].filter((x) => x !== undefined && x !== '').join(' '));
+      else if (c?.type === 'tool_result' && c.is_error) out([i + 1, 'ERROR', c.tool_use_id, cut(c.content)].filter((x) => x !== undefined && x !== '').join(' '));
     }
   });
   return 0;
