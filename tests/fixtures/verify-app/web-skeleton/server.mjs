@@ -8,16 +8,14 @@
 //
 // Routes:
 //   GET /             the page: a heading, the People list (three skeleton rows until the API answers), and a
-//                     section below the list, so the list growing moves it and the browser records a layout shift
+//                     section below the list, so a change in the list height moves it
 //   GET /api/people   three people as JSON. The page passes its own query string on, so the same switches work
 //                     on the page URL and on the API:
 //                       ?delay=<ms>   wait that long before answering (at most 60000): the loading state
 //                       ?data=empty   answer []: the empty state
 //                       ?fail=1       answer 500 with {"error"}: the error state
 //
-// The skeleton is seeded wrong on purpose: a skeleton row is 36 px tall and a real row 56 px, so each row is 20 px
-// short and the section below jumps 60 px when the data arrives. Skeleton rows carry data-skeleton-for="person-row"
-// and real rows data-skeleton-name="person-row", the markers the recipe pairs them by.
+// Skeleton rows carry data-skeleton-for="person-row" and real rows data-skeleton-name="person-row".
 // SIGTERM and SIGINT stop it with exit code 0.
 import { createServer } from 'node:http';
 

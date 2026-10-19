@@ -891,6 +891,10 @@ describe('fixture apps', () => {
     assert.equal(code, 0);
   });
 
+  // The web-skeleton fixture's seeded gap, written here and not in the fixture folder, so a cold run that reads the
+  // fixture finds the gap by measuring it: a skeleton row (.skeleton-row) is 36 px tall and a real row (.person)
+  // 56 px, so each of the three skeleton rows is 20 px short and the section below the list (#below) moves 60 px when
+  // the data arrives. Keep the gap in the fixture: a dry run fixes it in a copy and measures again.
   test('the skeleton page starts, serves a skeleton 20 px too short, and its API delays, empties and fails on request', async () => {
     const child = spawn(process.execPath, [join(FIX, 'web-skeleton', 'server.mjs')], { env: { ...process.env, PORT: '0' }, stdio: ['ignore', 'pipe', 'pipe'] });
     try {
