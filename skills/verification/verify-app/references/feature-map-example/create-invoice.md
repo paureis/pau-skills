@@ -49,3 +49,22 @@ Steps:
 - `n` types into a focused field instead of opening the form. Click the page heading first.
 - Numbers are never reused: a deleted draft still uses up its number. Expect `INV-0003` after a delete, not `INV-0002`.
 - Delete both drafts at the end with `Delete draft`, and keep the evidence.
+
+## States
+
+The `Invoices` list page, which this feature starts from and ends on.
+
+- **Loading.** Hold `GET /api/invoices` with `await page.route('**/api/invoices*', (r) => held.push(r))` and open
+  `$URL/invoices`. Five grey skeleton rows fill the `Invoices` table, and `New invoice` is already enabled. Screenshot
+  `$EV/create-invoice/08-loading.png`. Release with `for (const r of held) await r.continue()`.
+- **Empty.** The baseline state has no invoices. The table is replaced by `No invoices yet` and a `New invoice`
+  button. Screenshot `$EV/create-invoice/09-empty.png`.
+- **Error.** Answer the request with `await page.route('**/api/invoices*', (r) => r.fulfill({ status: 500 }))`. An
+  alert reads `Could not load invoices` with a `Try again` button, and no skeleton is left on screen. Screenshot
+  `$EV/create-invoice/10-error.png`.
+- **Skeleton.** Skeleton rows carry `data-skeleton-for="invoice-row"` and real rows `data-skeleton-name="invoice-row"`.
+  The baseline has no invoices and the skeleton has five rows, so hold the request as in Loading and answer it with
+  five invoices: `r.fulfill({ json: FIVE_INVOICES })`, the list kept in the scratch script (`INV-0001` to `INV-0005`
+  for `Acme Ltd`). Measure with "States and skeletons" in `SKILL.md` at 390 by 844 and 1280 by 800, and keep the
+  report as `$EV/create-invoice/11-skeleton-<viewport>.txt`. It passes when no box is off by more than 4 px, no box is
+  unpaired and the layout-shift score is at most 0.1.

@@ -1,6 +1,6 @@
 ---
 name: verify-app
-description: "Write or maintain the project's own verification skill and feature map, so any agent can launch the real app, drive it like a user and keep evidence. Use when the user says 'make a verification skill', 'maintain the verify skill', or asks how an agent can test the app, or when a change must be proven in the running app and nothing scripted drives it."
+description: "Write or maintain the project's own verification skill and feature map, so any agent can launch the real app, drive it like a user and keep evidence. Use when the user says 'make a verification skill', 'maintain the verify skill', 'match the skeleton', or asks how an agent can test the app, or when a change must be proven in the running app and nothing scripted drives it."
 argument-hint: "[maintain] [the app or surface to cover, when the repository has several]"
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
@@ -27,6 +27,12 @@ description is not asking for it. If the user asked for it, or the brief you are
 - The project already has a `.claude/skills/verify-*/` folder and the user wants a change checked: this skill is not
   needed. Read that folder's `SKILL.md` and follow it. If the user asked for a new one anyway, say one exists and
   offer maintain mode instead of writing a second.
+- The request is only about a skeleton or the loading, empty and error states of a screen: when the project has a
+  `.claude/skills/verify-*/` folder with a "States and skeletons" section, read its `SKILL.md` and run that recipe
+  for the screen named, under that skill's rules (a skeleton is resized only on a yes). When it has no verify skill,
+  say that create mode comes first (an interview of the repository, a generated skill and one end-to-end run, far
+  more than one measurement), and wait for a yes. When its verify skill has no such section, offer maintain mode,
+  which adds it, and wait.
 - Otherwise: **create mode**, below.
 
 Bundled files, all read only:
@@ -35,6 +41,8 @@ Bundled files, all read only:
   per surface (web, CLI, TUI, HTTP, mobile, desktop, library). Read it before step 1.
 - `${CLAUDE_SKILL_DIR}/templates/verify-skill.md` and `${CLAUDE_SKILL_DIR}/templates/feature.md`: the files you
   generate. Every spot to fill is marked `TODO(verify-app)`.
+- `${CLAUDE_SKILL_DIR}/templates/measure-boxes.js`: browser JavaScript that measures a loading skeleton against the
+  loaded screen and reads the layout-shift score. Copied into the generated skill for an app with a screen.
 - `${CLAUDE_SKILL_DIR}/references/feature-map-example/`: a worked feature map, an index and three feature files.
 - `${CLAUDE_SKILL_DIR}/check-map.mjs` (Node 20+, no dependencies): checks a generated skill. Exit 0 clean, 1
   problems, 2 usage.
@@ -54,6 +62,9 @@ cannot show, one question at a time (with AskUserQuestion when it is available).
   environment variables (names only, never values), seed data, migrations and sign-in.
 - **Drive.** How can an agent use it from a script? The project's own harness first (DRIVING.md, section 1). Only
   without one, the fallback for the surface (section 2).
+- **States.** For a screen: the requests its data comes from (the ones to hold, empty or fail), any delay or mock
+  switch the app has, how its skeletons are marked (a project convention, or none yet), and the viewports in the
+  end-to-end config.
 - **Observe.** What proof can be captured: screenshots, accessibility snapshots, terminal transcripts, response
   bodies, logs, exit codes, files written, rows stored, messages sent.
 - **Isolate.** Where does the app write: the current folder, `HOME`, the XDG folders, the temp folder, a configured
@@ -87,8 +98,9 @@ another shell, such as PowerShell. Every other command comes from this repositor
 file.
 
 Required sections, checked by check-map: Launch, Doctor, Drive, Evidence and Cleanup, none empty, and Launch, Doctor
-and Cleanup each with a command in a code block. The template also has Run folders, Helpers, Feature map and Not yet
-proven on the real target; keep them (Helpers says "None." when there are none). What each section holds:
+and Cleanup each with a command in a code block. The template also has Run folders, States and skeletons, Helpers,
+Feature map and Not yet proven on the real target; keep them (Helpers says "None." when there are none). What each
+section holds:
 
 - **Run folders.** Fixed text: the run ID, the scratch folder `$RUN`, the evidence folder `$EV`, and the variables
   saved to `$RUN/env`, which every later command loads with `set -a` so the app sees them too. Each Bash tool call
@@ -116,6 +128,13 @@ proven on the real target; keep them (Helpers says "None." when there are none).
   when the project has none, and show the line. Each run has its own subfolder, each feature a subfolder in that,
   and each step numbered files: `01-<step>.cmd` (exactly what ran), `.out`, `.err`, `.exit`, and screenshots,
   snapshots or response bodies as the surface needs. The proof rules in the template stay as they are.
+- **States and skeletons.** For an app with a screen: how this harness holds, empties and fails a data request
+  (or the app's own switch where it cannot intercept), the viewports, the skeleton markers, and the shared recipe
+  that measures a skeleton against the loaded screen. Copy `${CLAUDE_SKILL_DIR}/templates/measure-boxes.js` to
+  `.claude/skills/verify-<app>/measure-boxes.js`: the generated skill must work without this skill installed, so the
+  recipe and its helper live in its own folder. Keep only the harness calls for this project's harness, and write
+  the measuring steps in its language, as a scratch test or script like any other drive. For an app with no screen,
+  the section says so in one line and the helper is not copied.
 - **Cleanup.** Stop only what `$RUN/started.txt` lists, checking that each process still has its recorded start time
   (a process ID can be reused), and delete only the paths it lists. Never by process name (`pkill`, `killall`,
   `taskkill /IM`), never by a glob, never with a command that wipes ignored files (`git clean -x`), never by removing
@@ -136,8 +155,12 @@ Create `.claude/skills/verify-<app>/features/README.md` and one file per user-fa
 Start with the 3 to 5 features a user meets first, found from routes, commands, menus and docs.
 
 - The index sets the baseline state, the driving conventions and the proof rules, and links every feature file.
-- Each feature file has a title, one paragraph on what the user sees, and exactly four sections: `Sub-features`,
-  `How to get to it (user's point of view)`, `Driving it with <harness>` and `Gotchas`.
+- Each feature file has a title, one paragraph on what the user sees, and exactly five sections: `Sub-features`,
+  `How to get to it (user's point of view)`, `Driving it with <harness>`, `Gotchas` and `States`.
+- `States` says how to force the screen's loading state (hold the data request), its empty state (no data) and its
+  error state (the request fails), what each should look like, and the screenshot kept for each. Where the screen has
+  a skeleton, it names the markers the recipe in "States and skeletons" pairs. A feature with no screen (a CLI
+  command, an HTTP endpoint) says so in one line.
 - Each step in `Driving it` pairs a user action with the exact command and the result that proves it.
 - Never weaken a journey to make it pass. If the seed data lacks what a journey needs, the journey fails, and the
   reason goes in that feature's `Gotchas`.
@@ -152,7 +175,7 @@ node "${CLAUDE_SKILL_DIR}/check-map.mjs" .claude/skills/verify-<app>
 
 It checks the frontmatter, the five required sections (none empty; Launch, Doctor and Cleanup with a command in a
 code block), the evidence line, leftover `TODO(verify-app)` markers and template tokens, that the index matches the
-feature files on disk (subfolders of `features/` count), the four headings in every feature file, and that the
+feature files on disk (subfolders of `features/` count), the five headings in every feature file, and that the
 evidence folder is ignored by git with nothing in it tracked. Fix every problem it prints. A clean result means the
 shape is right, not that the commands work: step 6 proves those.
 
@@ -170,6 +193,9 @@ mapped feature (one is enough; the map is there so later runs can cover the rest
     commands, like any session).
   - Only when neither is possible, follow the file yourself, using only what it says. This is the weaker test,
     because you know what the file meant to say; say so in the report.
+- For an app with a screen, the drive includes that feature's States: each state forced, its screenshot kept, and
+  the skeleton measured at the viewports the skill names. Report each mismatch with its numbers; resize a skeleton
+  only on the user's yes (it is product code), then measure again.
 - After cleanup, confirm that the evidence still exists at the named folder, that nothing the run started is still
   running (the recorded processes are gone, the port is free for a server), and that `git status` shows nothing new
   outside the evidence folder. A cleanup that eats the proof fails this step.
@@ -193,6 +219,7 @@ Verify skill: .claude/skills/verify-<app>/ (<surface>, harness <harness>)
 Features mapped: <n>: <names>; not covered yet: <surfaces or features, or none>
 check-map: clean
 End-to-end run: <feature> by <subagent | fresh session | me, the weaker test>: launch <ok>, doctor <ok>, drive <ok>, evidence at <path> (kept after cleanup), cleanup <ok>
+States: <loading, empty and error screenshots at <path>, or no screen>; skeleton <matches | each mismatch with its numbers | no skeleton>
 Fixed to make it start: <list, or none>
 Not yet proven on the real target: <list, or none>
 Questions for the user: <list, or none>
@@ -207,4 +234,5 @@ Questions for the user: <list, or none>
 - Never stop a process by name, and never stop what another session started.
 - Never put a secret in the generated skill or in evidence. Record variable names, and redact tokens from captured
   requests and logs.
-- Never change product code without the user's yes. In maintain mode, never change it at all.
+- Never change product code without the user's yes. In maintain mode, never change it at all. A skeleton is product
+  code: in create mode it is resized only on a yes, and in maintain mode a mismatch is a product gap to report.

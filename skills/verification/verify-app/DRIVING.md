@@ -39,6 +39,10 @@ When one exists:
   long CSS paths.
 - **Evidence:** a screenshot with the app's identity visible, an accessibility snapshot (`locator.ariaSnapshot()`), a
   trace (`context.tracing`) for a failure, and the browser console log.
+- **States:** force loading, empty and error from outside the app, with the harness's request interception
+  (Playwright `page.route`, Cypress `cy.intercept`, WebdriverIO `browser.mock`), or the app's own delay or mock switch
+  where the harness cannot intercept. The template's "States and skeletons" section has the calls for each harness
+  and the recipe that measures a skeleton against the loaded screen.
 - Browser downloads can be blocked in a sandbox. If they are, say so in the generated skill and use a browser that is
   already installed.
 

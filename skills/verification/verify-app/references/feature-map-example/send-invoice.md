@@ -41,3 +41,16 @@ Steps:
   send real email; the doctor checks the mode before any drive.
 - The email is sent by a background job. Poll the mailbox for up to 10 seconds, do not read it once.
 - A sent invoice cannot be deleted. Cleanup resets the database instead of deleting it through the UI.
+
+## States
+
+The invoice page, `$URL/invoices/INV-0001`.
+
+- **Loading.** Hold `GET /api/invoices/INV-0001` with `page.route` and open the page. A skeleton heading and three
+  skeleton lines show, and `Send` is disabled. Screenshot `$EV/send-invoice/05-loading.png`.
+- **Empty.** Does not apply: an invoice always has at least one line. An unknown number, `$URL/invoices/INV-9999`,
+  shows `Invoice not found` with a link back to `Invoices`. Screenshot `$EV/send-invoice/06-not-found.png`.
+- **Error.** Answer `POST /api/invoices/INV-0001/send` with status 502. The dialog stays open with the alert
+  `Could not send, nothing was sent`, and the status still reads `Draft`. Screenshot `$EV/send-invoice/07-error.png`.
+- **Skeleton.** No marker on this page: pair by document order inside `main`. Measured with "States and skeletons" in
+  `SKILL.md`; a mismatch here is reported, not fixed, unless the user says yes.

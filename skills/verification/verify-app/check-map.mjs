@@ -14,8 +14,10 @@
  *     template token (<app>, <surface>, <harness>) left in.
  *   - features/README.md exists, and its links match the feature files on disk: no dead entry, no unlisted file, no
  *     duplicate. Every .md file under features/, in subfolders too, is a feature file, except features/README.md.
- *   - Every feature file has exactly four second-level headings, in this order, each with content under it:
- *     Sub-features, How to get to it (...), Driving it (...), Gotchas.
+ *   - Every feature file has exactly five second-level headings, in this order, each with content under it:
+ *     Sub-features, How to get to it (...), Driving it (...), Gotchas, States. A missing States heading names maintain
+ *     mode, which adds it to maps made before it was required. What States says (loading, empty and error, or that the
+ *     feature has no screen) is for the agent to judge; it is not parsed here.
  *   - No line in SKILL.md or features/ still carries the template marker TODO(verify-app).
  *   - The evidence folder is ignored by git and has no tracked files in it. --evidence <path> overrides the folder
  *     named in SKILL.md; a relative path is relative to the repository root. A folder outside the repository, or a
@@ -45,6 +47,12 @@ export const FEATURE_HEADINGS = [
   { label: 'How to get to it', test: (t) => /^how to get to it\b/i.test(t) },
   { label: 'Driving it', test: (t) => /^driving it\b/i.test(t) },
   { label: 'Gotchas', test: (t) => /^gotchas$/i.test(t) },
+  {
+    label: 'States',
+    test: (t) => /^states\b/i.test(t),
+    missing: 'maps made before it was required gain it in maintain mode (verify-app with the argument maintain), which writes how to force the loading, empty and error states, or says the feature has no screen',
+    empty: 'say how to force the loading, empty and error states and what each looks like, or that the feature has no screen',
+  },
 ];
 
 /** Required sections of the generated SKILL.md, and whether each needs a command in a fenced code block. */
@@ -140,19 +148,20 @@ export function checkFeature(text) {
   const found = [];
   for (const s of sections(text)) {
     const idx = FEATURE_HEADINGS.findIndex((r) => r.test(s.h.text));
-    if (idx < 0) { problems.push(`unexpected heading "## ${s.h.text}" (line ${s.h.line}): a feature file has exactly the four headings`); continue; }
+    if (idx < 0) { problems.push(`unexpected heading "## ${s.h.text}" (line ${s.h.line}): a feature file has exactly the five headings`); continue; }
     if (found.some((f) => f.idx === idx)) { problems.push(`heading "${FEATURE_HEADINGS[idx].label}" appears more than once (line ${s.h.line})`); continue; }
     found.push({ idx, s });
   }
   for (const [idx, r] of FEATURE_HEADINGS.entries()) {
-    if (!found.some((f) => f.idx === idx)) problems.push(`missing heading "## ${r.label}"`);
+    if (!found.some((f) => f.idx === idx)) problems.push(`missing heading "## ${r.label}"${r.missing ? `: ${r.missing}` : ''}`);
   }
   const order = found.map((f) => f.idx);
   if (order.some((v, i) => i > 0 && v < order[i - 1])) {
     problems.push(`headings out of order: use ${FEATURE_HEADINGS.map((r) => r.label).join(', ')}`);
   }
   for (const { idx, s } of found) {
-    if (isEmpty(s.body)) problems.push(`"## ${FEATURE_HEADINGS[idx].label}" is empty`);
+    const r = FEATURE_HEADINGS[idx];
+    if (isEmpty(s.body)) problems.push(`"## ${r.label}" is empty${r.empty ? `: ${r.empty}` : ''}`);
   }
   return problems;
 }

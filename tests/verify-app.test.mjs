@@ -6,6 +6,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { writeFileSync, mkdirSync, readFileSync, readdirSync, cpSync, realpathSync, existsSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { once } from 'node:events';
+import vm from 'node:vm';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
   headings, checkFeature, indexLinks, compareIndex, parseFrontmatter, checkSkill, evidenceFolder, placeholders,
@@ -34,7 +35,25 @@ A user saves a link with a title and finds it again in the list.
 ## Gotchas
 
 - Titles are trimmed.
+
+## States
+
+- No screen: an HTTP endpoint, so there is no loading, empty or error screen to show.
 `;
+
+const GOTCHAS = '## Gotchas\n\n- Titles are trimmed.\n';
+
+/** A feature with a screen: the three states, each with how to force it and a screenshot. */
+const STATES = `## States
+
+- **Loading.** Hold \`GET /api/bookmarks\` with \`page.route\`. Five grey rows show. Screenshot \`$EV/list/01-loading.png\`.
+- **Empty.** Answer the request with \`[]\`. The list reads \`No bookmarks yet\`. Screenshot \`$EV/list/02-empty.png\`.
+- **Error.** Answer it with status 500. An alert reads \`Could not load bookmarks\`. Screenshot \`$EV/list/03-error.png\`.
+`;
+const WITH_SCREEN = FEATURE.replace(/## States\n[\s\S]*$/, STATES);
+
+/** FEATURE as maps made before the States heading: the four old headings only. */
+const FOUR_HEADINGS = FEATURE.replace(/\n## States\n[\s\S]*$/, '');
 
 const SKILL = `---
 name: verify-shelf
@@ -78,7 +97,7 @@ describe('headings', () => {
 });
 
 describe('checkFeature', () => {
-  test('a file with the four headings in order, each with content, is clean', () => assert.deepEqual(checkFeature(FEATURE), []));
+  test('a file with the five headings in order, each with content, is clean', () => assert.deepEqual(checkFeature(FEATURE), []));
 
   test('accepts the upstream spellings of the headings and any harness name', () => {
     const text = FEATURE.replace("(user's point of view)", '(user POV)').replace('with curl', 'with tmux');
@@ -109,8 +128,44 @@ describe('checkFeature', () => {
     assert.ok(p.some((m) => /How to get to it.*empty/.test(m)), p.join('\n'));
   });
 
+  test('States is required, and its absence names maintain mode as the way to add it', () => {
+    const p = checkFeature(FOUR_HEADINGS);
+    assert.equal(p.length, 1, p.join('\n'));
+    assert.match(p[0], /missing heading "## States"/);
+    assert.match(p[0], /maintain mode/);
+  });
+
+  test('States comes after Gotchas', () => {
+    const text = FOUR_HEADINGS.replace(GOTCHAS, `${STATES}\n${GOTCHAS}`);
+    assert.ok(checkFeature(text).some((m) => /order/.test(m) && /Gotchas, States/.test(m)), checkFeature(text).join('\n'));
+  });
+
+  test('an empty States section is reported by name', () => {
+    const p = checkFeature(`${FOUR_HEADINGS}\n## States\n\n`);
+    assert.equal(p.length, 1, p.join('\n'));
+    assert.match(p[0], /"## States" is empty/);
+  });
+
+  test('a feature with no screen passes with a one-line States body', () => {
+    assert.match(FEATURE, /## States\n\n- No screen[^\n]*\n$/);
+    assert.deepEqual(checkFeature(FEATURE), []);
+  });
+
+  test('a feature with a screen passes with its three states, which the checker does not parse', () => {
+    assert.deepEqual(checkFeature(WITH_SCREEN), []);
+    assert.deepEqual(checkFeature(WITH_SCREEN.replace(/- \*\*Empty[^\n]*\n/, '')), []);
+  });
+
+  test('an extra heading is reported against the five headings', () => {
+    assert.ok(checkFeature(`${FEATURE}\n## Notes\n\n- x\n`).some((m) => /five headings/.test(m)));
+  });
+
+  test('a States heading with extra words counts', () => {
+    assert.deepEqual(checkFeature(FEATURE.replace('## States\n', '## States (no screen)\n')), []);
+  });
+
   test('a heading inside a code block does not count', () => {
-    const p = checkFeature(FEATURE.replace('## Gotchas\n\n- Titles are trimmed.\n', '```\n## Gotchas\n```\n'));
+    const p = checkFeature(FEATURE.replace(GOTCHAS, '```\n## Gotchas\n```\n'));
     assert.ok(p.some((m) => /missing.*Gotchas/.test(m)));
   });
 });
@@ -192,13 +247,14 @@ describe('parseArgs', () => {
 
 describe('Markdown details', () => {
   test('a fence closes only on a bare fence of the same character, at least as long', () => {
-    const body = (inner) => `${FEATURE.replace('## Gotchas\n\n- Titles are trimmed.\n', '')}\n${inner}\n`;
+    // Gotchas comes before States, so the replacement goes where Gotchas was.
+    const body = (inner) => FEATURE.replace(GOTCHAS, `${inner}\n`);
     // Each code block hides a "## Gotchas", so the heading must still be missing.
     for (const inner of ['```\n~~~\n## Gotchas\n```', '````\n```\n## Gotchas\n````', '```\n```sh\n## Gotchas\n```']) {
       assert.ok(checkFeature(body(inner)).some((m) => /missing.*Gotchas/.test(m)), inner);
     }
     // A longer closing fence closes, so the heading after it counts.
-    assert.deepEqual(checkFeature(`${FEATURE.replace('## Gotchas\n\n- Titles are trimmed.\n', '')}\n\`\`\`\nx\n\`\`\`\`\n\n## Gotchas\n\n- y\n`), []);
+    assert.deepEqual(checkFeature(body('```\nx\n````\n\n## Gotchas\n\n- y\n')), []);
   });
 
   test('a file with CRLF line endings and a code block is read like one with LF', () => {
@@ -334,9 +390,28 @@ describe('check-map.mjs on a real project', () => {
     assert.equal(run([join(root, 'empty')]).code, 2);
   });
 
+  test('a map with only the four old headings exits 1, names States and says maintain mode adds it', () => {
+    const { dir } = makeProject();
+    writeFileSync(join(dir, 'features', 'add.md'), FOUR_HEADINGS);
+    writeFileSync(join(dir, 'features', 'search.md'), FOUR_HEADINGS.replace('# Add a bookmark', '# Search'));
+    const r = run([dir]);
+    assert.equal(r.code, 1, r.stdout);
+    assert.match(r.stdout, /add\.md: missing heading "## States".*maintain mode/);
+    assert.match(r.stdout, /search\.md: missing heading "## States".*maintain mode/);
+    assert.match(r.stdout, /2 problem\(s\)/);
+  });
+
+  test('an empty States section exits 1 and names the file', () => {
+    const { dir } = makeProject();
+    writeFileSync(join(dir, 'features', 'search.md'), `${FOUR_HEADINGS}\n## States\n`);
+    const r = run([dir]);
+    assert.equal(r.code, 1, r.stdout);
+    assert.match(r.stdout, /search\.md: "## States" is empty/);
+  });
+
   test('a feature file missing a heading exits 1 and names the file', () => {
     const { dir } = makeProject();
-    writeFileSync(join(dir, 'features', 'search.md'), FEATURE.replace('## Gotchas\n\n- Titles are trimmed.\n', ''));
+    writeFileSync(join(dir, 'features', 'search.md'), FEATURE.replace(GOTCHAS, ''));
     const r = run([dir]);
     assert.equal(r.code, 1, r.stdout);
     assert.match(r.stdout, /search\.md.*Gotchas/);
@@ -530,7 +605,34 @@ describe('the bundled template and example', () => {
     for (const s of ['Launch', 'Doctor', 'Cleanup']) assert.match(msgs, new RegExp(`${s}.*(empty|no command)`), `${s} with nothing filled in is reported:\n${msgs}`);
   });
 
-  test('the feature template has the four headings', () => {
+  test('the example map with its States sections taken out fails with the maintain-mode message for each file', () => {
+    const { root } = makeProject();
+    const dir = join(root, '.claude', 'skills', 'verify-notes');
+    mkdirSync(dir, { recursive: true });
+    const template = readFileSync(join(SKILL_DIR, 'templates', 'verify-skill.md'), 'utf8');
+    writeFileSync(join(dir, 'SKILL.md'), template.replace(/<app>/g, 'notes').replace(/<surface>/g, 'web UI').replace(/<harness>/g, 'Playwright').replace(/TODO\(verify-app\)/g, 'filled in'));
+    cpSync(join(SKILL_DIR, 'references', 'feature-map-example'), join(dir, 'features'), { recursive: true });
+    const examples = readdirSync(join(dir, 'features')).filter((f) => f.endsWith('.md') && f !== 'README.md');
+    for (const f of examples) {
+      const p = join(dir, 'features', f);
+      const text = readFileSync(p, 'utf8');
+      assert.match(text, /\n## States\n/, `${f} has a States section`);
+      writeFileSync(p, text.replace(/\n## States\n[\s\S]*$/, '\n'));
+    }
+    const out = JSON.parse(run([dir, '--json']).stdout);
+    assert.deepEqual(out.problems.map((p) => p.file).sort(), examples.map((f) => `features/${f}`).sort());
+    for (const p of out.problems) assert.match(p.message, /missing heading "## States".*maintain mode/);
+  });
+
+  test('the example map has a feature with no screen, and says so under States', () => {
+    const ex = join(SKILL_DIR, 'references', 'feature-map-example');
+    const bodies = readdirSync(ex).filter((f) => f.endsWith('.md') && f !== 'README.md')
+      .map((f) => readFileSync(join(ex, f), 'utf8').split('\n## States\n')[1] || '');
+    assert.ok(bodies.some((b) => /no screen/i.test(b)), 'one example says it has no screen');
+    assert.ok(bodies.some((b) => /loading/i.test(b) && /empty/i.test(b) && /error/i.test(b) && /\.png/.test(b)), 'one example has all three states with screenshots');
+  });
+
+  test('the feature template has the five headings', () => {
     const text = readFileSync(join(SKILL_DIR, 'templates', 'feature.md'), 'utf8').replace(/TODO\(verify-app\)/g, 'filled in');
     assert.deepEqual(checkFeature(text), []);
   });
@@ -541,6 +643,212 @@ describe('the bundled template and example', () => {
     const links = indexLinks(readFileSync(join(ex, 'README.md'), 'utf8'));
     assert.deepEqual(compareIndex(links, files), { dead: [], unlisted: [], duplicate: [] });
     assert.ok(files.length >= 3);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// The in-page skeleton helper, run in a stub page: CI has no browser
+// ---------------------------------------------------------------------------------------------------------------
+
+const HELPER = readFileSync(join(SKILL_DIR, 'templates', 'measure-boxes.js'), 'utf8');
+
+/**
+ * A stub page: elements by selector, swapped between the loading and the loaded state; shifts for the observer.
+ * An element is [name, left, top, width, height] in viewport coordinates, or with 'hidden' after them for one that is
+ * not rendered (hidden, display: none, a template): it has no client rects and a zero box, as in a browser.
+ */
+function stubPage({ loading, loaded, shifts = [], types = ['layout-shift', 'paint'], scroll = [0, 0] }) {
+  let state = loading;
+  const el = (attr, name, b) => {
+    const hidden = b[4] === 'hidden';
+    const r = hidden ? { left: 0, top: 0, width: 0, height: 0 } : { left: b[0], top: b[1], width: b[2], height: b[3] };
+    return { getAttribute: (a) => (a === attr ? name : null), getBoundingClientRect: () => r, getClientRects: () => (hidden ? [] : [r]) };
+  };
+  const all = (sel) => {
+    const [attr, list] = state[sel] || [null, []];
+    return list.map(([name, ...b]) => el(attr, name, b));
+  };
+  class PerformanceObserver {
+    static supportedEntryTypes = types;
+    constructor(cb) { this.cb = cb; }
+    observe() {}
+    takeRecords() { return shifts.splice(0); }
+  }
+  const window = { scrollX: scroll[0], scrollY: scroll[1], innerWidth: 390, innerHeight: 844 };
+  const ctx = {
+    window, PerformanceObserver, setTimeout, requestAnimationFrame: (f) => setTimeout(f, 0),
+    document: {
+      querySelectorAll: all,
+      querySelector: (sel) => (state[sel] ? { children: all(sel), querySelectorAll: all } : null),
+    },
+  };
+  vm.runInNewContext(HELPER, ctx);
+  return { api: window.__verifyBoxes, load: () => { state = loaded; } };
+}
+
+/** The helper runs in another realm: copy its results into this one before deepEqual. */
+const plain = (x) => JSON.parse(JSON.stringify(x));
+
+const ROWS = (h, gap = 8) => [0, 1, 2].map((i) => ['person-row', 16, 64 + i * (h + gap), 358, h]);
+
+describe('the skeleton helper', () => {
+  test('pairs boxes by marker and reports each one off by more than 4 px, with its numbers', async () => {
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', ROWS(36)] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56)] },
+      shifts: [{ value: 0.0418, hadRecentInput: false }],
+    });
+    assert.equal(api.skeleton().length, 3);
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.pass, false);
+    assert.equal(r.mismatches, 3);
+    assert.deepEqual(r.pairs.map((p) => p.diff), [{ x: 0, y: 0, width: 0, height: 20 }, { x: 0, y: 20, width: 0, height: 20 }, { x: 0, y: 40, width: 0, height: 20 }]);
+    assert.match(r.text, /MISMATCH person-row #3: skeleton x 16, y 152, 358 by 36; real x 16, y 192, 358 by 56; off by y \+40 px, height \+20 px/);
+    assert.deepEqual(r.layoutShift, { supported: true, score: 0.0418, entries: 1, mismatch: false });
+  });
+
+  test('a box off by exactly 4 px passes and one off by 4.5 px does not', async () => {
+    for (const [h, pass] of [[60, true], [60.5, false]]) {
+      const { api, load } = stubPage({
+        loading: { '[data-skeleton-for]': ['data-skeleton-for', [['card', 0, 0, 100, 56]]] },
+        loaded: { '[data-skeleton-name]': ['data-skeleton-name', [['card', 0, 0, 100, h]]] },
+      });
+      api.skeleton();
+      load();
+      assert.equal((await api.compare()).pass, pass, `height ${h}`);
+    }
+  });
+
+  test('a matching skeleton with no layout-shift entries passes', async () => {
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', ROWS(56)] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56)] },
+    });
+    api.skeleton();
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.pass, true, r.text);
+    assert.equal(r.layoutShift.score, 0);
+    assert.match(r.text, /matches the loaded screen/);
+  });
+
+  test('a layout-shift score above 0.1 is a mismatch, and shifts after input do not count', async () => {
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', ROWS(56)] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56)] },
+      shifts: [{ value: 0.08, hadRecentInput: false }, { value: 0.05, hadRecentInput: false }, { value: 0.5, hadRecentInput: true }],
+    });
+    api.skeleton();
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.layoutShift.score, 0.13);
+    assert.equal(r.layoutShift.entries, 2);
+    assert.equal(r.pass, false);
+    assert.match(r.text, /MISMATCH layout-shift score 0\.13/);
+  });
+
+  test('a box left without a partner is reported', async () => {
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', [...ROWS(56), ['avatar', 0, 0, 40, 40]]] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56).slice(0, 2)] },
+    });
+    api.skeleton();
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.pass, false);
+    assert.deepEqual(r.unpaired.map((u) => [u.side, u.name, u.index]).sort(), [['skeleton', 'avatar', 0], ['skeleton', 'person-row', 2]]);
+    assert.match(r.text, /UNPAIRED skeleton box avatar #1/);
+  });
+
+  test('without markers, boxes pair by document order inside the container', async () => {
+    const { api, load } = stubPage({
+      loading: { '#people': [null, ROWS(36)] },
+      loaded: { '#people': [null, ROWS(56)] },
+    });
+    api.skeleton({ container: '#people' });
+    load();
+    const r = plain(await api.compare({ container: '#people' }));
+    assert.equal(r.pairs.length, 3);
+    assert.equal(r.mismatches, 3);
+  });
+
+  test('no box matching the markers or the selector fails, and says to check them', async () => {
+    const { api, load } = stubPage({ loading: {}, loaded: {} });
+    assert.equal(api.skeleton().length, 0);
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.pass, false, r.text);
+    assert.match(r.text, /no boxes matched: check the markers or the selector/);
+    assert.doesNotMatch(r.text, /matches the loaded screen/);
+  });
+
+  test('compare() before skeleton() fails with that reason, not with every real box unpaired', async () => {
+    const { api, load } = stubPage({
+      loading: {},
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56)] },
+    });
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.pass, false);
+    assert.match(r.text, /skeleton\(\) was not called/);
+    assert.deepEqual(r.unpaired, []);
+    assert.doesNotMatch(r.text, /UNPAIRED/);
+  });
+
+  test('in container mode, children that are not rendered are skipped, not measured as empty boxes', async () => {
+    const { api, load } = stubPage({
+      loading: { '#people': [null, [...ROWS(56), ['tpl', 0, 0, 0, 0, 'hidden']]] },
+      loaded: { '#people': [null, [['tpl', 0, 0, 0, 0, 'hidden'], ...ROWS(56)]] },
+    });
+    assert.equal(api.skeleton({ container: '#people' }).length, 3);
+    load();
+    const r = plain(await api.compare({ container: '#people' }));
+    assert.equal(r.pairs.length, 3);
+    assert.deepEqual(r.unpaired, []);
+    assert.equal(r.pass, true, r.text);
+  });
+
+  test('a skeleton with fewer rows than the list says the counts differ, which resizing cannot fix', async () => {
+    const five = [0, 1, 2, 3, 4].map((i) => ['person-row', 16, 64 + i * 64, 358, 56]);
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', ROWS(56)] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', five] },
+    });
+    api.skeleton();
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.pass, false);
+    assert.equal(r.unpaired.length, 2);
+    assert.match(r.text, /COUNT person-row: 3 skeleton box\(es\), 5 real: answer the held request with 3 items/);
+  });
+
+  test('boxes are in page coordinates: the scroll offset is added', async () => {
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', ROWS(56)] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56)] },
+      scroll: [10, 300],
+    });
+    assert.deepEqual(plain(api.skeleton())[0].box, { x: 26, y: 364, width: 358, height: 56 });
+    load();
+    const r = plain(await api.compare());
+    assert.deepEqual(r.pairs[2].real, { x: 26, y: 492, width: 358, height: 56 });
+  });
+
+  test('an engine without layout-shift entries skips the score and says so', async () => {
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', ROWS(56)] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56)] },
+      shifts: [{ value: 0.5, hadRecentInput: false }],
+      types: ['paint'],
+    });
+    api.skeleton();
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.layoutShift.supported, false);
+    assert.equal(r.layoutShift.score, null);
+    assert.equal(r.pass, true);
+    assert.match(r.text, /skipped layout-shift score: .*only Chromium/);
   });
 });
 
@@ -576,6 +884,45 @@ describe('fixture apps', () => {
       const list = await (await fetch(`${url}/bookmarks`)).json();
       assert.equal(list.length, 1);
       assert.ok(existsSync(join(data, 'bookmarks.json')));
+    } finally {
+      child.kill('SIGTERM');
+    }
+    const [code] = await once(child, 'exit');
+    assert.equal(code, 0);
+  });
+
+  // The web-skeleton fixture's seeded gap, written here and not in the fixture folder, so a cold run that reads the
+  // fixture finds the gap by measuring it: a skeleton row (.skeleton-row) is 36 px tall and a real row (.person)
+  // 56 px, so each of the three skeleton rows is 20 px short and the section below the list (#below) moves 60 px when
+  // the data arrives. Keep the gap in the fixture: a dry run fixes it in a copy and measures again.
+  test('the skeleton page starts, serves a skeleton 20 px too short, and its API delays, empties and fails on request', async () => {
+    const child = spawn(process.execPath, [join(FIX, 'web-skeleton', 'server.mjs')], { env: { ...process.env, PORT: '0' }, stdio: ['ignore', 'pipe', 'pipe'] });
+    try {
+      let out = '';
+      const url = await new Promise((resolveUrl, reject) => {
+        const t = setTimeout(() => reject(new Error(`no ready line: ${out}`)), 5000);
+        child.stdout.on('data', (d) => {
+          out += d;
+          const m = /ready on (http:\/\/127\.0\.0\.1:\d+)/.exec(out);
+          if (m) { clearTimeout(t); resolveUrl(m[1]); }
+        });
+      });
+      const page = await (await fetch(`${url}/`)).text();
+      assert.match(page, /data-skeleton-for="person-row"/, 'the skeleton rows carry the marker');
+      assert.match(page, /data-skeleton-name/, 'the page marks its real rows');
+      assert.match(page, /id="below"/, 'content below the list, so a shift can be measured');
+      const px = (cls) => Number(new RegExp(`\\.${cls}\\s*\\{[^}]*\\bheight:\\s*(\\d+)px`).exec(page)?.[1]);
+      assert.equal(px('person') - px('skeleton-row'), 20, 'the seeded gap: a skeleton row is 20 px shorter than a real row');
+      const people = await (await fetch(`${url}/api/people`)).json();
+      assert.equal(people.length, 3);
+      const t0 = Date.now();
+      const slow = await fetch(`${url}/api/people?delay=400`);
+      assert.equal(slow.status, 200);
+      assert.ok(Date.now() - t0 >= 380, `the delay switch held the answer for ${Date.now() - t0} ms`);
+      assert.deepEqual(await (await fetch(`${url}/api/people?data=empty`)).json(), []);
+      const failed = await fetch(`${url}/api/people?fail=1`);
+      assert.equal(failed.status, 500);
+      assert.ok((await failed.json()).error);
     } finally {
       child.kill('SIGTERM');
     }
