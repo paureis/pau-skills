@@ -74,7 +74,7 @@ Your idea: <one line, or "none">
 ## Phase 2: Diverge (no judging)
 
 The lenses are for you, not for the user: work through them to find options nobody had in mind, then show only the
-options. Every lens gives at least one option.
+options. Every lens gives at least one candidate; merging and trimming them (rules below) leaves the 8 to 12 shown.
 
 | Lens | How to use it |
 |---|---|
@@ -97,8 +97,9 @@ Rules for this phase:
   skill folder into a manifest at pack time and compare it with the installed copy" is. No lens tags.
 - No ratings, no "but", no pros and cons, and do not drop an option for being impractical. Judging now kills the
   options that would have led somewhere.
-- Two options that differ only in a detail count as one. When you have more than 12, merge or cut the closest
-  duplicates, never the only option a lens gave.
+- Two candidates that differ only in a detail count as one: merge them. Then drop the weakest (the vaguest, or a
+  small variant of another) until 12 or fewer are left, never one for being impractical. Keep the options from the
+  less obvious lenses (Invert, Remove the biggest constraint, Borrow, Wild) over a second take on the Baseline.
 - If the user came with an idea, it is one of the options, marked "(your idea)". It counts like any other.
 - Keep a note of which lens gave each option, for yourself. It is not shown.
 
@@ -124,8 +125,8 @@ No ratings, no pros and cons, no preamble.
 Merge their options, add the user's idea if they came with one, remove duplicates, do Combine, then cluster and trim
 to 8 to 12 as above.
 
-**Done when** 8 to 12 distinct options are shown in 3 or 4 clusters, every lens gave at least one, and none has been
-judged.
+**Done when** every lens has given at least one candidate, 8 to 12 distinct options from them are shown in 3 or 4
+clusters, and none has been judged.
 
 ## Phase 3: Pick (one round)
 
