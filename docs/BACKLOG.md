@@ -7,7 +7,9 @@ and compared each part with this repository. This file is the result: what to bu
 skills, what to skip, and the decisions already taken.
 
 A new session should be able to pick any item below and build it without the conversation that produced this file.
-Read "How to work an item" first.
+Read "How to work an item" first. An item is a starting point, not a fixed spec: the session that builds it reviews
+the item against the code and current docs first, improves whatever it finds a better way to do, and records each
+change and why in its pull request and in the item.
 
 ## How to work an item
 
@@ -113,8 +115,9 @@ nothing itself except the integration.
       computer.
 
 Things that bit the first batch:
-- Subagents cannot launch subagents. A builder that needs "a fresh agent" for a dry run uses a separate `claude -p`
-  process, or reports the step as not done; the orchestrator can run the cold run instead.
+- Subagents could not launch subagents then. A builder that needs "a fresh agent" for a dry run uses a separate
+  `claude -p` process, or reports the step as not done; the orchestrator can run the cold run instead. Since then
+  (checked on 2.1.303) subagents can start subagents up to three layers deep; see Q2.
 - Each Bash call is a fresh shell: variables do not survive between calls, and `$!` after `cd dir && cmd &` is the
   subshell, not the app. Skills that start processes must save state to a file and record the real process ID.
 - Reviewers found real bugs in every item, including leaks in arena's blind judging and cleanup that could kill
@@ -754,6 +757,110 @@ count on the profile README is updated.
 - Done when: every test file has been sampled, the table is in the pull request, and the profile README states the
   count of tests kept, in the owner's words.
 
+**Q2 geppetto and a starter agent roster** (`todo`, agent-orchestration, one new skill with bundled agent files).
+Asked for by the owner on 2026-10-19 and settled with `grill-me` in the same session.
+- Origin. Original: ideas only, no shared text or structure, so no NOTICE entry; ORIGINS credits each idea. The ideas
+  come from Grok Bot (SpaceXAI), where Lauren Tan and Peng Zheng run a team of named, persistent bots with one job
+  each:
+  - Peter Yang's episode with them, "We Built Grok Bot. Here Are Our 14 Best Bots"
+    (https://creatoreconomy.so/p/grok-bot-team-14-best-bots-peng-zheng-lauren-tan). Most of it is for paid
+    subscribers; the free part has the chapter list and two takeaways.
+  - His two posts on X about it (https://x.com/petergyang/status/2104575614263144794 and the episode post): an eng
+    lead bot that "never writes code" and splits projects for engineer bots that run cloud coding agents; bots that
+    test their own work before merging; PM, design and eng bots debating in one group chat; "watch your bot work and
+    correct it. Turn what worked into a skill. Once it nails the task in one shot, make it a routine"; bots named
+    after food.
+  - Lauren Tan's public bot "dr eggbot" (https://x.ai/bot/93gOz3op1UQdBdbekQFLK), which designs other bots: "Asks a
+    few preference questions", "one job, one voice, explicit anti-jobs, no leftover tools", "Does not default to
+    shareable templates".
+  - The Grok Bot docs (https://docs.x.ai/grok-bot/bots, `skills-routines-and-automations`, `use-cases`): make a new
+    bot only for a distinct goal, tool set, working style, approval boundary or schedule ("General Helper" is their
+    bad example); standing rules go in the bot's description and the task goes in the message; start with the
+    smallest useful roster.
+  - The name is the owner's pick: Geppetto, the puppet maker in Lies of P. The game's Grand Covenant, the laws built
+    into every puppet that stop it from lying, names the shared rules file below.
+  - To read these sources again, the cloud environment needs `creatoreconomy.so`, `x.ai`, `docs.x.ai` and `x.com`
+    under Allowed domains. `cursor.com` timed out even when allowed.
+- Their bots and ours: Chief of Staff is our orchestrator session (skip); Calendar Manager, Tsuki (trips and errands)
+  and Podcast (articles to audio) are skipped; Dr. Eggbot becomes `geppetto`; Matcha becomes `eng-lead`; the three
+  eng bots become `builder`, one definition started as many times as needed; "bots test their own work" becomes
+  `reviewer`, because here no agent certifies its own work; Writer becomes `writer`; Crumb (cleans up disk files)
+  becomes `sweeper`; Designer is Q3.
+- Claude Code facts the design rests on (docs at code.claude.com, `sub-agents` and `plugins-reference`, checked on
+  2.1.303, 2026-10-19):
+  - An agent is a markdown file with frontmatter. `name` and `description` are required; `tools`, `disallowedTools`,
+    `model`, `effort`, `isolation: worktree`, `memory`, `skills`, `maxTurns` and `color` are optional.
+  - Scopes: the project's `.claude/agents/`, `~/.claude/agents/`, and a plugin's `agents/` folder (plugin agents
+    ignore `hooks`, `mcpServers` and `permissionMode`). claude.ai syncs skills only, never agent files, so the roster
+    ships inside the skill's folder and `geppetto` installs it. Cloud sessions start with an empty `~/.claude/agents/`.
+  - Subagents can start their own subagents, up to three layers below the main conversation
+    (`CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`). The first batch's note that they cannot is out of date.
+  - `memory: project` stores under `.claude/agent-memory/<name>/` and quietly gives the agent Read, Write and Edit.
+  - `skills:` injects the full text of each listed skill at startup; a skill must be model-invocable to be preloaded.
+  - `claude plugin validate .claude/agents` reports agent files whose frontmatter does not parse.
+- What `geppetto` does, in four modes. It shows every file before writing it and writes on a yes.
+  - **Create**: a few questions, then one agent that fits the project: one job, its anti-jobs, the fewest tools that
+    do the job, a description that says when to pick it, and the covenant.
+  - **Install**: copies the bundled roster into the project's `.claude/agents/`, to be committed, so the agents work in
+    cloud sessions and on every computer. User scope only when the user asks.
+  - **Audit**: `check-agents.mjs` (Node standard library) reads every agent in `.claude/agents/` and
+    `~/.claude/agents/` and reports: frontmatter that does not parse, duplicate names, tools that do not resolve or
+    that the job does not need, a description over its budget, a missing covenant, `memory` on an agent meant to be
+    read-only (it adds Write), and descriptions that overlap enough to confuse delegation. Then it proposes fixes and
+    applies them on a yes.
+  - **Update**: when a later version changes the bundled roster, shows the diff against the project's tuned copies and
+    merges on a yes. It never overwrites a tuned file.
+- The roster, role names by the owner's choice:
+  - `eng-lead`: no Edit or Write tools and no memory, so it cannot write code. First run: reads the code and returns
+    slices, one brief per slice (the fields of `lean-subagent-dev`'s `BRIEF-TEMPLATE.md`, written inline) and a cost
+    estimate (builders, reviewers, rounds). After the user's yes, it is continued with SendMessage to start the
+    builders, one reviewer per slice and one fix round, and returns branches ready to merge. The main session merges
+    and pushes.
+  - `builder`: `isolation: worktree`, test first, commits and never pushes, reports with evidence (the commands it ran
+    and their output). `memory: project` for verified project facts: how to run the checks, traps it hit.
+  - `reviewer`: fresh, hostile prior, no memory. Grades each claim PASS, FAIL or UNVERIFIED with evidence, the way
+    `evaluator` does.
+  - `writer`: edits prose only, never code, by the project's own style rules. `memory: project` for house style.
+  - `sweeper`: lists git-ignored build output, caches and temporary folders with their sizes, deletes only after a
+    yes, never touches a tracked file, and reports what it freed. No memory.
+  - A memory entry is kept only when it changed a decision and was verified.
+- `COVENANT.md`: the laws every agent carries, pasted into each file: never report work as done without evidence;
+  never push, merge, delete or install outside its job; stay inside the files its brief names; stop and report when
+  stuck or when a check fails twice. The audit fails an agent without it.
+- Defaults, chosen in the grilling and open to the plan check: `model: inherit` on every agent (decision 8's effort
+  split: `xhigh` for `eng-lead` and `reviewer`, `high` for `builder`); each agent description under 200 characters
+  (the Agent tool lists them in every session where they are installed); `skills:` lists only skills installed when
+  `geppetto` runs (`tdd` for `builder`, `evaluator` for `reviewer`), and each agent's body carries the essentials so it
+  works without them; `geppetto`'s own description keeps the skill total near 12,630 of 13,000; `geppetto` stays off
+  `CONFIRM_LIST` because it already asks before every write.
+- Dogfood: the same pull request installs the roster into this repository's `.claude/agents/`, and "How to run a
+  batch" switches to `eng-lead`, `builder` and `reviewer` from the next batch on. That batch records what worked and
+  what did not under its "Things that bit" list.
+- Not set in stone: everything above came out of one grilling session. The session that builds it reviews all of it
+  against the code and the current Claude Code docs before building, and changes whatever it finds a better way to do.
+  It records each change and why in the pull request and in this item.
+- Overlaps: `lean-subagent-dev` (`eng-lead` runs its brief and review loop inside an agent; keep the brief fields in
+  step), `evaluator` (`reviewer`), `parallel-worktrees`, `overnight-run` and scheduled tasks (the routine step of the
+  trust ladder), `skill-creator` (writes skills, not agents).
+- Done when: on a fixture repository, a headless cold run with an empty HOME shows `geppetto` installing the roster;
+  a small task going from `eng-lead` (plan, then dispatch after a yes) to two `builder` runs to `reviewer` and ending
+  on branches ready to merge; `sweeper` listing without deleting; and the audit catching a seeded bad agent (leftover
+  tools, missing covenant, memory on `eng-lead`). `check-agents.mjs` has tests a mutation can break, the bundled
+  roster passes its own audit in a test, and the four repository checks pass.
+
+**Q3 designer agent** (`todo`, after Q2). Asked for by the owner on 2026-10-19, left out of Q2's first roster.
+- Origin: Peng Zheng's design bot in the same episode. It edits Figma through the Figma MCP and uses a skill that
+  knows his files and design system; he designs the system and one keyframe ("I will do the first 5%") and the bot
+  extends it into every screen of the flow.
+- What it does: a `designer` agent that `geppetto` creates on request, at project scope so it can carry `mcpServers`
+  (plugin agents cannot), with a short design-system skill or file it reads first (tokens, type, spacing, how the
+  files are laid out). It extends a keyframe into further screens using only the system's tokens and reports any
+  value it had to invent.
+- Blocked on: a working Figma connector. In the 2026-10-19 session the Figma MCP failed to connect (proxy 403). Without
+  Figma, the same agent can work on a code design system (a tokens file and components).
+- Done when: on a fixture design system with one keyframe, the agent produces a second screen that uses only system
+  tokens, flags anything it invented, and passes `geppetto`'s audit.
+
 ## Order
 
 1. Done: P0.2, P0.3, P0.4 (groundwork).
@@ -765,7 +872,8 @@ count on the profile README is updated.
    `which-skill`, M11 small additions with the `suppression-reason` hook, P1.2 and P1.3.
 7. Done: the fifth batch, N8 overnight-run, N9 engineering-principles, and the small items P1.6 to P1.8, with the
    hillclimb log guard and the mutate.sh restore by content.
-8. **Next:** Q1 test-value audit, and the owner's new ideas, which the next session writes into a new section first.
+8. **Next:** the items in section Q: Q1 test-value audit, Q2 `geppetto` and the agent roster, Q3 designer agent
+   (after Q2), and any further ideas the owner adds there.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
 
