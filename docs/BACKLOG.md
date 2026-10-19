@@ -849,7 +849,7 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 
 ### Q. After the pstack review
 
-**Q1 test-value audit** (`todo`, verification, no new skill). Asked for by the owner on 2026-10-19 before the test
+**Q1 test-value audit** (`in progress`, verification, no new skill). Asked for by the owner on 2026-10-19 before the test
 count on the profile README is updated.
 - The suite has 1,069 tests. Find the ones that are not worth having, by the list in `tdd` ("prefer no new test over
   a bad test": mostly tests a mock, pins implementation details, depends on timing or unrelated global state, would
@@ -860,6 +860,21 @@ count on the profile README is updated.
   pull request that removes or rewrites the ones the owner agrees to, never weakening a test to make it pass.
 - Done when: every test file has been sampled, the table is in the pull request, and the profile README states the
   count of tests kept, in the owner's words.
+- Changed at the start of batch 7 (2026-10-19), after a review against the code:
+  - The suite now has 1,166 tests in 39 files (1,165 pass, 1 skipped as root), not 1,069. The count is the `# tests`
+    line of `npm test` minus skipped tests. The profile README says "with over 500 tests" today.
+  - "Redundant" joins the list (from `tdd`'s rules: "A redundant or brittle test is a cost"): a test that catches
+    only mutations another test in the file also catches and checks nothing else. Table-driven cases that each cover a
+    different input the code treats differently are not redundant.
+  - "A sample per file" was vague. Now: at least 3 mutations per test file and at least one per 10 tests, each aimed
+    at a different behaviour named by the tests. A doc-checking test (style, context budget, standalone, marketplace,
+    confirm step) is mutated through the file it guards. A SURVIVED counts only after the changed lines are read and a
+    second mutation of the same behaviour also survives, since a mutant can be equivalent.
+  - Timing: the full suite runs 5 times and once with `TMPDIR` set to a link; a test that fails once goes to
+    `flaky-test-hunt`.
+  - Two phases with a stop between: the audit changes nothing and every table row lists its exact `mutate.sh`
+    commands, so a reviewer can repeat them; the removal or rewrite starts only after the owner's yes. A rewritten
+    test must catch the mutation the old one missed, shown with `mutate.sh`.
 
 **Q2 geppetto and a starter agent roster** (`done`, sixth batch, agent-orchestration, one new skill with bundled agent files).
 Asked for by the owner on 2026-10-19 and settled with `grill-me` in the same session.
@@ -1062,6 +1077,30 @@ settled with `grill-me`.
   skip rule, a config override, the hook turned off, and input it does not understand; a mutation breaks each; the
   repository test passes with no tracked file over the limit; the four repository checks pass; the changed skills'
   zips go to the owner; `pau-skills-hooks` is bumped and the owner gets the update commands.
+- Changed at the start of batch 7 (2026-10-19), after a review against the code. The plan check of Q4's briefs
+  settles the details; these are the starting points:
+  - 25 tracked files are now over 5,000 tokens, not 20 (the two copies of `review-scope.mjs` at 5,299 each among the
+    new ones). Measure again after Q1.
+  - Per-plugin ORIGINS files would still be too big (the verification group alone is about 35 KB), and BACKLOG's
+    work items alone are about 76 KB. So ORIGINS becomes one file per entry, `docs/origins/<plugin>/<name>.md`, and the
+    backlog one file per item group or item under `docs/backlog/`, with the "things that bit" lists in their own file.
+    `docs/BACKLOG.md` and `docs/ORIGINS.md` stay as the indexes, so CLAUDE.md, the tests and the owner's kickoff
+    message keep working. `scripts/new-skill.mjs` then writes a new ORIGINS stub file and an index line, and its test
+    follows.
+  - The shared size and skip logic lives in the hook file as exported pure functions with a main guard, the way
+    `secret-guard.mjs` exports `decide`. Not in `hooks/lib/`: a change there bumps every plugin with hooks.
+  - The hook checks only files inside the project. A write outside it (the scratchpad, memory under `~/.claude`,
+    `/tmp`) passes.
+  - Size after the change is computed by applying the edit to the file's current text (each `MultiEdit` edit in
+    order, `replace_all` on every occurrence), in UTF-8 bytes. An `old_string` not in the file passes: the tool fails
+    anyway. Notebooks (`NotebookEdit`, `.ipynb`) are skipped: outputs and images make their size meaningless.
+  - Generated and vendored files are found with `git check-attr linguist-generated linguist-vendored`, ignored ones
+    with `git check-ignore`, which handle nested `.gitattributes` and patterns; without git or outside a repository
+    those two rules do not apply. Header markers are read from the first 5 lines.
+  - It refuses the way the other guards do: exit 2 with the message on stderr.
+  - A split script or test file is proven by the same full test names and the same pass count before and after; a
+    moved COPIES file keeps its pair, with new modules added as pairs.
+  - The hook count goes from 12 to 13 (README badge, and the profile README's "12 hooks").
 
 **Q5 html-plan, installed and linked** (`done`, sixth batch, small; touches `architect`, `to-prd`, `grill-me`, `which-skill`, the
 README and the batch process). Asked for by the owner on 2026-10-19, settled with `grill-me`.
