@@ -386,9 +386,18 @@ To bring a new skill into the repository, start with `node scripts/new-skill.mjs
 - The planning skills and `tdd` are adapted from [mattpocock/skills](https://github.com/mattpocock/skills) by Matt
   Pocock, under the MIT License. The upstream notice is in [NOTICE](NOTICE). The layout of this README, organised
   around the problems each piece fixes, also follows his.
-- `arena`, `architect`, `bug-fix`, `verify-app`, `hillclimb`, `skill-eval`, `agent-friendly-audit`, `sharpen`,
-  `codebase-oracle` and `rule-to-hook` are adapted from [pstack](https://github.com/cursor/plugins/tree/main/pstack)
-  by Lauren Tan, under the MIT License, and `tdd`, `review-triage` and `lean-subagent-dev` take parts of their text
-  from it. The upstream notice is in [NOTICE](NOTICE). The context budget and several
-  rules in [docs/BACKLOG.md](docs/BACKLOG.md) also come from reading it.
+- Much of this repository grew out of [pstack](https://github.com/cursor/plugins/tree/main/pstack), the skill set of
+  Lauren Tan (poteto), published in Cursor's plugin repository under the MIT License. Its skills and playbooks were
+  written for Cursor; the versions here are rewritten for Claude Code and generalised, and
+  [docs/ORIGINS.md](docs/ORIGINS.md) records what each one changes.
+  - Adapted from it, sharing its text or structure: `arena`, `architect`, `bug-fix`, `verify-app`, `hillclimb`,
+    `skill-eval`, `agent-friendly-audit`, `sharpen`, `codebase-oracle`, `overnight-run` and
+    `engineering-principles`.
+  - Taking parts of their text from it: `tdd`, `review-triage`, `lean-subagent-dev`, `rule-to-hook` and
+    `improve-codebase-architecture`.
+  - Taking ideas from it, in new words: `retrospective`, `handoff`, `which-skill`, `mutation-test`, `evaluator`,
+    `flaky-test-hunt`, `methodology`, `parallel-worktrees`, `safe-merge`, `brainstorm` and the `suppression-reason`
+    hook.
+  - The plan behind five batches of work in [docs/BACKLOG.md](docs/BACKLOG.md), the context budget and several of
+    its rules also come from reading it. The upstream notice is in [NOTICE](NOTICE).
 - Everything else is mine, under the MIT License ([LICENSE](LICENSE)).

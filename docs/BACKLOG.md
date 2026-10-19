@@ -223,8 +223,23 @@ and the mutate.sh restore):
 
 ## Kickoff for the next session
 
-The owner starts each batch in a fresh session with a message like this one. This one is for the fifth batch. For a
-later batch, change the item list and the decision paragraph; the rest stays.
+Every planned item is done (see "Order"). The next session starts from new work: the owner will describe new ideas,
+and Q1 below is already waiting. The owner starts it with a message like this one:
+
+```text
+Read CLAUDE.md, docs/ADDING-A-SKILL.md and docs/BACKLOG.md first (decisions 1 to 8, "How to work an item", "How to
+run a batch" with every list of things that bit earlier batches, and "Order"). Every item from the pstack review is
+done. I will describe some new ideas. For each one, help me shape it (offer brainstorm to widen it or grill-me to
+settle it, if they are installed), then write it into docs/BACKLOG.md as a work item in a new section, in the form
+the existing items use, with its upstream or origin, what it does and what done means. Q1, a test-value audit, is
+already there. When the items are written, propose how to group them into a batch and write the kickoff for it,
+the way the fifth batch's kickoff below was written. Do not build anything until I say so.
+```
+
+### The fifth batch's kickoff, as a template
+
+A batch kickoff names the items, the decisions to settle first, and the rules that matter most. For a later batch,
+change the item list and the decision paragraph; the rest stays.
 
 ```text
 You are the orchestrator for the fifth batch of work in this repository: N8 overnight-run, N9
@@ -295,6 +310,24 @@ profile README in paureis/paureis. If any hook changed, bump pau-skills-hooks an
    paid runs, take over the session, or write outside the conversation first say what they will do and what it costs,
    and wait for a yes, when the agent started them on its own. Typing `/name` still works for every skill. Item P0.5
    does it.
+
+## Decisions taken (2026-10-19)
+
+8. **Open questions settled after the fifth batch**, each as recommended:
+   - The description total is 13,000 characters (was 12,000), so new skills fit without trimming others.
+   - `evaluator` may grade an assertion PASS on a live call to a function while it reports the shipped test as a
+     test-integrity defect: the contract held, and the weak test is not hidden.
+   - `engineering-principles` keeps its description. It starts when a principle is named; a stronger cue would start
+     it on routine design questions.
+   - `overnight-run` is adapted from pstack (the rule is "text or structure"), and so is `lean-subagent-dev`, whose
+     `TRIAGE.md` ships pstack text.
+   - `lean-subagent-dev` keeps its effort split per role (builder `high`, plan checker and reviewer `xhigh` on a
+     generous budget): in the fifth batch every plan check and review found a real problem.
+   - `tdd` keeps a separate `metadata.upstream-pstack` key for its second upstream.
+   - The `rule-to-hook` ratchet keeps failing when the count drops until the lower baseline is committed, which locks
+     the progress in.
+   - The test count on the profile README waits for Q1: the owner wants the number to count tests that are worth
+     having.
 
 ## Context budget
 
@@ -707,6 +740,20 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 - Playbooks `visual-parity`, `multi-phase-plan`, `pause-safely`, `runtime-forensics`, `trace-forensics`,
   `autopilot-*`, `opening-a-pr`: niche, overfit, or already covered.
 
+### Q. After the pstack review
+
+**Q1 test-value audit** (`todo`, verification, no new skill). Asked for by the owner on 2026-10-19 before the test
+count on the profile README is updated.
+- The suite has 1,069 tests. Find the ones that are not worth having, by the list in `tdd` ("prefer no new test over
+  a bad test": mostly tests a mock, pins implementation details, depends on timing or unrelated global state, would
+  pass if the behaviour broke) and by mutation: for each test file, break the behaviour it claims to guard with
+  `mutate.sh` (a sample per file, starting with the scripts that have the most tests) and record CAUGHT or SURVIVED.
+  `flaky-test-hunt` is for tests that fail only sometimes; use it only if a test turns out to be intermittent.
+- Output: a table per test file (tests, sampled, caught, survived, tests worth removing or rewriting and why), then a
+  pull request that removes or rewrites the ones the owner agrees to, never weakening a test to make it pass.
+- Done when: every test file has been sampled, the table is in the pull request, and the profile README states the
+  count of tests kept, in the owner's words.
+
 ## Order
 
 1. Done: P0.2, P0.3, P0.4 (groundwork).
@@ -717,7 +764,8 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 6. Done: the fourth batch, M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M10
    `which-skill`, M11 small additions with the `suppression-reason` hook, P1.2 and P1.3.
 7. Done: the fifth batch, N8 overnight-run, N9 engineering-principles, and the small items P1.6 to P1.8, with the
-   hillclimb log guard and the mutate.sh restore by content. No item is left open; new work starts a new section.
+   hillclimb log guard and the mutate.sh restore by content.
+8. **Next:** Q1 test-value audit, and the owner's new ideas, which the next session writes into a new section first.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
 
@@ -781,9 +829,8 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   three had a cold run (the oracle's in two headless sessions with real explorers). Reviewers found a must-fix in
   three of the four. The seven changed skills (the six plus `which-skill`) were zipped with `pack-skills`, uploaded to
   claude.ai and confirmed synced; the skill count stays at 34, so the profile README did not change.
-  Still open for the owner, from the pull request: whether `lean-subagent-dev` is "adapted" (only its copy of
-  `TRIAGE.md` shares pstack text), the effort split per role, the new `metadata.upstream-pstack` key in `tdd`, and the
-  ratchet failing when the count drops until the baseline is lowered.
+  The owner's open questions from this pull request (whether `lean-subagent-dev` is "adapted", the effort split per
+  role, the `metadata.upstream-pstack` key in `tdd`, the ratchet) were settled on 2026-10-19 in decision 8.
 - 2026-10-18: P0.5 every skill loads on its own, merged as [pull request 19](https://github.com/paureis/pau-skills/pull/19).
   Four builders by plugin group, each brief checked by a read-only subagent first; a fresh reviewer, a cold run of 20
   headless sessions (10 plain requests, half with stubs of the owner's other plugins), one fix round and a second look
