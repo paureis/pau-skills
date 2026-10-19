@@ -757,10 +757,11 @@ verdict arriving before the orchestrator's own scores).
 
 Closest upstream, at 09d06eb: `docs/guide/07-overnight.md` (earning the trust, the contract),
 `skills/poteto-mode/playbooks/autonomous-run.md` (the loop, "a plateau is not a stop"),
-`skills/poteto-mode/playbooks/pause-safely.md` (the pause and the resume note) and `skills/show-me-your-work/SKILL.md` with `scripts/log.sh` (the log columns, cleaning cells,
-the audit of the log against the transcript, "correct the log, not the story", the Attention section). The structure
-comes from there; shared text is under 2% (word 6-grams: 5 of 3,152 words of SKILL.md against `07-overnight.md`, 2
-against `autonomous-run.md`, 16 of 702 words of AUDIT.md against `show-me-your-work`, measured on the first draft).
+`skills/poteto-mode/playbooks/pause-safely.md` (the pause and the resume note) and `skills/show-me-your-work/SKILL.md`
+with `scripts/log.sh` (the log columns, cleaning cells, the audit of the log against the transcript, "correct the log,
+not the story", the Attention section). The structure comes from there; shared text is under 2% (word 6-grams: 5 of
+3,152 words of SKILL.md against `07-overnight.md`, 2 against `autonomous-run.md`, 16 of 702 words of AUDIT.md against
+`show-me-your-work`, measured on the first draft).
 
 **Problem.** Unattended agent runs end in unchecked work and a story nobody can audit: hours of motion, a goal relaxed
 quietly, and no way to tell what was done.
