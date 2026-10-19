@@ -125,6 +125,99 @@ Proof rules:
 - Redact tokens and secrets from captured requests and logs.
 - In a temporary git worktree, the evidence goes when the worktree goes: copy it out first.
 
+## States and skeletons
+
+TODO(verify-app) keep this section for an app with a screen and fill it in. For an app with no screen (a CLI, a TUI, an HTTP API, a library), replace everything under this heading with "No screen: each feature file says so under States." and do not copy `measure-boxes.js`.
+
+Every feature file has a `States` section: how to force the screen's loading, empty and error states, what each
+should look like, and the screenshot to keep. Force each state from outside the app, and open the screen by its URL,
+not by a click: the browser ignores layout shifts within 500 ms of input, so a click hides them.
+
+Holding or answering the data request: TODO(verify-app) the harness's request interception (the calls are below), or, where the harness cannot intercept, the app's own delay or mock switch and the file it comes from.
+
+Viewports: TODO(verify-app) the viewports in the project's end-to-end config, with the file (for example `projects` in `playwright.config.ts`, `viewportWidth` in `cypress.config.js`); without one, 390 by 844 (a phone) and 1280 by 800 (a desktop).
+
+Skeleton markers: TODO(verify-app) how a skeleton box is paired with its real box: the project's own marker, with the file; without one, `data-skeleton-for="<name>"` on each skeleton box and `data-skeleton-name="<name>"` on the real element it stands for; where neither exists, the container whose children are paired in document order.
+
+### Measure a skeleton against the loaded screen
+
+The in-page part is `measure-boxes.js` in this skill's folder: browser JavaScript, the same text in every harness. It
+pairs each skeleton box with its real box by name (the nth `row` with the nth `row`), or, with `container`, by
+document order inside that container. At each viewport, in a fresh page:
+
+1. Add `measure-boxes.js` to the page: as an init script, or by evaluating its text right after the page opens.
+2. Hold the data request, open the screen by URL, and wait until the skeleton shows.
+3. Evaluate `window.__verifyBoxes.skeleton(options)`, then take the loading screenshot.
+4. Release the request and wait until the real content shows.
+5. Evaluate `window.__verifyBoxes.compare(options)`. It resolves to a report. Save its `text` as
+   `$EV/<feature>/NN-skeleton-<viewport>.txt` and the whole report as `.json` next to it, then take the loaded
+   screenshot.
+
+`options` is `{}` for the default markers. Other markers: `{ skeleton: '<selector>', skeletonName: '<attribute>',
+real: '<selector>', realName: '<attribute>' }`. Order inside a container: `{ container: '<selector>' }`. The limits
+stay at their defaults, `tolerance: 4` and `maxShift: 0.1`.
+
+Reading the report:
+
+- A pair is a mismatch when the real box is more than 4 px away from the skeleton box in x, y, width or height. The
+  line gives both boxes and each difference, for example `off by y +40 px, height +20 px`.
+- A box with no partner is `UNPAIRED`: a skeleton box with nothing real behind it, or real content the skeleton
+  left out.
+- The layout-shift score is the sum of the page's `layout-shift` entries without recent input. Above 0.1 (the
+  browser's "good" line) is a mismatch. Only Chromium has these entries: on another engine the helper finds no
+  `layout-shift` in `PerformanceObserver.supportedEntryTypes`, skips the score and says so, and the box check stands
+  alone.
+- Expect the boxes, not the score, to find most gaps. Only elements that were already on screen and moved count
+  toward the score, so a skeleton replaced by taller rows adds little (three rows 20 px short scored 0.0062 in one
+  check). Zero entries means nothing moved: a score of 0, a pass.
+
+### The calls in each harness
+
+Replace `**/api/items*` with the screen's data request, and `$SKILL` with this skill's folder,
+`.claude/skills/verify-<app>`.
+
+- **Playwright, JavaScript or TypeScript.** Viewport: `browser.newContext({ viewport: { width: 390, height: 844 } })`.
+  Helper: `await context.addInitScript({ path: '$SKILL/measure-boxes.js' })`. Hold:
+  `const held = []; await page.route('**/api/items*', (route) => { held.push(route); })`. Release:
+  `for (const r of held) await r.continue();` and only then `await page.unroute('**/api/items*')`. Empty:
+  `route.fulfill({ json: [] })`. Error: `route.fulfill({ status: 500 })`. Measure:
+  `await page.evaluate(() => window.__verifyBoxes.compare())`.
+- **Playwright, Python.** `browser.new_context(viewport={"width": 390, "height": 844})`,
+  `context.add_init_script(path="$SKILL/measure-boxes.js")`, `page.route("**/api/items*", lambda route: held.append(route))`,
+  `route.continue_()`, `route.fulfill(json=[])`, `route.fulfill(status=500)`,
+  `page.evaluate("window.__verifyBoxes.compare()")` (Playwright waits for the Promise).
+- **Playwright, Java.** `new Browser.NewContextOptions().setViewportSize(390, 844)`,
+  `context.addInitScript(Paths.get("$SKILL/measure-boxes.js"))`, `page.route("**/api/items*", route -> held.add(route))`,
+  `route.resume()`, `route.fulfill(new Route.FulfillOptions().setStatus(200).setContentType("application/json").setBody("[]"))`,
+  `route.fulfill(new Route.FulfillOptions().setStatus(500))`, `page.evaluate("window.__verifyBoxes.compare()")`.
+- **Playwright, .NET.** `new BrowserNewContextOptions { ViewportSize = new() { Width = 390, Height = 844 } }`,
+  `await context.AddInitScriptAsync(scriptPath: "$SKILL/measure-boxes.js")`,
+  `await page.RouteAsync("**/api/items*", route => { held.Add(route); return Task.CompletedTask; })`,
+  `await route.ContinueAsync()`, `await route.FulfillAsync(new() { Status = 200, ContentType = "application/json", Body = "[]" })`,
+  `await route.FulfillAsync(new() { Status = 500 })`, `await page.EvaluateAsync<JsonElement>("window.__verifyBoxes.compare()")`.
+- **Cypress.** `cy.viewport(390, 844)`. Helper:
+  `cy.readFile('$SKILL/measure-boxes.js').then((src) => cy.visit(url, { onBeforeLoad: (win) => win.eval(src) }))`.
+  Cypress cannot hold a request open, so delay it long enough to measure:
+  `cy.intercept('GET', '**/api/items*', (req) => req.on('response', (res) => res.setDelay(5000)))`. Empty:
+  `cy.intercept('GET', '**/api/items*', { body: [] })`. Error: `{ statusCode: 500 }`. Measure:
+  `cy.window().then((win) => win.__verifyBoxes.compare())`.
+- **WebdriverIO.** `await browser.setViewport({ width: 390, height: 844 })` (version 9; `setWindowSize` before it).
+  Helper: `await browser.execute(src)` right after `browser.url(url)`, with `src` read from the file (the observer
+  still reads the shifts recorded before it started). Empty and error through `const mock = await browser.mock('**/api/items*')`
+  and `mock.respond([])` or `mock.respond({}, { statusCode: 500 })`, where the session supports mocking. Loading:
+  the app's own delay switch. Measure: `await browser.execute('return window.__verifyBoxes.compare()')`.
+- **A browser tool's evaluate** (a browser MCP server, a built-in browser). Open the page, evaluate the text of
+  `measure-boxes.js`, then `window.__verifyBoxes.skeleton()` and later `window.__verifyBoxes.compare()`. Hold the
+  request with the tool's network control if it has one, else the app's own delay switch; set the size with its
+  resize or viewport tool.
+
+### When the skeleton does not match
+
+Report each mismatch with its numbers, and each unpaired box. The skeleton is product code: ask before changing it.
+On a yes, resize the skeleton to the measured real boxes (the style or component that draws it), then measure again
+at every viewport and keep both reports; the fix holds only when the second measurement passes. Without a yes, the
+mismatch stays in the report as a finding.
+
 ## Cleanup
 
 Run after every drive, including failed ones. Stop only what `$RUN/started.txt` lists, and only a process whose start
@@ -145,7 +238,7 @@ Never stop a process by name, never delete by a glob, never run `git clean -x`, 
 
 ## Helpers
 
-TODO(verify-app) each script this skill ships, with its exact invocation, or "None."
+TODO(verify-app) each script this skill ships, with its exact invocation, or "None." For an app with a screen, `measure-boxes.js` is one: browser JavaScript run inside the page, called as "States and skeletons" shows.
 
 ## Feature map
 
