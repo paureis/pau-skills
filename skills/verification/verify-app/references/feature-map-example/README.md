@@ -30,6 +30,8 @@ then the feature file for what you are verifying.
 - Browser proof: a screenshot and an accessibility snapshot of the end state.
 - API proof: the request, the status, the response headers and the body.
 - CLI proof: the command, stdout, stderr and the exit code.
+- States proof: a screenshot of each state a feature's `States` section lists (loading, empty, error), and the
+  skeleton report from "States and skeletons" in `SKILL.md`, saved as `skeleton.txt` next to them.
 - A change is proven through a second, read-only view: a write in the browser is read back through the API or `inv`.
 - Every artifact names the feature file and the entry point it came from.
 - An entry point you could not reach is reported with the command tried and the missing precondition.

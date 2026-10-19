@@ -34,7 +34,25 @@ A user saves a link with a title and finds it again in the list.
 ## Gotchas
 
 - Titles are trimmed.
+
+## States
+
+- No screen: an HTTP endpoint, so there is no loading, empty or error screen to show.
 `;
+
+const GOTCHAS = '## Gotchas\n\n- Titles are trimmed.\n';
+
+/** A feature with a screen: the three states, each with how to force it and a screenshot. */
+const STATES = `## States
+
+- **Loading.** Hold \`GET /api/bookmarks\` with \`page.route\`. Five grey rows show. Screenshot \`$EV/list/01-loading.png\`.
+- **Empty.** Answer the request with \`[]\`. The list reads \`No bookmarks yet\`. Screenshot \`$EV/list/02-empty.png\`.
+- **Error.** Answer it with status 500. An alert reads \`Could not load bookmarks\`. Screenshot \`$EV/list/03-error.png\`.
+`;
+const WITH_SCREEN = FEATURE.replace(/## States\n[\s\S]*$/, STATES);
+
+/** FEATURE as maps made before the States heading: the four old headings only. */
+const FOUR_HEADINGS = FEATURE.replace(/\n## States\n[\s\S]*$/, '');
 
 const SKILL = `---
 name: verify-shelf
@@ -78,7 +96,7 @@ describe('headings', () => {
 });
 
 describe('checkFeature', () => {
-  test('a file with the four headings in order, each with content, is clean', () => assert.deepEqual(checkFeature(FEATURE), []));
+  test('a file with the five headings in order, each with content, is clean', () => assert.deepEqual(checkFeature(FEATURE), []));
 
   test('accepts the upstream spellings of the headings and any harness name', () => {
     const text = FEATURE.replace("(user's point of view)", '(user POV)').replace('with curl', 'with tmux');
@@ -109,8 +127,40 @@ describe('checkFeature', () => {
     assert.ok(p.some((m) => /How to get to it.*empty/.test(m)), p.join('\n'));
   });
 
+  test('States is required, and its absence names maintain mode as the way to add it', () => {
+    const p = checkFeature(FOUR_HEADINGS);
+    assert.equal(p.length, 1, p.join('\n'));
+    assert.match(p[0], /missing heading "## States"/);
+    assert.match(p[0], /maintain mode/);
+  });
+
+  test('States comes after Gotchas', () => {
+    const text = FOUR_HEADINGS.replace(GOTCHAS, `${STATES}\n${GOTCHAS}`);
+    assert.ok(checkFeature(text).some((m) => /order/.test(m) && /Gotchas, States/.test(m)), checkFeature(text).join('\n'));
+  });
+
+  test('an empty States section is reported by name', () => {
+    const p = checkFeature(`${FOUR_HEADINGS}\n## States\n\n`);
+    assert.equal(p.length, 1, p.join('\n'));
+    assert.match(p[0], /"## States" is empty/);
+  });
+
+  test('a feature with no screen passes with a one-line States body', () => {
+    assert.match(FEATURE, /## States\n\n- No screen[^\n]*\n$/);
+    assert.deepEqual(checkFeature(FEATURE), []);
+  });
+
+  test('a feature with a screen passes with its three states, which the checker does not parse', () => {
+    assert.deepEqual(checkFeature(WITH_SCREEN), []);
+    assert.deepEqual(checkFeature(WITH_SCREEN.replace(/- \*\*Empty[^\n]*\n/, '')), []);
+  });
+
+  test('an extra heading is reported against the five headings', () => {
+    assert.ok(checkFeature(`${FEATURE}\n## Notes\n\n- x\n`).some((m) => /five headings/.test(m)));
+  });
+
   test('a heading inside a code block does not count', () => {
-    const p = checkFeature(FEATURE.replace('## Gotchas\n\n- Titles are trimmed.\n', '```\n## Gotchas\n```\n'));
+    const p = checkFeature(FEATURE.replace(GOTCHAS, '```\n## Gotchas\n```\n'));
     assert.ok(p.some((m) => /missing.*Gotchas/.test(m)));
   });
 });
@@ -192,13 +242,14 @@ describe('parseArgs', () => {
 
 describe('Markdown details', () => {
   test('a fence closes only on a bare fence of the same character, at least as long', () => {
-    const body = (inner) => `${FEATURE.replace('## Gotchas\n\n- Titles are trimmed.\n', '')}\n${inner}\n`;
+    // Gotchas comes before States, so the replacement goes where Gotchas was.
+    const body = (inner) => FEATURE.replace(GOTCHAS, `${inner}\n`);
     // Each code block hides a "## Gotchas", so the heading must still be missing.
     for (const inner of ['```\n~~~\n## Gotchas\n```', '````\n```\n## Gotchas\n````', '```\n```sh\n## Gotchas\n```']) {
       assert.ok(checkFeature(body(inner)).some((m) => /missing.*Gotchas/.test(m)), inner);
     }
     // A longer closing fence closes, so the heading after it counts.
-    assert.deepEqual(checkFeature(`${FEATURE.replace('## Gotchas\n\n- Titles are trimmed.\n', '')}\n\`\`\`\nx\n\`\`\`\`\n\n## Gotchas\n\n- y\n`), []);
+    assert.deepEqual(checkFeature(body('```\nx\n````\n\n## Gotchas\n\n- y\n')), []);
   });
 
   test('a file with CRLF line endings and a code block is read like one with LF', () => {
@@ -334,9 +385,28 @@ describe('check-map.mjs on a real project', () => {
     assert.equal(run([join(root, 'empty')]).code, 2);
   });
 
+  test('a map with only the four old headings exits 1, names States and says maintain mode adds it', () => {
+    const { dir } = makeProject();
+    writeFileSync(join(dir, 'features', 'add.md'), FOUR_HEADINGS);
+    writeFileSync(join(dir, 'features', 'search.md'), FOUR_HEADINGS.replace('# Add a bookmark', '# Search'));
+    const r = run([dir]);
+    assert.equal(r.code, 1, r.stdout);
+    assert.match(r.stdout, /add\.md: missing heading "## States".*maintain mode/);
+    assert.match(r.stdout, /search\.md: missing heading "## States".*maintain mode/);
+    assert.match(r.stdout, /2 problem\(s\)/);
+  });
+
+  test('an empty States section exits 1 and names the file', () => {
+    const { dir } = makeProject();
+    writeFileSync(join(dir, 'features', 'search.md'), `${FOUR_HEADINGS}\n## States\n`);
+    const r = run([dir]);
+    assert.equal(r.code, 1, r.stdout);
+    assert.match(r.stdout, /search\.md: "## States" is empty/);
+  });
+
   test('a feature file missing a heading exits 1 and names the file', () => {
     const { dir } = makeProject();
-    writeFileSync(join(dir, 'features', 'search.md'), FEATURE.replace('## Gotchas\n\n- Titles are trimmed.\n', ''));
+    writeFileSync(join(dir, 'features', 'search.md'), FEATURE.replace(GOTCHAS, ''));
     const r = run([dir]);
     assert.equal(r.code, 1, r.stdout);
     assert.match(r.stdout, /search\.md.*Gotchas/);
@@ -530,7 +600,34 @@ describe('the bundled template and example', () => {
     for (const s of ['Launch', 'Doctor', 'Cleanup']) assert.match(msgs, new RegExp(`${s}.*(empty|no command)`), `${s} with nothing filled in is reported:\n${msgs}`);
   });
 
-  test('the feature template has the four headings', () => {
+  test('the example map with its States sections taken out fails with the maintain-mode message for each file', () => {
+    const { root } = makeProject();
+    const dir = join(root, '.claude', 'skills', 'verify-notes');
+    mkdirSync(dir, { recursive: true });
+    const template = readFileSync(join(SKILL_DIR, 'templates', 'verify-skill.md'), 'utf8');
+    writeFileSync(join(dir, 'SKILL.md'), template.replace(/<app>/g, 'notes').replace(/<surface>/g, 'web UI').replace(/<harness>/g, 'Playwright').replace(/TODO\(verify-app\)/g, 'filled in'));
+    cpSync(join(SKILL_DIR, 'references', 'feature-map-example'), join(dir, 'features'), { recursive: true });
+    const examples = readdirSync(join(dir, 'features')).filter((f) => f.endsWith('.md') && f !== 'README.md');
+    for (const f of examples) {
+      const p = join(dir, 'features', f);
+      const text = readFileSync(p, 'utf8');
+      assert.match(text, /\n## States\n/, `${f} has a States section`);
+      writeFileSync(p, text.replace(/\n## States\n[\s\S]*$/, '\n'));
+    }
+    const out = JSON.parse(run([dir, '--json']).stdout);
+    assert.deepEqual(out.problems.map((p) => p.file).sort(), examples.map((f) => `features/${f}`).sort());
+    for (const p of out.problems) assert.match(p.message, /missing heading "## States".*maintain mode/);
+  });
+
+  test('the example map has a feature with no screen, and says so under States', () => {
+    const ex = join(SKILL_DIR, 'references', 'feature-map-example');
+    const bodies = readdirSync(ex).filter((f) => f.endsWith('.md') && f !== 'README.md')
+      .map((f) => readFileSync(join(ex, f), 'utf8').split('\n## States\n')[1] || '');
+    assert.ok(bodies.some((b) => /no screen/i.test(b)), 'one example says it has no screen');
+    assert.ok(bodies.some((b) => /loading/i.test(b) && /empty/i.test(b) && /error/i.test(b) && /\.png/.test(b)), 'one example has all three states with screenshots');
+  });
+
+  test('the feature template has the five headings', () => {
     const text = readFileSync(join(SKILL_DIR, 'templates', 'feature.md'), 'utf8').replace(/TODO\(verify-app\)/g, 'filled in');
     assert.deepEqual(checkFeature(text), []);
   });
