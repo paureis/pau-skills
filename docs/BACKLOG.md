@@ -195,6 +195,29 @@ Things that bit the fourth batch (M5, M8, M9, M10, M11, P1.2 with P1.3):
 - In a Python fixture, `mutate.sh` can leave stale `.pyc` files when a break and its restore land in the same second;
   set `PYTHONDONTWRITEBYTECODE=1`.
 
+Things that bit the fifth batch (N8, N9, P1.6 to P1.8, and two follow-ups the owner added: the hillclimb log guard
+and the mutate.sh restore):
+- The plan checks found a real problem in every brief again: `marketplace.json` lists plugin folders, so a new skill
+  needs no rebuild; six pstack principle bodies were cut on purpose upstream (the full text is in earlier commits);
+  bigram containment cannot score a short CLAUDE.md bullet; `/loop` and session jobs only wake a session that stays
+  open; and a past file time alone does not reproduce git's stat-cache problem.
+- This sandbox's `/root/.gitconfig` sets `core.checkStat minimal` and `core.trustctime false`, which CI runners do
+  not. A test about git's stat behaviour sets its own repository config and points `GIT_CONFIG_GLOBAL` at an empty
+  file.
+- A plan checker experimenting as root ran `mv mod.js /dev/null` and replaced `/dev/null` with a regular file; the
+  owner approved restoring it (`mknod -m 666 /dev/null.new c 1 3 && mv -f /dev/null.new /dev/null`). Tell every
+  subagent to keep `mv`, `rm` and redirections inside its own `mktemp -d` folder.
+- Reviewers found must-fix problems in N8 (a turn could rewrite its own predicate and log; `acceptEdits` approves
+  `rm`, `mv`, `cp` and `sed -i` by mode, so `rm -fr` passed a deny rule for `rm -rf`) and in the mutate.sh
+  restore (deleting the file first erased an uncommitted edit git did not see). The cold runs again found what the
+  reviewers missed: N8's morning audit did not work end to end.
+- Headless permission facts, proven on 2.1.303: `--allowedTools` and `--disallowedTools` take several values, so a
+  prompt after them is swallowed (put it right after `-p`); Claude Code ignores `Write(path)` rules, and `Edit(path)`
+  rules cover every file-editing tool; a skill's `allowed-tools` does not carry into a `--resume`d session;
+  `dontAsk` refuses everything without an allow rule except commands it treats as read only.
+- The container restarted mid-batch. Stopped agents were resumed by id with SendMessage (their names no longer
+  resolved); the worktrees and the scratchpad survived.
+
 ## Kickoff for the next session
 
 The owner starts each batch in a fresh session with a message like this one. This one is for the fifth batch. For a
@@ -539,7 +562,7 @@ holding only this repository's skills and checks which skill each one starts.
   transcripts are needed (`--output-format stream-json`). Reuse what `evals/project-setup/run.mjs` and `grade.mjs`
   already do.
 
-**N8 overnight-run** (`todo`, agent-orchestration, typed tier).
+**N8 overnight-run** (`in progress`, fifth batch, agent-orchestration, typed tier).
 - Upstream: `skills/poteto-mode/playbooks/autonomous-run.md`, `docs/guide/07-overnight.md`,
   `skills/show-me-your-work/SKILL.md` and its `scripts/log.sh`.
 - What it does: a contract for unattended work. Earn the trust before the loop (the task has run attended at least
@@ -553,7 +576,7 @@ holding only this repository's skills and checks which skill each one starts.
   where available.
 - Script: `log.mjs` appends rows safely. Tests for the injection guard and append-only behaviour.
 
-**N9 engineering-principles** (`todo`, planning, typed tier).
+**N9 engineering-principles** (`in progress`, fifth batch, planning, typed tier).
 - Upstream: the `skills/principle-*` folders; `skills/poteto-mode/SKILL.md` section "Principles";
   `docs/guide/08-principles.md`; `skills/typescript-best-practices/SKILL.md` (three rules only).
 - What it does: one index in `SKILL.md` (for each principle: when it applies, the rule in one sentence, the sign you
@@ -690,7 +713,8 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 5. Done: P0.5, every skill loads on its own (decision 7), with Part B, trimming the owner's plugins.
 6. Done: the fourth batch, M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M10
    `which-skill`, M11 small additions with the `suppression-reason` hook, P1.2 and P1.3.
-7. **Next:** N8 overnight-run, N9 engineering-principles, and the small items P1.6 to P1.8.
+7. **In progress:** the fifth batch, N8 overnight-run, N9 engineering-principles, and the small items P1.6 to P1.8,
+   with the hillclimb log guard and the mutate.sh restore by content.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
 
@@ -715,14 +739,14 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   no skill in 3 of 3 headless runs; the session fixed the bug inline, test first. The owner decided that is right: an
   obvious one-line fix needs no skill. The description now says when `bug-fix` is worth loading (the cause is not
   obvious, a first fix did not hold, the bug came back, the fix is risky).
-- **P1.6 retrospective audit blind spots** (`todo`). `audit.mjs` (and its copy in `session-close`) skips units of 12
+- **P1.6 retrospective audit blind spots** (`in progress`, fifth batch). `audit.mjs` (and its copy in `session-close`) skips units of 12
   or fewer content words, so short CLAUDE.md bullets never score as DUPLICATE, and it does not scan skills synced from
   claude.ai under `~/.claude/skills/synced/<id>/<name>/`. The skill now tells the agent to read short bullets itself;
   the script should see both. Found by the fourth batch's review and cold run.
-- **P1.7 mutate.sh and Python bytecode** (`todo`). A break and its restore in the same second can leave a stale
+- **P1.7 mutate.sh and Python bytecode** (`in progress`, fifth batch). A break and its restore in the same second can leave a stale
   `.pyc`, so the mutant keeps running and a later control fails with no visible diff. Export
   `PYTHONDONTWRITEBYTECODE=1` in the harness or say so in `mutation-test`. Found by the M9 dry run.
-- **P1.8 evaluator evidence line** (`todo`). The evaluator's "Counts as evidence" line accepts "a passing automated test
+- **P1.8 evaluator evidence line** (`in progress`, fifth batch). The evaluator's "Counts as evidence" line accepts "a passing automated test
   that you have run and watched pass", which an agent reads as enough without the mutation check the same skill
   requires; and its Mutation field accepts an unrun "would" claim. Found by the M8 cold run; pre-existing.
 - **P1.4 typed-skill names** (`closed`: P0.5 removed every `/<plugin>:<name>` mention, so there is nothing left to

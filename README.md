@@ -1,7 +1,7 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 34](https://img.shields.io/badge/skills-34-informational)
+![Skills: 36](https://img.shields.io/badge/skills-36-informational)
 ![Hooks: 12](https://img.shields.io/badge/hooks-12-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 

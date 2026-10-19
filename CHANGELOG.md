@@ -3,6 +3,38 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-19: the fifth pstack batch (overnight-run, engineering-principles, audit, mutate.sh, evaluator, hillclimb)
+
+- `overnight-run` (new, agent-orchestration, adapted from pstack): runs one task unattended under a contract. Trust
+  checks first, a finish condition a script checks on a clean tree, a fresh worktree, a control folder no turn can
+  write, turns in `--permission-mode dontAsk` with one allow rule per command, an append-only decision log through
+  `log.mjs` (outside the repository, guarded against spreadsheet formulas), an off switch and a resume note, and a
+  morning audit by a fresh reviewer; the summary ends with an Attention section. It asks first when the agent starts
+  it on its own.
+- `engineering-principles` (new, planning, adapted from pstack): an index of eleven named principles (build the lever,
+  explain the number, make operations idempotent, type system discipline, model the domain, minimize reader load,
+  separate before serializing shared state, subtract before you add, migrate callers then delete, redesign from first
+  principles, experience first), with the detail in `PRINCIPLES.md`; steer with a name, and a citation names the
+  decision it changed. Read only.
+- `retrospective`, `session-close`: the rules audit now scores CLAUDE.md bullets of 12 or fewer content words in
+  `--check` with a word score, a candidate the agent confirms by reading the bullet, and reads skills synced from
+  claude.ai, printed as `[synced skill]` with their path. Both stay out of the pairs report. The retrospective says
+  what to do when `--check` cannot run.
+- `mutation-test`: `mutate.sh` turns off Python's bytecode cache for its commands (a same-size mutation in the same
+  second read SURVIVED), and restores by content: a command that sets the file's time, or a patch that keeps its size
+  and time, can no longer leave the mutant behind a false RESTORED. It refuses a file with an edit git does not see,
+  a skip-worktree or assume-unchanged file, and an absolute or `..` path, and reports a command that staged or
+  committed the mutant.
+- `evaluator`: a passing test counts as evidence only after its mutation check made it fail, and the `Mutation:`
+  field records the defect, the command and CAUGHT, SURVIVED or NOT MUTATED.
+- `hillclimb`: `decisions.mjs` writes a single quote in front of any `decision.tsv` cell a spreadsheet would read as
+  a formula (the delta always starts with + or -), reads it back without the quote so old logs still read, and refuses
+  a value that would not read back as typed.
+- `which-skill`: routes for the two new skills; `overnight-run` joins the skills that ask first.
+- `tests/context-budget.test.mjs`: the description total is 13,000 characters (was 12,000), by the owner's choice.
+- Versions: agent-orchestration 0.9.0, planning 0.7.0, session-discipline 0.10.0, verification 0.10.1, pau-skills
+  0.13.0. No hook changed; pau-skills-hooks stays at 0.2.0.
+
 ## 2026-10-18: the fourth pstack batch (retrospective, safe-merge, evaluator, improve-codebase-architecture, which-skill, small additions, CI)
 
 - `retrospective`: a proposed edit must change what a future agent does, or it is dropped and shown as DROPPED; a user

@@ -195,6 +195,16 @@ read the failure first, since a build error means the refactor was wrong. The sk
 repository root, how to keep one bug's hunks, how to handle a fix spread over several files and runner caches, and
 when a runtime error counts as a catch.
 
+**Later changes (2026-10-19).** Two cases where the harness trusted file times. With Python, a same-size mutation
+written in the same second as the control's bytecode read SURVIVED (13 of 15 back-to-back runs in the fourth batch's
+dry run): the harness now runs its commands with `PYTHONDONTWRITEBYTECODE=1` and a throwaway `PYTHONPYCACHEPREFIX`.
+And `git checkout` skips a file whose size and time match what the index recorded, so a command that set a fixed
+time left the mutant in place behind a false RESTORED: the restore now checks out, compares content with
+`git cat-file --filters`, and deletes and checks out again only when the content still differs; it refuses at the
+start a file with an edit git does not see, a skip-worktree or assume-unchanged file, and an absolute or `..` path, and
+reports a command that staged or committed the mutant. A review of the first fix found it could erase such hidden
+edits and delete files on the error paths; the fix round closed both.
+
 ### evaluator (Original)
 
 From the methodology kit's evaluator prompt (see `methodology` below).
@@ -517,6 +527,10 @@ tried.
 what matters, and as prose an agent bends it. The script makes the log the gate every keep passes through. The review
 round found that a correction was judged against itself and that "simplification" keeps could drift without limit;
 both are refused now.
+
+**Later changes (2026-10-19).** `decisions.mjs` writes a single quote in front of any `decision.tsv` cell a
+spreadsheet would read as a formula (the delta always starts with `+` or `-`), reads it back without the quote so old
+logs still read, and refuses a value that would not read back as typed. The rule matches `overnight-run`'s `log.mjs`.
 
 ### skill-eval and `skill-eval.mjs` (Adapted from [pstack eval playbook](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/playbooks/eval.md))
 
