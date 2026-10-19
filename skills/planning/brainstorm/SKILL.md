@@ -26,7 +26,8 @@ has no task tool, post the five phases as a short checklist in the conversation 
 Keep the user's work to a tap or a word. Every question in this skill offers answers to choose from.
 
 - **With a question tool** (AskUserQuestion in Claude Code), ask through it: up to 4 questions in one call, 2 to 4
-  answers each, a header of at most 12 characters. The tool adds an "Other" choice for a typed answer, so do not add
+  answers each, a header of at most 12 characters. Count the characters of every header: "Great outcome" is 13,
+  "Outcome" fits. The tool adds an "Other" choice for a typed answer, so do not add
   one. When you recommend an answer, put it first and end its label with "(Recommended)".
 - **Without one** (a headless run, a background subagent, another client), write the same questions as text:
   numbered questions, lettered answers, the recommended answer first and marked "(Recommended)". End with one line
@@ -43,8 +44,8 @@ makes the user ask for them.
    files, scripts, docs or configuration it touches. A quick read, not a study. Do not ask what the code can tell.
 2. **Ask at most three questions, all at once**, and only ones whose answer changes which ideas are worth having.
    The usual three: the goal behind the ask (what the user needs once this works), which constraints are hard, and
-   what a great outcome would look like. Give each 2 to 4 proposed answers drawn from what you read, and mark none as
-   recommended: the frame is the user's. Skip any the user has already answered; with none left, go to step 3.
+   what a great outcome would look like (headers "Goal", "Hard limits" and "Outcome"). Give each 2 to 4 proposed
+   answers drawn from what you read, and mark none as recommended: the frame is the user's. Skip any the user has already answered; with none left, go to step 3.
 3. **Sort the constraints.** A hard constraint is one the user confirmed, or that the code, a contract or the
    platform enforces. Everything else is assumed: inherited from the first idea, from habit, or from a guess.
    A check in the code that is itself what the question is about is assumed, not hard: when the question is how to
@@ -61,7 +62,7 @@ makes the user ask for them.
 Goal: <one sentence, in your words>
 Hard: <each hard constraint, and what enforces it>
 Assumed: <each assumed constraint; open to loosening>
-Great outcome: <what the user said, concretely>
+Outcome: <the great outcome the user described, concretely>
 Your idea: <one line, or "none">
 ```
 
@@ -86,7 +87,8 @@ options. Every lens gives at least one option.
 
 Rules for this phase:
 - Show 8 to 12 options, grouped by the approach underneath them into 3 or 4 clusters of 2 to 4 options each. Give
-  each cluster a name of at most 12 characters (it becomes a question header). Number the options across all
+  each cluster a name of at most 12 characters, counted (it becomes a question header): "Built-in sync" is 13, too
+  long; "Built-in" fits. Number the options across all
   clusters.
 - Each option is one line: a short name and what it is, concretely. "Use a manifest" is not an option; "hash each
   skill folder into a manifest at pack time and compare it with the installed copy" is. No lens tags.
