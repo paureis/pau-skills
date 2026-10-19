@@ -74,25 +74,25 @@ must-fix)", gets the strictest tag that applies to the stage being entered. Stag
 
 Read an area file only when the profile says it applies:
 
-| Area | File | Load when |
-| --- | --- | --- |
-| data and schema | `areas/data-and-schema.md` | a database |
-| identity and sessions | `areas/identity-and-sessions.md` | sign-in |
-| access control and tenancy | `areas/access-control.md` | accounts or per-user data |
-| data safety | `areas/data-safety.md` | stored user data |
-| correctness | `areas/correctness.md` | always |
-| security | `areas/security.md` | any network surface (a CLI keeps three rows) |
-| compliance | `areas/compliance.md` | personal data from stage 2, or stage 3 or 4 |
-| delivery | `areas/delivery.md` | deployed or published |
-| observability and on-call | `areas/observability.md` | runs as a service |
-| testing | `areas/testing.md` | always |
-| billing | `areas/billing.md` | takes money |
-| APIs and webhooks | `areas/apis-and-webhooks.md` | an API for others, or webhooks |
-| AI features | `areas/ai-features.md` | calls a model |
-| UX and accessibility | `areas/ux-and-accessibility.md` | a user interface |
-| code health and ownership | `areas/code-health.md` | always |
+| Area | File | Prefix | Load when |
+| --- | --- | --- | --- |
+| data and schema | `areas/data-and-schema.md` | SCH | a database |
+| identity and sessions | `areas/identity-and-sessions.md` | IDN | sign-in |
+| access control and tenancy | `areas/access-control.md` | ACC | accounts or per-user data |
+| data safety | `areas/data-safety.md` | SAFE | stored user data |
+| correctness | `areas/correctness.md` | COR | always |
+| security | `areas/security.md` | SEC | any network surface (a CLI keeps three rows) |
+| compliance | `areas/compliance.md` | CMP | personal data from stage 2, or stage 3 or 4 |
+| delivery | `areas/delivery.md` | DEL | deployed or published |
+| observability and on-call | `areas/observability.md` | OBS | runs as a service |
+| testing | `areas/testing.md` | TST | always |
+| billing | `areas/billing.md` | BIL | takes money |
+| APIs and webhooks | `areas/apis-and-webhooks.md` | API | an API for others, or webhooks |
+| AI features | `areas/ai-features.md` | AI | calls a model |
+| UX and accessibility | `areas/ux-and-accessibility.md` | UX | a user interface |
+| code health and ownership | `areas/code-health.md` | CODE | always |
 
-An area left out gets one row, `<PREFIX>-NA`, status `n/a`, with the profile reason. Inside a loaded area, a check
+Each area left out gets its own row, `<prefix>-NA` (such as `BIL-NA`), status `n/a`, with the profile reason. Inside a loaded area, a check
 whose "Applies" condition is false gets an `n/a` row with the reason. When the manifests change, the n/a rows go
 back to recheck, so a new payments package brings billing back.
 
@@ -125,7 +125,8 @@ with `curl` against the app started locally.
 Write each probe as a test in the project's own framework that states the safe behavior, so it fails while the gap
 is there. Then send one message and stop: the findings so far, each probe in full with the file it goes in, and the
 questionnaire (step 6). Add and run the probes only on a yes. If the user declines, the suspects stay `likely` and
-the verdict says probes were skipped.
+the verdict says probes were skipped. Write the ledger (step 7) after the probes have run or been declined, so each
+row is written once with its final grade.
 
 ## 6. Questionnaire
 
@@ -138,18 +139,21 @@ months, an access review a quarter). Skipped or "don't know" is `unknown`. Never
 READINESS.md, in `docs/` when the project has that folder, else at the root. `ledger.mjs` finds an existing one in
 either place before it creates one. Paths in rows are from the repository root.
 
+Claude Code refuses a command that carries JSON on its command line or in a heredoc, and a write outside the
+project. So write each input with your file-writing tool to `.readiness-input.json` at the repository root, then
+pass it with `--consume`, which deletes it once it is applied (a refused input is kept for you to fix):
+
 ```bash
-node ${CLAUDE_SKILL_DIR}/ledger.mjs profile - <<'EOF'
-{"profile": {"stack": "...", "surface": "...", "data": "..."}, "stage": 2, "regulated": false,
- "files": ["package.json"]}
-EOF
-node ${CLAUDE_SKILL_DIR}/ledger.mjs apply - <<'EOF'
-[{"id": "SEC-08", "area": "security", "stage": 2, "severity": "must-fix", "status": "fail", "source": "code",
-  "evidence": "src/cors.js:3 sets Access-Control-Allow-Origin: *", "files": ["src/cors.js"]}]
-EOF
+node ${CLAUDE_SKILL_DIR}/ledger.mjs profile .readiness-input.json --consume
+node ${CLAUDE_SKILL_DIR}/ledger.mjs apply .readiness-input.json --consume
 node ${CLAUDE_SKILL_DIR}/ledger.mjs status
 node ${CLAUDE_SKILL_DIR}/ledger.mjs stamp
 ```
+
+The profile input is `{"profile": {"stack": "...", "surface": "...", ...}, "stage": 2, "regulated": false,
+"files": ["package.json"]}`. The rows input is a list such as `[{"id": "SEC-08", "area": "security", "stage": 2,
+"severity": "must-fix", "status": "fail", "source": "code", "evidence": "src/cors.js:3 sets
+Access-Control-Allow-Origin: *", "files": ["src/cors.js"]}]`.
 
 - `profile` stores the confirmed profile with a hash of each file it came from (the manifests).
 - `apply` adds or replaces rows by id and hashes each cited file. `source` is `code`, `command` (a test, a probe,

@@ -1,19 +1,13 @@
 #!/usr/bin/env node
 /**
- * The READINESS.md ledger of the launch-readiness skill. Node standard library only. Run "help" for the commands.
- * Every command takes --root <dir> (default: the git top level of the current folder) and --now <ISO date>.
- *
- * Profile input: {"profile": {...}, "stage": 1|2|3, "regulated": bool, "files": [the manifests it was read from]}.
- * Row input: a JSON array of {id, area, stage (1 to 4, the first stage that needs the check), severity (must-fix |
- * can-wait), status, source (code | command | answer), evidence, files: [paths], expires (YYYY-MM-DD), date}. A row
- * whose id is in the ledger replaces it; nothing is written when any row breaks a rule.
- *
- * Statuses: pass, fail, likely (a security suspect with no probe), unknown, n/a, recheck. Closed: pass or n/a, with
- * any expiry not passed. Ready for stage N: every must-fix row for stages 1 to N, plus the stage 4 rows when
- * regulated data is added, is closed. The ledger is the first table whose header is COLUMNS plus the fenced block
- * opened by "```json launch-readiness"; the rest of the file, and every row line not changed, stays byte for byte.
+ * The READINESS.md ledger of the launch-readiness skill (Node standard library). "help" lists the commands, which
+ * take --root <dir> (default: the git top level) and --now <ISO date>. Profile input: {profile, stage (1 to 3),
+ * regulated, files: [the manifests]}. Row input: [{id, area, stage (1 to 4), severity, status, source, evidence,
+ * files: [paths], expires, date}]; a row with a known id replaces it, and a bad row stops the whole write.
+ * Closed: pass or n/a, not expired. Ready for stage N: every must-fix row for stages 1 to N, plus stage 4 rows when
+ * regulated data is added, is closed. Only the table and the "```json launch-readiness" block are rewritten.
  */
-import { readFileSync, writeFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, statSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { join, dirname, resolve, relative, sep } from 'node:path';
@@ -296,6 +290,7 @@ const USAGE = `Usage: node ledger.mjs <command> [--root <dir>] [--now <ISO date>
   find                 where the ledger is, or where a new one goes
   profile <file|->     store the confirmed profile, creating the ledger from the template if needed
   apply <file|->       add or replace rows from a JSON array
+                       (with --consume, the input file is deleted once it is applied)
   refresh [--dry-run]  send stale rows to recheck and list changed files that no row cites
   status               readiness per stage, open must-fix rows and counts per grade
   stamp                record HEAD and today as the last run`;
@@ -303,8 +298,9 @@ const USAGE = `Usage: node ledger.mjs <command> [--root <dir>] [--now <ISO date>
 export function main(argv, { cwd = process.cwd(), out = console.log, err = console.error, stdin = () => readFileSync(0, 'utf8') } = {}) {
   const args = [...argv];
   const flag = (name) => { const i = args.indexOf(name); if (i < 0) return null; const v = args[i + 1]; args.splice(i, 2); return v; };
-  const dry = args.includes('--dry-run');
-  if (dry) args.splice(args.indexOf('--dry-run'), 1);
+  const has = (name) => { const i = args.indexOf(name); if (i >= 0) args.splice(i, 1); return i >= 0; };
+  const dry = has('--dry-run');
+  const consume = has('--consume');
   const rootArg = flag('--root');
   const nowArg = flag('--now');
   const [cmd, input] = args;
@@ -323,7 +319,10 @@ export function main(argv, { cwd = process.cwd(), out = console.log, err = conso
       if (!found.exists) throw new Error(`no ledger yet at ${rel}: run "profile" first`);
       return parseLedger(readFileSync(found.path, 'utf8'));
     };
-    const save = (l) => writeFileSync(found.path, formatLedger(l));
+    const save = (l) => {
+      writeFileSync(found.path, formatLedger(l));
+      if (consume && input && input !== '-') rmSync(resolve(cwd, input));
+    };
     if (cmd === 'find') { out(`${found.exists ? 'found' : 'none yet, would create'}: ${rel}`); return 0; }
     if (cmd === 'profile') {
       const base = found.exists ? load() : parseLedger(readFileSync(join(HERE, 'READINESS-TEMPLATE.md'), 'utf8'));
@@ -354,7 +353,7 @@ export function main(argv, { cwd = process.cwd(), out = console.log, err = conso
       const l = load();
       if (!l.meta.stage) throw new Error('no profile stored: run "profile" first');
       const r = readiness(l.rows, { stage: l.meta.stage, regulated: l.meta.regulated, now });
-      if (r.regulated) out('regulated data is added: the stage 4 rows count at every stage');
+      if (r.regulated) out('regulated data added: stage 4 rows count at every stage');
       for (const s of r.stages) {
         const tag = s.stage === r.stage ? ' (the stage being entered)' : '';
         const list = s.blockers.map((b) => b.id).join(', ');
@@ -370,7 +369,7 @@ export function main(argv, { cwd = process.cwd(), out = console.log, err = conso
       out(`last run: ${commit.slice(0, 12)} on ${today(now)}`);
       return 0;
     }
-    throw new Error(`unknown command "${cmd}"\n${USAGE}`);
+    throw new Error(`unknown command "${cmd}"`);
   } catch (e) {
     err(e.message);
     return 1;

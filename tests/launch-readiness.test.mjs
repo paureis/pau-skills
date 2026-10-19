@@ -1,5 +1,5 @@
-// ledger.mjs for the launch-readiness skill: round trip, escaping, recheck on a changed, missing or expired source,
-// uncited changes, the profile recheck and stage readiness. The fixtures' gaps are in tests/fixtures/launch-readiness/README.md.
+// ledger.mjs of launch-readiness: round trip, escaping, rechecks, uncited changes, profile recheck, stage readiness.
+// The fixtures' gaps are listed in tests/fixtures/launch-readiness/README.md.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, readFileSync, mkdirSync, existsSync, renameSync, rmSync, readdirSync } from 'node:fs';
@@ -348,7 +348,9 @@ describe('the command line', () => {
     const ok = (r) => { assert.equal(r.code, 0, r.err); return r; };
     ok(run(['profile', '-'], sub, JSON.stringify({ profile: { stack: 'Node' }, stage: 2, files: ['package.json'] })));
     assert.ok(existsSync(join(root, 'docs', 'READINESS.md')));
-    ok(run(['apply', '-'], sub, JSON.stringify([row({ id: 'SEC-08', status: 'fail', evidence: 'src/a.js:1 sets *', files: ['src/a.js'] })])));
+    writeFileSync(join(root, 'in.json'), JSON.stringify([row({ id: 'SEC-08', status: 'fail', evidence: 'src/a.js:1 *', files: ['src/a.js'] })]));
+    ok(run(['apply', '../in.json', '--consume'], sub));
+    assert.ok(!existsSync(join(root, 'in.json')), '--consume deletes the input after a good apply');
     assert.match(ok(run(['status'], sub)).out, /stage 2 \(paying customers\): NO-GO, must-fix open: SEC-08/);
     ok(run(['stamp'], sub));
     let r;
@@ -365,8 +367,8 @@ describe('the command line', () => {
     const root = project({ 'a.js': 'x\n' });
     writeFileSync(join(root, 'READINESS.md'), SAMPLE);
     writeFileSync(join(root, 'rows.json'), JSON.stringify([row({ id: 'X', evidence: 'no line' })]));
-    const r = run(['apply', 'rows.json', '--root', '.'], root);
-    assert.equal(r.code, 1);
+    const r = run(['apply', 'rows.json', '--root', '.', '--consume'], root);
+    assert.deepEqual([r.code, existsSync(join(root, 'rows.json'))], [1, true]);
     assert.match(r.err, /file:line/);
     assert.equal(readFileSync(join(root, 'READINESS.md'), 'utf8'), SAMPLE);
   });
