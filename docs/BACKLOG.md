@@ -943,6 +943,116 @@ README and the batch process). Asked for by the owner on 2026-10-19, settled wit
   `grill-me` offering the page for three open decisions and "write a PRD" still starting `to-prd`; the four
   repository checks pass.
 
+**Q6 launch-readiness** (`todo`, verification, new skill with `ledger.mjs`). Asked for by the owner on 2026-10-19;
+widened with `brainstorm` (18 options, two rounds of marks, direction D of four finalists) and settled with
+`grill-me`.
+- Origin: Original. Ideas from two posts the owner shared on 2026-10-19 (authors not recorded): a list of about 170
+  things a vibe-coded app needs "before it touches a paying customer", grouped by schema, identity, access control,
+  data safety, correctness, security, compliance, delivery, observability, testing, billing, APIs, AI features, UX,
+  code health, and the human roles still needed; and a 16-line "security prompt" (keys out of the frontend, rotate any
+  key that touched GitHub, row-level security, server-side auth on every route, rate limits, server-side validation,
+  parameterized SQL, CORS locked to your domain, httpOnly, secure and sameSite cookies, argon2 or bcrypt, never trust a
+  client-sent user ID, no stack traces in production, dependency scanning, security headers, spending limits on paid
+  APIs). Neither is taken as truth: some lines are stack-specific (row-level security is a Postgres or Supabase
+  feature). The stage tiers borrow the idea of OWASP's verification levels. Ask the owner for the posts' text if the
+  building session needs it; it was pasted into the planning conversation, not saved.
+- Goal: before an app built mostly by agents reaches paying users, give an honest go / no-go for the stage it is
+  entering, backed by evidence and sized to what the app is; close gaps on the owner's yes; on later runs, report only
+  what changed. Primary use: the owner's own apps before launch. Then ongoing checks as the app changes. Use by others
+  comes from the skill working on its own.
+- How it runs:
+  1. **Profile, confirmed first.** Read the project and write a short profile: stack, kinds of data (personal,
+     health, card, children's), auth, payments, AI features, tenants, deploy target, and the stage being entered. The
+     owner confirms or corrects it before any check runs. A wrong profile is the likeliest failure.
+  2. **Stages.** 1 private beta (no money), 2 paying customers, 3 enterprise buyers (SSO, SAML, SCIM, audit trails,
+     questionnaires); stages 1 to 3 stack. 4 regulated data (health, card data, residency) adds its checks to the
+     stage the app is at and does not require stage 3. Each check is tagged with the first stage that needs it.
+  3. **Area files, loaded only when they apply.** A short SKILL.md plus one reference file per area, each under Q4's
+     limit: data and schema; identity and sessions; access control and tenancy; data safety (backups, tested restore,
+     point-in-time recovery, soft deletes, retention); correctness (time zones, money as integers, text with
+     apostrophes, emoji and right-to-left, idempotency, duplicate submits, pagination, imports and exports); security
+     (the 16-line prompt with stack conditions, OWASP, uploads, headers, encryption, logs without secrets); compliance
+     (SOC 2, HIPAA and BAAs, PCI scope, GDPR deletion, residency, access reviews); delivery (environments,
+     infrastructure as code, CI, rollback, zero-downtime deploys, flags, scaling, DNS and certificates, queues,
+     retries, dead letters, cron on several servers, caching, email deliverability, storage, cost alerts, disaster
+     recovery); observability and on-call; testing; billing; APIs and webhooks; AI features (prompt injection, data in
+     prompts, spend caps, evals, provider fallback, deprecation); UX and accessibility; code health and ownership.
+  4. **Evidence or silence.** A row passes only with `file:line` or a command and its output. Anything unproven is
+     "unknown", with how to check it. No grade comes from a dependency's name alone.
+  5. **Proof on security.** For the security area, each suspect from the code read is confirmed by a probe against
+     the running app (through `verify-app` if it is installed, or the project's own test harness), for example user A
+     asking for user B's record. The probe is written as a test in the project's own framework, so it stays as a
+     regression test. Without a probe a security row is at most "likely", the verdict says plainly that probes were
+     skipped, and a must-fix security row that is only "likely" blocks "go".
+  6. **Questionnaire.** Items code cannot show (restores tested, on-call, SOC 2, BAAs, accounts in the company's name,
+     a disclosure process, a stolen-laptop plan) are asked once and stored in the ledger with a date and an expiry
+     (a tested restore holds 12 months, an access review a quarter). Expired answers are asked again.
+  7. **Ledger.** A committed `READINESS.md` (in `docs/` if the project has one): one row per applicable check with
+     stage, status, evidence and date. "Ready for stage N" means every must-fix row for that stage is closed. When a
+     file a row cites changes, the row goes back to "recheck", so a re-run looks only at stale rows and reports what
+     changed. `ledger.mjs` (Node standard library) parses and updates rows, marks stale ones from content hashes, and
+     works out stage readiness.
+  8. **Verdict.** Go or no-go for the stage; at most 10 must-fix rows with evidence; a can-wait list; a needs-a-person
+     list naming the role (from the post's last section: senior engineer, backend engineer, DevOps, on-call, security
+     and compliance, QA, tech lead); the unknowns; counts per grade. No single score: it would let 20 small passes hide
+     one missing permission check.
+  9. **Fix on a yes.** A fix that fits in one sitting (a header, a cookie flag, one auth check) happens in the skill,
+     failing test or probe first. Anything bigger (MFA, SSO, backups, a schema change) becomes a brief for Q2's
+     `eng-lead` or `builder` if installed, or an issue through `to-issues` if installed, or a plain list, with its
+     failing probe or check as the done condition.
+- Defaults: confirming the profile is the stop before any write, so it stays off `CONFIRM_LIST` unless the plan check
+  finds otherwise. Its description takes the skill total to about 12,980 of 13,000, so Q7 extends `verify-app`
+  instead of adding a skill. Overlaps: `dependency-security-audit` (packages only; called for that row),
+  `migration-review` (migration rows), `verify-app` (probes), `ci-cost-and-cadence` (CI rows), `evaluator`, Claude
+  Code's built-in `/security-review` (the current diff only, not the whole app).
+- Done when: on two fixtures, a small web app with seeded gaps (one route that skips the ownership check, CORS set to
+  `*`, money stored as a float, no login rate limit, a key in frontend code) and a small CLI tool, a headless cold run
+  shows: the profile asked for first; web checks left out for the CLI; the seeded gaps found with evidence; the
+  missing ownership check confirmed by a failing test in the fixture's own test framework; the ledger written; a
+  re-run after editing one cited file rechecking only that row. `ledger.mjs` has tests a mutation can break; the four
+  repository checks pass.
+
+**Q7 UI states and skeleton matching in verify-app** (`todo`, verification, changes `verify-app` and
+`check-map.mjs`; no new skill). Asked for by the owner on 2026-10-19, settled with `grill-me`.
+- Origin: Original, from two ideas. Aiden Bai's post on X (2026-10-18): "ask your agent to measure the loaded UI with
+  Playwright, then match the skeleton's sizes and positions to prevent layout jank". And a line in the long
+  production-readiness list (Q6): "empty states, loading states and error states on every screen".
+- What it does:
+  - Each feature file in a generated verify skill gains a fifth heading, **States**, after the four that
+    `check-map.mjs` requires today (Sub-features, How to get to it, Driving it, Gotchas). It says how to force each
+    state of that screen and what it should look like: loading (delay the API, for example by intercepting the
+    request), empty (no data), error (the API fails), each with a screenshot kept as evidence. A feature with no
+    screen (a CLI command, an HTTP endpoint) says so under the heading.
+  - The generated verify skill gets one shared recipe: load the screen in its loading state and record the
+    skeleton's element boxes, load it fully and record the real boxes, compare them, and read the browser's
+    layout-shift score (a `PerformanceObserver` on `layout-shift`). A box off by more than 4 px, or a score above 0.1
+    (the browser's "good" line), is a mismatch.
+  - Report, then fix on a yes: the report lists each mismatched box and by how much. On a yes, the agent resizes the
+    skeleton to the measured boxes and measures again to prove it. By default `verify-app` stays a prover and never
+    edits product code.
+  - Driving uses what `verify-app` already detects first: the project's own end-to-end harness (Playwright if the
+    project has it) or a browser MCP. Our scripts stay on the Node standard library; the measuring code is written
+    into the project's verify skill or tests, in the project's own tooling.
+  - Maintain mode adds the States heading to existing feature files and checks that each state still renders.
+- Budget: `verify-app`'s description may gain a trigger such as "skeleton" or "loading states" only if the total
+  stays within 13,000 after Q2 and Q6 (about 20 characters left); otherwise reword within its current length.
+- Done when: on the fixture web app from N1 (or Q6's), with a skeleton seeded 20 px too short, a cold run finds the
+  mismatch with its numbers, fixes it on a yes and proves the new measurement; the loading, empty and error
+  screenshots are kept; `check-map.mjs` requires the States heading and says what is missing, with tests a mutation
+  can break; existing fixture maps pass after a maintain run; the four repository checks pass.
+
+**Q8 production rules from day one** (`todo`, after Q6; touches `project-setup`, `geppetto` from Q2 and `rule-to-hook`).
+Kept in Q6's brainstorm as a separate item.
+- What it does: prevent the common gaps instead of finding them later. `project-setup` offers a short set of
+  production rules for CLAUDE.md, picked by the project's profile (money as integers, validate on the server,
+  parameterized queries, never trust a client-sent user ID, secrets out of the code). `geppetto`'s covenant for
+  coding agents carries the same rules. `rule-to-hook` offers to enforce the mechanical ones.
+- One source: the rules come from Q6's area files, so what is prevented and what is checked cannot drift. Each skill
+  must still work on its own, so the rules a skill needs are copied into its folder and added to `COPIES` in
+  `tests/standalone.test.mjs`, which keeps the copies identical.
+- Done when: on a fixture project, `project-setup` offers rules that match its profile and leaves out the rest; Q6's
+  audit of a project set up this way finds none of the gaps the rules cover; the copies pass the standalone test.
+
 ## Order
 
 1. Done: P0.2, P0.3, P0.4 (groundwork).
@@ -955,7 +1065,8 @@ README and the batch process). Asked for by the owner on 2026-10-19, settled wit
 7. Done: the fifth batch, N8 overnight-run, N9 engineering-principles, and the small items P1.6 to P1.8, with the
    hillclimb log guard and the mutate.sh restore by content.
 8. **Next:** the items in section Q: Q1 test-value audit, Q2 `geppetto` and the agent roster, Q3 designer agent
-   (after Q2), and any further ideas the owner adds there.
+   (after Q2), Q4 file-size guard (after Q1), Q5 html-plan, Q6 `launch-readiness`, Q7 UI states in `verify-app`, Q8
+   production rules from day one (after Q6), and any further ideas the owner adds there.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
 
