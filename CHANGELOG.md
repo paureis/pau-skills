@@ -3,6 +3,31 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-19: the sixth batch (geppetto, launch-readiness, verify-app states, a lighter brainstorm, html-plan links)
+
+<!-- Q2 and Q6 lines are added when those items merge. -->
+- `brainstorm`: lighter. Frame asks at most three questions at once, with proposed answers, through the question tool
+  when the session has one, and shows the frame only after the answers. 8 to 12 options show in 3 or 4 clusters with
+  no lens tags (the lenses stay, used internally). One round of picks, with the agent's marked "(Recommended)" and a
+  reason each, accepted with an "ok" ("blind" holds them back). Improvements fold into 3 or 4 finalists. Statuses
+  are kept, dropped and chosen, and the summary is shorter.
+- `grill-me`: asks each question with the question tool when the session has one, recommended answer first. With
+  three or more decisions open at once, it offers one html-plan page if it is installed, as its own question first;
+  the page's answers feed the next branch, never a build.
+- `architect`: when it stops at Agree, it offers to show the design as an html-plan page if it is installed.
+- `to-prd`: after saving the PRD, it offers to render it as an html-plan page if it is installed; the answers update
+  the PRD and never start a build.
+- `verify-app` (verification): feature files gain a fifth heading, States (loading, empty and error, with a
+  screenshot each, or "no screen"), which `check-map.mjs` requires and, for old maps, says maintain mode adds. The
+  generated skill gains a States and skeletons recipe and the in-page helper `measure-boxes.js`, which reports
+  skeleton boxes off by more than 4 px and a layout-shift score above 0.1 (Chromium only), fails when nothing
+  matched, and resizes a skeleton only on a yes. A request only about a skeleton runs that recipe. A new
+  `web-skeleton` fixture.
+- `which-skill`: routes "show me the plan as a page" to html-plan (an outside skill), a jumping skeleton to
+  `verify-app`, and says how html-plan, `to-prd` and `architect` differ.
+- `tests/context-budget.test.mjs`: the description total is 14,000 characters (was 13,000), by the owner's choice.
+- `tests/standalone.test.mjs`: also checks mentions of html-plan, a skill from elsewhere.
+
 ## 2026-10-19: the fifth pstack batch (overnight-run, engineering-principles, audit, mutate.sh, evaluator, hillclimb)
 
 - `overnight-run` (new, agent-orchestration, adapted from pstack): runs one task unattended under a contract. Trust

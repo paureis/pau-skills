@@ -49,8 +49,9 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 ## The main flow: from an idea to merged work
 
 0. **`brainstorm`** (planning). With a goal but only one idea or none ("brainstorm this", "give
-   me ideas", "what are my options"), widen the options first: lenses, keep, kill or combine, a shortlist with a
-   premortem each. Then run `grill-me` on the chosen direction.
+   me ideas", "what are my options"), widen the options first: 8 to 12 options from named lenses, the agent's picks
+   to accept with a tap or an "ok", 3 or 4 finalists with a premortem each. Then run `grill-me` on the chosen
+   direction.
 1. **`grill-me`** (planning). Settle every open decision before anything is built, one question at a time.
    Start here whenever the user has an idea that is not fully decided.
 2. **`to-prd`** (planning). Turn the decided conversation into a written spec, without interviewing again.
@@ -87,7 +88,8 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | CI is slow or expensive, "how much CI should we run" | `ci-cost-and-cadence` (verification) | |
 | Review comments to work through, "which of these should I fix", a review loop that keeps going | `review-triage` (verification) | |
 | A bug whose cause is not obvious, a fix that did not hold, a bug that came back, "find the root cause" (happens every time; an obvious one-line fix needs no skill) | `bug-fix` (verification) | `evaluator` to attack the fix |
-| "Verify it in the app", "how can an agent test this app", no scripted way to drive the app | `verify-app` (verification) | `evaluator` cites its drives as evidence |
+| "Verify it in the app", "how can an agent test this app", no scripted way to drive the app, a skeleton or loading state that jumps | `verify-app` (verification) | `evaluator` cites its drives as evidence |
+| "Show me the plan as a page", a plan with several decisions to answer at once | `html-plan` (an outside skill, if it is installed) | `grill-me` on what the response leaves open |
 | A question about how the codebase works, or why it is built that way | `codebase-oracle` (agent-orchestration) | `grill-me` if it leads to a change |
 | "The code is getting messy", hard-to-test modules | `improve-codebase-architecture` (planning) | `grill-me` on the candidate picked |
 | A task about to start, "make sure you understand this", "restate this first", a vague or over-constrained request | `sharpen` (planning) | the skill that fits the task |
@@ -159,6 +161,10 @@ Hooks act on every session where their plugin is installed. Each can be turned o
 
 - **`brainstorm` or `grill-me`?** `brainstorm` widens: it generates and compares options when nothing is chosen yet.
   `grill-me` narrows: it settles the open decisions of a chosen plan. With only a goal, brainstorm first.
+- **`html-plan`, `to-prd` or `architect`?** `html-plan` (an outside skill, if it is installed) writes the plan as one
+  interactive HTML page, with each decision on the claim it changes, for the user to answer and copy back. `to-prd`
+  writes a markdown spec from what is already decided. `architect` writes types and signatures in code and builds
+  against them. Both offer an html-plan page when it is installed.
 - **`skill-eval` or `arena`?** `arena` runs several attempts at one task and builds on the best. `skill-eval` runs the
   same task with two versions of a skill or prompt and checks whether the change alters what the agent does.
 - **`hillclimb` or `bug-fix`?** `bug-fix` makes a wrong result right. `hillclimb` makes a correct result better on a

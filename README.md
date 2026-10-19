@@ -250,7 +250,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   the fix, and proves what the change cannot break.
 - **[verify-app](skills/verification/verify-app/SKILL.md)** (adapted): Generates a project skill, `.claude/skills/verify-<app>/`, that
   launches the real app, drives it like a user, keeps evidence that survives cleanup and cleans up only what it
-  started, with a feature map; `check-map.mjs` checks it, and `maintain` keeps it in step with the app.
+  started, with a feature map; each feature file says how to force its loading, empty and error states, and the skill
+  carries a recipe that measures a skeleton against the loaded screen and reads the layout-shift score;
+  `check-map.mjs` checks it, and `maintain` keeps it in step with the app.
 - **[hillclimb](skills/verification/hillclimb/SKILL.md)** (adapted): Improves one metric (time, size, memory, a score)
   step by step: a frozen harness proven sensitive with a deliberate regression, a stop predicate with a minimum number
   of attempts, one change and one measurement per attempt (keep or revert), a commit per win, and an append-only
@@ -308,8 +310,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   writing code, compares at least two shapes against red flags for agent contributors, then implements against the
   sketch test first and scraps it when deviations repeat.
 - **[brainstorm](skills/planning/brainstorm/SKILL.md)**: Widens the options before a decision is settled: frames the
-  goal in at most three questions, generates 10 to 20 options through named lenses, lets you keep, kill or combine
-  them, then converges on 3 to 5 rated without a score, with a premortem each, and a one-page summary for `grill-me`.
+  goal in at most three questions, shows 8 to 12 options from named lenses in 3 or 4 clusters with its own picks
+  marked, takes one round where you accept them with an "ok" or pick your own, then converges on 3 or 4 rated without
+  a score, with a premortem each, and a short summary for `grill-me`.
 - **[sharpen](skills/planning/sharpen/SKILL.md)** (adapted): Before a task, restates the goal and the problem behind
   it, asks how an expert would check the result, and confirms in six lines before working.
 - **[agent-friendly-audit](skills/planning/agent-friendly-audit/SKILL.md)** (adapted): Mines review comments, fix and
@@ -326,10 +329,15 @@ the upstream version it was compared against and what this version changes, take
 
 ### I also use, unmodified
 
-My copies of these differ from upstream only by being shorter, so I do not republish them. Use the originals:
+My copies of these differ from upstream only by being shorter, or I use them exactly as published, so I do not
+republish them. Use the originals:
 
 - [grill-with-docs](https://github.com/mattpocock/skills/tree/main/skills/engineering/grill-with-docs) by Matt Pocock
 - [prototype](https://github.com/mattpocock/skills/tree/main/skills/engineering/prototype) by Matt Pocock
+- [html-plan](https://github.com/anthropics/claude-plugins-community/tree/06ec7b6a0a82bdc4bec44bd82d4368c42f20d7c1/html-plan)
+  by Thariq Shihipar: writes a plan as one interactive HTML page with the decisions placed on the claims they change.
+  `architect`, `to-prd` and `grill-me` offer it when it is installed. Its `plugin.json` says MIT; the repository's root
+  LICENSE is Apache 2.0. I upload it unchanged, built from that commit; nothing of it ships from here.
 
 ## How the pieces fit into a session
 

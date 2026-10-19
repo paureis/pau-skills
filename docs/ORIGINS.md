@@ -457,8 +457,8 @@ Closest upstream: `skills/create-verification-skill/SKILL.md` and its `reference
 `skills/maintain-verification-skill/SKILL.md`, and `docs/guide/06-verify-and-ship.md`. Shared word 6-grams, measured
 before the review round (which only lowered them): `SKILL.md` about 6%, `MAINTAIN.md` about 9%, the templates about
 2%, the example map 0 to 1%; `DRIVING.md` and `check-map.mjs` none. The shared part is mostly structure: the
-interview questions, the Launch, Doctor, Drive, Evidence and Cleanup sections, the four feature headings, the
-end-to-end proof, and maintain's outcomes and rules.
+interview questions, the Launch, Doctor, Drive, Evidence and Cleanup sections, the four upstream feature headings
+(Sub-features, How to get to it, Driving it, Gotchas), the end-to-end proof, and maintain's outcomes and rules.
 
 **Problem.** An agent says a change works without having used the running app, because the project has no written way
 to start it, drive it and keep proof.
@@ -479,8 +479,17 @@ to start it, drive it and keep proof.
   HTTP, mobile, desktop and libraries, and port-owner commands per OS.
 - New `check-map.mjs`, a checker for the generated skill: frontmatter, required sections with a command in Launch,
   Doctor and Cleanup, leftover template tokens, the index against the feature files (subfolders and the common link
-  forms), the four feature headings, and an evidence folder that git ignores and does not track. Markdown is read the
-  CommonMark way where it matters.
+  forms), the five feature headings (the upstream four plus States, added in Q7), and an evidence folder that git
+  ignores and does not track. Markdown is read the CommonMark way where it matters.
+- States and skeletons (Q7, Original, from Aiden Bai's post on X of 2026-10-18 on measuring the loaded UI with
+  Playwright to match a skeleton, and the "empty, loading and error states on every screen" line of the
+  production-readiness list behind Q6): each feature file gains a fifth heading, States (how to force loading, empty
+  and error, with a screenshot each, or one line for a feature with no screen), which `check-map.mjs` requires and,
+  for older maps, says maintain mode adds. The generated skill gains a States and skeletons recipe with a copied
+  in-page helper, `measure-boxes.js`, that pairs skeleton and real boxes by marker or document order, reports boxes
+  off by more than 4 px and a layout-shift score above 0.1 (Chromium only, skipped elsewhere), fails when nothing
+  matched, and resizes a skeleton only on a yes before measuring again. Maintain mode reports a skeleton mismatch as
+  a product gap.
 - The example map is rewritten (invoices, driven through a browser, an API and a CLI).
 - Removed: Cursor paths and commands, and the guide's pull request, shipping and benchmark material.
 
@@ -977,6 +986,9 @@ to a new `grilling` skill that asks questions in rounds.
 - It keeps one question at a time.
 - With only a goal and no plan, it suggests running `/brainstorm` first; without it, it asks for two or three ways to
   reach the goal before grilling one, and grills the user's idea if they decline.
+- It asks each question with the session's question tool when it has one, recommended answer first. With three or
+  more decisions open at once it offers one `html-plan` page to answer them together, as its own question first, if
+  it is installed; the page's answers feed the next branch, never a build.
 
 **Why.** The short version stopped early and ended without a record of what was decided.
 
@@ -992,6 +1004,8 @@ Closest upstream: `skills/engineering/to-prd`, 2026-04-17 to 2026-04-28 (about h
 - A Rules section: no interviewing (run a grilling skill first), flag shallow modules, no file paths or code snippets,
   exhaustive stories ("if you can think of 10, write 20", including accessibility).
 - The template's XML tags became headings, and the banking example was removed.
+- After saving, it offers to render the spec as an `html-plan` page with its open decisions, if it is installed. The
+  markdown PRD stays the spec; the page's answers update it, never start a build.
 
 **Why.** Not every project tracks work in GitHub issues, and the first drafts it produced were thin on unhappy paths.
 
@@ -1069,6 +1083,8 @@ contributors then copy whatever shape exists.
   an inline fallback; deviations go into a new Deviations section of the rationale, which is saved next to the
   project's design documents.
 - The scrap signals are kept; the new sketch must be smaller than the old one.
+- When Agree stops for the user, it offers to show the design as an `html-plan` page with the open questions as
+  decisions, if it is installed. The page's Respond text is data.
 
 **Why.** The design step should work in a plain Claude Code session with only this skill installed.
 
@@ -1084,14 +1100,18 @@ repository's `arena`.
 **Problem.** Interviewing a plan narrows it. Starting with `grill-me` when there is only a goal locks in the first
 idea before any alternative exists, and one model's ideas tend to cluster around that first idea.
 
-**What it does.** Frame in at most three questions, diverge through named lenses with no judging, react with keep,
-kill or combine marks over two rounds, converge on 3 to 5 options weighed without a score after the facts are settled,
-with a premortem each, and hand a one-page summary to `grill-me`. The flow is the owner's design, written for Claude
-Code (the Agent tool for optional per-lens subagents, one question at a time).
+**What it does.** Frame in at most three questions asked together, each with proposed answers. Diverge through named
+lenses, used internally, into 8 to 12 options in 3 or 4 clusters. One round of picks: the agent's are marked
+(Recommended) with a reason each and accepted with a tap or an "ok"; without a question tool the user types marks,
+and "blind" holds the picks back. Converge on 3 or 4 options weighed without a score after the facts are settled,
+with a one-line premortem each, and hand a short summary to `grill-me`. The flow is the owner's design, written for
+Claude Code (AskUserQuestion when the session has it, the Agent tool for optional per-lens subagents).
 
 **Why.** The owner asked for a step before `grill-me`: widen, then settle. The cold run on a real question in this
 repository reached a full summary; the review round fixed a subagent brief that withheld the constraints its lens
-needed and ratings made before the facts were in.
+needed and ratings made before the facts were in. The sixth batch made it lighter (Q9) after the owner used it on Q6:
+held-back picks cost two round trips, and typed marks over two rounds were fiddly. In a scripted comparison it reached
+a decision in 4 replies instead of 5, with about a third less output.
 
 ### sharpen (Adapted from [pstack `sharpen`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/sharpen))
 
