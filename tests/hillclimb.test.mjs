@@ -7,7 +7,7 @@ import { writeFileSync, readFileSync, mkdirSync, existsSync, symlinkSync, realpa
 import { join } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
-  HEADER, parseMeasurement, formatNumber, median, describeDelta, insideGitTree, parseArgs, main,
+  HEADER, parseMeasurement, formatNumber, median, describeDelta, insideGitTree, parseArgs, main, guardCell,
 } from '../skills/verification/hillclimb/decisions.mjs';
 
 const SCRIPT = repo('skills', 'verification', 'hillclimb', 'decisions.mjs');
@@ -125,7 +125,7 @@ describe('append', () => {
     const two = rows(log);
     assert.equal(two.length, 2);
     assert.equal(two[1][col('attempt')], '1', 'the first attempt is 1');
-    assert.equal(two[1][col('delta')], '-0.5s -25.0% better, beyond noise');
+    assert.equal(two[1][col('delta')], "'-0.5s -25.0% better, beyond noise");
     assert.ok(text.length > 0 && readFileSync(log, 'utf8').startsWith(text), 'the first row was not rewritten');
   });
 
@@ -136,8 +136,8 @@ describe('append', () => {
     append(log, { decision: 'revert', tests: 'pass', measurement: 'median=3.00s runs=5 spread=0.05s', hypothesis: 'h', change: 'c' });
     append(log, { decision: 'revert', tests: 'pass', measurement: 'median=1.40s runs=5 spread=0.20s', hypothesis: 'h', change: 'c' });
     const r = rows(log);
-    assert.equal(r[2][col('delta')], '+1.5s +100.0% worse, beyond noise');
-    assert.equal(r[3][col('delta')], '-0.1s -6.7% within noise');
+    assert.equal(r[2][col('delta')], "'+1.5s +100.0% worse, beyond noise");
+    assert.equal(r[3][col('delta')], "'-0.1s -6.7% within noise");
   });
 
   test('refuses a keep without a measurement, or with no run count or no spread, and leaves the file as it was', () => {
@@ -289,7 +289,7 @@ describe('append', () => {
     assert.equal(keep({ measurement: 'median=1.00s runs=5 spread=0.05s' }).code, 0);
     const r = keep({ id: '1', measurement: 'median=1.05s runs=5 spread=0.05s', note: 'corrects: pasted the wrong run' });
     assert.equal(r.code, 0, r.err);
-    assert.equal(rows(log)[2][col('delta')], '-0.95s -47.5% better, beyond noise');
+    assert.equal(rows(log)[2][col('delta')], "'-0.95s -47.5% better, beyond noise");
   });
 
   test('a keep corrected to a revert stops being the reference, the best and a kept attempt', () => {
@@ -299,7 +299,7 @@ describe('append', () => {
     assert.equal(append(log, { decision: 'revert', tests: 'fail', id: '1', hypothesis: 'h', change: 'c', note: 'corrects: broke parsing' }).code, 0);
     const r = append(log, { decision: 'keep', tests: 'pass', measurement: 'median=1.50s runs=5 spread=0.05s', hypothesis: 'h2', change: 'c2' });
     assert.equal(r.code, 0, r.err);
-    assert.equal(rows(log)[3][col('delta')], '-0.5s -25.0% better, beyond noise');
+    assert.equal(rows(log)[3][col('delta')], "'-0.5s -25.0% better, beyond noise");
     const s = run(['summary', log]).out;
     assert.match(s, /best 1\.5s \(-25\.0%, attempt 2\)/);
     assert.match(s, /attempts 2 \(kept 1, reverted 1\)/);
@@ -322,7 +322,7 @@ describe('append', () => {
     assert.match(keep('median=90ops/s runs=5 spread=2ops/s').err, /worse/);
     const r = keep('median=120ops/s runs=5 spread=2ops/s');
     assert.equal(r.code, 0, r.err);
-    assert.equal(rows(log)[1][col('delta')], '+20ops/s +20.0% better, beyond noise');
+    assert.equal(rows(log)[1][col('delta')], "'+20ops/s +20.0% better, beyond noise");
   });
 
   test('refuses a baseline with failing tests: the gate must be green before the first change', () => {
@@ -501,6 +501,112 @@ describe('summary', () => {
 
   test('a missing log is an error', () => {
     assert.equal(run(['summary', join(tempDir('hillclimb-'), 'none.tsv')]).code, 1);
+  });
+});
+
+describe('spreadsheet formula guard', () => {
+  const keep = (log, extra) => append(log, { decision: 'keep', tests: 'pass', hypothesis: 'h', change: 'c', ...extra });
+  // Timestamps differ between two logs; the rest of a summary must not.
+  const sameTimes = (s) => s.replace(/\d{4}-\d\d-\d\dT[\d:.]+Z/g, 'TIME');
+
+  test('guardCell quotes a cell a spreadsheet would read as a formula, and leaves the rest alone', () => {
+    // buildRow refuses control characters, so the tab and carriage return cases are only reachable here.
+    assert.equal(guardCell('\tx'), "'\tx");
+    assert.equal(guardCell('\r=x'), "'\r=x");
+    assert.equal(guardCell(' -1'), "' -1");
+    assert.equal(guardCell('"=1+1"'), `'"=1+1"`);
+    for (const v of ['=x', '+x', '-x', '@x', '  =x', ' " @x']) assert.equal(guardCell(v), `'${v}`, v);
+    for (const v of ['median=1s runs=5 spread=0s', 'reference (lower is better)', "'tis cheaper", 'a-b', '']) assert.equal(guardCell(v), v, v);
+  });
+
+  test('a delta, and a hypothesis, change or note typed with a formula character, are written quoted', () => {
+    const log = newLog();
+    assert.equal(baseline(log, { note: '=stop: half the baseline' }).code, 0);
+    const r = keep(log, { measurement: 'median=1.50s runs=5 spread=0.05s', hypothesis: '@cache', change: '+memo' });
+    assert.equal(r.code, 0, r.err);
+    assert.match(r.out, /\(keep\): -0\.5s -25\.0% better, beyond noise to /, 'the message prints the delta as computed');
+    const [base, one] = rows(log);
+    assert.equal(base[col('note')], "'=stop: half the baseline");
+    assert.equal(base[col('delta')], 'reference (lower is better)');
+    assert.equal(one[col('delta')], "'-0.5s -25.0% better, beyond noise");
+    assert.equal(one[col('hypothesis')], "'@cache");
+    assert.equal(one[col('change')], "'+memo");
+  });
+
+  test('summary prints guarded cells as typed, and keeps a value that really starts with a quote', () => {
+    const log = newLog();
+    baseline(log, { note: '=stop: half the baseline' });
+    keep(log, { measurement: 'median=1.50s runs=5 spread=0.05s', hypothesis: "'tis cheaper", change: '@memo' });
+    const r = run(['summary', log]);
+    assert.equal(r.code, 0, r.err);
+    assert.match(r.out, /\| -0\.5s -25\.0% better, beyond noise \|/);
+    assert.match(r.out, /\| 'tis cheaper \| @memo \|/);
+    assert.doesNotMatch(r.out, /'-0\.5s|'@memo/);
+    assert.match(r.out, /^first baseline note: =stop: half the baseline$/m);
+  });
+
+  test('refuses a field that would not read back as typed: a quote followed by a formula character', () => {
+    const log = newLog();
+    assert.match(baseline(log, { measurement: "'=1 median=2s runs=5 spread=0.1s" }).err, /refused.*quote/);
+    assert.equal(existsSync(log), false, 'a refused first append creates no file');
+    baseline(log);
+    const before = readFileSync(log, 'utf8');
+    const r = append(log, { decision: 'revert', tests: 'pass', hypothesis: 'h', change: 'c', note: "'=x" });
+    assert.equal(r.code, 1);
+    assert.match(r.err, /--note/);
+    assert.equal(readFileSync(log, 'utf8'), before);
+    assert.equal(append(log, { decision: 'revert', tests: 'pass', hypothesis: "'tis cheaper", change: 'c' }).code, 0);
+    assert.equal(rows(log)[1][col('hypothesis')], "'tis cheaper");
+  });
+
+  test('an --id typed with a formula character reads back as typed: a correction is judged against the rows before it', () => {
+    const log = newLog();
+    baseline(log);
+    assert.equal(keep(log, { id: '-1', measurement: 'median=1.00s runs=5 spread=0.05s' }).code, 0);
+    assert.equal(rows(log)[1][col('attempt')], "'-1");
+    // Judged against itself (1.00s), 1.05s would be within noise and refused; against the baseline it is better.
+    const r = keep(log, { id: '-1', measurement: 'median=1.05s runs=5 spread=0.05s', note: 'corrects: pasted the wrong run' });
+    assert.equal(r.code, 0, r.err);
+    assert.equal(rows(log)[2][col('delta')], "'-0.95s -47.5% better, beyond noise");
+    const s = run(['summary', log]).out;
+    assert.match(s, /best 1\.05s \(-47\.5%, attempt -1\)/);
+    assert.match(s, /attempts 1 \(kept 1, reverted 0\)/);
+  });
+
+  test('a measurement with leading whitespace and a formula character reads back, so later appends and summary work', () => {
+    const log = newLog();
+    assert.equal(baseline(log, { measurement: ' -n=3 median=2s runs=5 spread=0.1s' }).code, 0);
+    assert.equal(rows(log)[0][col('measurement')], "' -n=3 median=2s runs=5 spread=0.1s");
+    const r = keep(log, { measurement: 'median=1.5s runs=5 spread=0.1s' });
+    assert.equal(r.code, 0, r.err);
+    assert.equal(rows(log)[1][col('delta')], "'-0.5s -25.0% better, beyond noise");
+    const s = run(['summary', log]);
+    assert.equal(s.code, 0, s.err);
+    assert.match(s.out, /baseline 2s, best 1\.5s \(-25\.0%, attempt 1\)/);
+  });
+
+  test('an old log written before the guard, with unquoted cells, reads the same as a new one', () => {
+    const cells = [
+      ['2026-01-01T00:00:00.000Z', 'baseline', 'baseline', 'none', 'median=2.00s runs=5 spread=0.10s', 'reference (lower is better)', 'pass', 'baseline', '=stop: half'],
+      ['2026-01-01T00:01:00.000Z', '-1', '@cache', '+memo', 'median=1.00s runs=5 spread=0.05s', '-1s -50.0% better, beyond noise', 'pass', 'keep', ''],
+    ];
+    const old = newLog();
+    writeFileSync(old, [HEADER, ...cells].map((c) => c.join('\t') + '\n').join(''));
+    const fresh = newLog();
+    baseline(fresh, { note: '=stop: half' });
+    keep(fresh, { id: '-1', hypothesis: '@cache', change: '+memo', measurement: 'median=1.00s runs=5 spread=0.05s' });
+    const body = (log) => readFileSync(log, 'utf8').split('\n').slice(1).map((l) => l.split('\t').slice(1).join('\t')).join('\n');
+    assert.notEqual(body(fresh), body(old), 'the new log holds quoted cells, the old one does not');
+    const a = run(['summary', old]);
+    assert.equal(a.code, 0, a.err);
+    assert.equal(sameTimes(a.out), sameTimes(run(['summary', fresh]).out));
+    assert.match(a.out, /best 1s \(-50\.0%, attempt -1\)/);
+    // The next append reads the old cells too: the direction, the best kept and the correction by id.
+    for (const log of [old, fresh]) {
+      const r = keep(log, { id: '-1', measurement: 'median=1.05s runs=5 spread=0.05s', note: 'corrects: pasted the wrong run' });
+      assert.equal(r.code, 0, r.err);
+      assert.match(r.out, /-0\.95s -47\.5% better, beyond noise/);
+    }
   });
 });
 
