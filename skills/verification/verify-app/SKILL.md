@@ -27,6 +27,12 @@ description is not asking for it. If the user asked for it, or the brief you are
 - The project already has a `.claude/skills/verify-*/` folder and the user wants a change checked: this skill is not
   needed. Read that folder's `SKILL.md` and follow it. If the user asked for a new one anyway, say one exists and
   offer maintain mode instead of writing a second.
+- The request is only about a skeleton or the loading, empty and error states of a screen: when the project has a
+  `.claude/skills/verify-*/` folder with a "States and skeletons" section, read its `SKILL.md` and run that recipe
+  for the screen named, under that skill's rules (a skeleton is resized only on a yes). When it has no verify skill,
+  say that create mode comes first (an interview of the repository, a generated skill and one end-to-end run, far
+  more than one measurement), and wait for a yes. When its verify skill has no such section, offer maintain mode,
+  which adds it, and wait.
 - Otherwise: **create mode**, below.
 
 Bundled files, all read only:
