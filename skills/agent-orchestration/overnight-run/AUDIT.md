@@ -68,7 +68,8 @@ node {control}/log.mjs append {state}/decisions.tsv --phase audit \
 ```
 
 For a wrong row, add `--supersedes <its id>` and write `--result "corrects row <id>"` instead of `gap`. Leave out
-`--run`: the log fills it with your session id.
+`--run`: the log fills it with your session id (a subagent shares the id of the session that started it, so its
+rows are told apart by `--phase audit`).
 
 Reply with exactly this:
 

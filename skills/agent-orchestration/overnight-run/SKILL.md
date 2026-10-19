@@ -96,7 +96,8 @@ Checked on Claude Code 2.1.303 with headless runs in October 2026.
   `Bash(git status *)`). In `dontAsk` everything else is refused: in the check, `rm -fr`, `mv`, `cp`, `sed -i`,
   `touch`, an `echo >>` redirect and a `>` redirect from an allowed command into the control folder were all refused,
   and so was plain `rm` in the worktree (revert a new file with `git -C <worktree> clean -f -- <file>`). A subagent
-  gets the same rules.
+  gets the same rules. Commands Claude Code treats as read only (`cat`, `grep`, `ls`, a plain `git log`) still run
+  without a rule: they read, and cannot write.
 - **Not `acceptEdits`, not a blanket bypass.** `acceptEdits` approves `rm`, `mv`, `cp`, `sed -i`, `mkdir` and
   `touch` inside the working folders by mode, so a deny rule such as `Bash(rm -rf *)` is passed by `rm -fr`. Never
   use `--dangerously-skip-permissions`, `bypassPermissions` or `auto` for the night.
@@ -151,8 +152,8 @@ Log:         node <control>/log.mjs append <state>/decisions.tsv ...      Run id
 Each wake: check <control>/STOP on its own (ls <control>) and act on the answer before anything else: if it exists,
 pause (resume.md, a stop row, end). Read this file and the last ten log rows (node <control>/log.mjs show
 <state>/decisions.tsv --last 10). Run the predicate: exit 0 on a clean tree means finished. Otherwise make one small
-change, run the tests and the predicate, commit it if the predicate moved and the tests pass, revert it if not, and
-log one row. Never push, deploy, delete data or message anyone.
+change, run the tests and the predicate, commit it if the predicate moved and no test that passed before fails,
+revert it if not, and log one row. Never push, deploy, delete data or message anyone.
 ```
 
 Log the contract as the first row:
@@ -211,7 +212,8 @@ Each iteration:
 5. **Make the smallest change the evidence justifies**, for one idea. Name the idea first. Never edit the files
    that define the predicate.
 6. **Verify**: the test command, then the predicate.
-7. **Decide.** Keep when the tests pass and the predicate moved (the remaining count fell, or it passes): stage
+7. **Decide.** Keep when the predicate moved (the remaining count fell, or it passes) and the tests pass; when
+   failing tests are the task, "the tests pass" means no test that passed before fails now. Stage
    only the files you changed and commit (`git -C <worktree> add <files>`, `git -C <worktree> commit -m
    "<change>"`). Otherwise revert: `git -C <worktree> restore -- <files>`, `git -C <worktree> clean -f -- <new
    file>` for each file it created, and check that `git -C <worktree> status --short` prints nothing. A change that

@@ -53,7 +53,8 @@ ALLOW=('Skill(overnight-run)' 'Agent' "Read(/$CTL/**)" "Read(/$STATE/**)" "Edit(
   "Edit(/$STATE/resume.md)" "Write(/$STATE/resume.md)" "Edit(/$STATE/summary.md)" "Write(/$STATE/summary.md)"
   "Bash(node $CTL/log.mjs *)" "Bash(bash $CTL/done.sh)" "Bash($TEST)" "Bash(ls $CTL)"
   "Bash(git -C $WT status *)" "Bash(git -C $WT diff *)" "Bash(git -C $WT log *)" "Bash(git -C $WT show *)"
-  "Bash(git -C $WT add *)" "Bash(git -C $WT commit *)" "Bash(git -C $WT restore *)" "Bash(git -C $WT clean -f -- *)")
+  "Bash(git -C $WT add *)" "Bash(git -C $WT commit *)" "Bash(git -C $WT restore *)" "Bash(git -C $WT clean -f -- *)"
+  "Bash(git -C $WT hash-object *)")
 DENY=("Edit(/$CTL/**)" "Write(/$CTL/**)" 'Bash(git push *)' "Bash(git -C $WT push *)")
 
 # A child that inherits this session's CLAUDE* variables reuses its session id. Keep only the login and the provider.
