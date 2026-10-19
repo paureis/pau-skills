@@ -21,7 +21,8 @@ const CONFIRM_PARAGRAPH = 'If you started this skill on your own, without the us
 // proposal (handoff, to-prd) do not ask twice.
 const CONFIRM_LIST = [
   // launches subagents or headless runs
-  'agent-orchestration/arena', 'agent-orchestration/codebase-oracle', 'agent-orchestration/parallel-worktrees',
+  'agent-orchestration/arena', 'agent-orchestration/codebase-oracle', 'agent-orchestration/overnight-run',
+  'agent-orchestration/parallel-worktrees',
   'planning/agent-friendly-audit', 'verification/hillclimb', 'verification/skill-eval', 'verification/verify-app',
   // commits, pushes or installs with no other gate
   'guards/dependency-upgrade', 'guards/rule-to-hook', 'planning/architect', 'session-discipline/session-close',

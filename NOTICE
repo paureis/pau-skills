@@ -60,6 +60,10 @@ docs/ORIGINS.md lists, for each one, what this version changes.
   skills/verification/verify-app/references/feature-map-example/export.md
   skills/agent-orchestration/arena/SKILL.md
   skills/agent-orchestration/arena/CANDIDATE-BRIEF.md
+  skills/agent-orchestration/overnight-run/SKILL.md
+  skills/agent-orchestration/overnight-run/LOOP.md
+  skills/agent-orchestration/overnight-run/AUDIT.md
+  skills/agent-orchestration/overnight-run/log.mjs
   skills/planning/architect/SKILL.md
   skills/planning/architect/RED-FLAGS.md
   skills/planning/architect/SKETCH-BRIEF.md

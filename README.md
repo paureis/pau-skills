@@ -141,6 +141,9 @@ context was compacted.
   main session checks its work itself. It asks how much usage room you have and delegates less when it is tight,
   because a subagent costs more usage in total, not less. Every brief carries the same standing orders, and no
   subagent starts while a field of its brief is empty.
+- `overnight-run` lets an agent work while you are away without waking up to hours of motion and no way to tell what
+  it did: it starts only after trust checks, stops on a check a script runs, logs every decision, and has a fresh
+  reviewer audit the log against the transcript before you read the summary.
 - `no-idle` (hook) stops subagents from ending their turn waiting for something that will never wake them.
 
 ### 7. A review that never ends
@@ -187,8 +190,8 @@ starts one of these on its own, without you asking for what it does, it first sa
 do and what it will cost, and waits for your yes. A remark that only matches a description ("the code is getting
 messy") does not count as asking.
 
-- `arena`, `codebase-oracle` (big questions only), `parallel-worktrees`, `agent-friendly-audit`, `hillclimb`,
-  `skill-eval`, `verify-app`;
+- `arena`, `codebase-oracle` (big questions only), `overnight-run`, `parallel-worktrees`, `agent-friendly-audit`,
+  `hillclimb`, `skill-eval`, `verify-app`;
 - `dependency-upgrade`, `rule-to-hook`, `architect`, `session-close`;
 - `lean-subagent-dev`, `methodology`.
 
@@ -274,6 +277,10 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[arena](skills/agent-orchestration/arena/SKILL.md)** (adapted): Runs several candidate subagents at one task, each with a
   different brief, has a fresh judge score them blind against a rubric they never saw, then picks a base and grafts
   the best parts by hand; `arena.mjs` scaffolds the folders and makes the blind copy.
+- **[overnight-run](skills/agent-orchestration/overnight-run/SKILL.md)** (adapted): Runs one task unattended under a
+  contract: trust checks before the loop, a finish condition a script checks, a fresh worktree, an append-only
+  decision log kept outside the repository by `log.mjs`, a control folder no turn can write, an off switch and a
+  resume note, and a morning audit by a fresh reviewer; the summary ends with an Attention section.
 - Hook: [`no-idle`](hooks/agent-orchestration/no-idle.mjs).
 
 ### guards

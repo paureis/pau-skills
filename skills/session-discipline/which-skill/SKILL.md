@@ -37,9 +37,9 @@ Keep the answer short. A list of every skill is not an answer.
 Every skill can start on its own when the situation fits, and the user can also type any of them, for example
 `/pau-skills:grill-me`. These ask first when the agent started them without the user asking for what they do, because
 they launch subagents or headless runs, commit, push or install with no other check, or change how the session works:
-`arena`, `codebase-oracle` (big questions only), `parallel-worktrees`, `agent-friendly-audit`, `hillclimb`,
-`skill-eval`, `verify-app`, `dependency-upgrade`, `rule-to-hook`, `architect`, `session-close`, `lean-subagent-dev`,
-`methodology`.
+`arena`, `codebase-oracle` (big questions only), `overnight-run`, `parallel-worktrees`, `agent-friendly-audit`,
+`hillclimb`, `skill-eval`, `verify-app`, `dependency-upgrade`, `rule-to-hook`, `architect`, `session-close`,
+`lean-subagent-dev`, `methodology`.
 
 ## Starting out
 
@@ -93,6 +93,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | A task about to start, "make sure you understand this", "restate this first", a vague or over-constrained request | `sharpen` (planning) | the skill that fits the task |
 | "Make it faster", "make it smaller", improve a number (run time, bundle size, memory, a score) over many attempts with proof for each step | `hillclimb` (verification) | `bug-fix` if a step uncovers a bug |
 | "Apply build the lever", "which principle applies here", a design choice such as a second flag, a new type or one edit across many files | `engineering-principles` (planning) | `architect` for new code, `improve-codebase-architecture` for existing code |
+| "Run this overnight", "keep going while I sleep", work to leave running while the user is away | `overnight-run` (agent-orchestration): trust checks first, a finish condition a script checks, a decision log and a morning audit | `hillclimb` when the goal is one number; the built-in `/loop` and `/schedule` only wake a session |
 | "Did this skill or prompt change help?", "A/B this prompt", does a new version of a skill behave differently | `skill-eval` (verification) | `arena` to pick between attempts at one task |
 
 ## Fix a run that went wrong
@@ -106,7 +107,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | The review and fix loop keeps going | `review-triage`: one review round, one fix round, then the rest goes to the owner or an issue |
 | The same correction keeps being made, session after session | `retrospective` for this session's lessons; `rule-to-hook` once a written rule is still broken; `agent-friendly-audit` for mistakes that repeat across the whole history |
 | A fix did not hold, or two fixes in a row failed | `bug-fix`: attack the premise both fixes shared before trying a third |
-| A long or unattended run kept going but finished nothing | Before the next run, set a finish condition a script can check and a stop that ends it and reports to the user: a dead end, or a budget of time, attempts or money. Progress stalling is not a finish condition; without a stop the run spins. `methodology` for work under contract; `hillclimb` when the goal is a number |
+| A long or unattended run kept going but finished nothing | Before the next run, set a finish condition a script can check and a stop that ends it and reports to the user: a dead end, or a budget of time, attempts or money. Progress stalling is not a finish condition; without a stop the run spins. `overnight-run` to run it unattended under a contract with a morning audit; `methodology` for work under contract; `hillclimb` when the goal is a number |
 | A subagent's report was taken at its word and the work was wrong | `lean-subagent-dev`: reread the diff and rerun the checks after every subagent |
 | Context was lost after a compaction or a new session | `handoff` before the session ends; the `compact-snapshot` hook keeps the last messages and edited files across a compaction |
 
