@@ -37,7 +37,8 @@
  * is the largest value minus the smallest. A difference is beyond noise when the gap between two medians is larger
  * than the larger of their two spreads.
  *
- * append refuses, and writes nothing, when: a field holds a tab, a newline or another control character; the log is
+ * append refuses, and writes nothing, when: a field holds a tab, a newline or another control character, or starts
+ * with a single quote followed by what the spreadsheet guard below would quote (it would not read back); the log is
  * inside a git work tree (a folder with .git above it, for the path, its resolved folder, or the file a link leads
  * to), where a reset or clean could erase it; the file exists but its first line is not the header, its last line
  * has no newline, or a row has the wrong number of fields; the decision or tests value is unknown; a keep or revert
@@ -54,8 +55,8 @@
  * that opens the TSV shows it as text instead of running it as a formula. Every read (append and summary) takes one
  * leading quote off a cell when the rest would itself be guarded, so a value reads as it was typed: "'-1" reads as
  * "-1", while "'tis cheaper" stays as it is. A log written before the guard, with unquoted cells, reads the same way.
- * The one value that does not read back as typed is a quote followed by a formula character (typed "'=x" reads as
- * "=x").
+ * A value that would not read back as typed, a quote followed by a formula character (typed "'=x" would read as
+ * "=x"), is refused, so every cell the log holds reads back exactly.
  *
  * Exit codes: 0 done; 1 refused, a run failed, or a file error; 2 usage (unknown command or option, a bad value).
  * Node 20+, standard library only.
@@ -282,6 +283,7 @@ function readLog(log) {
 function buildRow(log, fields, now) {
   for (const [k, v] of Object.entries(fields)) {
     if (/[\u0000-\u001f\u007f]/.test(v)) throw new Refusal(`--${k} holds a tab, a newline or another control character, which would break the TSV; write it on one line`);
+    if (unguardCell(guardCell(v)) !== v) throw new Refusal(`--${k} starts with a single quote followed by =, +, - or @, which would read back without the quote; drop the quote or put a word before it`);
   }
   const repo = insideGitTree(log);
   if (repo) throw new Refusal(`${resolve(log)} is inside the git work tree at ${repo}; git reset --hard or git clean -fdx could erase it. Put the log in a folder outside any git repository`);

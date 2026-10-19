@@ -545,6 +545,20 @@ describe('spreadsheet formula guard', () => {
     assert.match(r.out, /^first baseline note: =stop: half the baseline$/m);
   });
 
+  test('refuses a field that would not read back as typed: a quote followed by a formula character', () => {
+    const log = newLog();
+    assert.match(baseline(log, { measurement: "'=1 median=2s runs=5 spread=0.1s" }).err, /refused.*quote/);
+    assert.equal(existsSync(log), false, 'a refused first append creates no file');
+    baseline(log);
+    const before = readFileSync(log, 'utf8');
+    const r = append(log, { decision: 'revert', tests: 'pass', hypothesis: 'h', change: 'c', note: "'=x" });
+    assert.equal(r.code, 1);
+    assert.match(r.err, /--note/);
+    assert.equal(readFileSync(log, 'utf8'), before);
+    assert.equal(append(log, { decision: 'revert', tests: 'pass', hypothesis: "'tis cheaper", change: 'c' }).code, 0);
+    assert.equal(rows(log)[1][col('hypothesis')], "'tis cheaper");
+  });
+
   test('an --id typed with a formula character reads back as typed: a correction is judged against the rows before it', () => {
     const log = newLog();
     baseline(log);
