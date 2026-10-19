@@ -106,6 +106,27 @@ test('parse: frontmatter Claude Code skips is a warning that names claude plugin
   assert.equal(found(check({ 'a.md': '---\nname: x\ndescription: y\n' }), 'parse', 'warning').length, 1, 'frontmatter never closed');
 });
 
+// `claude plugin validate` (2.1.303) reads a folder of agents at a path ending in .claude/agents; a folder such as
+// the bundled roster or a drafts folder fails there with "No manifest found". The hint must give a command that works.
+test('parse: the claude plugin validate hint gives a command that works for the folder it names', () => {
+  const broken = `${SKIPS.neverClosedQuote.join('\n')}\n\n${COVENANT.text}\n`;
+  const inProject = found(check({ 'a.md': broken }), 'parse')[0].message;
+  assert.match(inProject, /Run claude plugin validate \S*\.claude[/\\]agents\. /, 'the project folder is validated as it is');
+  assert.doesNotMatch(inProject, /mktemp/);
+
+  const drafts = tempDir('geppetto-drafts-');
+  put(drafts, 'a.md', broken);
+  const message = found(audit({ dir: drafts, project: tempDir('geppetto-empty-'), user: tempDir('geppetto-empty-user-') }), 'parse')[0].message;
+  assert.match(message, /does not end in \.claude\/agents/);
+  assert.ok(!message.includes(`claude plugin validate ${drafts}`), 'no direct validate of a folder validate cannot read');
+  const command = /d=\$\(mktemp -d\) && .*? && claude plugin validate "\$d\/\.claude\/agents"/.exec(message);
+  assert.ok(command, `a copy-and-validate command: ${message}`);
+  // Run it with `ls` in place of claude: the copy lands at a path ending in .claude/agents and holds the file.
+  const tmp = tempDir('geppetto-hint-');
+  const out = execFileSync('sh', ['-c', command[0].replace('claude plugin validate', 'ls')], { encoding: 'utf8', env: { ...process.env, TMPDIR: tmp } });
+  assert.equal(out.trim(), 'a.md');
+});
+
 test('a .md file with no frontmatter, or with frontmatter but no name, is documentation, not an agent', () => {
   const r = check({ 'tester.md': agent(), 'README.md': '# Notes about these agents\n', 'notes.md': '---\ntitle: Notes\n---\n# Notes\n' });
   assert.deepEqual(r.findings, []);

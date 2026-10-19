@@ -20,6 +20,9 @@
 // `description: Use when: x`) as the plain text of its line, and keeps the last of two equal keys. Where its own
 // subset still cannot read an entry, it says so as a warning and runs every check that does not need that entry;
 // `claude plugin validate <folder>` uses Claude Code's own parser and is the authority on whether the file loads.
+// It reads a folder of agents only at a path ending in .claude/agents (any other folder fails with "No manifest
+// found"), so for another folder the parse warning gives a command that copies the folder to
+// <a temporary folder>/.claude/agents and validates the copy.
 //
 // Errors (Claude Code skips the file, or the agent quietly does something other than its file says):
 //   name                a name with a colon, a leading dash, or over 256 characters (Claude Code skips the file)
@@ -32,7 +35,7 @@
 //   memory-read-only    memory on an agent with no Write or Edit: memory gives the agent Read, Write and Edit
 //   worktree-ignore     an agent uses isolation: worktree and .claude/worktrees/ is not git-ignored
 // Warnings:
-//   parse               an entry this script cannot read: run claude plugin validate on the folder
+//   parse               an entry this script cannot read: run claude plugin validate on the folder (or on a copy)
 //   duplicate-key       a key given twice: Claude Code keeps the last one
 //   value               a model name this script does not know (the field takes what --model takes)
 //   shadowed            the same name in the project and the user scope: the project's file wins
@@ -50,7 +53,7 @@
 //
 // Judging whether an agent needs each tool for its job is left to the agent running the audit.
 import { readFileSync, readdirSync, existsSync, statSync, realpathSync } from 'node:fs';
-import { join, dirname, relative, resolve } from 'node:path';
+import { join, dirname, basename, relative, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -456,6 +459,13 @@ function says(body, re) {
   return false;
 }
 
+/** How to run claude plugin validate on a folder of agents: it reads one only at a path ending in .claude/agents. */
+export function validateHint(dir) {
+  if (basename(dir) === 'agents' && basename(dirname(dir)) === '.claude') return `Run claude plugin validate ${dir}`;
+  const quoted = `'${dir.replace(/'/g, `'\\''`)}'`;
+  return `This folder does not end in .claude/agents, and claude plugin validate reads a folder of agents only there, so validate a copy: d=$(mktemp -d) && mkdir "$d/.claude" && cp -R ${quoted} "$d/.claude/agents" && claude plugin validate "$d/.claude/agents"`;
+}
+
 function checkAgent(a, ctx) {
   const out = [];
   const add = (level, check, message) => out.push({ level, check, scope: a.scope, file: a.file, rel: a.rel, message });
@@ -464,7 +474,7 @@ function checkAgent(a, ctx) {
     return out;
   }
   if (a.error) {
-    add('warning', 'parse', `this script cannot read the frontmatter (${a.error}). Run claude plugin validate ${a.scopeDir}: it uses Claude Code's own parser, and a parse error there means Claude Code skips this file`);
+    add('warning', 'parse', `this script cannot read the frontmatter (${a.error}). ${validateHint(a.scopeDir)}. It uses Claude Code's own parser, and a parse error there means Claude Code skips this file`);
   }
   const ok = (key) => !a.failed.includes(key);
   for (const key of a.repeated) add('warning', 'duplicate-key', `the key ${key} appears more than once: Claude Code keeps the last one`);
