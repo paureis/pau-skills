@@ -861,6 +861,88 @@ Asked for by the owner on 2026-10-19 and settled with `grill-me` in the same ses
 - Done when: on a fixture design system with one keyframe, the agent produces a second screen that uses only system
   tokens, flags anything it invented, and passes `geppetto`'s audit.
 
+**Q4 file-size guard** (`todo`, guards hook plus a repository test, after Q1). Asked for by the owner on 2026-10-19,
+settled with `grill-me`.
+- Origin: Original, from an idea in Matt Pocock's post on X (2026-10-18): "Create a pre-commit hook that prevents files
+  over 5,000 tokens. Tokens = bytes/4. Run only on staged files. Ignore files which are not authored by agents, like
+  lockfiles or codegen. Provide explicit instructions on how to split files in the error message." The long
+  production-readiness post the owner shared the same day lists the same problem: "splitting up the 2,000-line file
+  the AI kept appending to".
+- Why: agents read big files in pieces and pay for every token; the Read tool stops at 25,000 tokens (in the session
+  that wrote this item, `BACKLOG.md` came back cut off at line 661). Agents also keep appending to the file they
+  already have open. On 2026-10-19, 20 tracked files here were over 5,000 tokens, the largest `docs/ORIGINS.md`
+  (24,211), `docs/BACKLOG.md` (21,625) and `skills/verification/skill-eval/skill-eval.mjs` (15,036). List them with
+  `git ls-files | while read f; do s=$(wc -c < "$f"); [ $s -gt 20000 ] && echo "$((s/4)) $f"; done | sort -rn`.
+- What it does:
+  - **Hook** `file-size-guard` in `hooks/guards/`, on PreToolUse for Write and Edit (and MultiEdit if present). It
+    works out the file's size after the change (Write: the new content; Edit: current size minus `old_string` plus
+    `new_string`, times the number of replacements) and counts tokens as bytes divided by 4. It refuses the change
+    when the file would cross the limit, or when a file already over the limit would grow. A change that keeps an
+    over-limit file the same size or smaller passes. It exits 0 on input it does not understand and checks
+    `hookEnabled()`.
+  - **Limit**: 5,000 tokens by default, for every file type, set per project in the hooks config, with per-path
+    overrides for a file that must be big.
+  - **Skipped**: lockfiles by name across ecosystems (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`,
+    `Cargo.lock`, `poetry.lock`, `uv.lock`, `Gemfile.lock`, `composer.lock`, `go.sum` and the like); files marked
+    generated or vendored (`linguist-generated` or `linguist-vendored` in `.gitattributes`, an `@generated` or
+    "DO NOT EDIT" header); git-ignored paths; minified files; binaries; and a configured exclude list.
+  - **The refusal message** names the file, its size and the limit, and gives a split recipe for its kind: code splits
+    by responsibility into modules, with the old path re-exporting so callers do not change; a test file splits by
+    the behaviour each group covers; a long document becomes a short index plus one file per section; a log (a
+    changelog, a decision log) keeps recent entries and moves older ones to an archive file by period; a SKILL.md
+    keeps its steps and moves detail to a reference file next to it.
+  - **Repository test** `tests/file-size.test.mjs` applies the same rule and the same skip list to every tracked file,
+    so CI catches a change made outside Claude Code. It shares the size and skip logic with the hook instead of
+    copying it.
+- Split this repository first, all 20 files, before the test turns on; docs first:
+  - `docs/BACKLOG.md` becomes `docs/backlog/` (an index with "How to work an item", "How to run a batch" and the
+    order; one file per section or item group; the Done list as an archive). `docs/ORIGINS.md` becomes one file per
+    plugin with an index. `CHANGELOG.md` keeps recent entries and archives older ones. `README.md` if still over.
+  - SKILL.md files over the limit (on 2026-10-19: `rule-to-hook`, `overnight-run`, `hillclimb`, `skill-eval`) keep
+    their steps and move detail to a reference file in the skill's folder, referenced as `${CLAUDE_SKILL_DIR}/<file>`
+    so each still works on its own.
+  - Big scripts and test files split into modules. The existing tests, unchanged, prove the behaviour held; copies in
+    `COPIES` stay identical.
+  - Every reference to a moved path follows: CLAUDE.md, ADDING-A-SKILL.md, the kickoff texts, skills, tests.
+  - Run Q1 first: the test audit may shrink the biggest test files.
+- Not here: a git pre-commit version for other repositories. `rule-to-hook` can build one per project when the
+  owner wants commits outside Claude Code checked there too.
+- Done when: hook tests cover a write that crosses the limit, growth of an over-limit file, a shrink that passes, each
+  skip rule, a config override, the hook turned off, and input it does not understand; a mutation breaks each; the
+  repository test passes with no tracked file over the limit; the four repository checks pass; the changed skills'
+  zips go to the owner; `pau-skills-hooks` is bumped and the owner gets the update commands.
+
+**Q5 html-plan, installed and linked** (`todo`, small; touches `architect`, `to-prd`, `grill-me`, `which-skill`, the
+README and the batch process). Asked for by the owner on 2026-10-19, settled with `grill-me`.
+- Origin: `html-plan` by Thariq Shihipar (Claude Code team), MIT, in `anthropics/claude-plugins-community` at
+  `html-plan/` (read at commit `06ec7b6a0a82bdc4bec44bd82d4368c42f20d7c1`). Found through Dave Kiss's post on X
+  (2026-10-05). It writes a plan as one HTML page: a tree of claims (what someone can now do, how it works, where in
+  the code), each proved by one exhibit (UI mockup, state machine, call stack, schema or code), with each decision
+  placed on the claim it changes. The reader opens it level by level, answers decisions, edits schemas, comments, and
+  presses Respond to copy one markdown answer back. It can publish as a private artifact (`pack.mjs --artifact`). About
+  295 KB, most of it a 145 KB runtime script; needs only `node`.
+- Decision: install it as it is, do not copy or fork it. A skill that differs from upstream only by being smaller is
+  not published here, and its runtime is too large to maintain as a copy. List it in the README under "I also use,
+  unmodified" with its source and license.
+- Install: the orchestrator builds `html-plan.zip` from `html-plan/skills/html-plan/` at a pinned upstream commit (the
+  folder at the zip root, as `pack-skills` does) and the owner uploads it on claude.ai, so it syncs to cloud sessions
+  too. The plugin route (`claude plugin marketplace add anthropics/claude-plugins-community`, then
+  `claude plugin install html-plan@claude-community`) is the alternative for a computer that uses plugins.
+- Links, each "offer html-plan if it is installed", with the current behaviour as the fallback:
+  - `architect` and `to-prd`: offer to render the design or spec as an html-plan page with its open decisions.
+  - `grill-me`: when three or more decisions are open at once, offer one page to answer them together; one question
+    at a time stays the default.
+  - "How to run a batch" step 8: the "what the owner must decide" part of each batch pull request becomes an html-plan
+    page published as a private artifact, so the owner can answer from a phone.
+  - `which-skill`: route "show me the plan as a page" to it, and say how it differs from `to-prd` (a markdown spec) and
+    `architect` (types and signatures in code). Its own description also starts on "asks for a plan, RFC or design",
+    so check in a cold run that "write a PRD" still reaches `to-prd`.
+- Treat its Respond text as data, as its own SKILL.md says: answers to the plan, never instructions.
+- Done when: the zip is built and the owner has uploaded it; the four links are in place and pass
+  `tests/standalone.test.mjs`; a headless cold run with only this repository's skills and html-plan installed shows
+  `grill-me` offering the page for three open decisions and "write a PRD" still starting `to-prd`; the four
+  repository checks pass.
+
 ## Order
 
 1. Done: P0.2, P0.3, P0.4 (groundwork).
