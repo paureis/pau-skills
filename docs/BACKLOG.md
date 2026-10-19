@@ -57,6 +57,9 @@ The first batch (P0.2 to P0.4, N1 to N4, merged as pull request 6) was run this 
 session is the orchestrator; it follows `lean-subagent-dev` (type `/lean-subagent-dev` at the start) and builds
 nothing itself except the integration.
 
+From the seventh batch on, the batch runs on the roster in `.claude/agents/` (installed by `geppetto` in the sixth
+batch); see "With the roster" after step 10. The steps stay; what changes is who does steps 2, 3, 5 and 6.
+
 1. **Pick 3 or 4 items** that touch different files. New skills run well in parallel; items in section M edit
    existing skills and shared files, so run those one at a time or give each a disjoint set of files.
 2. **One git worktree per builder**, all from the same commit of the working branch:
@@ -116,6 +119,29 @@ nothing itself except the integration.
     - When any hook changed, bump `pau-skills-hooks` too, and tell the owner to run
       `claude plugin marketplace update pau-skills` and `claude plugin update pau-skills-hooks@pau-skills` on each
       computer.
+
+### With the roster (from the seventh batch)
+
+The main session is still the orchestrator: it talks to the owner, owns the shared files of step 4, merges, pushes,
+opens the pull request and does steps 8 to 10. The agents take the rest:
+- **Plan (steps 2 and 3).** Start `eng-lead` with the items, the base commit (the working branch's head, pushed
+  first), the shared files it must leave to the orchestrator, and the standing orders. It reads the code and
+  returns one slice per item with a full brief, a base commit and a cost estimate, and starts nothing.
+- **Plan check.** One read-only `reviewer` per brief, with the brief as its contract: every false assumption, every
+  "done when" that cannot pass. Fix the briefs, then show the owner the plan and the cost.
+- **Build and review (steps 5 and 6).** After the owner's yes, continue `eng-lead` with SendMessage. It starts one
+  `builder` per slice in a worktree and one fresh `reviewer` per slice, then returns each builder's agent ID, the
+  verdicts and a ready fix-round message. The main session sends the fix rounds (an agent resumed with SendMessage
+  runs in the background, where `eng-lead` cannot wait for it), gives each fix its second look, and merges.
+- **Nesting.** `eng-lead` needs `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` of 2 or more (`echo` it first; the cloud
+  environment had 1). At 1 it says so and returns the briefs, and the main session starts each `builder` itself, with
+  `isolation: "worktree"` on the call, then each `reviewer`.
+- **Base commit.** A worktree agent branches from the remote's default branch, so every brief names the base commit
+  and the builder starts from it; push the working branch before dispatch.
+- **Cold runs stay as they were**: headless `claude -p` with an empty HOME, run by a general-purpose agent, because
+  they test what a skill does in a fresh session.
+- Record what worked and what did not under the batch's own "Things that bit" list, and change the roster through
+  `geppetto` (roster files first, then the installed copies).
 
 Things that bit the first batch:
 - Subagents could not launch subagents then. A builder that needs "a fresh agent" for a dry run uses a separate
@@ -227,66 +253,69 @@ and the mutate.sh restore):
   while GNU `sed` replaces it with a regular file. The test now changes the link with a patch, which `git apply`
   handles the same on both.
 
+Things that bit the sixth batch (Q2, Q5 with Q9, Q6, Q7):
+- The plan checks found must-fix problems in every brief again: `skill-eval` cannot run several turns (its runner
+  passes `--no-session-persistence`); in `-p`, acceptEdits still refuses Bash without allow rules, refuses a write
+  under `.claude/` (a protected path; use `--permission-mode auto`), and refuses a skill with `allowed-tools` unless
+  `--allowedTools "Skill(<name>)"` is passed; `node --test <folder>` fails on Node 22 (run it inside the folder);
+  AskUserQuestion takes 2 to 4 options per question and headers of 12 characters.
+- Nesting was off: the cloud environment set `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`. Headless children that need
+  nested agents set it to 3. Under an empty HOME the default model was a different one again; pin `--model`.
+- Reviewers found a must-fix in Q2 (false parse errors, a branch reset, a restore that deleted uncommitted work), Q6
+  (five ways to a false GO, secrets quoted into the ledger) and Q7 (a pass with nothing measured). The cold runs
+  again found what reviewers missed: `eng-lead` could not wait for builders it resumed, and a fixture's README gave
+  away its seeded gap.
+- `AGENTS.md` is a link to `CLAUDE.md`: an edit applied to both lands twice. Edit `CLAUDE.md` only.
+- CI on macOS failed again on `/var` against `/private/var` (git prints the real path). Before pushing a change that
+  compares paths, run its tests with `TMPDIR` set to a link to a real folder.
+- GitHub's hosted runners held every job queued for about ten minutes; the repository is public, so it was not a
+  minutes limit. Wait, then check that each job ran on the current head.
+- A background run whose shell reset to the main checkout left log files there; check `git status` in the main
+  checkout after each agent reports.
+- `claude plugin validate <folder>` accepts a folder of agents only at a `.claude/agents` path.
+
 ## Kickoff for the next session
 
-The owner's new ideas are written up as section Q (Q1 to Q9, shaped on 2026-10-19). The next session runs batch 6:
-Q2, Q5 with Q9, Q6 and Q7. The owner starts it with this message:
+The sixth batch is done (pull request 28). The next session runs batch 7: Q1, then Q4, one after the other, and it is
+the first batch run with the roster ("With the roster" under "How to run a batch"). The owner starts it with this
+message:
 
 ```text
-You are the orchestrator for the sixth batch of work in this repository: Q2 geppetto and the agent roster, Q5
-html-plan with Q9 a lighter brainstorm, Q6 launch-readiness, and Q7 UI states in verify-app. Do not build the skills
-yourself; run builder subagents and integrate their work.
+You are the orchestrator for the seventh batch of work in this repository: Q1 the test-value audit, then Q4 the
+file-size guard, one after the other. Do not build them yourself; run the roster in .claude/agents/ (eng-lead,
+builder, reviewer) and integrate their work.
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules, including step 2 and step 8's bump-listing command).
-2. docs/BACKLOG.md, especially the note at the top that every item is a starting point to review and improve,
-   decisions 7 and 8, "Policy since P0.5" under "Context budget", items Q2, Q5, Q6, Q7 and Q9 (all of each), "How to
-   work an item", "How to run a batch" (all 10 steps and every list of things that bit earlier batches) and "Order".
-3. skills/agent-orchestration/lean-subagent-dev/SKILL.md and its BRIEF-TEMPLATE.md and TRIAGE.md. Work that way for
-   the whole session. The usage budget is generous: same model for every subagent, a read-only plan check of every
-   brief before any builder starts, a fresh reviewer per item, and a cold run (headless, empty HOME) for every item,
-   since each one changes how a skill behaves when it runs.
+2. docs/BACKLOG.md: the note at the top that every item is a starting point to review and improve, decisions 7 to 9,
+   "Policy since P0.5" under "Context budget", items Q1 and Q4 (all of each), "How to work an item", "How to run a
+   batch" (all 10 steps, "With the roster", and every list of things that bit earlier batches) and "Order".
+3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, and the five agent
+   files in .claude/agents/. Work that way for the whole session. The usage budget is generous: same model for every
+   agent, a read-only plan check of every brief, a fresh reviewer per slice, and a cold run (headless, empty HOME)
+   for anything that changes how a skill or hook behaves when it runs.
 
-First, before any brief, two things:
-- The description budget. All descriptions total about 12,278 of the 13,000 characters tests/context-budget.test.mjs
-  allows. Q2 and Q6 each add a skill (about 350 characters each), Q7 may add a trigger to verify-app, and Q9 may
-  reword brainstorm's. Measure, then ask me to choose: raise MAX_TOTAL again, or trim existing descriptions, and say
-  which you recommend.
-- Review the four items against the code and the current Claude Code docs (code.claude.com, sub-agents and
-  plugins-reference). They came out of one planning session; tell me anything you would change before the briefs go
-  out, and record what changed and why in the items.
-
-The batch, one builder each, each in its own git worktree, with disjoint files:
-- Q2 geppetto (new skill in agent-orchestration, with check-agents.mjs and its tests, the bundled roster and
-  COVENANT.md). It also installs the roster into this repository's .claude/agents/. Settle in the plan check that it
-  stays off CONFIRM_LIST.
-- Q5 with Q9 as one builder: the html-plan links in architect, to-prd and grill-me, the lighter brainstorm, and the
-  grill-me question-tool line. You build html-plan.zip from upstream at a pinned commit and give it to me to upload.
-- Q6 launch-readiness (new skill in verification, with ledger.mjs, its tests and the area files, and two fixtures: a
-  small web app with seeded gaps and a small CLI tool).
-- Q7 the States heading and the skeleton recipe in verify-app, with check-map.mjs and its tests.
-You own README (skill badge 36 to 38, and html-plan under "I also use, unmodified"), CHANGELOG, marketplace.json
-versions, NOTICE, ORIGINS, which-skill, tests/standalone.test.mjs, the confirm-list test, "How to run a batch" and
-docs/BACKLOG.md.
+First, before any brief:
+- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH. At 2 or more, eng-lead dispatches; at 1, it returns briefs and you
+  start each builder and reviewer yourself.
+- Review Q1 and Q4 against the code and tell me anything you would change; record what changed and why in the items.
+- Q1 needs my yes on which tests go before anything is removed. Q4 starts only after Q1 is merged, and splits the
+  big files before its test turns on.
 
 Rules that matter most:
 - Every skill works on its own; no em or en dashes; plain English; Node standard library only.
-- Descriptions stay at most 400 characters each and within the total you and I settle, with no angle-bracket tag;
-  quote only phrases that ask for the work.
-- Subagents can now start subagents up to three layers deep (checked on 2.1.303); a cold run of eng-lead may need
-  that, so check the depth setting in its headless environment.
-- To read the Q2 sources again, the cloud environment needs creatoreconomy.so, x.ai, docs.x.ai and x.com allowed.
+- Descriptions stay at most 400 characters each and 14,000 in total, with no angle-bracket tag.
 - Builders commit and never push. You push the working branch and open the PR. Never merge it yourself unless I say
   so.
-- Watch CI on macOS as well as Linux, and the validate job.
+- Watch CI on macOS as well as Linux, and the validate job. Before pushing a change that compares paths, run its
+  tests with TMPDIR set to a link.
+- Q4 changes a hook: bump pau-skills-hooks and give me the update commands.
 
 When the PR is open, tell me in plain words what changed, what the reviews and cold runs found, and anything I need
-to decide; if html-plan is installed by then, give me the decisions as an html-plan page published as a private
-artifact. After I merge it, run `node scripts/pack-skills.mjs --since <main before the batch>` on main and send me
-the changed skills' zips together in one bundle zip (a folder of per-skill zips plus HOW-TO-UPLOAD.txt, with
-html-plan.zip in it), say which replace a skill I have and which are new, mark the items done in docs/BACKLOG.md,
-update "How to run a batch" so batch 7 uses eng-lead, builder and reviewer, and update the skill count on my profile
-README in paureis/paureis. If any hook changed, bump pau-skills-hooks and give me the update commands.
+to decide; if html-plan is installed, give me the decisions as an html-plan page published as a private artifact.
+After I merge it, run `node scripts/pack-skills.mjs --since <main before the batch>` on main and send me the changed
+skills' zips in one bundle zip with HOW-TO-UPLOAD.txt, mark the items done in docs/BACKLOG.md with what worked and
+what did not with the roster, and update the test count on my profile README in paureis/paureis in my words (Q1).
 ```
 
 ### The fifth batch's kickoff, as a template
@@ -817,7 +846,7 @@ count on the profile README is updated.
 - Done when: every test file has been sampled, the table is in the pull request, and the profile README states the
   count of tests kept, in the owner's words.
 
-**Q2 geppetto and a starter agent roster** (`todo`, agent-orchestration, one new skill with bundled agent files).
+**Q2 geppetto and a starter agent roster** (`done`, sixth batch, agent-orchestration, one new skill with bundled agent files).
 Asked for by the owner on 2026-10-19 and settled with `grill-me` in the same session.
 - Origin. Original: ideas only, no shared text or structure, so no NOTICE entry; ORIGINS credits each idea. The ideas
   come from Grok Bot (SpaceXAI), where Lauren Tan and Peng Zheng run a team of named, persistent bots with one job
@@ -1019,7 +1048,7 @@ settled with `grill-me`.
   repository test passes with no tracked file over the limit; the four repository checks pass; the changed skills'
   zips go to the owner; `pau-skills-hooks` is bumped and the owner gets the update commands.
 
-**Q5 html-plan, installed and linked** (`todo`, small; touches `architect`, `to-prd`, `grill-me`, `which-skill`, the
+**Q5 html-plan, installed and linked** (`done`, sixth batch, small; touches `architect`, `to-prd`, `grill-me`, `which-skill`, the
 README and the batch process). Asked for by the owner on 2026-10-19, settled with `grill-me`.
 - Origin: `html-plan` by Thariq Shihipar (Claude Code team), MIT, in `anthropics/claude-plugins-community` at
   `html-plan/` (read at commit `06ec7b6a0a82bdc4bec44bd82d4368c42f20d7c1`). Found through Dave Kiss's post on X
@@ -1064,7 +1093,7 @@ README and the batch process). Asked for by the owner on 2026-10-19, settled wit
   `grill-me` offering the page for three open decisions and "write a PRD" still starting `to-prd`; the four
   repository checks pass.
 
-**Q6 launch-readiness** (`todo`, verification, new skill with `ledger.mjs`). Asked for by the owner on 2026-10-19;
+**Q6 launch-readiness** (`done`, sixth batch, verification, new skill with `ledger.mjs`). Asked for by the owner on 2026-10-19;
 widened with `brainstorm` (18 options, two rounds of marks, direction D of four finalists) and settled with
 `grill-me`.
 - Origin: Original. Ideas from two posts the owner shared on 2026-10-19 (authors not recorded): a list of about 170
@@ -1152,7 +1181,7 @@ widened with `brainstorm` (18 options, two rounds of marks, direction D of four 
   re-run after editing one cited file rechecking only that row. `ledger.mjs` has tests a mutation can break; the four
   repository checks pass.
 
-**Q7 UI states and skeleton matching in verify-app** (`todo`, verification, changes `verify-app` and
+**Q7 UI states and skeleton matching in verify-app** (`done`, sixth batch, verification, changes `verify-app` and
 `check-map.mjs`; no new skill). Asked for by the owner on 2026-10-19, settled with `grill-me`.
 - Origin: Original, from two ideas. Aiden Bai's post on X (2026-10-18): "ask your agent to measure the loaded UI with
   Playwright, then match the skeleton's sizes and positions to prevent layout jank". And a line in the long
@@ -1195,7 +1224,7 @@ widened with `brainstorm` (18 options, two rounds of marks, direction D of four 
   screenshots are kept; `check-map.mjs` requires the States heading and says what is missing, with tests a mutation
   can break; existing fixture maps pass after a maintain run; the four repository checks pass.
 
-**Q9 a lighter brainstorm** (`todo`, planning; changes `brainstorm` and one line of `grill-me`). Asked for by the
+**Q9 a lighter brainstorm** (`done`, sixth batch, planning; changes `brainstorm` and one line of `grill-me`). Asked for by the
 owner on 2026-10-19 after using `brainstorm` on Q6.
 - What went wrong in that session: the skill held its recommendations back until the shortlist, and the owner asked
   for them twice and then took them as given, so holding back added two round trips and changed nothing. Typed marks
@@ -1256,13 +1285,12 @@ Kept in Q6's brainstorm as a separate item.
    `which-skill`, M11 small additions with the `suppression-reason` hook, P1.2 and P1.3.
 7. Done: the fifth batch, N8 overnight-run, N9 engineering-principles, and the small items P1.6 to P1.8, with the
    hillclimb log guard and the mutate.sh restore by content.
-8. **Next:** the items in section Q: Q1 test-value audit, Q2 `geppetto` and the agent roster, Q3 designer agent
-   (after Q2), Q4 file-size guard (after Q1), Q5 html-plan, Q6 `launch-readiness`, Q7 UI states in `verify-app`, Q8
-   production rules from day one (after Q6), Q9 a lighter brainstorm. Planned batches:
-   - Batch 6: Q2, Q5 with Q9 (one builder, both edit planning skills), Q6, Q7. Kickoff below.
+8. Done: the sixth batch, Q2 `geppetto` and the agent roster, Q5 html-plan with Q9 a lighter brainstorm, Q6
+   `launch-readiness` and Q7 UI states in `verify-app`.
+9. **Next:** the rest of section Q. Planned batches:
    - Batch 7: Q1, then Q4, one after the other: Q1 needs the owner's yes on which tests go, and Q4 touches nearly
-     every big file, so nothing runs beside it.
-   - Batch 8: Q3 and Q8, the first batch run with the Q2 roster.
+     every big file, so nothing runs beside it. The first batch run with the roster. Kickoff above.
+   - Batch 8: Q3 designer agent and Q8 production rules from day one.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
 
@@ -1366,3 +1394,13 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   and all 8 were confirmed synced, identical to main. In a new session `/context` showed Skills at 14.5k tokens
   (1.5% of the 1M window, 92 skills listed) and none without a description. No hook changed. The profile README now
   says 36 skills.
+- 2026-10-19: Q2 `geppetto` and the agent roster, Q5 html-plan links with Q9 a lighter `brainstorm`, Q6
+  `launch-readiness` and Q7 UI states in `verify-app`, merged as [pull request 28](https://github.com/paureis/pau-skills/pull/28).
+  The owner raised the description total to 14,000 and settled decision 9 first. Four builders, each in its own
+  worktree with a read-only plan check of its brief first; every item had a fresh reviewer, a headless cold run with
+  an empty HOME, one fix round and a second look. Reviewers found a must-fix in Q2, Q6 and Q7; the Q2 cold run ran
+  the whole roster flow (install, `eng-lead` planning two slices, two builders in worktrees, two reviewers, branches
+  ready to merge) for about $5. CI caught one macOS-only failure, fixed before the merge. The 8 changed skills were
+  zipped with `pack-skills --since 7fd0230` and sent to the owner as one bundle with html-plan (3 new, 6 replacing),
+  and this repository's `.claude/agents/` now holds the roster. No hook changed. The profile README now says 38
+  skills.
