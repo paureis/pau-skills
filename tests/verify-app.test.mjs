@@ -160,6 +160,10 @@ describe('checkFeature', () => {
     assert.ok(checkFeature(`${FEATURE}\n## Notes\n\n- x\n`).some((m) => /five headings/.test(m)));
   });
 
+  test('a States heading with extra words counts', () => {
+    assert.deepEqual(checkFeature(FEATURE.replace('## States\n', '## States (no screen)\n')), []);
+  });
+
   test('a heading inside a code block does not count', () => {
     const p = checkFeature(FEATURE.replace(GOTCHAS, '```\n## Gotchas\n```\n'));
     assert.ok(p.some((m) => /missing.*Gotchas/.test(m)));
@@ -648,10 +652,18 @@ describe('the bundled template and example', () => {
 
 const HELPER = readFileSync(join(SKILL_DIR, 'templates', 'measure-boxes.js'), 'utf8');
 
-/** A stub page: elements by selector, swapped between the loading and the loaded state; shifts for the observer. */
-function stubPage({ loading, loaded, shifts = [], types = ['layout-shift', 'paint'] }) {
+/**
+ * A stub page: elements by selector, swapped between the loading and the loaded state; shifts for the observer.
+ * An element is [name, left, top, width, height] in viewport coordinates, or with 'hidden' after them for one that is
+ * not rendered (hidden, display: none, a template): it has no client rects and a zero box, as in a browser.
+ */
+function stubPage({ loading, loaded, shifts = [], types = ['layout-shift', 'paint'], scroll = [0, 0] }) {
   let state = loading;
-  const el = (attr, name, b) => ({ getAttribute: (a) => (a === attr ? name : null), getBoundingClientRect: () => ({ left: b[0], top: b[1], width: b[2], height: b[3] }) });
+  const el = (attr, name, b) => {
+    const hidden = b[4] === 'hidden';
+    const r = hidden ? { left: 0, top: 0, width: 0, height: 0 } : { left: b[0], top: b[1], width: b[2], height: b[3] };
+    return { getAttribute: (a) => (a === attr ? name : null), getBoundingClientRect: () => r, getClientRects: () => (hidden ? [] : [r]) };
+  };
   const all = (sel) => {
     const [attr, list] = state[sel] || [null, []];
     return list.map(([name, ...b]) => el(attr, name, b));
@@ -662,7 +674,7 @@ function stubPage({ loading, loaded, shifts = [], types = ['layout-shift', 'pain
     observe() {}
     takeRecords() { return shifts.splice(0); }
   }
-  const window = { scrollX: 0, scrollY: 0, innerWidth: 390, innerHeight: 844 };
+  const window = { scrollX: scroll[0], scrollY: scroll[1], innerWidth: 390, innerHeight: 844 };
   const ctx = {
     window, PerformanceObserver, setTimeout, requestAnimationFrame: (f) => setTimeout(f, 0),
     document: {
@@ -759,6 +771,68 @@ describe('the skeleton helper', () => {
     const r = plain(await api.compare({ container: '#people' }));
     assert.equal(r.pairs.length, 3);
     assert.equal(r.mismatches, 3);
+  });
+
+  test('no box matching the markers or the selector fails, and says to check them', async () => {
+    const { api, load } = stubPage({ loading: {}, loaded: {} });
+    assert.equal(api.skeleton().length, 0);
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.pass, false, r.text);
+    assert.match(r.text, /no boxes matched: check the markers or the selector/);
+    assert.doesNotMatch(r.text, /matches the loaded screen/);
+  });
+
+  test('compare() before skeleton() fails with that reason, not with every real box unpaired', async () => {
+    const { api, load } = stubPage({
+      loading: {},
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56)] },
+    });
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.pass, false);
+    assert.match(r.text, /skeleton\(\) was not called/);
+    assert.deepEqual(r.unpaired, []);
+    assert.doesNotMatch(r.text, /UNPAIRED/);
+  });
+
+  test('in container mode, children that are not rendered are skipped, not measured as empty boxes', async () => {
+    const { api, load } = stubPage({
+      loading: { '#people': [null, [...ROWS(56), ['tpl', 0, 0, 0, 0, 'hidden']]] },
+      loaded: { '#people': [null, [['tpl', 0, 0, 0, 0, 'hidden'], ...ROWS(56)]] },
+    });
+    assert.equal(api.skeleton({ container: '#people' }).length, 3);
+    load();
+    const r = plain(await api.compare({ container: '#people' }));
+    assert.equal(r.pairs.length, 3);
+    assert.deepEqual(r.unpaired, []);
+    assert.equal(r.pass, true, r.text);
+  });
+
+  test('a skeleton with fewer rows than the list says the counts differ, which resizing cannot fix', async () => {
+    const five = [0, 1, 2, 3, 4].map((i) => ['person-row', 16, 64 + i * 64, 358, 56]);
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', ROWS(56)] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', five] },
+    });
+    api.skeleton();
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.pass, false);
+    assert.equal(r.unpaired.length, 2);
+    assert.match(r.text, /COUNT person-row: 3 skeleton box\(es\), 5 real: answer the held request with 3 items/);
+  });
+
+  test('boxes are in page coordinates: the scroll offset is added', async () => {
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', ROWS(56)] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56)] },
+      scroll: [10, 300],
+    });
+    assert.deepEqual(plain(api.skeleton())[0].box, { x: 26, y: 364, width: 358, height: 56 });
+    load();
+    const r = plain(await api.compare());
+    assert.deepEqual(r.pairs[2].real, { x: 26, y: 492, width: 358, height: 56 });
   });
 
   test('an engine without layout-shift entries skips the score and says so', async () => {
