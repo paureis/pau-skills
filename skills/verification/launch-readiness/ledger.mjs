@@ -8,7 +8,7 @@
  * every must-fix row for stages 1 to N, plus stage 4 rows when regulated data is added, is closed, and every one of
  * those stages has graded rows and was assessed by a stamped run. The table and profile block are in table.mjs.
  */
-import { readFileSync, writeFileSync, existsSync, statSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, statSync, rmSync, realpathSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { join, dirname, resolve, relative, sep } from 'node:path';
@@ -102,7 +102,8 @@ export function changedSince(root, commit) {
   const g = (...a) => execFileSync('git', ['-C', root, ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   const top = g('rev-parse', '--show-toplevel').trim();
   const list = [...g('diff', '--name-only', commit, '--').split('\n'), ...g('ls-files', '--others', '--exclude-standard', '--full-name').split('\n')];
-  const prefix = relative(resolve(top), resolve(root)).split(sep).join('/');
+  // git prints the real path; the root may reach it through a link (macOS temp folders are under /var -> /private/var).
+  const prefix = relative(realpathSync(top), realpathSync(resolve(root))).split(sep).join('/');
   const out = new Set();
   for (const f of list.filter(Boolean)) {
     if (!prefix) out.add(f);
