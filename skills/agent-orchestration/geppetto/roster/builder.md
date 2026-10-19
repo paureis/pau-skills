@@ -75,7 +75,7 @@ Outside my scope, not done: [file: what and why, or "none"]
 Unsure about: [every doubt, guess or shortcut, or "none"]
 ```
 
-<!-- covenant start: geppetto roster 1 -->
+<!-- covenant start: geppetto roster 2 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.

@@ -44,8 +44,10 @@ behaviour the map describes that the app no longer has is either doc drift (fix 
    and asks: "How does this user-facing feature work, from the source? Do not run the app and do not edit any file.
    Return: a short summary; the source entry points as file:line; claims in the feature file the source contradicts,
    each with a citation, or none; how the screen shows loading, empty and error (the request, the component, the
-   skeleton and its markers), or that it has no screen; one recipe to verify it live." Without subagents, read each feature's source
-   yourself, one feature at a time.
+   skeleton and its markers), or that it has no screen; one recipe to verify it live."
+   Read the sources yourself instead, one feature at a time, only when the map has at most two feature files or the
+   session cannot start subagents (no Agent tool, or nesting is off). The report then says the wave was done inline
+   and why. Otherwise the subagents run, however small the app looks.
 
 3. **Reconcile.** Every feature file has a returned summary. Spot-check the cited drift; do not re-prove claims that
    came back clean. Merge the recipes into as few app states as you can. Then look at recent changes for user-facing
@@ -95,6 +97,7 @@ the repository. Do not commit them.
 Verify skill maintenance: <skill folder>
 Outcome: clean | changed | blocked (<what blocked it>)
 Features: <n> covered from source, <n> driven live, <n> unreachable (<prerequisite and route tried>)
+Source wave: <n> subagents | inline (<at most two feature files | no subagents in this session>)
 States: <n> features with a screen, every state forced and kept at <path>; States added to <n> files, or none
 Doc drift fixed: <list, or none>
 Harness gaps fixed: <list, or none>

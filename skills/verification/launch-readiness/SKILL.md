@@ -138,14 +138,19 @@ and drive the app; otherwise use the project's own test harness. If neither can 
 with `curl` against the app started locally.
 
 Write each probe as a test in the project's own framework that states the safe behavior, so it fails while the gap
-is open. Say before writing them that the suite will then show those failures, and offer the framework's
-expected-failure form so CI stays green while the row is open: node:test `{ todo: true }`, Jest or Vitest
-`test.failing`, pytest `@pytest.mark.xfail(strict=True)`, unittest `@unittest.expectedFailure`, RSpec `pending`, Go
-`t.Skip` with the row id, or a separate probe command outside the default suite. The user picks. Then send one
-message and stop: the findings so far, each probe in full with the file it goes in, that choice, and the
-questionnaire (step 6). Add and run the probes only on a yes; record each as a `probe` row. If the user declines, the suspects stay `likely` and
-the verdict says probes were skipped. Write the ledger (step 7) after the probes have run or been declined, so each
-row is written once with its final grade.
+is open. Before writing them, ask how a probe whose gap is open should run, with two answers:
+
+1. Recommended: the framework's expected-failure form, so CI stays green while the row is open: node:test
+   `{ todo: true }`, Jest or Vitest `test.failing`, pytest `@pytest.mark.xfail(strict=True)`, unittest
+   `@unittest.expectedFailure`, RSpec `pending`, Go `t.Skip` with the row id, or a separate probe command outside the
+   default suite.
+2. A plain test that stays failing in the suite until the gap is fixed.
+
+Then send one message and stop: the findings so far, each probe in full with the file it goes in, that question with
+the recommended answer first, and the questionnaire (step 6). Add and run the probes only on a yes, in the form the
+user picked; record each as a `probe` row. If the user declines, the suspects stay `likely` and the verdict says
+probes were skipped. Write the ledger (step 7) after the probes have run or been declined, so each row is written
+once with its final grade.
 
 ## 6. Questionnaire
 

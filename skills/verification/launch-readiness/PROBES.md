@@ -27,9 +27,9 @@ In this order:
   source `probe` and an expiry of 90 days; the ledger refuses a pass on a probe check from any other source.
 - A probe that fails for another reason (the app did not start, the seed user is missing) proves nothing: fix the
   probe, do not grade from it.
-- A probe fails while its gap is open; that is how it confirms the gap. Before adding probes, say that the suite will
-  show those failures, and offer the framework's expected-failure form (SKILL.md step 5) so CI stays green until
-  the fix; the user picks.
+- A probe fails while its gap is open; that is how it confirms the gap. Before adding probes, ask how such a probe
+  should run, with two answers (SKILL.md step 5). The recommended first answer is the framework's expected-failure
+  form, so CI stays green until the fix; the second is a plain test that stays failing in the suite.
 - A missing feature (no sign-out, no reset) is a `fail` row from the code, not a probe: a probe tests behavior the
   app has.
 
