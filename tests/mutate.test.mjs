@@ -355,7 +355,9 @@ test('a restore that leaves the mutant in place behind matching stat data exits 
 test('a tracked symlink mutated with sed restores as clean', { skip: process.platform === 'win32' ? 'symlinks need extra rights on Windows' : false }, () => {
   const { dir, env, sgit } = pastTimeRepo('', { file: 'real.js' });
   symlinkSync('real.js', join(dir, 'link.js'));
-  sgit('add', 'link.js');
+  // sed replaces the link with a regular file holding the mutant, so the check reads through the link.
+  writeFileSync(join(dir, 'touch.mjs'), "import { readFileSync } from 'node:fs';\nprocess.exit(readFileSync('link.js', 'utf8').includes('v = 1') ? 0 : 1);\n");
+  sgit('add', 'link.js', 'touch.mjs');
   sgit('commit', '-q', '-m', 'link');
   const r = harness(['--sed', 's/v = 1/v = 2/', 'link.js', process.execPath, 'touch.mjs'], '', { env, cwd: dir });
   assert.equal(r.code, 0, r.out);
