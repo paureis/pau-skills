@@ -350,7 +350,8 @@ test('the roster follows the settled design', () => {
     assert.equal(d.model, 'inherit', d.name);
     assert.equal(d.skills, undefined, `${d.name}: skills are added at install time, only when installed`);
   }
-  assert.deepEqual(parseTools(by['eng-lead'].tools), ['Read', 'Grep', 'Glob', 'Agent', 'SendMessage']);
+  // eng-lead starts builders and reviewers; the main session sends the fix rounds, so eng-lead has no SendMessage.
+  assert.deepEqual(parseTools(by['eng-lead'].tools), ['Read', 'Grep', 'Glob', 'Agent']);
   assert.equal(by['eng-lead'].effort, 'xhigh');
   assert.equal(by.reviewer.effort, 'xhigh');
   assert.equal(by.builder.effort, 'high');
