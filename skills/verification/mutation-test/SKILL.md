@@ -96,8 +96,9 @@ bash "${CLAUDE_SKILL_DIR}/mutate.sh" --refactor --label rename-helper \
 - Exit 2: as for a mutation, nothing was checked.
 
 A refactor is limited to one file, like a mutation, so one that moves code into a new module or across files cannot
-be checked this way. Check it by hand: commit first, make the refactor, run the test, then restore with
-`git checkout -- <files>` and confirm `git status` is clean.
+be checked this way. Check it by hand: commit first, make the refactor, run the test, then delete the changed files
+and restore them with `git checkout -- <files>`, and confirm `git status` is clean. Delete them first: `git checkout`
+and `git status` skip a file whose size and modification time match what git recorded, even when its content differs.
 
 ## Rules
 

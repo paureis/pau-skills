@@ -34,7 +34,9 @@
 #     printed again: a mutation can apply without changing behaviour (one that only appended "and true" to a SQL join
 #     read as a weak test), so read them before believing a SURVIVED.
 #  5. Assertion three, the restore WORKED: restores ONLY <file> and checks that file has no diff and no status (not the
-#     whole tree: the command may leave untracked outputs such as snapshots or reports).
+#     whole tree: the command may leave untracked outputs such as snapshots or reports). git checkout skips a file whose
+#     size and modification time match what the index recorded, even when its content differs (a command that sets a
+#     fixed time, a patch that keeps the inode), so the file is deleted first and the check compares content.
 # Exit: 0 CAUGHT (the command failed with the mutation), 1 SURVIVED (the command passed: the test cannot fail that
 # way, fix the test), 2 the harness could not do its job (usage, dirty tree, control failed, mutation did not apply,
 # restore failed).
@@ -85,8 +87,9 @@ if ! git ls-files --error-unmatch -- "$file" >/dev/null 2>&1; then
 fi
 
 mutation="$(mktemp)"
-pycache="$(mktemp -d)" || { rm -f "$mutation"; echo "${tag}${stop}: could not make a temporary folder." >&2; exit 2; }
-trap 'rm -f "$mutation"; rm -rf "$pycache"' EXIT
+expected="$(mktemp)"
+pycache="$(mktemp -d)" || { rm -f "$mutation" "$expected"; echo "${tag}${stop}: could not make a temporary folder." >&2; exit 2; }
+trap 'rm -f "$mutation" "$expected"; rm -rf "$pycache"' EXIT
 export PYTHONDONTWRITEBYTECODE=1
 export PYTHONPYCACHEPREFIX="$pycache"
 if [ -n "$sed_expr" ]; then
@@ -108,6 +111,13 @@ if [ "$control" -ne 0 ]; then
 fi
 
 content_hash() { tr -d '\r' < "$1" | git hash-object --stdin; }
+# Puts the committed content of <file> back. git always writes a missing file from the index (through any filter and
+# line-ending conversion, with the index's mode), so the file is deleted first; a directory in its place is left to
+# git, which replaces it.
+restore() {
+  if [ ! -d "$file" ] || [ -L "$file" ]; then rm -f -- "$file"; fi
+  git checkout -- "$file"
+}
 before="$(content_hash "$file")"
 if head -c 4 "$mutation" | grep -qE '^(diff|---)'; then
   touched="$(git apply --numstat "$mutation" 2>/dev/null | awk '{print $3}')"
@@ -115,28 +125,28 @@ if head -c 4 "$mutation" | grep -qE '^(diff|---)'; then
     echo "${tag}${stop}: the patch must touch only $file and it touches: ${touched:-nothing it can parse}" >&2
     exit 2
   fi
-  git apply --ignore-whitespace "$mutation" || { echo "${tag}${stop}: the patch did not apply." >&2; git checkout -- "$file"; exit 2; }
+  git apply --ignore-whitespace "$mutation" || { echo "${tag}${stop}: the patch did not apply." >&2; restore; exit 2; }
 else
   # GNU sed takes -i alone; BSD sed (macOS) needs an explicit, empty backup suffix.
   if sed --version >/dev/null 2>&1; then inplace=(-i); else inplace=(-i ''); fi
-  sed "${inplace[@]}" -f "$mutation" "$file" || { echo "${tag}${stop}: sed failed." >&2; git checkout -- "$file"; exit 2; }
+  sed "${inplace[@]}" -f "$mutation" "$file" || { echo "${tag}${stop}: sed failed." >&2; restore; exit 2; }
 fi
 # A deleted or emptied file fails any command (a missing module, an empty import), so its CAUGHT would prove nothing.
 # Reversing the commit that added or renamed the file gives exactly that patch.
 if [ ! -f "$file" ]; then
   echo "${tag}${stop}: the $what deletes $file (a reversed commit that added or renamed it?): a missing file proves nothing." >&2
-  git checkout -- "$file"
+  restore
   exit 2
 fi
 if [ ! -s "$file" ]; then
   echo "${tag}${stop}: the $what leaves $file empty: an empty file proves nothing." >&2
-  git checkout -- "$file"
+  restore
   exit 2
 fi
 after="$(content_hash "$file")"
 if [ "$before" = "$after" ]; then
   echo "${tag}${stop}: the $what did not change the content of $file (does the pattern match?)." >&2
-  git checkout -- "$file"
+  restore
   exit 2
 fi
 
@@ -152,13 +162,19 @@ code=$?
 # Kept for the verdicts that need them read before believing them: SURVIVED, and BROKE in refactor mode.
 verdict_lines="$(changed_lines)"
 
-git checkout -- "$file"
-if ! git diff --quiet -- "$file" || [ -n "$(git status --porcelain -- "$file")" ]; then
-  echo "${tag}ERROR: restoring $file did not leave it clean:" >&2
+restore
+# By content: the file must hold exactly the bytes checkout writes for the index's blob (`git cat-file --filters`
+# applies the same smudge filter and line-ending conversion). `git hash-object` compared with the index's blob is not
+# used: it converts CRLF to LF even for a file committed with CRLF, which checkout leaves alone under core.autocrlf, so
+# a good restore read as failed. git diff and git status catch a mode change and a mutant that the command staged. A
+# file tracked with Git LFS when git-lfs is not installed cannot be converted this way and ends here too.
+if [ ! -f "$file" ] || ! git cat-file --filters ":$file" > "$expected" 2>/dev/null || ! cmp -s -- "$expected" "$file" ||
+  ! git diff --quiet -- "$file" || [ -n "$(git status --porcelain -- "$file")" ]; then
+  echo "${tag}ERROR: restoring $file did not work: the file is missing or still holds the $what. Fix the cause (for example remove .git/index.lock, left by an interrupted git command), then delete $file and run: git checkout -- $file" >&2
   git status --short -- "$file" >&2
   exit 2
 fi
-echo "=== ${tag}RESTORED $file (no diff, no status)."
+echo "=== ${tag}RESTORED $file (same content as committed, no diff, no status)."
 
 if [ -n "$refactor" ]; then
   if [ "$code" -eq 0 ]; then

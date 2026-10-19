@@ -1,11 +1,12 @@
 // The mutation harness, run for real in a throwaway git repository: argument handling, the refusals that protect
 // work (dirty tree, failing control, mutation that does not apply, patch touching another file), CAUGHT and SURVIVED,
 // the refactor mode (KEPT and BROKE), a mutation taken from a real fix in git history, that every path leaves the
-// file restored, and that Python's bytecode cache cannot run the original code in place of the mutant.
+// file restored, that Python's bytecode cache cannot run the original code in place of the mutant, and that the
+// restore puts the committed content back (and a restore that did not happen is an error) whatever the file's times.
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync, execFileSync } from 'node:child_process';
-import { writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo as repoPath, tempDir, findBash } from './helpers.mjs';
 
@@ -202,6 +203,77 @@ test('the harness turns off Python bytecode writing for its commands, whatever t
   }
 });
 
+// A repository where git compares only a file's whole-second modification time and size with what the index recorded
+// (core.checkStat minimal, in the repository's own config; the global config is an empty file, as on a CI runner).
+// The command sets mod.js's times to 2020-01-01, keeps its size, and passes only on the original content. It runs
+// once before the harness, so the index already holds that past time when the harness mutates the file.
+function pastTimeRepo(extra = '') {
+  const dir = tempDir('mutate-stat-');
+  const empty = join(tempDir('mutate-gitconfig-'), 'empty');
+  writeFileSync(empty, '');
+  const env = { ...process.env, GIT_CONFIG_GLOBAL: empty };
+  const sgit = (...args) => execFileSync('git', ['-C', dir, ...args], { encoding: 'utf8', env });
+  execFileSync('git', ['init', '-q', dir], { env });
+  sgit('config', 'user.email', 'test@example.com');
+  sgit('config', 'user.name', 'test');
+  sgit('config', 'commit.gpgsign', 'false');
+  sgit('config', 'core.autocrlf', 'false');
+  sgit('config', 'core.checkStat', 'minimal');
+  writeFileSync(join(dir, 'mod.js'), 'export const v = 1;\n');
+  writeFileSync(join(dir, 'touch.mjs'), "import { utimesSync, readFileSync, writeFileSync } from 'node:fs';\n" +
+    "const ok = readFileSync('mod.js', 'utf8').includes('v = 1');\n" + extra +
+    "const t = new Date('2020-01-01T00:00:00Z');\nutimesSync('mod.js', t, t);\nprocess.exit(ok ? 0 : 1);\n");
+  sgit('add', '.');
+  sgit('commit', '-q', '-m', 'init');
+  execFileSync(process.execPath, ['touch.mjs'], { cwd: dir, env });
+  assert.equal(sgit('status', '--porcelain'), '');
+  return { dir, env, sgit };
+}
+
+test('a command that sets the file to a past time cannot make the restore skip the file', () => {
+  const { dir, env, sgit } = pastTimeRepo();
+  const r = harness(['--sed', 's/v = 1/v = 2/', 'mod.js', process.execPath, 'touch.mjs'], '', { env, cwd: dir });
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /RESTORED mod\.js/);
+  assert.match(r.out, /RESULT: CAUGHT/);
+  assert.equal(readFileSync(join(dir, 'mod.js'), 'utf8'), 'export const v = 1;\n', 'the mutant is still in the file');
+  assert.equal(sgit('status', '--porcelain'), '');
+});
+
+test('a file committed with CRLF line endings under core.autocrlf restores as clean', () => {
+  // checkout leaves such a file's CRLF alone, while git hash-object would convert it to LF: the content check must
+  // compare what checkout writes, or every restore of it reads as failed.
+  const { dir, env, sgit } = pastTimeRepo();
+  writeFileSync(join(dir, 'mod.js'), 'export const v = 1;\r\nexport const w = 2;\r\n');
+  sgit('commit', '-q', '-am', 'crlf');
+  sgit('config', 'core.autocrlf', 'true');
+  assert.equal(sgit('status', '--porcelain'), '');
+  const r = harness(['--sed', 's/v = 1/v = 2/', 'mod.js', process.execPath, 'touch.mjs'], '', { env, cwd: dir });
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /RESTORED mod\.js[\s\S]*RESULT: CAUGHT/);
+  assert.equal(readFileSync(join(dir, 'mod.js'), 'utf8'), 'export const v = 1;\r\nexport const w = 2;\r\n');
+  assert.equal(sgit('status', '--porcelain'), '');
+});
+
+test('a restore that cannot happen exits 2 with the recovery, never RESTORED', () => {
+  // On the mutant the command also leaves .git/index.lock behind, as an interrupted git command does, so the restore's
+  // git checkout fails.
+  const { dir, env, sgit } = pastTimeRepo("if (!ok) writeFileSync('.git/index.lock', '');\n");
+  try {
+    const r = harness(['--sed', 's/v = 1/v = 2/', 'mod.js', process.execPath, 'touch.mjs'], '', { env, cwd: dir });
+    assert.equal(r.code, 2, r.out);
+    assert.doesNotMatch(r.out, /RESTORED|RESULT/);
+    assert.match(r.out, /restoring mod\.js did not work/);
+    assert.match(r.out, /missing or still holds the mutation/);
+    assert.match(r.out, /git checkout -- mod\.js/);
+  } finally {
+    rmSync(join(dir, '.git', 'index.lock'), { force: true });
+    rmSync(join(dir, 'mod.js'), { force: true });
+    sgit('checkout', '--', 'mod.js');
+  }
+  assert.equal(readFileSync(join(dir, 'mod.js'), 'utf8'), 'export const v = 1;\n');
+});
+
 const python = ['python3', 'python'].find((p) => spawnSync(p, ['--version'], { encoding: 'utf8' }).status === 0);
 test('Python: a mutant of the same size, in the same second, runs instead of a cached original', { skip: python ? false : 'no python3 or python on PATH' }, () => {
   const py = tempDir('mutate-py-');
@@ -213,7 +285,7 @@ test('Python: a mutant of the same size, in the same second, runs instead of a c
   const MOD = 'def ok():\n    return 1 < 2\n';
   writeFileSync(join(py, 'mod.py'), MOD);
   // A fixed time in the future for every run: the original and the mutant then share a time and a size, which is what
-  // a cached .pyc is checked against. A past time would let git trust its stat cache over the file's content.
+  // a cached .pyc is checked against.
   writeFileSync(join(py, 'check.py'), 'import os, sys\nos.utime("mod.py", (4102444800, 4102444800))\nimport mod\nsys.exit(0 if mod.ok() else 1)\n');
   pgit('add', '.');
   pgit('commit', '-q', '-m', 'init');
