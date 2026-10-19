@@ -876,6 +876,15 @@ count on the profile README is updated.
   - Two phases with a stop between: the audit changes nothing and every table row lists its exact `mutate.sh`
     commands, so a reviewer can repeat them; the removal or rewrite starts only after the owner's yes. A rewritten
     test must catch the mutation the old one missed, shown with `mutate.sh`.
+- Phase A result (2026-10-19): three audit builders, one per group of test files, and a fresh reviewer each. 448
+  mutation runs over all 39 files, 428 caught; the reviewers reran 219 with the same verdicts. Found: 1 test worth
+  removing (verify-app line 149, a copy of line 100), about 15 that pass with the behaviour broken, about 160 that
+  depend on the machine (the caller's hook config or `PAU_SKILLS_DISABLE`, the time zone, a global git config that
+  signs commits, the home folder, a `.git` or `.claude` folder above the temporary folder), and behaviour with no
+  test (the off switch of 6 hooks, the backtick guard's "a backtick after the flag" rule, measure-minutes `keyOf`
+  grouping by conclusion). Also: `hooks/guards/secret-guard.mjs` line 72 is dead code.
+- The owner's choices: remove the one copy, do every rewrite, and add tests for the off switches only. The backtick
+  rule, the `keyOf` grouping and the dead code wait in the backlog.
 
 **Q2 geppetto and a starter agent roster** (`done`, sixth batch, agent-orchestration, one new skill with bundled agent files).
 Asked for by the owner on 2026-10-19 and settled with `grill-me` in the same session.
