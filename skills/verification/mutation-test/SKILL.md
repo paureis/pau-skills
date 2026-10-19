@@ -20,6 +20,10 @@ harness reports that the mutation arrived empty.
 1. **Commit first.** The harness refuses a dirty tree, because restoring the file erases any uncommitted edit in it.
    Caches the test run leaves behind (`__pycache__`, `.pytest_cache`, coverage files) count as dirty on the next run:
    add them to `.gitignore`. A runner that caches results may skip the run: turn that off (Go: `go test -count=1`).
+   A build or test cache keyed on file times in whole seconds can run stale code when the break and the restore of
+   one run, or the restore and the next break, land in the same second: the mutant never runs and reads SURVIVED (or
+   KEPT with `--refactor`). The harness turns Python's bytecode cache off for its command and writes no
+   `__pycache__`. For another tool with such a cache, turn it off or clear it inside the command you give the harness.
 2. **Choose the defect the test claims to catch**, the one a real regression would introduce: drop the tenant filter,
    invert the permission check, remove the `await`, return early. Not a random edit: a mutation that breaks the
    build or crashes the import proves only that the file is imported.
@@ -59,8 +63,9 @@ harness reports that the mutation arrived empty.
    - `SURVIVED` (exit 1): read the printed changed lines first. If the mutation really changes behaviour, the test is
      weak: fix the test, then run the same mutation again. If it does not (it applied but is equivalent), choose a
      different mutation.
-   - Exit 2: the harness could not do its job (dirty tree, the control run failed, the mutation did not apply, the
-     restore failed). Nothing was proven either way; fix the cause and run it again.
+   - Exit 2: the harness could not do its job (dirty tree, a file marked skip-worktree or assume-unchanged, the
+     control run failed, the mutation did not apply, the restore failed or the command staged or committed the
+     mutant). Nothing was proven either way; fix the cause and run it again.
 
 ## Second check: a pure refactor stays green (optional)
 
@@ -92,8 +97,9 @@ bash "${CLAUDE_SKILL_DIR}/mutate.sh" --refactor --label rename-helper \
 - Exit 2: as for a mutation, nothing was checked.
 
 A refactor is limited to one file, like a mutation, so one that moves code into a new module or across files cannot
-be checked this way. Check it by hand: commit first, make the refactor, run the test, then restore with
-`git checkout -- <files>` and confirm `git status` is clean.
+be checked this way. Check it by hand: commit first, make the refactor, run the test, then delete the changed files
+and restore them with `git checkout -- <files>`, and confirm `git status` is clean. Delete them first: `git checkout`
+and `git status` skip a file whose size and modification time match what git recorded, even when its content differs.
 
 ## Rules
 

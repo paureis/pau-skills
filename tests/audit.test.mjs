@@ -5,7 +5,11 @@ import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
-import { shingles, containment, verdict, unitsOf, findStale, projectSlug } from '../skills/session-discipline/retrospective/audit.mjs';
+import * as audit from '../skills/session-discipline/retrospective/audit.mjs';
+
+const { shingles, containment, verdict, unitsOf, findStale, projectSlug } = audit;
+const wordScore = (...a) => audit.wordScore(...a);
+const wordVerdict = (...a) => audit.wordVerdict(...a);
 
 const AUDIT = repo('skills', 'session-discipline', 'retrospective', 'audit.mjs');
 const LONG_RULE = '- Verify the artifact, never the exit code. After any scripted edit, read the seam back: grep the changed line, check git diff stat, check the last commit. A multi-line replace silently does nothing on CRLF files, and conflict resolution by deleting lines by number corrupts files while reporting success. ' +
@@ -22,11 +26,141 @@ test('containment: a short restatement inside a long unit scores high; Jaccard w
   assert.equal(verdict(containment(shingles('Always water the office plants on Mondays before standup meetings begin.'), b)), 'NEW');
 });
 
-test('unitsOf splits at headings and bullets and drops tiny units', () => {
-  const text = '# Rules\n\nIntro paragraph describing operating rules for agents editing repository files through scripts, shells, hooks, gates and tests.\n' + LONG_RULE + '\n- short bullet\n';
+test('unitsOf splits at headings and bullets, keeps short units marked short, drops empty ones', () => {
+  const text = '# Rules\n\nIntro paragraph describing operating rules for agents editing repository files through scripts, shells, hooks, gates and tests.\n' + LONG_RULE + '\n- short bullet\n# Empty\n';
   const units = unitsOf('test', text);
-  assert.equal(units.length, 2);
+  assert.deepEqual(units.map((u) => !!u.short), [false, false, true]);
   assert.match(units[1].name, /^Rules > Verify the artifact/);
+  assert.match(units[2].name, /^Rules > short bullet/);
+});
+
+test('wordScore: a short unit scores by the share of its distinct content words, code spans included', () => {
+  const bullet = '- Use `pnpm`, never `npm`.\n';
+  const dup = wordScore(bullet, 'Install packages with pnpm, not npm: use pnpm everywhere.');
+  assert.deepEqual([dup.shared, dup.total], [3, 3]);
+  assert.equal(wordVerdict(dup), 'DUPLICATE/EXTENDS');
+  // Two shared words of three: related at most, never a duplicate.
+  assert.equal(wordVerdict(wordScore(bullet, 'Use pnpm workspaces for the monorepo.')), 'RELATED');
+  // Code spans are words here: a different tool in the same sentence shape is new.
+  assert.equal(wordVerdict(wordScore(bullet, 'Use `uv` for Python, not `pip`.')), 'NEW');
+  // A tool name of two letters still counts inside a code span, and matches the same word written plainly.
+  const rg = wordScore('- Prefer `rg` over `grep`.\n', 'Use rg instead of grep for searches.');
+  assert.deepEqual([rg.shared, rg.total], [2, 4]);
+  assert.equal(wordVerdict(rg), 'RELATED');
+  const longer = '- Run the linter before every commit to main.\n';
+  assert.equal(wordVerdict(wordScore(longer, 'Run the commit hooks in CI as well.')), 'NEW');
+  assert.notEqual(wordVerdict(wordScore(longer, 'Run the linter on a pull request.')), 'DUPLICATE/EXTENDS');
+});
+
+// A fake home and project: short bullets in both CLAUDE.md files, a synced skill with a manifest beside it, a skill
+// that is both local and synced, and a large synced skill that matches a local one.
+function fixture() {
+  const home = tempDir(); const project = tempDir();
+  const synced = join(home, '.claude', 'skills', 'synced', 'abc_123');
+  mkdirSync(join(synced, 'deploy-notes'), { recursive: true });
+  mkdirSync(join(synced, 'shared-skill'), { recursive: true });
+  mkdirSync(join(synced, 'big-copy'), { recursive: true });
+  mkdirSync(join(home, '.claude', 'skills', 'shared-skill'), { recursive: true });
+  mkdirSync(join(home, '.claude', 'skills', 'local-original'), { recursive: true });
+  writeFileSync(join(home, '.claude', 'skills', 'synced', 'stray.json'), '{}');
+  writeFileSync(join(synced, 'manifest.json'), '{"skills":[]}');
+  writeFileSync(join(home, '.claude', 'CLAUDE.md'), '# Global\n\n' + LONG_RULE + '\n- Use `pnpm`, never `npm`.\n');
+  writeFileSync(join(project, 'CLAUDE.md'), '# Project\n\n- Use `pnpm`, never `npm`.\n- Run the linter before every commit to main.\n');
+  writeFileSync(join(synced, 'deploy-notes', 'SKILL.md'), '---\nname: deploy-notes\n---\nTag the release, then wait for the canary dashboard to stay green for an hour before promoting the build to every region.\n');
+  const shared = '---\nname: shared-skill\n---\nRotate the signing keys every quarter and record the fingerprint of each new key in the security runbook.\n';
+  writeFileSync(join(synced, 'shared-skill', 'SKILL.md'), shared);
+  writeFileSync(join(home, '.claude', 'skills', 'shared-skill', 'SKILL.md'), shared);
+  const big = '---\nname: big\n---\n' + 'Profile the slow query with the planner output before adding any index to the orders table. '.repeat(40);
+  writeFileSync(join(synced, 'big-copy', 'SKILL.md'), big);
+  writeFileSync(join(home, '.claude', 'skills', 'local-original', 'SKILL.md'), big);
+  return { home, project };
+}
+
+test('CLI --check: a restated short bullet is a DUPLICATE by word score; a partial overlap is not', () => {
+  const { home, project } = fixture();
+  const proposal = join(project, 'proposal.md');
+  writeFileSync(proposal, 'Install packages with `pnpm`, not `npm`: use pnpm everywhere.\n');
+  const r = runNode(AUDIT, { args: ['--check', proposal, '--home', home], cwd: project });
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stdout, /VERDICT: DUPLICATE\/EXTENDS/);
+  assert.match(r.stdout, /1\.000 +\[project CLAUDE\.md\] Project > Use `pnpm`, never `npm`\..*word score/);
+  // A verdict that rests on a word score is a candidate the agent confirms by reading the bullet.
+  assert.match(r.stdout, /VERDICT: DUPLICATE\/EXTENDS, by word score: a candidate\. Read that bullet/);
+
+  writeFileSync(proposal, 'Run the commit hooks in CI as well.\n');
+  const partial = runNode(AUDIT, { args: ['--check', proposal, '--home', home], cwd: project });
+  assert.doesNotMatch(partial.stdout, /VERDICT: DUPLICATE/);
+  assert.match(partial.stdout, /Run the linter before every commit to main.*word score: 2 of 5/);
+});
+
+test('CLI --check: synced skills are scored and labelled; one both local and synced shows once', () => {
+  const { home, project } = fixture();
+  const proposal = join(project, 'proposal.md');
+  writeFileSync(proposal, 'Wait for the canary dashboard to stay green for an hour before promoting the build.\n');
+  const r = runNode(AUDIT, { args: ['--check', proposal, '--home', home], cwd: project });
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stdout, /\[synced skill\] deploy-notes\/SKILL\.md/);
+  assert.match(r.stdout, /VERDICT: DUPLICATE\/EXTENDS\./);
+  // The path, with its <id> level, so the agent reads the right file.
+  assert.ok(r.stdout.includes(join(home, '.claude', 'skills', 'synced', 'abc_123', 'deploy-notes', 'SKILL.md')), r.stdout);
+
+  writeFileSync(proposal, 'Rotate the signing keys every quarter and record each fingerprint in the security runbook.\n');
+  const both = runNode(AUDIT, { args: ['--check', proposal, '--home', home], cwd: project });
+  assert.equal(both.stdout.split('shared-skill/SKILL.md').length - 1, 1, both.stdout);
+  assert.match(both.stdout, /\[skill, synced skill\] shared-skill\/SKILL\.md/);
+});
+
+test('CLI --check: a short paragraph under a heading is not scored; only short bullets get a word score', () => {
+  const home = tempDir(); const project = tempDir();
+  writeFileSync(join(project, 'CLAUDE.md'), '# Working on this repository\n\nThis is a Claude Code plugin marketplace. Read this before changing anything.\n\n## Rules\n\n- Use `pnpm`, never `npm`.\n');
+  const proposal = join(project, 'proposal.md');
+  writeFileSync(proposal, 'Claude Code caches each plugin: after changing a skill, read the installed copy, not the marketplace folder, before you report anything.\n');
+  const r = runNode(AUDIT, { args: ['--check', proposal, '--home', home], cwd: project });
+  assert.equal(r.code, 0, r.stderr);
+  assert.doesNotMatch(r.stdout, /VERDICT: DUPLICATE/);
+  assert.doesNotMatch(r.stdout, /\] Working on this repository/);
+});
+
+test('CLI --check: one skill name under two synced ids is two units, each scored; a local copy merges with both', () => {
+  const home = tempDir(); const project = tempDir();
+  const synced = join(home, '.claude', 'skills', 'synced');
+  const A = '---\nname: dup\n---\nTag the release, then wait for the canary dashboard to stay green for an hour before promoting the build.\n';
+  const B = '---\nname: dup\n---\nRotate the signing keys every quarter and record the fingerprint of each new key in the security runbook.\n';
+  mkdirSync(join(synced, 'aaa', 'dup'), { recursive: true });
+  mkdirSync(join(synced, 'bbb', 'dup'), { recursive: true });
+  writeFileSync(join(synced, 'aaa', 'dup', 'SKILL.md'), A);
+  writeFileSync(join(synced, 'bbb', 'dup', 'SKILL.md'), B);
+  const proposal = join(project, 'proposal.md');
+  const check = (text) => { writeFileSync(proposal, text); return runNode(AUDIT, { args: ['--check', proposal, '--home', home], cwd: project }).stdout; };
+  const restateA = 'Wait for the canary dashboard to stay green for an hour before promoting the build.\n';
+  const restateB = 'Rotate the signing keys every quarter and record each fingerprint in the security runbook.\n';
+  for (const text of [restateA, restateB]) assert.match(check(text), /VERDICT: DUPLICATE\/EXTENDS/);
+  assert.match(runNode(AUDIT, { args: ['--home', home], cwd: project }).stdout, /2 synced skills/);
+  for (const [text, id] of [[restateA, 'aaa'], [restateB, 'bbb']]) {
+    const out = check(text);
+    // The closest unit is the first scored line.
+    assert.ok(out.split('\n').find((l) => /^ {2}\d/.test(l)).includes(join(synced, id, 'dup', 'SKILL.md')), out);
+  }
+
+  mkdirSync(join(home, '.claude', 'skills', 'dup'), { recursive: true });
+  writeFileSync(join(home, '.claude', 'skills', 'dup', 'SKILL.md'), '---\nname: dup\n---\nAn older local copy that says something else entirely about release notes and changelogs.\n');
+  for (const text of [restateA, restateB]) {
+    const out = check(text);
+    assert.match(out, /VERDICT: DUPLICATE\/EXTENDS/, out);
+    assert.equal(out.split('dup/SKILL.md').length - 1, 1, out);
+    assert.match(out, /\[skill, synced skill\] dup\/SKILL\.md/);
+  }
+});
+
+test('CLI report: short units and synced skills stay out of the pairs and the largest units; synced counted apart', () => {
+  const { home, project } = fixture();
+  const r = runNode(AUDIT, { args: ['--home', home], cwd: project });
+  assert.equal(r.code, 0, r.stderr);
+  assert.doesNotMatch(r.stdout, /pnpm|linter/);
+  assert.doesNotMatch(r.stdout, /big-copy|deploy-notes|\[synced skill\]/);
+  assert.doesNotMatch(r.stdout, /shared-skill\/SKILL\.md\n\s*<-> \[[^\]]*\] shared-skill/);
+  assert.match(r.stdout, /3 synced skills/);
+  assert.match(r.stdout, /local-original\/SKILL\.md/);
 });
 
 test('projectSlug matches the Claude Code layout', () => {

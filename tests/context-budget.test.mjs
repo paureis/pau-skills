@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { ROOT } from './helpers.mjs';
 
 const MAX_DESCRIPTION = 400;
-const MAX_TOTAL = 12000;
+const MAX_TOTAL = 13000;
 const MAX_ANY_DESCRIPTION = 1536; // Claude Code cuts any description longer than this.
 const MAX_UPLOAD_DESCRIPTION = 1024; // claude.ai refuses to upload a skill with a longer description.
 

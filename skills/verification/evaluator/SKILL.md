@@ -24,8 +24,8 @@ evaluation until you have earned that conclusion by attacking, not by reading.
 For each assertion in scope, produce a verdict backed by evidence that a stranger could reproduce from your write-up
 alone.
 
-**Counts as evidence:** a passing automated test that you have run and watched pass; a captured trace with the
-relevant correlation IDs; a live reproduction.
+**Counts as evidence:** a passing automated test that you have run and watched pass, once its mutation check (the
+next section) has made it fail; a captured trace with the relevant correlation IDs; a live reproduction.
 
 What a live reproduction is depends on what changed:
 
@@ -51,7 +51,8 @@ under the contract gaps and suggest generating one.
 - "I read the code and it is correct." Reading is how you form a hypothesis, not how you settle one.
 - A recorded or replayed fixture, where the assertion demands live behavior.
 - The existence of a test. A test is evidence only after you have made it fail on purpose. See below.
-- Any argument that begins "presumably" or "should."
+- Any argument that begins "presumably" or "should," and a claim that a test "would" catch a defect you did not
+  inject and run.
 
 For `MUST-NOT` assertions, absence must be shown by an **enumerable** check: registry or enum membership, a grep, a
 module-graph gate. Something that mechanically cannot miss an instance. "I didn't see one" is not enumerable.
@@ -124,7 +125,12 @@ For each assertion in scope:
 [ID] - PASS | FAIL | UNVERIFIED
 Evidence:      <what you ran; what you observed; how to reproduce>
                (UNVERIFIED: begin with "inconclusive: <what could not run and why>")
-Mutation:      <the defect you injected; whether the test caught it>
+Mutation:      <the defect you injected>; <the command you ran>; CAUGHT | SURVIVED | NOT MUTATED
+               (CAUGHT: the test counts. SURVIVED: the assertion is UNVERIFIED, its Evidence begins
+               "inconclusive: <test> did not catch <defect>", and the test is a test-integrity defect. NOT MUTATED,
+               or the mutation could not run: UNVERIFIED, "inconclusive: <why>". A hand mutation records the edit and
+               the test command, with the same words. No test relied on: "none (no test relied on: trace)" or
+               "none (no test relied on: live reproduction)". A mutation you did not run is not inconclusive: run it.)
 ```
 
 Then, separately:

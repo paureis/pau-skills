@@ -1,7 +1,7 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 34](https://img.shields.io/badge/skills-34-informational)
+![Skills: 36](https://img.shields.io/badge/skills-36-informational)
 ![Hooks: 12](https://img.shields.io/badge/hooks-12-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
@@ -127,6 +127,8 @@ context was compacted.
   behind a characterization test when you ask.
 - `architect` sketches the types and signatures in two different shapes before any code is written, and builds
   against the one that survives the red flags.
+- `engineering-principles` gives a name to each rule a design or code decision is made by ("apply build the lever"),
+  so one phrase steers the work and every citation says which decision it changed.
 
 ### 6. Several agents in one repository
 
@@ -139,6 +141,9 @@ context was compacted.
   main session checks its work itself. It asks how much usage room you have and delegates less when it is tight,
   because a subagent costs more usage in total, not less. Every brief carries the same standing orders, and no
   subagent starts while a field of its brief is empty.
+- `overnight-run` lets an agent work while you are away without waking up to hours of motion and no way to tell what
+  it did: it starts only after trust checks, stops on a check a script runs, logs every decision, and has a fresh
+  reviewer audit the log against the transcript before you read the summary.
 - `no-idle` (hook) stops subagents from ending their turn waiting for something that will never wake them.
 
 ### 7. A review that never ends
@@ -177,7 +182,7 @@ Every skill loads on its own: the agent can start it when your words fit its des
 for this", "wrap up this session", "is this test any good"), and you can still type any of them as
 `/pau-skills:<skill>` or `/<plugin>:<skill>`. Claude Code puts every description into the context of every session,
 so each one is a short list of the phrases that should start it. `tests/context-budget.test.mjs` holds each
-description to 400 characters and all of them to 12,000 together.
+description to 400 characters and all of them to 13,000 together.
 
 Some skills cost something when they run, and nothing else in them stops for your yes first: they launch subagents
 or headless runs, commit, push or install with no other check, or change how the whole session works. When the agent
@@ -185,8 +190,8 @@ starts one of these on its own, without you asking for what it does, it first sa
 do and what it will cost, and waits for your yes. A remark that only matches a description ("the code is getting
 messy") does not count as asking.
 
-- `arena`, `codebase-oracle` (big questions only), `parallel-worktrees`, `agent-friendly-audit`, `hillclimb`,
-  `skill-eval`, `verify-app`;
+- `arena`, `codebase-oracle` (big questions only), `overnight-run`, `parallel-worktrees`, `agent-friendly-audit`,
+  `hillclimb`, `skill-eval`, `verify-app`;
 - `dependency-upgrade`, `rule-to-hook`, `architect`, `session-close`;
 - `lean-subagent-dev`, `methodology`.
 
@@ -272,6 +277,10 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[arena](skills/agent-orchestration/arena/SKILL.md)** (adapted): Runs several candidate subagents at one task, each with a
   different brief, has a fresh judge score them blind against a rubric they never saw, then picks a base and grafts
   the best parts by hand; `arena.mjs` scaffolds the folders and makes the blind copy.
+- **[overnight-run](skills/agent-orchestration/overnight-run/SKILL.md)** (adapted): Runs one task unattended under a
+  contract: trust checks before the loop, a finish condition a script checks, a fresh worktree, an append-only
+  decision log kept outside the repository by `log.mjs`, a control folder no turn can write, an off switch and a
+  resume note, and a morning audit by a fresh reviewer; the summary ends with an Attention section.
 - Hook: [`no-idle`](hooks/agent-orchestration/no-idle.mjs).
 
 ### guards
@@ -307,6 +316,10 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   revert commits, this project's transcripts and instruction files for the mistakes agents repeat, and proposes a fix
   for each at the highest layer (architecture, types, lint, test, prose), proven on a past instance; `mine.mjs` does
   the read-only mining, with redaction. Writes nothing without your yes.
+- **[engineering-principles](skills/planning/engineering-principles/SKILL.md)** (adapted): An index of eleven named
+  engineering principles (build the lever, model the domain, subtract before you add and more), each with when it
+  applies, its rule and the sign you skipped it, and a reference file with the detail; steer with a name, and a
+  citation must name the decision it changed.
 
 [docs/ORIGINS.md](docs/ORIGINS.md) records, for every piece, the problem that led to it and, for each adapted skill,
 the upstream version it was compared against and what this version changes, taken from a diff.
