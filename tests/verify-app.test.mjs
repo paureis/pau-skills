@@ -6,6 +6,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { writeFileSync, mkdirSync, readFileSync, readdirSync, cpSync, realpathSync, existsSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { once } from 'node:events';
+import vm from 'node:vm';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
   headings, checkFeature, indexLinks, compareIndex, parseFrontmatter, checkSkill, evidenceFolder, placeholders,
@@ -642,6 +643,142 @@ describe('the bundled template and example', () => {
 });
 
 // ---------------------------------------------------------------------------------------------------------------
+// The in-page skeleton helper, run in a stub page: CI has no browser
+// ---------------------------------------------------------------------------------------------------------------
+
+const HELPER = readFileSync(join(SKILL_DIR, 'templates', 'measure-boxes.js'), 'utf8');
+
+/** A stub page: elements by selector, swapped between the loading and the loaded state; shifts for the observer. */
+function stubPage({ loading, loaded, shifts = [], types = ['layout-shift', 'paint'] }) {
+  let state = loading;
+  const el = (attr, name, b) => ({ getAttribute: (a) => (a === attr ? name : null), getBoundingClientRect: () => ({ left: b[0], top: b[1], width: b[2], height: b[3] }) });
+  const all = (sel) => {
+    const [attr, list] = state[sel] || [null, []];
+    return list.map(([name, ...b]) => el(attr, name, b));
+  };
+  class PerformanceObserver {
+    static supportedEntryTypes = types;
+    constructor(cb) { this.cb = cb; }
+    observe() {}
+    takeRecords() { return shifts.splice(0); }
+  }
+  const window = { scrollX: 0, scrollY: 0, innerWidth: 390, innerHeight: 844 };
+  const ctx = {
+    window, PerformanceObserver, setTimeout, requestAnimationFrame: (f) => setTimeout(f, 0),
+    document: {
+      querySelectorAll: all,
+      querySelector: (sel) => (state[sel] ? { children: all(sel), querySelectorAll: all } : null),
+    },
+  };
+  vm.runInNewContext(HELPER, ctx);
+  return { api: window.__verifyBoxes, load: () => { state = loaded; } };
+}
+
+/** The helper runs in another realm: copy its results into this one before deepEqual. */
+const plain = (x) => JSON.parse(JSON.stringify(x));
+
+const ROWS = (h, gap = 8) => [0, 1, 2].map((i) => ['person-row', 16, 64 + i * (h + gap), 358, h]);
+
+describe('the skeleton helper', () => {
+  test('pairs boxes by marker and reports each one off by more than 4 px, with its numbers', async () => {
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', ROWS(36)] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56)] },
+      shifts: [{ value: 0.0418, hadRecentInput: false }],
+    });
+    assert.equal(api.skeleton().length, 3);
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.pass, false);
+    assert.equal(r.mismatches, 3);
+    assert.deepEqual(r.pairs.map((p) => p.diff), [{ x: 0, y: 0, width: 0, height: 20 }, { x: 0, y: 20, width: 0, height: 20 }, { x: 0, y: 40, width: 0, height: 20 }]);
+    assert.match(r.text, /MISMATCH person-row #3: skeleton x 16, y 152, 358 by 36; real x 16, y 192, 358 by 56; off by y \+40 px, height \+20 px/);
+    assert.deepEqual(r.layoutShift, { supported: true, score: 0.0418, entries: 1, mismatch: false });
+  });
+
+  test('a box off by exactly 4 px passes and one off by 4.5 px does not', async () => {
+    for (const [h, pass] of [[60, true], [60.5, false]]) {
+      const { api, load } = stubPage({
+        loading: { '[data-skeleton-for]': ['data-skeleton-for', [['card', 0, 0, 100, 56]]] },
+        loaded: { '[data-skeleton-name]': ['data-skeleton-name', [['card', 0, 0, 100, h]]] },
+      });
+      api.skeleton();
+      load();
+      assert.equal((await api.compare()).pass, pass, `height ${h}`);
+    }
+  });
+
+  test('a matching skeleton with no layout-shift entries passes', async () => {
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', ROWS(56)] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56)] },
+    });
+    api.skeleton();
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.pass, true, r.text);
+    assert.equal(r.layoutShift.score, 0);
+    assert.match(r.text, /matches the loaded screen/);
+  });
+
+  test('a layout-shift score above 0.1 is a mismatch, and shifts after input do not count', async () => {
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', ROWS(56)] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56)] },
+      shifts: [{ value: 0.08, hadRecentInput: false }, { value: 0.05, hadRecentInput: false }, { value: 0.5, hadRecentInput: true }],
+    });
+    api.skeleton();
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.layoutShift.score, 0.13);
+    assert.equal(r.layoutShift.entries, 2);
+    assert.equal(r.pass, false);
+    assert.match(r.text, /MISMATCH layout-shift score 0\.13/);
+  });
+
+  test('a box left without a partner is reported', async () => {
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', [...ROWS(56), ['avatar', 0, 0, 40, 40]]] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56).slice(0, 2)] },
+    });
+    api.skeleton();
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.pass, false);
+    assert.deepEqual(r.unpaired.map((u) => [u.side, u.name, u.index]).sort(), [['skeleton', 'avatar', 0], ['skeleton', 'person-row', 2]]);
+    assert.match(r.text, /UNPAIRED skeleton box avatar #1/);
+  });
+
+  test('without markers, boxes pair by document order inside the container', async () => {
+    const { api, load } = stubPage({
+      loading: { '#people': [null, ROWS(36)] },
+      loaded: { '#people': [null, ROWS(56)] },
+    });
+    api.skeleton({ container: '#people' });
+    load();
+    const r = plain(await api.compare({ container: '#people' }));
+    assert.equal(r.pairs.length, 3);
+    assert.equal(r.mismatches, 3);
+  });
+
+  test('an engine without layout-shift entries skips the score and says so', async () => {
+    const { api, load } = stubPage({
+      loading: { '[data-skeleton-for]': ['data-skeleton-for', ROWS(56)] },
+      loaded: { '[data-skeleton-name]': ['data-skeleton-name', ROWS(56)] },
+      shifts: [{ value: 0.5, hadRecentInput: false }],
+      types: ['paint'],
+    });
+    api.skeleton();
+    load();
+    const r = plain(await api.compare());
+    assert.equal(r.layoutShift.supported, false);
+    assert.equal(r.layoutShift.score, null);
+    assert.equal(r.pass, true);
+    assert.match(r.text, /skipped layout-shift score: .*only Chromium/);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------
 // The fixture apps the skill is tried on: they must keep working, or the dry run cannot be repeated
 // ---------------------------------------------------------------------------------------------------------------
 
@@ -673,6 +810,41 @@ describe('fixture apps', () => {
       const list = await (await fetch(`${url}/bookmarks`)).json();
       assert.equal(list.length, 1);
       assert.ok(existsSync(join(data, 'bookmarks.json')));
+    } finally {
+      child.kill('SIGTERM');
+    }
+    const [code] = await once(child, 'exit');
+    assert.equal(code, 0);
+  });
+
+  test('the skeleton page starts, serves a skeleton 20 px too short, and its API delays, empties and fails on request', async () => {
+    const child = spawn(process.execPath, [join(FIX, 'web-skeleton', 'server.mjs')], { env: { ...process.env, PORT: '0' }, stdio: ['ignore', 'pipe', 'pipe'] });
+    try {
+      let out = '';
+      const url = await new Promise((resolveUrl, reject) => {
+        const t = setTimeout(() => reject(new Error(`no ready line: ${out}`)), 5000);
+        child.stdout.on('data', (d) => {
+          out += d;
+          const m = /ready on (http:\/\/127\.0\.0\.1:\d+)/.exec(out);
+          if (m) { clearTimeout(t); resolveUrl(m[1]); }
+        });
+      });
+      const page = await (await fetch(`${url}/`)).text();
+      assert.match(page, /data-skeleton-for="person-row"/, 'the skeleton rows carry the marker');
+      assert.match(page, /data-skeleton-name/, 'the page marks its real rows');
+      assert.match(page, /id="below"/, 'content below the list, so a shift can be measured');
+      const px = (cls) => Number(new RegExp(`\\.${cls}\\s*\\{[^}]*\\bheight:\\s*(\\d+)px`).exec(page)?.[1]);
+      assert.equal(px('person') - px('skeleton-row'), 20, 'the seeded gap: a skeleton row is 20 px shorter than a real row');
+      const people = await (await fetch(`${url}/api/people`)).json();
+      assert.equal(people.length, 3);
+      const t0 = Date.now();
+      const slow = await fetch(`${url}/api/people?delay=400`);
+      assert.equal(slow.status, 200);
+      assert.ok(Date.now() - t0 >= 380, `the delay switch held the answer for ${Date.now() - t0} ms`);
+      assert.deepEqual(await (await fetch(`${url}/api/people?data=empty`)).json(), []);
+      const failed = await fetch(`${url}/api/people?fail=1`);
+      assert.equal(failed.status, 500);
+      assert.ok((await failed.json()).error);
     } finally {
       child.kill('SIGTERM');
     }
