@@ -124,7 +124,9 @@ skill changed is **Update**. If you cannot tell, ask which one, in one line.
 1. Run `node "${CLAUDE_SKILL_DIR}/check-agents.mjs" --project .` (add `--json` to read it as data). It reads the
    project's and the user's agents and reports errors and warnings; the comment at the top of the script lists every
    check and the overlap score's threshold. For YAML it does not read, also run `claude plugin validate .claude/agents`.
-2. Add what the script cannot judge, agent by agent, from the body:
+2. Add what the script cannot judge, agent by agent, from the body. For a roster agent, first diff the installed
+   copy against its bundled file and judge only the lines that differ: the bundled settings (such as `effort: xhigh`
+   on eng-lead) are the design, not findings.
    - Leftover tools: a tool in `tools` that no step of the body needs, or no `tools` list at all on an agent with a
      narrow job (it then has every tool).
    - One job: an agent with two unrelated jobs, or no anti-jobs.
