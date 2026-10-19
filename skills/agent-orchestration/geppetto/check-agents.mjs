@@ -12,27 +12,34 @@
 //
 // Exit 0 when there is no error (warnings allowed), 1 when there is at least one error, 2 on a usage problem.
 //
-// Folders are read recursively, as Claude Code reads them. A .md file with no frontmatter is documentation kept
-// beside the agents and is skipped. Node has no YAML parser, so this reads the subset agent files use: `key: value`
-// lines with plain, quoted or block (`|`, `>`) values, `- item` lists, `[a, b]` lists, and nested maps (hooks,
-// mcpServers, experimental), which it keeps without checking inside. Anything else is reported as a parse error; run
-// `claude plugin validate <folder>` to see what Claude Code's own parser makes of it.
+// Folders are read recursively, as Claude Code reads them. A .md file with no frontmatter, or with frontmatter but no
+// name, is documentation kept beside the agents: it is counted and not checked. Node has no YAML parser, so this reads
+// the subset agent files use: `key: value` lines with plain, quoted or block (`|`, `>`) values, `- item` lists
+// (indented or not), `[a, b]` lists, anchors, and nested maps (hooks, mcpServers, experimental), which it keeps
+// without checking inside. Like Claude Code, it reads an inline value that is not strict YAML (such as
+// `description: Use when: x`) as the plain text of its line, and keeps the last of two equal keys. Where its own
+// subset still cannot read an entry, it says so as a warning and runs every check that does not need that entry;
+// `claude plugin validate <folder>` uses Claude Code's own parser and is the authority on whether the file loads.
 //
 // Errors (Claude Code skips the file, or the agent quietly does something other than its file says):
-//   parse               frontmatter that does not parse, or is never closed
-//   name, description   missing (Claude Code skips the file), or a name with a colon, a leading dash, over 256 chars
+//   name                a name with a colon, a leading dash, or over 256 characters (Claude Code skips the file)
+//   description         a named agent with no description (Claude Code skips the file)
 //   duplicate           two files with the same name in one scope (Claude Code loads one, by file read order)
 //   field               a frontmatter field Claude Code does not know (it ignores it without a word)
-//   value               a bad effort, model, memory, isolation, permissionMode, color, boolean or number
-//   covenant            the covenant block from COVENANT.md is missing, unclosed, or reworded
+//   value               a bad effort, memory, isolation, permissionMode, color, boolean or number
+//   covenant            the covenant block from COVENANT.md is missing (in the project, or on a file with a roster
+//                       marker), unclosed, or reworded at the bundle's roster version
 //   memory-read-only    memory on an agent with no Write or Edit: memory gives the agent Read, Write and Edit
 //   worktree-ignore     an agent uses isolation: worktree and .claude/worktrees/ is not git-ignored
 // Warnings:
+//   parse               an entry this script cannot read: run claude plugin validate on the folder
+//   duplicate-key       a key given twice: Claude Code keeps the last one
+//   value               a model name this script does not know (the field takes what --model takes)
 //   shadowed            the same name in the project and the user scope: the project's file wins
 //   glob-grep           Glob or Grep listed with Bash: on Linux and macOS they are dropped when Bash is there
-//   tool                a tools entry that is not a known tool name (the tool list changes between versions)
+//   tool                a tools entry that is not a known tool name, or that reads as a map
 //   description-length  a description over 200 characters (the Agent tool lists every description in every session)
-//   covenant            a covenant from an older or newer roster version: run Update
+//   covenant            a covenant from another roster version (run Update), or none on a personal user agent
 //   agent-tools         the body says it starts or continues agents, and Agent or SendMessage is not in tools
 //   skill               a skills entry that is not installed in the project's or the user's skill folders
 //   overlap             two descriptions share so many words that delegation may pick the wrong agent
@@ -67,9 +74,9 @@ export const ENUMS = {
   color: ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink', 'cyan'],
 };
 const BOOLEANS = ['background', 'omitClaudeMd'];
-const MODEL_ALIASES = ['inherit', 'sonnet', 'opus', 'haiku', 'fable'];
+const MODEL_ALIASES = ['inherit', 'sonnet', 'opus', 'haiku', 'fable', 'best', 'opusplan', 'default'];
 // A full model ID: Anthropic's own, or a cloud provider's form of it.
-const MODEL_ID = /^(claude-[a-z0-9.-]+(\[1m\])?|([a-z]{2,4}\.)?anthropic\.claude-[\w.:-]+|arn:aws:bedrock:\S+)$/;
+const MODEL_ID = /^(claude-[a-z0-9.@-]+|([a-z]{2,6}\.)?anthropic\.claude-[\w.:@-]+|arn:aws:bedrock:\S+)(\[1m\])?$/i;
 
 // Built-in tool names (tools reference, 2.1.303), plus Task, the old name of Agent that still works.
 export const TOOLS = new Set(['Agent', 'Task', 'Artifact', 'AskUserQuestion', 'Bash', 'CronCreate', 'CronDelete',
@@ -138,20 +145,27 @@ function scalar(text) {
   return text;
 }
 
+// An anchor (`&name `) in front of a value names it for later aliases; the value itself is what follows.
+const ANCHOR = /^&[^\s[\]{},]+(\s+|$)/;
+
 function plain(lines) {
   const parts = [];
+  let ended = false;
   for (const [k, raw] of lines.entries()) {
-    const line = raw.trim();
-    if (k > 0 && line.startsWith('#')) break;
+    let line = raw.trim();
+    if (k > 0 && !line) continue;
+    if (k > 0 && line.startsWith('#')) { ended = true; continue; }
+    if (ended) throw new YamlError(`a comment ends the value, and the line after it continues it: ${JSON.stringify(raw)}`);
+    if (k === 0) line = line.replace(ANCHOR, '');
     const text = stripComment(line);
-    if (k === 0 && /^([&*!%@`|>]|- |-$|\? )/.test(text)) {
+    if (k === 0 && /^([*!%@`|>]|- |-$|\? )/.test(text)) {
       throw new YamlError(`a value starting with ${JSON.stringify(text[0])} is YAML this script does not read`);
     }
     if (/: |:$/.test(text)) throw new YamlError(`a plain value cannot contain ": " (quote it): ${JSON.stringify(line)}`);
     parts.push(text);
-    if (text !== line) break;
+    if (text !== line) ended = true;
   }
-  return parts.filter((p, k) => p !== '' || k < parts.length - 1).join(' ').replace(/\s+/g, ' ').trim();
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
 function blockScalar(header, lines) {
@@ -242,8 +256,13 @@ function nested(lines) {
       if (own > indent) { if (!items.length) throw new YamlError('bad indentation'); items[items.length - 1] = { complex: true }; continue; }
       const m = /^-(?: +(.*))?$/.exec(l.trim());
       if (!m) throw new YamlError(`a list line must start with "- ": ${JSON.stringify(l)}`);
-      const v = stripComment(m[1] || '').trim();
-      if (/^[^"'[{][^:]*: /.test(v) || /^[^"'[{][^:]*:$/.test(v)) { items.push({ complex: true }); continue; }
+      const v = stripComment(m[1] || '').trim().replace(ANCHOR, '');
+      const pair = /^[^"'[{][^:]*:( (.*)|$)/.exec(v);
+      if (pair) {
+        if (/^\*/.test((pair[2] || '').trim())) throw new YamlError(`the list item ${JSON.stringify(v)} reads as "key: *alias", and the alias is never defined (quote the item)`);
+        items.push({ complex: true, text: v });
+        continue;
+      }
       items.push(v.startsWith('[') || v.startsWith('{') ? flow(v, []) : flowItem(v));
     }
     return items;
@@ -257,44 +276,81 @@ function nested(lines) {
   return { nested: content.map((l) => l.slice(indent)) };
 }
 
-/** Parse an agent file. Returns { data, body, error }: data is null when the file has no frontmatter. */
-export function parseFrontmatter(text) {
-  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
-  if (lines[0].trimEnd() !== '---') return { data: null, body: text };
-  const close = lines.findIndex((l, i) => i > 0 && l.trimEnd() === '---');
-  if (close < 0) return { data: {}, body: '', error: 'the frontmatter has no closing --- line' };
-  const front = lines.slice(1, close);
-  const body = lines.slice(close + 1).join('\n');
-  const data = {};
+// One `key: value` entry, read strictly first. When that fails, Claude Code (2.1.303) parses again with an inline
+// value read as the plain text of its line, which is how `description: Use when: x` still loads. A value that is
+// quoted, a block, or a nested list or map gets no second chance, and neither does an inline value with indented
+// lines after it.
+function entryValue(line, head, more) {
   try {
-    for (let i = 0; i < front.length; i++) {
-      const line = front[i];
-      if (!line.trim() || /^\s*#/.test(line)) continue;
-      if (/^\s/.test(line)) throw new YamlError(`line ${i + 2} is indented but belongs to no key: ${JSON.stringify(line)}`);
-      const m = /^(?:"([^"]+)"|'([^']+)'|([^\s"'#:][^:]*?))\s*:(?:\s+(.*))?$/.exec(line);
-      if (!m) throw new YamlError(`line ${i + 2} is not "key: value": ${JSON.stringify(line)}`);
-      const key = m[1] ?? m[2] ?? m[3];
-      if (Object.hasOwn(data, key)) throw new YamlError(`the key ${key} appears twice`);
-      const head = (m[4] || '').trim();
-      let end = i + 1;
-      while (end < front.length && (!front[end].trim() || /^\s/.test(front[end]))) end++;
-      const more = front.slice(i + 1, end);
-      i = end - 1;
-      if (!head || head.startsWith('#')) data[key] = nested(more);
-      else if (head.startsWith('"') || head.startsWith("'")) {
-        const raw = [line.slice(line.indexOf(head[0], line.indexOf(':')) + 1), ...more].join('\n');
-        const { value, rest } = quoted(raw, head[0]);
-        if (stripComment(rest).trim()) throw new YamlError(`text after the closing quote: ${JSON.stringify(rest.trim())}`);
-        data[key] = value;
-      } else if (head.startsWith('|') || head.startsWith('>')) data[key] = blockScalar(head, more);
-      else if (head.startsWith('[') || head.startsWith('{')) data[key] = flow(head, more);
-      else data[key] = scalar(plain([head, ...more]));
+    if (!head || head.startsWith('#')) return nested(more);
+    if (head.startsWith('"') || head.startsWith("'")) {
+      const raw = [line.slice(line.indexOf(head[0], line.indexOf(':')) + 1), ...more].join('\n');
+      const { value, rest } = quoted(raw, head[0]);
+      if (stripComment(rest).trim()) throw new YamlError(`text after the closing quote: ${JSON.stringify(rest.trim())}`);
+      return value;
     }
+    if (head.startsWith('|') || head.startsWith('>')) return blockScalar(head, more);
+    if (head.startsWith('[') || head.startsWith('{')) return flow(head, more);
+    return scalar(plain([head, ...more]));
   } catch (e) {
-    if (e instanceof YamlError) return { data, body, error: e.message };
+    if (!(e instanceof YamlError)) throw e;
+    const lenient = head && !/^["'|>#]/.test(head) && !more.some((l) => l.trim() && !l.trim().startsWith('#'));
+    if (lenient) return head;
     throw e;
   }
-  return { data, body };
+}
+
+/**
+ * Parse an agent file. Returns { data, body, error, failed, repeated }: data is null when the file has no
+ * frontmatter. When an entry cannot be read, `error` says why, `failed` lists its key (or the line), and the other
+ * entries are still read, so the checks that do not need the failed field can run.
+ */
+export function parseFrontmatter(text) {
+  const lines = text.replace(/^﻿/, '').split(/\r?\n/);
+  if (lines[0].trimEnd() !== '---') return { data: null, body: text, failed: [], repeated: [] };
+  const close = lines.findIndex((l, i) => i > 0 && l.trimEnd() === '---');
+  if (close < 0) return { data: {}, body: '', error: 'the frontmatter has no closing --- line', failed: ['*'], repeated: [], unclosed: true };
+  let front = lines.slice(1, close);
+  const body = lines.slice(close + 1).join('\n');
+  // A frontmatter block indented as a whole is still one map.
+  const content = front.filter((l) => l.trim() && !/^\s*#/.test(l));
+  const indent = content.length ? Math.min(...content.map((l) => /^ */.exec(l)[0].length)) : 0;
+  if (indent) front = front.map((l) => l.slice(Math.min(indent, /^ */.exec(l)[0].length)));
+  const data = {};
+  const failed = [];
+  const repeated = [];
+  const problems = [];
+  for (let i = 0; i < front.length; i++) {
+    const line = front[i];
+    if (!line.trim() || /^\s*#/.test(line)) continue;
+    const m = /^(?:"([^"]+)"|'([^']+)'|([^\s"'#:-][^:]*?|-[^\s:][^:]*?))\s*:(?:\s+(.*))?$/.exec(line);
+    if (/^\s/.test(line) || !m) {
+      problems.push(`line ${i + 2} is not "key: value": ${JSON.stringify(line)}`);
+      failed.push(`line ${i + 2}`);
+      continue;
+    }
+    const key = m[1] ?? m[2] ?? m[3];
+    const head = (m[4] || '').trim();
+    // The entry's own lines: indented ones, blank ones, and, under a key with no inline value, a list that starts at
+    // the key's own column (YAML allows `tools:` followed by `- Read`).
+    let end = i + 1;
+    const listAtColumn = !head || head.startsWith('#');
+    while (end < front.length && (!front[end].trim() || /^\s/.test(front[end]) || (listAtColumn && /^-( |$)/.test(front[end])))) end++;
+    const more = front.slice(i + 1, end);
+    i = end - 1;
+    if (Object.hasOwn(data, key) || failed.includes(key)) repeated.push(key);
+    try {
+      data[key] = entryValue(line, head, more);
+      const at = failed.indexOf(key);
+      if (at >= 0) failed.splice(at, 1);
+    } catch (e) {
+      if (!(e instanceof YamlError)) throw e;
+      problems.push(`${key}: ${e.message}`);
+      failed.push(key);
+      delete data[key];
+    }
+  }
+  return { data, body, failed, repeated, ...(problems.length ? { error: problems.join('; ') } : {}) };
 }
 
 /** A tools or disallowedTools value as a list of entries; commas inside parentheses stay inside their entry. */
@@ -351,8 +407,11 @@ function loadScope(scope, dir) {
   for (const file of mdFiles(dir)) {
     const text = readFileSync(file, 'utf8');
     const parsed = parseFrontmatter(text);
-    const entry = { scope, file, rel: relative(dir, file).split('\\').join('/'), text, ...parsed };
-    (parsed.data === null ? docs : agents).push(entry);
+    const entry = { scope, scopeDir: dir, file, rel: relative(dir, file).split('\\').join('/'), text, ...parsed };
+    // No frontmatter, or frontmatter with no name: Claude Code treats the file as documentation kept beside the agents.
+    const named = parsed.data && parsed.data.name !== undefined && parsed.data.name !== null && parsed.data.name !== '';
+    const doc = parsed.data === null || (!named && !parsed.unclosed && !parsed.failed.includes('name'));
+    (doc ? docs : agents).push(entry);
   }
   return { agents, docs };
 }
@@ -400,18 +459,25 @@ function says(body, re) {
 function checkAgent(a, ctx) {
   const out = [];
   const add = (level, check, message) => out.push({ level, check, scope: a.scope, file: a.file, rel: a.rel, message });
-  if (a.error) { add('error', 'parse', `frontmatter does not parse: ${a.error}. Run claude plugin validate on the folder to compare.`); return out; }
+  if (a.unclosed) {
+    add('warning', 'parse', 'the frontmatter has no closing --- line: Claude Code reads the file as documentation and never loads it');
+    return out;
+  }
+  if (a.error) {
+    add('warning', 'parse', `this script cannot read the frontmatter (${a.error}). Run claude plugin validate ${a.scopeDir}: it uses Claude Code's own parser, and a parse error there means Claude Code skips this file`);
+  }
+  const ok = (key) => !a.failed.includes(key);
+  for (const key of a.repeated) add('warning', 'duplicate-key', `the key ${key} appears more than once: Claude Code keeps the last one`);
   const d = a.data;
   const name = d.name;
-  if (name === undefined || name === null || name === '') add('error', 'name', 'no name: Claude Code treats the file as documentation and never loads it');
-  else {
+  if (ok('name') && name !== undefined && name !== null && name !== '') {
     const n = String(name);
     if (n.includes(':')) add('error', 'name', `name "${n}" contains ":", which is reserved for plugin agents; Claude Code skips the file`);
     if (n.startsWith('-')) add('error', 'name', `name "${n}" starts with "-"; Claude Code skips the file`);
     if (n.length > NAME_MAX) add('error', 'name', `name is ${n.length} characters, over ${NAME_MAX}; Claude Code skips the file`);
   }
   const description = d.description === undefined || d.description === null ? '' : String(d.description);
-  if (!description.trim()) add('error', 'description', 'no description: Claude Code skips the file');
+  if (!ok('description')) { /* reported as a parse warning */ } else if (!description.trim()) add('error', 'description', 'no description: Claude Code skips the file');
   else if (description.length > DESCRIPTION_MAX) add('warning', 'description-length', `description is ${description.length} characters, over ${DESCRIPTION_MAX}`);
 
   for (const key of Object.keys(d)) if (!FIELDS.has(key)) add('error', 'field', `unknown field "${key}": Claude Code ignores it without a word`);
@@ -421,8 +487,8 @@ function checkAgent(a, ctx) {
   for (const key of BOOLEANS) {
     if (d[key] !== undefined && typeof d[key] !== 'boolean') add('error', 'value', `${key}: ${JSON.stringify(d[key])} is not true or false`);
   }
-  if (d.model !== undefined && !(MODEL_ALIASES.includes(d.model) || MODEL_ID.test(String(d.model)))) {
-    add('error', 'value', `model: ${JSON.stringify(d.model)} is not ${MODEL_ALIASES.join(', ')} or a full model ID`);
+  if (d.model !== undefined && !(MODEL_ALIASES.includes(String(d.model).replace(/\[1m\]$/i, '')) || MODEL_ID.test(String(d.model)))) {
+    add('warning', 'value', `model: ${JSON.stringify(d.model)} is not a model name this script knows (${MODEL_ALIASES.join(', ')} or a full model ID); check it against what --model takes`);
   }
   if (d.maxTurns !== undefined && !(Number.isInteger(d.maxTurns) && d.maxTurns > 0)) add('error', 'value', `maxTurns: ${JSON.stringify(d.maxTurns)} is not a positive whole number`);
   if (d.autoCompactWindow !== undefined && !(Number.isInteger(d.autoCompactWindow) && d.autoCompactWindow >= 100000 && d.autoCompactWindow <= 1000000)) {
@@ -434,6 +500,9 @@ function checkAgent(a, ctx) {
   const denied = parseTools(d.disallowedTools);
   const names = new Set(tools.map(toolName));
   const deniedNames = new Set(denied.map(toolName));
+  for (const key of ['tools', 'disallowedTools']) {
+    if (Array.isArray(d[key]) && d[key].some((v) => typeof v !== 'string')) add('warning', 'tool', `a ${key} entry reads as a map, not a tool name: quote it`);
+  }
   for (const entry of [...tools, ...denied]) {
     const t = toolName(entry);
     if (!TOOLS.has(t) && !/^mcp__/.test(t)) add('warning', 'tool', `"${entry}" is not a known tool name`);
@@ -454,15 +523,17 @@ function checkAgent(a, ctx) {
   }
 
   const cov = covenantOf(a.body);
+  // A personal agent in the user's folder that carries no roster marker was not made by geppetto: the covenant is a
+  // suggestion there. Everywhere else, and on any file that carries the marker, it is required.
+  const required = a.scope !== 'user' || cov.version !== null;
   if (cov.error) add('error', 'covenant', cov.error);
-  else if (cov.block === null) add('error', 'covenant', 'no covenant block: paste the block from COVENANT.md');
-  else if (cov.block !== ctx.covenant.block) {
-    if (cov.version === ctx.covenant.version) add('error', 'covenant', 'the covenant block differs from COVENANT.md: the laws are not to be tuned');
-    else {
-      const older = cov.version < ctx.covenant.version;
-      add('warning', 'covenant', `the covenant is from roster ${cov.version}, the bundle is roster ${ctx.covenant.version}${older ? ': run Update' : ': this copy is newer than the bundle, update the skill'}`);
-    }
-  }
+  else if (cov.block === null) {
+    if (required) add('error', 'covenant', 'no covenant block: paste the block from COVENANT.md');
+    else add('warning', 'covenant', "no covenant block: this agent was not made by geppetto; add the covenant if it should follow the roster's laws");
+  } else if (cov.version !== ctx.covenant.version) {
+    const older = cov.version < ctx.covenant.version;
+    add('warning', 'covenant', `the covenant is from roster ${cov.version}, the bundle is roster ${ctx.covenant.version}${older ? ': run Update' : ': this copy is newer than the bundle, update the skill'}`);
+  } else if (cov.block !== ctx.covenant.block) add('error', 'covenant', 'the covenant block differs from COVENANT.md: the laws are not to be tuned');
   return out;
 }
 
@@ -485,7 +556,7 @@ export function audit({ project = process.cwd(), user = join(homedir(), '.claude
   }
   const ctx = { covenant: cov, skillDirs: [join(project, '.claude', 'skills'), join(user, 'skills')], userDir: user };
   const findings = agents.flatMap((a) => checkAgent(a, ctx));
-  const named = agents.filter((a) => !a.error && a.data.name !== undefined && a.data.name !== null && a.data.name !== '');
+  const named = agents.filter((a) => !a.unclosed && a.data.name !== undefined && a.data.name !== null && a.data.name !== '');
 
   const byScope = new Map();
   for (const a of named) {
@@ -504,13 +575,13 @@ export function audit({ project = process.cwd(), user = join(homedir(), '.claude
     if (u) findings.push({ level: 'warning', check: 'shadowed', scope: 'user', file: u.file, rel: u.rel, message: `name "${u.data.name}" is also in the project (${p.rel}): the project's file wins over the user's` });
   }
   const seen = new Set();
-  const unique = named.filter((a) => { const k = `${a.data.name}`; if (seen.has(k)) return false; seen.add(k); return true; });
+  const unique = named.filter((a) => typeof a.data.description === 'string' && a.data.description.trim()).filter((a) => { const k = `${a.data.name}`; if (seen.has(k)) return false; seen.add(k); return true; });
   for (let i = 0; i < unique.length; i++) {
     for (let j = i + 1; j < unique.length; j++) {
       const score = overlapScore(unique[i].data.description, unique[j].data.description);
       if (score >= OVERLAP_THRESHOLD) {
         findings.push({ level: 'warning', check: 'overlap', scope: unique[j].scope, file: unique[j].file, rel: unique[j].rel,
-          message: `description overlaps "${unique[i].data.name}" (${unique[i].rel}) with a word score of ${score.toFixed(2)}: say what makes each one the right pick` });
+          message: `the descriptions of "${unique[i].data.name}" (${unique[i].scope} ${unique[i].rel}) and "${unique[j].data.name}" (${unique[j].scope} ${unique[j].rel}) overlap with a word score of ${score.toFixed(2)}: say what makes each one the right pick` });
       }
     }
   }
