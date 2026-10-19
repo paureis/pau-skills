@@ -9,6 +9,12 @@ This is a Claude Code plugin marketplace. Read this before changing anything.
 - `hooks/<plugin>/`: hook scripts and the `hooks.json` that registers them. `hooks/lib/` is shared by all hooks.
 - `.claude-plugin/marketplace.json`: one entry per plugin plus the `pau-skills` bundle. Every entry is rooted at the
   repository (`"source": "./"`, `"strict": false`). Never add `.claude-plugin/plugin.json`; it conflicts with that.
+- `.claude/agents/`: the roster that `geppetto` installs, used by the batches. Change a roster agent in
+  `skills/agent-orchestration/geppetto/roster/` first, raise the roster number on every covenant marker, then update
+  the installed copy. Never put agent files in a root `agents/` folder: every plugin here would load it.
+- `.claude/agents/`: the roster that `geppetto` installs, used by the batches. Change a roster agent in
+  `skills/agent-orchestration/geppetto/roster/` first, raise the roster number on every covenant marker, then update
+  the installed copy. Never put agent files in a root `agents/` folder: every plugin here would load it.
 - `scripts/`: repository tooling. `tests/`: `node:test` suites. `docs/`: install guide, origins, rules, how to add a
   skill.
 

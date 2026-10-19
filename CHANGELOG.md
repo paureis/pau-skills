@@ -5,7 +5,14 @@ the plugin they installed is bumped.
 
 ## 2026-10-19: the sixth batch (geppetto, launch-readiness, verify-app states, a lighter brainstorm, html-plan links)
 
-<!-- Q2 and Q6 lines are added when those items merge. -->
+- `geppetto` (new, agent-orchestration, Original): designs, installs, audits and updates a project's agent files.
+  Bundled roster: `eng-lead` (plans and dispatches, cannot write code), `builder` (worktree, test first, never
+  pushes), `reviewer`, `writer` and `sweeper`, each with the covenant from `COVENANT.md`. `check-agents.mjs` finds
+  what makes Claude Code skip an agent or change its tools: frontmatter it cannot read, a missing name, unknown
+  fields, bad values, duplicates, memory on a read-only agent, Glob or Grep next to Bash, a missing or old covenant,
+  skills that are not installed, overlapping descriptions and an unignored `.claude/worktrees/`. Asks before every
+  write. This repository's `.claude/agents/` now holds the roster.
+<!-- Q6 line is added when it merges. -->
 - `brainstorm`: lighter. Frame asks at most three questions at once, with proposed answers, through the question tool
   when the session has one, and shows the frame only after the answers. 8 to 12 options show in 3 or 4 clusters with
   no lens tags (the lenses stay, used internally). One round of picks, with the agent's marked "(Recommended)" and a

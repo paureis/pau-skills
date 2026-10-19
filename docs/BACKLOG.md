@@ -922,6 +922,27 @@ Asked for by the owner on 2026-10-19 and settled with `grill-me` in the same ses
     `.claude/agents/` (a new agents folder loads only after a restart).
   - Agent descriptions have no length limit of their own; past 15,000 tokens for all agents Claude Code warns. The
     200-character target stays.
+- Changed during the build (review and cold run), and why:
+  - `check-agents.mjs` follows Claude Code's own lenient reading of frontmatter (a value with ": ", a last-wins
+    repeated key, an unindented list), checked against `claude plugin validate` on 17 probe files. What its subset
+    cannot read is a warning that names `claude plugin validate`, which decides; Audit runs it when `claude` is
+    installed. The first version reported agents Claude Code loads as parse errors.
+  - The covenant is required in the project (and in a `--dir` folder); a personal agent in the user scope without it
+    is a warning, not an error, so the check after Install does not fail on a machine with agents geppetto never made.
+    This narrows "The audit fails an agent without it".
+  - The fix round is sent by the main session: an agent resumed with SendMessage runs in the background, and in the
+    cold run `eng-lead` had to hand back before either builder's reply arrived. `eng-lead` returns one ready
+    fix-round message per builder instead. It keeps SendMessage in its tools, as settled.
+  - `eng-lead` starts no agent type other than `builder` and `reviewer` (an `Agent(type)` list is ignored in a
+    subagent's file, so plain Agent could start general-purpose, which can push).
+  - `builder` uses `git switch -c` and stops if the branch exists (`-C` reset a branch checked out in the main
+    checkout), reports the harness's own `worktree-agent-*` branch for deletion after the merge, runs one git command
+    per call (the worktree guard refused chained ones nine times), and commits with `-m`.
+  - `reviewer` restores a mutated file from its own scratch copy, never with `git checkout --`, which deleted
+    uncommitted work under review.
+  - Cold run (2.1.303, empty HOME, depth 3): install, then `eng-lead` planning two slices, two builders in worktrees,
+    two reviewers and branches ready to merge with nothing merged, in about $5; `sweeper` listed without deleting; the
+    audit caught the seeded bad agent.
 - Overlaps: `lean-subagent-dev` (`eng-lead` runs its brief and review loop inside an agent; keep the brief fields in
   step), `evaluator` (`reviewer`), `parallel-worktrees`, `overnight-run` and scheduled tasks (the routine step of the
   trust ladder), `skill-creator` (writes skills, not agents).
@@ -1030,6 +1051,11 @@ README and the batch process). Asked for by the owner on 2026-10-19, settled wit
     installed" would pass. The test gains a list of outside skills it also checks.
   - The zip is built by copying the folder into a scratch git repository and running `pack-skills --root`, so it gets
     the same upload checks.
+- Changed during the build (review and cold run), and why: `grill-me` makes the html-plan offer its own question and
+  asks the first decision only after the answer (a cold run sent both in one message); in `grill-me` and `to-prd`
+  the page's answers feed the next branch or the PRD and never start a build, because html-plan's own steps end in
+  "Then build". A cold run with the real html-plan showed the offer for three open decisions, a correct hand-over,
+  and "write a PRD" still starting `to-prd`.
 - Done when: the zip is built and the owner has uploaded it; the four links are in place and pass
   `tests/standalone.test.mjs`; a headless cold run with only this repository's skills and html-plan installed shows
   `grill-me` offering the page for three open decisions and "write a PRD" still starting `to-prd`; the four
@@ -1142,6 +1168,13 @@ widened with `brainstorm` (18 options, two rounds of marks, direction D of four 
   - The `layout-shift` entry exists only in Chromium. On other engines the score is skipped and the report says so.
   - Q6's fixture is built in the same batch, so Q7 adds its own small page with a skeleton next to the N1 fixtures.
   - `check-map.mjs` fails a four-heading map with a message that names maintain mode, so old maps get a way forward.
+- Changed during the build (review and cold run), and why: the helper `measure-boxes.js` fails when nothing matched
+  or when `compare()` runs before `skeleton()` (it passed with zero pairs), skips elements that are not rendered, and
+  reports a count difference separately: the recipe answers the held request with as many items as the skeleton has
+  rows, since resizing cannot fix a count. A request only about a skeleton runs the existing verify skill's recipe
+  instead of the whole create mode. The trigger is 'match the skeleton'. The fixture's README no longer names the
+  seeded gap, which cold runs quoted before measuring. Measured: three rows 20 px short scored 0.0418 on a phone and
+  0.017 on a desktop, under 0.1, while the box check found every row.
 - Done when: on a fixture web app with a skeleton seeded 20 px too short, a cold run finds the
   mismatch with its numbers, fixes it on a yes and proves the new measurement; the loading, empty and error
   screenshots are kept; `check-map.mjs` requires the States heading and says what is missing, with tests a mutation
@@ -1173,6 +1206,13 @@ owner on 2026-10-19 after using `brainstorm` on Q6.
   can only show the typed fallback. The comparison gives both versions the same scripted user replies and counts round
   trips and characters typed; the question-tool path gets one live try after the upload. The description ("the user
   keeps or kills them") is reworded within its current length.
+- Changed during the build, and why: the shortlist is 3 or 4 (5 would not fit one question); every header is 12
+  characters or fewer, counted; without a question tool the picks are still shown and "ok" accepts them; the frame
+  questions go out alone and the frame comes after the answers; a brought-back option replaces the weakest finalist;
+  the lenses give candidates and 8 to 12 are shown after merging. Measured (two runs each, scripted replies, typed
+  fallback): 4 replies instead of 5, 431 characters typed instead of 462, and about a third less output to a decision;
+  a non-baseline option reached the finalists in both new runs. The question-tool path gets its first live try after
+  the upload.
 - Done when: a blind `skill-eval` (if it is installed; otherwise two headless runs read side by side) on the same
   question, old against new, shows fewer user turns and less user typing to reach a decision, with at least one
   option from a non-baseline lens still reaching the finalists; the descriptions stay within budget; the four

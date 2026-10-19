@@ -144,6 +144,9 @@ context was compacted.
 - `overnight-run` lets an agent work while you are away without waking up to hours of motion and no way to tell what
   it did: it starts only after trust checks, stops on a check a script runs, logs every decision, and has a fresh
   reviewer audit the log against the transcript before you read the summary.
+- `geppetto` designs, installs and audits a project's agent files, with a starter roster (`eng-lead` plans and
+  dispatches without writing code, `builder`, `reviewer`, `writer`, `sweeper`) and a check for the mistakes that make
+  Claude Code skip an agent or quietly change its tools.
 - `no-idle` (hook) stops subagents from ending their turn waiting for something that will never wake them.
 
 ### 7. A review that never ends
@@ -283,6 +286,10 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   contract: trust checks before the loop, a finish condition a script checks, a fresh worktree, an append-only
   decision log kept outside the repository by `log.mjs`, a control folder no turn can write, an off switch and a
   resume note, and a morning audit by a fresh reviewer; the summary ends with an Attention section.
+- **[geppetto](skills/agent-orchestration/geppetto/SKILL.md)**: Designs, installs, audits and updates a project's
+  Claude Code agent files, with a starter roster (eng-lead, builder, reviewer, writer, sweeper) that all carry one
+  covenant, and `check-agents.mjs`, which finds what makes Claude Code skip an agent or quietly change its tools.
+  Asks before every write.
 - Hook: [`no-idle`](hooks/agent-orchestration/no-idle.mjs).
 
 ### guards
