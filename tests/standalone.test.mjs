@@ -85,8 +85,11 @@ test('relative links in a skill stay inside its folder', () => {
   assert.deepEqual(bad, []);
 });
 
+// Skills from elsewhere that skills here mention; a mention of one needs the same "if it is installed" fallback.
+const OUTSIDE = ['html-plan'];
+
 test('a skill that names another skill says what to do if that skill is not installed', () => {
-  const names = ALL.map((s) => s.name);
+  const names = [...ALL.map((s) => s.name), ...OUTSIDE];
   const bad = [];
   for (const s of ALL) {
     if (ROUTERS.has(s.name)) continue;
