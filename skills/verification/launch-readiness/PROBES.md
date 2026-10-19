@@ -23,12 +23,15 @@ In this order:
 - Show each probe in full before writing it, with the file it goes in, and add it only on the user's yes. Probes
   change the project's test suite.
 - Run it and record the command and its output. A failing probe confirms the gap: the row is `fail`, citing the
-  probe file and the route file. A passing probe clears the suspect: the row is `pass`. Either way the row is a
-  `command` row with an expiry of 90 days.
+  probe file and the route file. A passing probe clears the suspect: the row is `pass`. Either way the row has
+  source `probe` and an expiry of 90 days; the ledger refuses a pass on a probe check from any other source.
 - A probe that fails for another reason (the app did not start, the seed user is missing) proves nothing: fix the
   probe, do not grade from it.
-- A missing feature (no sign-out, no reset) is a `fail` row from the code, not a probe. Never write a test that
-  fails on purpose.
+- A probe fails while its gap is open; that is how it confirms the gap. Before adding probes, say that the suite will
+  show those failures, and offer the framework's expected-failure form (SKILL.md step 5) so CI stays green until
+  the fix; the user picks.
+- A missing feature (no sign-out, no reset) is a `fail` row from the code, not a probe: a probe tests behavior the
+  app has.
 
 ## Shapes by stack
 
@@ -57,3 +60,4 @@ In this order:
 | SEC-09 | Read the login response's `Set-Cookie`: HttpOnly, Secure and SameSite are set |
 | SEC-12 | A request that throws: the body has no stack trace, path or query |
 | BIL-01, API-02 | An unsigned webhook: expect 400 or 401 |
+| SEC-03, SEC-26 | With user A's client token, read and write user B's rows, documents or files: refused |

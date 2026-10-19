@@ -15,7 +15,8 @@ evidence that closes it. Fix: what the fix is, and whether it fits in one sittin
 bundle, mobile app, desktop app, a public CLI). Check: grep the client folders and the built bundle for key-like
 names (`KEY`, `SECRET`, `TOKEN`, `PASSWORD`, `PRIVATE`) and long literal strings; check which env variables the
 bundler exposes (`NEXT_PUBLIC_`, `VITE_`, `REACT_APP_`, `EXPO_PUBLIC_`, `PUBLIC_`). A publishable key meant for
-browsers (a Stripe `pk_` key, a Supabase anon key with row-level security on, a Firebase web config) is not a
+browsers (a Stripe `pk_` key, a Supabase anon key with row-level security on, a Firebase web config with security
+rules enforced, SEC-26) is not a
 secret; any other key is, whatever its value looks like, since a placeholder in code is replaced by a real one
 later. Pass: `file:line` of where the client gets only public values, and the grep with no hits. Fix: move the call
 to the server, read the key from the server's environment; small. Then SEC-02.
@@ -34,9 +35,12 @@ rows. Pass: the probe's output. Fix: a policy per table; small each.
 
 **SEC-04 Server-side auth on every route** (1, must-fix, probe). Applies: an HTTP API or server-rendered pages.
 Check: list every route from the router (or the framework's route listing: `rails routes`, `php artisan
-route:list`, `flask routes`, Django `show_urls` if installed) and find where each checks the session. Middleware
-that guards "all but a list" is safer than a check in each handler. Probe: each route that is not meant to be
-public, called with no session, returns 401 or a redirect. Pass: the probe's output. Fix: one guard; small.
+route:list`, `flask routes`, Django `show_urls` if installed), plus every server action and RPC entry point (Next.js
+server actions, Remix actions, tRPC procedures, GraphQL resolvers), and find where each checks the session. Check
+auth in each route handler, server action and data-access function: a middleware or layout check alone is not
+enough (a matcher can miss a path, and Next.js middleware was bypassed by CVE-2025-29927). Probe: each route and
+action that is not meant to be public, called with no session, returns 401 or a redirect. Pass: the probe's output.
+Fix: one guard; small.
 
 **SEC-05 Rate limits on auth and costly routes** (2, must-fix, probe). Applies: login, sign-up, password reset,
 one-time codes, invites, and any route that sends email or SMS or calls a paid API. Check: find a limiter
@@ -62,7 +66,9 @@ https://evil.example.com`; the response does not allow it. Pass: `file:line` of 
 an allowlist from config; small.
 
 **SEC-09 Session cookies HttpOnly, Secure and SameSite** (1, must-fix, probe). Applies: only cookie sessions. For
-bearer tokens, check instead that they are not kept in `localStorage` when an XSS would expose them, and that they
+bearer tokens, check instead that they are not kept in `localStorage` when an XSS would expose them (on mobile:
+in the iOS Keychain or Android Keystore-backed storage, never AsyncStorage, SharedPreferences or a plain file), and
+that they
 expire. Check: every `Set-Cookie` for the session. Probe: read the `Set-Cookie` header from a login. Pass: the
 header. Fix: three flags; small.
 
@@ -135,3 +141,10 @@ Java or .NET object deserialization, PHP `unserialize`, `eval` or `Function` on 
 
 **SEC-25 A way to report a vulnerability** (3, must-fix). A `security.txt` or a published address, and who reads
 it. Questionnaire item `disclosure`.
+
+**SEC-26 Firebase security rules** (1, must-fix, probe). Applies: only Firestore, Realtime Database or Cloud
+Storage reached from the client. Check: `firestore.rules`, `database.rules.json` and `storage.rules` (or the
+console's rules): no `allow read, write: if true`, no test-mode rule that opens everything until a date
+(`request.time < timestamp.date(...)`), and each rule compares `request.auth.uid` with the owner of the document or
+path. Probe: in the Firebase emulator (with `@firebase/rules-unit-testing` or the SDK's emulator connection), user A
+reads and writes user B's document and file. Pass: the probe's output. Fix: rules per collection; small each.

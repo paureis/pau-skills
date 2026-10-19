@@ -19,7 +19,8 @@ Bundled files, read when you reach their step:
   applies to, and the evidence that passes it
 - `${CLAUDE_SKILL_DIR}/PROBES.md`: how to confirm a security suspect with a test in the project's own framework
 - `${CLAUDE_SKILL_DIR}/QUESTIONNAIRE.md`: what code cannot show, with how long each answer holds
-- `${CLAUDE_SKILL_DIR}/ledger.mjs` and `${CLAUDE_SKILL_DIR}/READINESS-TEMPLATE.md`: the ledger and its shape
+- `${CLAUDE_SKILL_DIR}/ledger.mjs` (with `table.mjs` and `rules.mjs`) and `${CLAUDE_SKILL_DIR}/READINESS-TEMPLATE.md`:
+  the ledger and its shape
 
 ## Do not
 
@@ -30,14 +31,23 @@ Bundled files, read when you reach their step:
   added test are left for the user to review and commit.
 - Do not probe production or an environment other people use.
 - Do not give a single score. Twenty small passes would hide one missing permission check.
+- Never copy a secret value into the chat, the evidence or READINESS.md, which is meant to be committed. Cite its
+  `file:line` and show at most the first 4 characters followed by "...". The ledger refuses evidence that looks
+  like a key.
+- Put any scratch file in a git-ignored folder inside the project, or in a `mktemp -d` folder you remove at the end;
+  never anywhere else.
+- Do not start agents (see step 9) on the profile's yes alone.
 
 ## 1. Profile, confirmed first
 
 Read the project, read-only: manifests and lockfiles (`package.json`, `pyproject.toml`, `requirements*.txt`,
 `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`, `pom.xml`, `build.gradle`, `*.csproj`), framework and deploy
 config, the schema or migrations, the routes, `.env.example`, CI files, the README. Run
-`node ${CLAUDE_SKILL_DIR}/ledger.mjs find`; if a ledger exists, read its profile block and run
-`node ${CLAUDE_SKILL_DIR}/ledger.mjs refresh --dry-run`, which writes nothing, to see which rows are stale.
+`node "${CLAUDE_SKILL_DIR}/ledger.mjs" find`; if a ledger exists, read its profile block and run
+`node "${CLAUDE_SKILL_DIR}/ledger.mjs" refresh --dry-run`, which writes nothing, to see which rows are stale.
+
+A repository with several apps gets one READINESS.md per app: pass `--root <app folder>` to every ledger command,
+and cite paths from that folder. Say in the profile which app it covers.
 
 Then send the profile and stop. It is the first thing that waits for the user:
 
@@ -92,16 +102,18 @@ Read an area file only when the profile says it applies:
 | UX and accessibility | `areas/ux-and-accessibility.md` | UX | a user interface |
 | code health and ownership | `areas/code-health.md` | CODE | always |
 
-Each area left out gets its own row, `<prefix>-NA` (such as `BIL-NA`), status `n/a`, with the profile reason. Inside a loaded area, a check
-whose "Applies" condition is false gets an `n/a` row with the reason. When the manifests change, the n/a rows go
-back to recheck, so a new payments package brings billing back.
+Each area left out gets its own row, `<prefix>-NA` (such as `BIL-NA`): stage 1, must-fix, status `n/a`, with the
+profile reason. It is must-fix so that an area which comes back blocks GO until it is graded. Inside a loaded area,
+a check whose "Applies" condition is false gets an `n/a` row with the reason. When the manifests change, the n/a
+rows go back to recheck, so a new payments package brings billing back.
 
 ## 4. Evidence or silence
 
 Run the project's test suite once (see `areas/testing.md` for how to find the runner). Then go through each loaded
 check and grade it:
 
-- `pass`: with `file:line` for code, or the command and its output. Nothing else passes a row.
+- `pass`: with `file:line` for code, or the command and its output. Nothing else passes a row. A row tagged probe
+  in its area file passes only on a probe run (source `probe`).
 - `fail`: with the `file:line` or the output that shows the gap.
 - `likely`: a security suspect from reading the code, not yet confirmed by a probe.
 - `unknown`: not shown either way, with how to check it (a command, a file to read, a person to ask).
@@ -109,7 +121,9 @@ check and grade it:
 - `recheck`: set by the ledger when the evidence changed; grade it again.
 
 Cite only the files that prove the row, so editing one file sends one row back to recheck. An `answer` row and
-an `n/a` row cite no files: the expiry and the profile recheck bring them back. For package
+an `n/a` row cite no files: the expiry and the profile recheck bring them back. A row about something missing (no
+CI, no LICENSE) cites no file either: it stays open and is graded again on every run. Never cite an unrelated file
+to give a row one. For package
 vulnerabilities (SEC-13), use `dependency-security-audit` if it is installed; otherwise run the ecosystem's audit
 command. For pending migrations, use `migration-review` if it is installed; otherwise check locks and data loss by
 hand. Claude Code's built-in `/security-review` covers only the current branch's changes, not the whole app, so it
@@ -124,8 +138,12 @@ and drive the app; otherwise use the project's own test harness. If neither can 
 with `curl` against the app started locally.
 
 Write each probe as a test in the project's own framework that states the safe behavior, so it fails while the gap
-is there. Then send one message and stop: the findings so far, each probe in full with the file it goes in, and the
-questionnaire (step 6). Add and run the probes only on a yes. If the user declines, the suspects stay `likely` and
+is open. Say before writing them that the suite will then show those failures, and offer the framework's
+expected-failure form so CI stays green while the row is open: node:test `{ todo: true }`, Jest or Vitest
+`test.failing`, pytest `@pytest.mark.xfail(strict=True)`, unittest `@unittest.expectedFailure`, RSpec `pending`, Go
+`t.Skip` with the row id, or a separate probe command outside the default suite. The user picks. Then send one
+message and stop: the findings so far, each probe in full with the file it goes in, that choice, and the
+questionnaire (step 6). Add and run the probes only on a yes; record each as a `probe` row. If the user declines, the suspects stay `likely` and
 the verdict says probes were skipped. Write the ledger (step 7) after the probes have run or been declined, so each
 row is written once with its final grade.
 
@@ -138,32 +156,42 @@ months, an access review a quarter). Skipped or "don't know" is `unknown`. Never
 ## 7. Ledger
 
 READINESS.md, in `docs/` when the project has that folder, else at the root. `ledger.mjs` finds an existing one in
-either place before it creates one. Paths in rows are from the repository root.
+either place before it creates one. Paths in rows are from the repository root (or the `--root` app folder); a path
+outside it is refused.
 
 Claude Code refuses a command that carries JSON on its command line or in a heredoc, and a write outside the
 project. So write each input with your file-writing tool to `.readiness-input.json` at the repository root, then
-pass it with `--consume`, which deletes it once it is applied (a refused input is kept for you to fix):
+pass it with `--consume`, which deletes it once it is applied (a refused input is kept for you to fix). In this
+order:
 
 ```bash
-node ${CLAUDE_SKILL_DIR}/ledger.mjs profile .readiness-input.json --consume
-node ${CLAUDE_SKILL_DIR}/ledger.mjs apply .readiness-input.json --consume
-node ${CLAUDE_SKILL_DIR}/ledger.mjs status
-node ${CLAUDE_SKILL_DIR}/ledger.mjs stamp
+node "${CLAUDE_SKILL_DIR}/ledger.mjs" refresh       # on a later run, always before profile
+node "${CLAUDE_SKILL_DIR}/ledger.mjs" profile .readiness-input.json --consume
+node "${CLAUDE_SKILL_DIR}/ledger.mjs" apply .readiness-input.json --consume
+node "${CLAUDE_SKILL_DIR}/ledger.mjs" stamp
+node "${CLAUDE_SKILL_DIR}/ledger.mjs" status
 ```
 
 The profile input is `{"profile": {"stack": "...", "surface": "...", ...}, "stage": 2, "regulated": false,
 "files": ["package.json"]}`. The rows input is a list such as `[{"id": "SEC-08", "area": "security", "stage": 2,
-"severity": "must-fix", "status": "fail", "source": "code", "evidence": "src/cors.js:3 sets
+"severity": "must-fix", "status": "likely", "source": "code", "evidence": "src/cors.js:3 sets
 Access-Control-Allow-Origin: *", "files": ["src/cors.js"]}]`.
 
-- `profile` stores the confirmed profile with a hash of each file it came from (the manifests).
-- `apply` adds or replaces rows by id and hashes each cited file. `source` is `code`, `command` (a test, a probe,
-  an audit: it lists its input files and carries an `expires`) or `answer` (carries an `expires`). It refuses a row
-  that breaks the evidence rules and writes nothing.
+- `profile` stores the confirmed profile with a hash of each file it came from (the manifests). If those files
+  changed it first sends the n/a rows to recheck. If the stage rose or regulated data was added, it sends the n/a
+  and can-wait rows to recheck: load the areas the new stage needs and write rows for its checks.
+- `apply` adds or replaces rows by id and hashes each cited file. `source` is `code`, `command` (a test or an
+  audit), `probe` (a probe run) or `answer`; `command` and `probe` list their input files, and all three carry an
+  `expires`. It refuses a row that breaks the evidence rules and writes nothing.
+- `stamp` records the commit (HEAD) and the stage this run assessed. Rows are tied to file hashes, not to commits:
+  a row stays closed while its cited files keep their content, committed or not. Only the list of uncited changed
+  files compares against the stamped commit, so a changed file that no row cites shows there again until it is
+  committed or cited. With no commit yet, `stamp` refuses: say that the next run cannot list uncited changes until
+  the first commit.
 - `status` prints readiness per stage, the open must-fix rows and the counts per grade. Ready for stage N means
   every must-fix row for stages 1 to N, plus the stage 4 rows when regulated data is added, is pass or n/a and not
-  expired. A must-fix security row that is only `likely` blocks go.
-- `stamp` records the commit of this run, so the next run can list changed files that no row cites.
+  expired, and each of those stages has graded rows and was assessed by a stamped run; otherwise it says "not
+  assessed". A must-fix security row that is only `likely` blocks go.
 
 Write the verdict into the file's Verdict section, and the roles into "Needs a person". Leave the rest of the prose
 as the user wrote it.
@@ -172,31 +200,36 @@ as the user wrote it.
 
 ```
 Stage <N> (<name>)<, with regulated data>: GO | NO-GO
-Must fix (<count>, at most 10 shown, most severe first):
+Must fix (<count>; at most 10 lines, most severe first):
   <ID> <title>: <status>. <file:line or output>. Fix: <one line>, <small | bigger>
+  (one row per line, never several ids on one line; the rest are in the ledger)
 Can wait: <ID title, one line each>
-Needs a person: <role: why> (senior engineer, backend engineer, DevOps, on-call, security and compliance, QA,
-  tech lead)
+Needs a person: <role: why, or "none"> (only these roles: senior engineer, backend engineer, DevOps, on-call,
+  security and compliance, QA, tech lead)
 Unknown: <ID: how to check>
 Probes: <run: n, failing: n> | skipped, so <n> security rows are only "likely"
 Counts: pass n, fail n, likely n, unknown n, n/a n, recheck n
 Ledger: <path>, not committed
 ```
 
-No single score. Say plainly when probes were skipped. Then ask which fixes to make.
+No single score. Always show the needs-a-person list in the chat verdict. Say plainly when probes were skipped.
+Then ask which fixes to make.
 
 ## 9. Fix on a yes
 
 A fix that fits in one sitting (a header, a cookie flag, one ownership check, a limiter) is made here: its failing
 probe or test first, then the fix, then the probe passing, then `apply` the row again. Anything bigger (MFA, SSO,
-backups, a schema change) becomes a brief with the failing probe or check as its done condition: hand it to the
-`eng-lead` or `builder` agent if one is installed; otherwise offer to run `to-issues` if it is installed to file it;
-otherwise give it as a plain list. CI gaps: offer to run `ci-cost-and-cadence` if it is installed.
+backups, a schema change) becomes a brief with the failing probe or check as its done condition. If the `eng-lead`
+or `builder` agent is installed, offer to start it with the brief and wait for a yes: the profile's yes did not
+cover agent runs. Otherwise offer to run `to-issues` if it is installed to file it; otherwise give it as a plain
+list. CI gaps: offer to run `ci-cost-and-cadence` if it is installed.
 
 ## Later runs
 
-Step 1 again, with the stored profile shown for confirmation. After the yes, run `refresh`: it sends to `recheck`
-every row whose cited file changed, moved or is missing, every answer or command past its expiry, and every n/a row
-when the manifests changed, and lists the files changed since the last run that no row cites (a new route). Grade
-only the recheck rows and look at the uncited files for new checks; leave every other row as it is. Report what
-changed since the last verdict, then the verdict, then `stamp`.
+Step 1 again, with the stored profile shown for confirmation. After the yes, run `refresh` before `profile`: it
+sends to `recheck` every row whose cited file changed, moved or is missing, every answer, command or probe past its
+expiry, and every n/a row when the manifests changed. It lists the open rows (fail, unknown, likely) and the files
+changed since the last run that no row cites (a new route). Then store the profile; if its stage changed, grade the
+new stage's rows (step 7). Grade the recheck rows and every open row again, and look at the uncited files for new
+checks; leave every other row as it is. Then `stamp`, `status`, and report what changed since the last verdict,
+then the verdict.
