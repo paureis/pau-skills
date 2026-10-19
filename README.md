@@ -1,7 +1,7 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 36](https://img.shields.io/badge/skills-36-informational)
+![Skills: 38](https://img.shields.io/badge/skills-38-informational)
 ![Hooks: 12](https://img.shields.io/badge/hooks-12-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
@@ -70,6 +70,9 @@ green by skipping the failing test.
   history, and checks that a pure refactor leaves the test green.
 - `evaluator` has a fresh agent, which did not build the change, grade it against its acceptance criteria.
 - `verify-app` writes the project's own recipe for starting the real app and proving a change in it, with evidence.
+- `launch-readiness` says whether an app built mostly by agents is ready for the stage it is entering, from private
+  beta to paying customers, enterprise buyers or regulated data, with evidence for every row, probe tests for the
+  security suspects, and a ledger that rechecks only what changed on later runs.
 - `bug-fix` finds the actual cause of a bug from runtime evidence and ships only the change that evidence justifies,
   when the cause is not obvious or a first fix did not hold.
 - `hillclimb` makes a number better (run time, size, memory, a score) one measured change at a time, on a harness
@@ -268,6 +271,10 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 
 ### agent-orchestration
 
+- **[launch-readiness](skills/verification/launch-readiness/SKILL.md)**: An honest go or no-go for the stage an app is
+  entering (private beta, paying customers, enterprise, regulated data). The profile is confirmed first, every row has
+  `file:line` or command evidence, security suspects are confirmed by probe tests, what code cannot show goes through
+  a questionnaire with expiry, and `READINESS.md` rechecks only rows whose evidence changed; `ledger.mjs` keeps it.
 - **[methodology](skills/agent-orchestration/methodology/SKILL.md)**: Contracts, an evidence standard, an evaluator, convergence, a stop for every
   unattended run and two-file state, with templates.
 - **[codebase-oracle](skills/agent-orchestration/codebase-oracle/SKILL.md)** (adapted): Answers questions about a codebase from the

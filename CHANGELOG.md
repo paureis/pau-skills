@@ -12,7 +12,12 @@ the plugin they installed is bumped.
   fields, bad values, duplicates, memory on a read-only agent, Glob or Grep next to Bash, a missing or old covenant,
   skills that are not installed, overlapping descriptions and an unignored `.claude/worktrees/`. Asks before every
   write. This repository's `.claude/agents/` now holds the roster.
-<!-- Q6 line is added when it merges. -->
+- `launch-readiness` (new, verification, Original): an honest go or no-go for the stage an app is entering (private
+  beta, paying customers, enterprise, regulated data). The profile is confirmed first; 15 area files load only when
+  they apply; every row needs `file:line` or a command; security suspects are confirmed by probe tests in the
+  project's own framework; a questionnaire with expiry covers what code cannot show; `ledger.mjs` keeps
+  `READINESS.md`, rechecks rows whose cited files changed, never gives GO for a stage it did not assess, and refuses
+  secret values in evidence. Two fixtures: a web app with seeded gaps and a Python CLI.
 - `brainstorm`: lighter. Frame asks at most three questions at once, with proposed answers, through the question tool
   when the session has one, and shows the frame only after the answers. 8 to 12 options show in 3 or 4 clusters with
   no lens tags (the lenses stay, used internally). One round of picks, with the agent's marked "(Recommended)" and a
@@ -34,6 +39,8 @@ the plugin they installed is bumped.
   `verify-app`, and says how html-plan, `to-prd` and `architect` differ.
 - `tests/context-budget.test.mjs`: the description total is 14,000 characters (was 13,000), by the owner's choice.
 - `tests/standalone.test.mjs`: also checks mentions of html-plan, a skill from elsewhere.
+- Versions: agent-orchestration 0.10.0, planning 0.8.0, session-discipline 0.11.0, verification 0.11.0, pau-skills
+  0.14.0. No hook changed.
 
 ## 2026-10-19: the fifth pstack batch (overnight-run, engineering-principles, audit, mutate.sh, evaluator, hillclimb)
 

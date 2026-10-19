@@ -84,6 +84,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | "This test fails sometimes", an intermittent CI failure, a failed CI run someone wants to retry | `flaky-test-hunt` (verification): first checks for a stale base or a failure that repeats | `tdd` for the regression test; `bug-fix` if it fails every time |
 | A database migration about to run | `migration-review` (verification) | fix, then review again |
 | Outdated dependencies, a framework major version to adopt | `dependency-upgrade` (guards) | `dependency-security-audit` for known risk |
+| "Is this ready for paying customers", "can we launch", an app about to reach beta, paying customers, enterprise buyers or regulated data | `launch-readiness` (verification) | fix the must-fix rows, then run it again |
 | A CVE announcement, "are we vulnerable", "is this package safe" | `dependency-security-audit` (guards) | `dependency-upgrade` to apply fixes |
 | CI is slow or expensive, "how much CI should we run" | `ci-cost-and-cadence` (verification) | |
 | Review comments to work through, "which of these should I fix", a review loop that keeps going | `review-triage` (verification) | |
