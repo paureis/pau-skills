@@ -49,13 +49,13 @@ PER_TURN=2
 TURN_USD=2                         # --max-budget-usd per turn; the night costs at most (MAX_TURNS + 2) x this
 DEADLINE='2026-10-19T07:00'        # no new turn after this local time (a budget, not a finish)
 
-ALLOW=('Skill(overnight-run)' 'Agent' "Read(/$CTL/**)" "Read(/$STATE/**)" "Edit(/$WT/**)" "Write(/$WT/**)"
-  "Edit(/$STATE/resume.md)" "Write(/$STATE/resume.md)" "Edit(/$STATE/summary.md)" "Write(/$STATE/summary.md)"
+ALLOW=('Skill(overnight-run)' 'Agent' "Read(/$CTL/**)" "Read(/$STATE/**)" "Edit(/$WT/**)"
+  "Edit(/$STATE/resume.md)" "Edit(/$STATE/summary.md)"
   "Bash(node $CTL/log.mjs *)" "Bash(bash $CTL/done.sh)" "Bash($TEST)" "Bash(ls $CTL)"
   "Bash(git -C $WT status *)" "Bash(git -C $WT diff *)" "Bash(git -C $WT log *)" "Bash(git -C $WT show *)"
   "Bash(git -C $WT add *)" "Bash(git -C $WT commit *)" "Bash(git -C $WT restore *)" "Bash(git -C $WT clean -f -- *)"
   "Bash(git -C $WT hash-object *)")
-DENY=("Edit(/$CTL/**)" "Write(/$CTL/**)" 'Bash(git push *)' "Bash(git -C $WT push *)")
+DENY=("Edit(/$CTL/**)" 'Bash(git push *)' "Bash(git -C $WT push *)")
 
 # A child that inherits this session's CLAUDE* variables reuses its session id. Keep only the login and the provider.
 KEEP='^(CLAUDE_CONFIG_DIR|CLAUDE_CODE_OAUTH_TOKEN|CLAUDE_CODE_USE_BEDROCK|CLAUDE_CODE_USE_VERTEX)$'

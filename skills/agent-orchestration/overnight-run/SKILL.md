@@ -88,8 +88,9 @@ folder. A predicate that turns out wrong stops the run (step 6), and the user am
 Checked on Claude Code 2.1.303 with headless runs in October 2026.
 
 - **The allow list is the protection.** Run the turns with `--permission-mode dontAsk` and one allow rule per thing
-  the run does (LOOP.md has the full list): `Edit(/<worktree>/**)` and `Write(/<worktree>/**)` for the code (a rule
-  path that starts with `//` is absolute), `Edit` and `Write` for `<state>/resume.md` and `<state>/summary.md` only,
+  the run does (LOOP.md has the full list): `Edit(/<worktree>/**)` for the code (an `Edit` rule covers Write and
+  every other file-editing tool, Claude Code ignores `Write(path)` rules, and a rule path that starts with `//` is
+  absolute), `Edit` for `<state>/resume.md` and `<state>/summary.md` only,
   `Bash(node <control>/log.mjs *)` for the log, `Bash(bash <control>/done.sh)`, the exact test command, and
   `Bash(git -C <worktree> add *)`, `commit *`, `restore *`, `status *`, `diff *`, `log *`, `show *` and
   `clean -f -- *` (the rule must match the form the run types: `git -C <worktree> status` is not covered by
@@ -122,7 +123,7 @@ it and every wake can find it: from the repository root, print `echo "$(cd .. &&
 where the label is the date and a short slug (`2026-10-18-parser`). It holds two folders, and every path below is
 absolute:
 - `<control>` (`<run>/control`): written now, attended, and never by a turn. No turn gets an allow rule to write
-  it, its folder is never passed with `--add-dir`, and `Edit(/<control>/**)` and `Write(/<control>/**)` are denied.
+  it, its folder is never passed with `--add-dir`, and `Edit(/<control>/**)` is denied.
   It holds `RUN.md` (the contract, from the template below), `done.sh` (the predicate, starting with
   `cd <worktree>`), `predicate.sha` (the fingerprint below), and copies of `log.mjs` and `AUDIT.md`
   (`cp ${CLAUDE_SKILL_DIR}/log.mjs ${CLAUDE_SKILL_DIR}/AUDIT.md <control>/`). The outer loop's `loop.sh` goes here
