@@ -217,6 +217,9 @@ and the mutate.sh restore):
   `dontAsk` refuses everything without an allow rule except commands it treats as read only.
 - The container restarted mid-batch. Stopped agents were resumed by id with SendMessage (their names no longer
   resolved); the worktrees and the scratchpad survived.
+- CI on macOS failed on a test that mutated a tracked symlink with `sed`: BSD `sed -i` refuses to edit a symlink,
+  while GNU `sed` replaces it with a regular file. The test now changes the link with a patch, which `git apply`
+  handles the same on both.
 
 ## Kickoff for the next session
 
@@ -562,7 +565,7 @@ holding only this repository's skills and checks which skill each one starts.
   transcripts are needed (`--output-format stream-json`). Reuse what `evals/project-setup/run.mjs` and `grade.mjs`
   already do.
 
-**N8 overnight-run** (`in progress`, fifth batch, agent-orchestration, typed tier).
+**N8 overnight-run** (`done`, fifth batch, agent-orchestration, typed tier).
 - Upstream: `skills/poteto-mode/playbooks/autonomous-run.md`, `docs/guide/07-overnight.md`,
   `skills/show-me-your-work/SKILL.md` and its `scripts/log.sh`.
 - What it does: a contract for unattended work. Earn the trust before the loop (the task has run attended at least
@@ -576,7 +579,7 @@ holding only this repository's skills and checks which skill each one starts.
   where available.
 - Script: `log.mjs` appends rows safely. Tests for the injection guard and append-only behaviour.
 
-**N9 engineering-principles** (`in progress`, fifth batch, planning, typed tier).
+**N9 engineering-principles** (`done`, fifth batch, planning, typed tier).
 - Upstream: the `skills/principle-*` folders; `skills/poteto-mode/SKILL.md` section "Principles";
   `docs/guide/08-principles.md`; `skills/typescript-best-practices/SKILL.md` (three rules only).
 - What it does: one index in `SKILL.md` (for each principle: when it applies, the rule in one sentence, the sign you
@@ -713,8 +716,8 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 5. Done: P0.5, every skill loads on its own (decision 7), with Part B, trimming the owner's plugins.
 6. Done: the fourth batch, M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M10
    `which-skill`, M11 small additions with the `suppression-reason` hook, P1.2 and P1.3.
-7. **In progress:** the fifth batch, N8 overnight-run, N9 engineering-principles, and the small items P1.6 to P1.8,
-   with the hillclimb log guard and the mutate.sh restore by content.
+7. Done: the fifth batch, N8 overnight-run, N9 engineering-principles, and the small items P1.6 to P1.8, with the
+   hillclimb log guard and the mutate.sh restore by content. No item is left open; new work starts a new section.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
 
@@ -739,14 +742,14 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   no skill in 3 of 3 headless runs; the session fixed the bug inline, test first. The owner decided that is right: an
   obvious one-line fix needs no skill. The description now says when `bug-fix` is worth loading (the cause is not
   obvious, a first fix did not hold, the bug came back, the fix is risky).
-- **P1.6 retrospective audit blind spots** (`in progress`, fifth batch). `audit.mjs` (and its copy in `session-close`) skips units of 12
+- **P1.6 retrospective audit blind spots** (`done`, fifth batch). `audit.mjs` (and its copy in `session-close`) skips units of 12
   or fewer content words, so short CLAUDE.md bullets never score as DUPLICATE, and it does not scan skills synced from
   claude.ai under `~/.claude/skills/synced/<id>/<name>/`. The skill now tells the agent to read short bullets itself;
   the script should see both. Found by the fourth batch's review and cold run.
-- **P1.7 mutate.sh and Python bytecode** (`in progress`, fifth batch). A break and its restore in the same second can leave a stale
+- **P1.7 mutate.sh and Python bytecode** (`done`, fifth batch). A break and its restore in the same second can leave a stale
   `.pyc`, so the mutant keeps running and a later control fails with no visible diff. Export
   `PYTHONDONTWRITEBYTECODE=1` in the harness or say so in `mutation-test`. Found by the M9 dry run.
-- **P1.8 evaluator evidence line** (`in progress`, fifth batch). The evaluator's "Counts as evidence" line accepts "a passing automated test
+- **P1.8 evaluator evidence line** (`done`, fifth batch). The evaluator's "Counts as evidence" line accepts "a passing automated test
   that you have run and watched pass", which an agent reads as enough without the mutation check the same skill
   requires; and its Mutation field accepts an unrun "would" claim. Found by the M8 cold run; pre-existing.
 - **P1.4 typed-skill names** (`closed`: P0.5 removed every `/<plugin>:<name>` mention, so there is nothing left to
@@ -807,3 +810,15 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   replace an existing skill, and the owner uploaded them to claude.ai. `pau-skills-hooks` went to 0.2.0 for the hook,
   and the owner updated it on their computers. The skill count stays at 34, so the
   profile README did not change. Follow-ups: P1.6 to P1.8.
+- 2026-10-19: N8 overnight-run, N9 engineering-principles, P1.6 retrospective audit, P1.7 mutate.sh and Python
+  bytecode, P1.8 evaluator evidence line, and two follow-ups the owner added mid-batch (the hillclimb log formula
+  guard and the mutate.sh restore by content), merged as [pull request 24](https://github.com/paureis/pau-skills/pull/24).
+  The owner raised the description total to 13,000 first. Five builders, each in its own worktree with a read-only
+  plan check of its brief first; every item had a fresh reviewer, one fix round and a second look, and N8, N9 and P1
+  had cold runs as headless sessions. Reviewers or cold runs found a must-fix in N8 (a turn could rewrite its own
+  predicate; the morning audit did not work end to end) and in the mutate.sh restore (it could erase a hidden edit).
+  CI caught one macOS-only test failure, fixed before the merge. The 8 changed skills were zipped with
+  `pack-skills --since 8f44afa` and sent to the owner as one bundle (2 new, 6 replacing); the owner uploaded them
+  and all 8 were confirmed synced, identical to main. In a new session `/context` showed Skills at 14.5k tokens
+  (1.5% of the 1M window, 92 skills listed) and none without a description. No hook changed. The profile README now
+  says 36 skills.
