@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
  * The READINESS.md ledger of the launch-readiness skill (Node standard library). "help" lists the commands, which
- * take --root <dir> (default: the git top level) and --now <ISO date>. Profile input: {profile, stage (1 to 3),
- * regulated, files: [the manifests]}. Row input: [{id, area, stage (1 to 4), severity, status, source, evidence,
- * files: [paths], expires, date}]; a row with a known id replaces it, and a bad row stops the whole write.
- * Closed: pass or n/a, not expired. Ready for stage N: every must-fix row for stages 1 to N, plus stage 4 rows when
- * regulated data is added, is closed. Only the table and the "```json launch-readiness" block are rewritten.
+ * take --root <dir> (default: the git top level; one ledger per app folder) and --now <ISO date>. Profile input:
+ * {profile, stage (1 to 3), regulated, files: [the manifests]}. Row input: [{id, area, stage (1 to 4), severity,
+ * status, source (code, command, probe, answer), evidence, files: [paths], expires, date}]; a row with a known id
+ * replaces it, and a bad row stops the whole write (rules.mjs). Closed: pass or n/a, not expired. Ready for stage N:
+ * every must-fix row for stages 1 to N, plus stage 4 rows when regulated data is added, is closed, and every one of
+ * those stages has graded rows and was assessed by a stamped run. The table and profile block are in table.mjs.
  */
 import { readFileSync, writeFileSync, existsSync, statSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -13,11 +14,15 @@ import { execFileSync } from 'node:child_process';
 import { join, dirname, resolve, relative, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { COLUMNS, STATUSES, checkShape, parseLedger, formatLedger, clone } from './table.mjs';
+import { evidenceRules, insideRoot } from './rules.mjs';
+
+export { PROBE_IDS, secretIn } from './rules.mjs';
 
 export { COLUMNS, STATUSES, SEVERITIES, SOURCES, escapeCell, unescapeCell, splitRow, formatRow, parseLedger, formatLedger } from './table.mjs';
 export const STAGE_NAMES = { 1: 'private beta', 2: 'paying customers', 3: 'enterprise buyers', 4: 'regulated data' };
 const HERE = dirname(fileURLToPath(import.meta.url));
-const today = (now) => now.toISOString().slice(0, 10);
+// The local calendar date: an answer that expires today holds until local midnight.
+const today = (now) => [now.getFullYear(), now.getMonth() + 1, now.getDate()].map((n) => String(n).padStart(2, '0')).join('-');
 
 /** sha256 of the whole file, first 16 hex characters: a moved line changes it too. */
 export function hashFile(path) {
@@ -25,19 +30,6 @@ export function hashFile(path) {
 }
 
 const cleanPath = (p) => p.split(sep).join('/').replace(/^\.\//, '');
-
-function evidenceRules(r) {
-  const why = [];
-  const has = (s) => s && String(s).trim();
-  if (r.status === 'pass' && r.source === 'code' && !/[^\s:]+:\d+/.test(r.evidence)) why.push('a code pass needs file:line in its evidence');
-  if (r.status === 'pass' && r.source === 'code' && !r.files.length) why.push('a code pass cites the file it read');
-  if (r.source === 'command' && !r.files.length) why.push('a command row lists its input files (a dependency audit cites the lockfile)');
-  if ((r.source === 'command' || r.source === 'answer') && !r.expires) why.push(`a ${r.source} row carries an expiry`);
-  if (['pass', 'fail', 'likely'].includes(r.status) && !has(r.evidence)) why.push(`a ${r.status} row needs its evidence`);
-  if (r.status === 'unknown' && !has(r.evidence)) why.push('an unknown row says how to check it');
-  if (r.status === 'n/a' && !has(r.evidence)) why.push('an n/a row gives the profile reason');
-  return why;
-}
 
 /** Add or replace rows. Returns a new ledger; throws, changing nothing, when any row breaks a rule. */
 export function applyRows(ledger, inputs, { root, now = new Date() }) {
@@ -53,10 +45,8 @@ export function applyRows(ledger, inputs, { root, now = new Date() }) {
       checkShape(r, 'input');
       if (!Array.isArray(input.files || [])) throw new Error('files must be a list of paths');
       r.files = (input.files || []).map((p) => {
-        const rel = cleanPath(String(p));
+        const { rel, abs } = insideRoot(root, p);
         if (rel.includes(', ')) throw new Error(`path "${rel}" contains ", "`);
-        const abs = resolve(root, rel);
-        if (!existsSync(abs) || !statSync(abs).isFile()) throw new Error(`cited file ${rel} does not exist under the root`);
         return { path: rel, hash: hashFile(abs) };
       });
       const why = evidenceRules(r);
@@ -69,23 +59,41 @@ export function applyRows(ledger, inputs, { root, now = new Date() }) {
   return l;
 }
 
-/** Store the confirmed profile and the hash of each file it came from. */
+/** Files the profile came from that changed, went missing or were added since it was stored. */
+function profileDiff(meta, root, files = null) {
+  const old = meta.profileFiles || {};
+  if (!Object.keys(old).length) return [];
+  const gone = Object.entries(old).filter(([p, h]) => !existsSync(resolve(root, p)) || hashFile(resolve(root, p)) !== h).map(([p]) => p);
+  return [...gone, ...(files || []).filter((p) => !(p in old))];
+}
+
+/**
+ * Store the confirmed profile and a hash of each file it came from. First, as refresh would, the n/a rows go to
+ * recheck when those files changed; and when the stage rises or regulated data is added, the n/a and can-wait rows
+ * go to recheck too, since a higher stage can make them apply or make them must-fix.
+ */
 export function setProfile(ledger, { profile, stage, regulated = false, files = [] }, { root }) {
   if (![1, 2, 3].includes(Number(stage))) throw new Error('stage must be 1, 2 or 3 (stage 4 is "regulated": true on top of it)');
   const l = clone(ledger);
   const profileFiles = {};
   for (const p of files) {
-    const rel = cleanPath(p);
-    if (!existsSync(resolve(root, rel))) throw new Error(`profile file ${rel} does not exist under the root`);
-    profileFiles[rel] = hashFile(resolve(root, rel));
+    const { rel, abs } = insideRoot(root, p);
+    profileFiles[rel] = hashFile(abs);
+  }
+  const changed = profileDiff(l.meta, root, Object.keys(profileFiles)).length > 0;
+  const raised = (l.meta.stage && Number(stage) > l.meta.stage) || (!!regulated && !l.meta.regulated && l.meta.stage);
+  for (const r of l.rows) {
+    if ((changed && r.status === 'n/a') || (raised && (r.status === 'n/a' || r.severity === 'can-wait'))) r.status = 'recheck';
   }
   l.meta = { ...l.meta, version: 1, stage: Number(stage), regulated: !!regulated, profile, profileFiles };
   return l;
 }
 
+/** Record the run: its commit, its date, and the stage that was assessed (stages above it are "not assessed"). */
 export function stamp(ledger, { commit, now = new Date() }) {
   const l = clone(ledger);
   l.meta.lastRun = { commit, date: today(now) };
+  l.meta.assessed = { stage: l.meta.stage, regulated: !!l.meta.regulated };
   return l;
 }
 
@@ -107,8 +115,7 @@ export function changedSince(root, commit) {
 export function refresh(ledger, { root, now = new Date(), ledgerPath = null, changed = changedSince }) {
   const l = clone(ledger);
   const day = today(now);
-  const profileDiff = Object.entries(l.meta.profileFiles || {})
-    .filter(([p, h]) => !existsSync(resolve(root, p)) || hashFile(resolve(root, p)) !== h).map(([p]) => p);
+  const diff = profileDiff(l.meta, root);
   const changes = [];
   for (const r of l.rows) {
     if (r.status === 'recheck') continue;
@@ -119,7 +126,7 @@ export function refresh(ledger, { root, now = new Date(), ledgerPath = null, cha
       else if (hashFile(abs) !== f.hash) reasons.push(`${f.path} changed`);
     }
     if (r.expires && r.expires < day) reasons.push(`expired ${r.expires}`);
-    if (profileDiff.length && r.status === 'n/a') reasons.push(`profile sources changed: ${profileDiff.join(', ')}`);
+    if (diff.length && r.status === 'n/a') reasons.push(`profile sources changed: ${diff.join(', ')}`);
     if (reasons.length) { changes.push({ id: r.id, was: r.status, reasons }); r.status = 'recheck'; }
   }
   let uncited = [];
@@ -135,26 +142,34 @@ export function refresh(ledger, { root, now = new Date(), ledgerPath = null, cha
       uncitedNote = `cannot list files changed since ${commit}: ${String(e.message).split('\n')[0]}`;
     }
   }
-  return { ledger: l, changes, profileChanged: profileDiff.length > 0, uncited, uncitedNote };
+  const open = l.rows.filter((r) => ['fail', 'unknown', 'likely'].includes(r.status)).map((r) => r.id);
+  return { ledger: l, changes, profileChanged: diff.length > 0, uncited, uncitedNote, open };
 }
 
 const closed = (r, day) => (r.status === 'pass' || r.status === 'n/a') && (!r.expires || r.expires >= day);
 
-/** Readiness per stage for the rows, the stage being entered and whether regulated data is added. */
-export function readiness(rows, { stage, regulated = false, now = new Date() }) {
+/**
+ * Readiness per stage. A stage is not assessed, so never GO, when a stage up to it has no rows, when it is above the
+ * stage the last stamped run assessed, or when regulated data is added and no stage 4 row was graded.
+ */
+export function readiness(rows, { stage, regulated = false, assessed = null, now = new Date() }) {
   const day = today(now);
   const open = (n) => rows.filter((r) => r.severity === 'must-fix' && (r.stage <= Math.min(n, 3) || (regulated && r.stage === 4)) && !closed(r, day));
-  const stages = [1, 2, 3].map((n) => ({ stage: n, ready: open(n).length === 0, blockers: open(n) }));
+  const has = (n) => rows.some((r) => r.stage === n);
+  const missing = (n) => [...[1, 2, 3].filter((k) => k <= n && (!has(k) || (assessed && k > assessed.stage))),
+    ...(regulated && (!has(4) || (assessed && !assessed.regulated)) ? [4] : [])];
+  const stages = [1, 2, 3].map((n) => ({ stage: n, ready: !open(n).length && !missing(n).length, blockers: open(n), notAssessed: missing(n) }));
   const blockers = open(stage);
   const counts = Object.fromEntries(STATUSES.map((s) => [s, rows.filter((r) => r.status === s).length]));
-  return { stage, regulated, stages, go: blockers.length === 0, blockers, counts, probesSkipped: rows.some((r) => r.status === 'likely') };
+  const go = !blockers.length && !missing(stage).length;
+  return { stage, regulated, stages, go, blockers, counts, probesSkipped: rows.some((r) => r.status === 'likely') };
 }
 
 /** docs/READINESS.md, then READINESS.md at the root; a new ledger goes in docs/ when the project has that folder. */
 export function findLedger(root) {
   const inDocs = join(root, 'docs', 'READINESS.md');
   const atRoot = join(root, 'READINESS.md');
-  if (existsSync(inDocs) && existsSync(atRoot)) throw new Error(`two ledgers, ${inDocs} and ${atRoot}: merge them into one and delete the other`);
+  if (existsSync(inDocs) && existsSync(atRoot)) throw new Error(`two ledgers, ${inDocs} and ${atRoot}: show both to the user and ask which one to keep`);
   if (existsSync(inDocs)) return { path: inDocs, exists: true };
   if (existsSync(atRoot)) return { path: atRoot, exists: true };
   return { path: existsSync(join(root, 'docs')) ? inDocs : atRoot, exists: false };
@@ -206,8 +221,15 @@ export function main(argv, { cwd = process.cwd(), out = console.log, err = conso
     if (cmd === 'find') { out(`${found.exists ? 'found' : 'none yet, would create'}: ${rel}`); return 0; }
     if (cmd === 'profile') {
       const base = found.exists ? load() : parseLedger(readFileSync(join(HERE, 'READINESS-TEMPLATE.md'), 'utf8'));
-      save(setProfile(base, readJson(), { root }));
+      const next = setProfile(base, readJson(), { root });
+      save(next);
       out(`profile stored in ${rel}`);
+      const was = base.meta.stage;
+      if (was && next.meta.stage !== was) {
+        out(`stage ${next.meta.stage > was ? 'raised' : 'lowered'} from ${was} to ${next.meta.stage}: load the areas for it and grade its rows; status says "not assessed" until a stamp after that`);
+      }
+      const sent = next.rows.filter((r, i) => r.status === 'recheck' && base.rows[i].status !== 'recheck').map((r) => r.id);
+      if (sent.length) out(`sent to recheck: ${sent.join(', ')}`);
       return 0;
     }
     if (cmd === 'apply') {
@@ -226,25 +248,33 @@ export function main(argv, { cwd = process.cwd(), out = console.log, err = conso
       if (r.uncitedNote) out(r.uncitedNote);
       const rechecks = r.ledger.rows.filter((x) => x.status === 'recheck').map((x) => x.id);
       out(`rows to recheck: ${rechecks.length ? rechecks.join(', ') : 'none'}`);
+      out(`open rows, grade them again: ${r.open.length ? r.open.join(', ') : 'none'}`);
       if (!dry) save(r.ledger);
       return 0;
     }
     if (cmd === 'status') {
       const l = load();
       if (!l.meta.stage) throw new Error('no profile stored: run "profile" first');
-      const r = readiness(l.rows, { stage: l.meta.stage, regulated: l.meta.regulated, now });
+      const r = readiness(l.rows, { stage: l.meta.stage, regulated: l.meta.regulated, assessed: l.meta.assessed || null, now });
       if (r.regulated) out('regulated data added: stage 4 rows count at every stage');
       for (const s of r.stages) {
         const tag = s.stage === r.stage ? ' (the stage being entered)' : '';
         const list = s.blockers.map((b) => b.id).join(', ');
-        out(`stage ${s.stage} (${STAGE_NAMES[s.stage]}): ${s.ready ? 'GO' : `NO-GO, must-fix open: ${list}`}${tag}`);
+        const na = s.notAssessed.length ? `not assessed (stage ${s.notAssessed.join(', stage ')})` : '';
+        const verdict = s.ready ? 'GO' : s.blockers.length ? `NO-GO, must-fix open: ${list}${na ? `; ${na}` : ''}` : na;
+        out(`stage ${s.stage} (${STAGE_NAMES[s.stage]}): ${verdict}${tag}`);
       }
       out(`counts: ${STATUSES.map((s) => `${s} ${r.counts[s]}`).join(', ')}`);
       if (r.probesSkipped) out('some security rows are only "likely": probes were skipped for them');
       return 0;
     }
     if (cmd === 'stamp') {
-      const commit = execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+      let commit;
+      try {
+        commit = execFileSync('git', ['-C', root, 'rev-parse', '--verify', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+      } catch {
+        throw new Error('no commit yet (or not a git repository), so there is no run to record: the rows are still kept by file hash; stamp after the first commit');
+      }
       save(stamp(load(), { commit, now }));
       out(`last run: ${commit.slice(0, 12)} on ${today(now)}`);
       return 0;

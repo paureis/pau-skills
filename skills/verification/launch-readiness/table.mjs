@@ -6,7 +6,7 @@
 export const COLUMNS = ['id', 'area', 'stage', 'severity', 'status', 'source', 'evidence', 'files', 'date', 'expires'];
 export const STATUSES = ['pass', 'fail', 'likely', 'unknown', 'n/a', 'recheck'];
 export const SEVERITIES = ['must-fix', 'can-wait'];
-export const SOURCES = ['code', 'command', 'answer'];
+export const SOURCES = ['code', 'command', 'probe', 'answer'];
 const META_OPEN = '```json launch-readiness';
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -90,6 +90,12 @@ export function parseLedger(text) {
     if (rows.some((x) => x.id === r.id)) throw new Error(`line ${end + 1}: id ${r.id} appears twice`);
     rows.push(r);
     raw.push(lines[end]);
+  }
+  // A blank line ends a Markdown table: rows after it would be lost on the next write, so refuse instead.
+  const stray = lines.findIndex((l, i) => i > end && l.trim().startsWith('|') && !isHeader(l) && splitRow(l).length === COLUMNS.length);
+  if (stray > 0) {
+    const what = lines[end].trim() ? `line ${end + 1} ends the table` : `the blank line at line ${end + 1} ends the table`;
+    throw new Error(`line ${stray + 1}: a ledger row after the end of the table (${what}); remove that line so the rows are one table`);
   }
   let meta = null;
   let metaAt = null;

@@ -40,12 +40,12 @@ describe('parse and write', () => {
 
   test('changing a row rewrites that line only; the prose and the other rows stay byte for byte', () => {
     const root = project({ 'a.js': 'x\n' });
-    const l = put(parseLedger(SAMPLE), [row({ id: 'SEC-08', status: 'pass', evidence: 'a.js:1 now | fixed' })], root);
+    const l = put(parseLedger(SAMPLE), [row({ id: 'SEC-08', status: 'likely', evidence: 'a.js:1 now | fixed' })], root);
     const before = SAMPLE.split('\n');
     const after = formatLedger(l).split('\n');
     const changed = before.map((line, i) => (line === after[i] ? null : i)).filter((i) => i !== null);
     assert.deepEqual([after.length, changed.length], [before.length, 1]);
-    assert.match(after[changed[0]], /^\| SEC-08 \| security \| 2 \| must-fix \| pass \| code \| a\.js:1 now \\\| fixed \| a\.js@[0-9a-f]{16} \| 2026-10-19 \|/);
+    assert.match(after[changed[0]], /^\| SEC-08 \| security \| 2 \| must-fix \| likely \| code \| a\.js:1 now \\\| fixed \| a\.js@[0-9a-f]{16} \| 2026-10-19 \|/);
     assert.deepEqual(parseLedger(formatLedger(l)).rows, l.rows);
   });
 
@@ -70,6 +70,14 @@ describe('parse and write', () => {
     assert.throws(() => parseLedger(SAMPLE.replace('| fail |', '| failed |')), /status "failed"/);
     assert.throws(() => parseLedger(SAMPLE.replace('| 2026-10-19 |  |', '| 2026-10-19 |')), /10 cells/);
     assert.throws(() => parseLedger(SAMPLE.replace('"stage": 2,', '"stage": 2')), /profile block/);
+  });
+
+  test('a blank line inside the table is an error naming the line, not rows silently dropped; an id appears once', () => {
+    const lines = SAMPLE.split('\n');
+    const at = lines.findIndex((l) => l.startsWith('| CMP-01'));
+    const gap = [...lines.slice(0, at), '', ...lines.slice(at)].join('\n');
+    assert.throws(() => parseLedger(gap), new RegExp(`line ${at + 2}: .*blank line at line ${at + 1}`));
+    assert.throws(() => parseLedger(SAMPLE.replace('| CMP-01 |', '| SEC-08 |')), /id SEC-08 appears twice/);
   });
 
   test('the bundled template parses and has no rows', () => {

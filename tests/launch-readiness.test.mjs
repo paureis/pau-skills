@@ -6,7 +6,7 @@ import { writeFileSync, readFileSync, mkdirSync, existsSync, renameSync, rmSync,
 import { join } from 'node:path';
 import { repo } from './helpers.mjs';
 import {
-  formatLedger, hashFile, refresh, readiness, findLedger, stamp, changedSince,
+  formatLedger, hashFile, refresh, readiness, findLedger, stamp, changedSince, setProfile,
 } from '../skills/verification/launch-readiness/ledger.mjs';
 import { NOW, day, SAMPLE, project, newLedger, put, row, git, commitAll, run } from './launch-readiness.helpers.mjs';
 
@@ -108,6 +108,33 @@ describe('refresh', () => {
   });
 });
 
+describe('profile changes', () => {
+  test('profile runs the n/a recheck first, so a new dependency is not hidden by the new baseline', () => {
+    const root = project({ 'package.json': '{}\n', 'a.js': 'x\n' });
+    const input = { profile: { stack: 'Node' }, stage: 2, files: ['package.json'] };
+    let l = put(newLedger(root, input), [row({ id: 'BIL-NA', area: 'billing', stage: 1, status: 'n/a', evidence: 'takes no money', files: [] }), row({ id: 'A' })], root);
+    writeFileSync(join(root, 'package.json'), '{"dependencies":{"stripe":"1"}}\n');
+    l = setProfile(l, input, { root });
+    assert.deepEqual(l.rows.map((r) => r.status), ['recheck', 'pass']);
+    assert.equal(refresh(l, { root, now: NOW }).profileChanged, false, 'the new hash is stored once the rows are sent back');
+  });
+
+  test('raising the stage sends can-wait and n/a rows back, and status says the new stage is not assessed', () => {
+    const root = project({ 'a.js': 'x\n' });
+    let l = put(newLedger(root, { profile: {}, stage: 2, files: [] }), [
+      row({ id: 'A', stage: 1 }), row({ id: 'B', stage: 2 }), row({ id: 'IDN-04', stage: 2, severity: 'can-wait', status: 'fail', evidence: 'no MFA' }),
+      row({ id: 'C', stage: 3, status: 'n/a', evidence: 'stage 2', files: [] }),
+    ], root);
+    l = stamp(l, { commit: 'abc', now: NOW });
+    assert.deepEqual(l.meta.assessed, { stage: 2, regulated: false });
+    const up = setProfile(l, { profile: {}, stage: 3, files: [] }, { root });
+    assert.deepEqual(up.rows.map((r) => r.status), ['pass', 'pass', 'recheck', 'recheck']);
+    const r = readiness(up.rows, { stage: 3, assessed: up.meta.assessed, now: NOW });
+    assert.equal(r.go, false);
+    assert.deepEqual(setProfile(l, { profile: {}, stage: 2, files: [] }, { root }).rows.map((x) => x.status), ['pass', 'pass', 'fail', 'n/a']);
+  });
+});
+
 describe('files changed since the last run that no row cites', () => {
   test('are listed, so a new route is looked at; cited files, manifests and the ledger are not', () => {
     const root = project({ 'package.json': '{}\n', 'src/a.js': 'a\n', 'src/c.js': 'c\n' });
@@ -137,6 +164,13 @@ describe('files changed since the last run that no row cites', () => {
     const r2 = refresh(stamp(newLedger(root), { commit: 'abc1234', now: NOW }), { root, now: NOW });
     assert.match(r2.uncitedNote, /abc1234/);
   });
+
+  test('open rows are listed on every refresh, including those that cite no file', () => {
+    const root = project({ 'a.js': 'x\n' });
+    const l = put(newLedger(root), [row({ id: 'DEL-01', status: 'fail', evidence: 'no CI config', files: [] }),
+      row({ id: 'U', status: 'unknown', evidence: 'ask', files: [] }), row({ id: 'P' })], root);
+    assert.deepEqual(refresh(l, { root, now: NOW }).open, ['DEL-01', 'U']);
+  });
 });
 
 describe('readiness', () => {
@@ -145,7 +179,7 @@ describe('readiness', () => {
   const rd = (list, o = {}) => readiness(list, { stage: 1, regulated: false, now: NOW, ...o });
 
   test('stages 1 to 3 stack: a must-fix row blocks its own stage and every later one', () => {
-    const r = rd(rows({ stage: 2, status: 'fail' }), { stage: 3 });
+    const r = rd(rows({ stage: 2, status: 'fail' }, { stage: 1 }, { stage: 3 }), { stage: 3 });
     assert.deepEqual(r.stages.map((s) => [s.stage, s.ready]), [[1, true], [2, false], [3, false]]);
     assert.equal(r.go, false);
     assert.deepEqual(r.blockers.map((b) => b.id), ['R0']);
@@ -167,14 +201,14 @@ describe('readiness', () => {
   });
 
   test('stage 4 adds its rows to the stage the app is at, here stage 2, without needing stage 3', () => {
-    const list = rows({ stage: 4, status: 'fail' }, { stage: 3, status: 'fail' }, { stage: 2 });
+    const list = rows({ stage: 4, status: 'fail' }, { stage: 3, status: 'fail' }, { stage: 2 }, { stage: 1 });
     const plain = rd(list, { stage: 2 });
     assert.equal(plain.go, true, 'stage 4 rows do not count when no regulated data is added');
     const reg = rd(list, { stage: 2, regulated: true });
     assert.equal(reg.go, false);
     assert.deepEqual(reg.blockers.map((b) => b.id), ['R0']);
     assert.equal(stageReady(reg, 1), false, 'regulated data counts at every stage');
-    const fixed = rd(rows({ stage: 4 }, { stage: 3, status: 'fail' }, { stage: 2 }), { stage: 2, regulated: true });
+    const fixed = rd(rows({ stage: 4 }, { stage: 3, status: 'fail' }, { stage: 2 }, { stage: 1 }), { stage: 2, regulated: true });
     assert.equal(fixed.go, true, 'stage 3 is not required for stage 2 with regulated data');
   });
 
@@ -182,6 +216,28 @@ describe('readiness', () => {
     const list = rows({ source: 'answer', expires: '2026-10-18' });
     assert.equal(rd(list).go, false);
     assert.equal(rd(list, { now: day('2026-10-18') }).go, true);
+  });
+
+  test('a stage with no rows graded for it, or above the assessed stage, is not assessed and never GO', () => {
+    const list = rows({ stage: 1 }, { stage: 2 }, { stage: 3 });
+    assert.deepEqual(rd(list, { stage: 3 }).stages.map((s) => s.ready), [true, true, true]);
+    const r = rd(list, { stage: 3, assessed: { stage: 2, regulated: false } });
+    assert.deepEqual(r.stages.map((s) => [s.ready, s.notAssessed]), [[true, []], [true, []], [false, [3]]]);
+    assert.equal(r.go, false);
+    assert.deepEqual(rd(rows({ stage: 1 }), { stage: 2 }).stages[1].notAssessed, [2]);
+    assert.deepEqual(rd(list, { stage: 1, regulated: true }).stages[0].notAssessed, [4], 'regulated data with no stage 4 rows');
+  });
+
+  test('a pass on an answer that expires today holds all day in local time', () => {
+    const tz = process.env.TZ;
+    process.env.TZ = 'America/Los_Angeles';
+    try {
+      const list = rows({ source: 'answer', expires: '2026-10-19' });
+      assert.equal(rd(list, { now: new Date('2026-10-20T03:00:00Z') }).go, true, '20:00 on the 19th in Los Angeles');
+      assert.equal(rd(list, { now: new Date('2026-10-20T08:00:00Z') }).go, false);
+    } finally {
+      if (tz === undefined) delete process.env.TZ; else process.env.TZ = tz;
+    }
   });
 
   test('counts every grade', () => {
@@ -230,6 +286,29 @@ describe('the command line', () => {
     assert.match(ledger(), /\| SEC-08 \|[^\n]*\| fail \|/, '--dry-run writes nothing');
     run(['refresh'], sub);
     assert.match(ledger(), /\| SEC-08 \|[^\n]*\| recheck \|/);
+  });
+
+  test('status says "not assessed" above the stamped stage; profile and refresh name the rows to look at again', () => {
+    const root = project({ 'a.js': 'x\n' });
+    commitAll(root);
+    const ok = (r) => { assert.equal(r.code, 0, r.err); return r; };
+    ok(run(['profile', '-'], root, JSON.stringify({ profile: {}, stage: 2, files: [] })));
+    ok(run(['apply', '-'], root, JSON.stringify([row({ id: 'A', stage: 1 }), row({ id: 'B' }), row({ id: 'C', severity: 'can-wait', status: 'fail', evidence: 'none', files: [] })])));
+    ok(run(['stamp'], root));
+    const st = ok(run(['status'], root)).out;
+    assert.match(st, /stage 2 \(paying customers\): GO/);
+    assert.match(st, /stage 3 \(enterprise buyers\): not assessed \(stage 3\)/);
+    assert.match(ok(run(['refresh'], root)).out, /open rows, grade them again: C/);
+    assert.match(ok(run(['profile', '-'], root, JSON.stringify({ profile: {}, stage: 3, files: [] }))).out, /stage raised from 2 to 3[^\n]*\n[^\n]*recheck: C/);
+  });
+
+  test('stamp in a repository with no commit says so plainly', () => {
+    const root = project({ 'a.js': 'x\n' });
+    git(root, 'init', '-q');
+    assert.equal(run(['profile', '-'], root, JSON.stringify({ profile: {}, stage: 1, files: [] })).code, 0);
+    const r = run(['stamp'], root);
+    assert.equal(r.code, 1);
+    assert.match(r.err, /no commit yet/);
   });
 
   test('a bad input exits 1 with the reason and leaves the ledger as it was', () => {
