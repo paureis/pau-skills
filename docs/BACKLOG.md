@@ -421,6 +421,17 @@ profile README in paureis/paureis. If any hook changed, bump pau-skills-hooks an
      nesting off). `eng-lead` still works at depth 1: it plans and briefs, and the main session starts the builders.
    - html-plan was not installed in the session that ran the batch, so its decisions went out as plain text.
 
+10. **Settled after the sixth batch (pull request 28)**, each as recommended except the last:
+   - A personal agent in `~/.claude/agents/` without the covenant stays a warning; the covenant is an error in the
+     project and for any roster file.
+   - `eng-lead` drops SendMessage: the main session sends the fix rounds. The roster goes to version 2.
+   - `check-agents.mjs` gives a validate command that works for a folder not named `.claude/agents`.
+   - The launch-readiness secret check keeps flagging long camelCase names with digits; evidence cites `file:line`.
+   - A probe that fails on purpose: the agent offers the framework's expected-failure form as the recommended answer
+     and leaving it failing as the other.
+   - The three problems found before the batch (verify-app's skipped report block and source wave, `to-prd` step 2
+     asking the user) are fixed in the same follow-up pull request, not filed as issues (the owner's choice).
+
 ## Context budget
 
 Facts (Claude Code documentation, skills page, checked 2026-10-17):
