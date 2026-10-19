@@ -30,7 +30,8 @@ Keep the user's work to a tap or a word. Every question in this skill offers ans
   one. When you recommend an answer, put it first and end its label with "(Recommended)".
 - **Without one** (a headless run, a background subagent, another client), write the same questions as text:
   numbered questions, lettered answers, the recommended answer first and marked "(Recommended)". End with one line
-  that says how to reply, for example "Reply ok to take the recommended answers, or type yours."
+  that says how to reply, for example "Reply ok to take the recommended answers, or type yours." Pick is the
+  exception: there the option list is the question (see Pick).
 
 **Blind.** If the user says "blind", in the question or at any point before Pick, show no picks and no reasons in
 Pick, and recommend nothing until the finalists are rated. Without "blind", show your picks: holding them back only
@@ -130,8 +131,9 @@ call of the question tool.
 Your picks are the options you would take forward: 3 to 5 in all, from at least two clusters, and at least one that
 is neither the Baseline nor Do nothing. Put each pick first in its cluster's question, with "(Recommended)" at the end
 of its label and a one-line reason (in the answer's description, or after it in text). Without a question tool, list
-the picks under the clusters, each with its reason, and end with: "Reply ok to take my picks, or type your own, for
-example: keep 3, 7; drop 1; combine 2 and 9." With "blind", ask the same questions with no picks marked.
+the options once, under their clusters, with your picks marked "(Recommended)" and a reason each; do not repeat
+them as lettered questions. End with: "Reply ok to take my picks, or type your own, for
+example: keep 3, 7; drop 1; combine 2 and 9." With "blind", mark no picks and give no reasons.
 
 Every option now has one status, and the summary uses the same words:
 - `kept`: the user picked it, or it was made from a combine the user asked for. It goes to Converge.
