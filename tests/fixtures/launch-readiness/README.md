@@ -16,7 +16,7 @@ stales one ledger row:
 | `src/cors.mjs` | `Access-Control-Allow-Origin: *` on every API route | CORS locked to known origins (SEC-08) |
 | `src/orders.mjs` | prices and totals are floats in dollars (`4.99 * 2`) | money as integer minor units (COR-01) |
 | `src/routes/login.mjs` | no rate limit or lockout on `POST /api/login` | rate limits on auth (SEC-05) |
-| `public/app.js` | `const PAYMENTS_KEY = "demo-payments-key"` in the page script | no secrets in client code (SEC-01) |
+| `public/config.js` | `const PAYMENTS_KEY = "demo-payments-key"`, loaded by the page and sent by `public/app.js` | no secrets in client code (SEC-01) |
 
 The run is expected to confirm the ownership gap with a probe: a test in the fixture's own `node --test` suite in
 which Bob asks for Alice's record `r1` and expects 403 or 404. It fails against the code as shipped.

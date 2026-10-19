@@ -10,7 +10,11 @@ import { listRecords, getRecord } from './routes/records.mjs';
 import { postOrder, getOrders } from './routes/orders.mjs';
 
 const PUBLIC = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
-const STATIC = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'] };
+const STATIC = {
+  '/': ['index.html', 'text/html'],
+  '/config.js': ['config.js', 'text/javascript'],
+  '/app.js': ['app.js', 'text/javascript'],
+};
 
 export function createApp(store = createStore()) {
   return async function handle(req, res) {

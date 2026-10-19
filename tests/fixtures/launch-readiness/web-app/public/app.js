@@ -1,5 +1,4 @@
-// The page script: sign in, list records, buy an add-on.
-const PAYMENTS_KEY = "demo-payments-key";
+// The page script: sign in, list records, buy an add-on. Settings come from config.js.
 
 const $ = (id) => document.getElementById(id);
 
