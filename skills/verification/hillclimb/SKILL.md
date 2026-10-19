@@ -58,8 +58,10 @@ Every number in the log is one line: `median=<number><unit> runs=<count> spread=
   smallest. The median and the spread use the same unit, or none.
 - Extra `key=value` pairs may follow, such as `errors=0 work=60000` from a harness that counts them.
 - Two numbers differ **beyond noise** when the gap between their medians is larger than the larger of the two
-  spreads. `decisions.mjs` writes the delta that way: `-0.5s -25.0% better, beyond noise` or
-  `+0.01s +0.8% within noise`.
+  spreads. `decisions.mjs` prints the delta that way: `-0.5s -25.0% better, beyond noise` or
+  `+0.01s +0.8% within noise`. In the file the delta has a single quote in front (`'-0.5s -25.0% better, beyond
+  noise`), as does any cell starting with `=`, `+`, `-` or `@`, so a spreadsheet that opens the log shows it as text
+  instead of running it as a formula. `summary` and every later `append` read the cell without the quote.
 
 The delta of every row is against the best kept so far: the best number among the latest baseline and the keeps
 after it. A keep needs a measurement with at least 3 runs (more is better; see step 3), passing tests, and a delta
