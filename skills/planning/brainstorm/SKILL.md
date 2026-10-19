@@ -152,7 +152,7 @@ again once.
    - Fewer than three kept: add the Baseline so there is always something to beat, or Do nothing when the Baseline
      is already a finalist. More than four: merge the closest, or drop the weakest with its reason.
    - No finalist reaches the great outcome from the frame: say so plainly and offer to bring back the dropped option
-     that came closest. The user decides.
+     that came closest, in place of the weakest finalist, so there are never more than four. The user decides.
 2. **Settle questions of fact, do not debate them.** A question of fact is one the world can answer: does the tool
    expose this, how slow is it, does this file already exist, what do callers do today. Settle each one that would
    change how a finalist rates or which one wins:
@@ -177,7 +177,7 @@ again once.
 
 4. **Premortem each finalist in one line.** "It is six months from now and this failed. Why?" The most likely cause,
    and the first sign that would show it early.
-5. **Ask for the choice** in one question: the finalists as its answers, your recommendation first with
+5. **Ask for the choice** in one question: the 3 or 4 finalists as its answers, your recommendation first with
    "(Recommended)" and its reason in a sentence. The choice is the user's.
 
 **Done when** the user has chosen a direction, or has said none of the finalists is good enough (then go back to
