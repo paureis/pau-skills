@@ -3,6 +3,20 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-19: after the sixth batch, the owner's decisions (decision 10)
+
+- `geppetto`: `eng-lead` drops SendMessage (the main session sends the fix rounds); the roster goes to version 2, so
+  run Update on installed copies. `check-agents.mjs`'s parse warning gives a validate command that works for a
+  folder not ending in `.claude/agents` (it validates a copy under a temporary `.claude/agents`).
+- `launch-readiness`: before writing probes that fail while their gap is open, it asks how they should run; the
+  framework's expected-failure form is the recommended first answer, a plain failing test the second.
+- `verify-app`: create mode's final message starts with the filled report block. Maintain mode's source wave runs
+  as subagents unless the map has at most two feature files or the session cannot start subagents, and the report
+  says which.
+- `to-prd`: step 2 no longer asks the user about modules and tests; the PRD lists them from the conversation, and
+  the message after saving names any choice the conversation did not settle.
+- Versions: agent-orchestration 0.10.1, planning 0.8.1, verification 0.11.1, pau-skills 0.14.1. No hook changed.
+
 ## 2026-10-19: the sixth batch (geppetto, launch-readiness, verify-app states, a lighter brainstorm, html-plan links)
 
 - `geppetto` (new, agent-orchestration, Original): designs, installs, audits and updates a project's agent files.

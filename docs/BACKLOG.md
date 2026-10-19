@@ -138,6 +138,10 @@ opens the pull request and does steps 8 to 10. The agents take the rest:
   `isolation: "worktree"` on the call, then each `reviewer`.
 - **Base commit.** A worktree agent branches from the remote's default branch, so every brief names the base commit
   and the builder starts from it; push the working branch before dispatch.
+- **Worktrees.** Do not make a worktree by hand for a `builder`: its `isolation: worktree` puts it in its own
+  harness worktree (`.claude/worktrees/agent-<id>`, branch `worktree-agent-<id>`, from the remote's default branch),
+  and the harness refuses git commands aimed at any other folder. Merge its branch, then delete it. In the follow-up
+  to pull request 28 a builder sent to a hand-made worktree worked in its own instead.
 - **Cold runs stay as they were**: headless `claude -p` with an empty HOME, run by a general-purpose agent, because
   they test what a skill does in a fresh session.
 - Record what worked and what did not under the batch's own "Things that bit" list, and change the roster through
@@ -287,7 +291,7 @@ builder, reviewer) and integrate their work.
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules, including step 2 and step 8's bump-listing command).
-2. docs/BACKLOG.md: the note at the top that every item is a starting point to review and improve, decisions 7 to 9,
+2. docs/BACKLOG.md: the note at the top that every item is a starting point to review and improve, decisions 7 to 10,
    "Policy since P0.5" under "Context budget", items Q1 and Q4 (all of each), "How to work an item", "How to run a
    batch" (all 10 steps, "With the roster", and every list of things that bit earlier batches) and "Order".
 3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, and the five agent
@@ -420,6 +424,17 @@ profile README in paureis/paureis. If any hook changed, bump pau-skills-hooks an
    - The owner sets `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` to 3 in the cloud environment (it was 1, which turns
      nesting off). `eng-lead` still works at depth 1: it plans and briefs, and the main session starts the builders.
    - html-plan was not installed in the session that ran the batch, so its decisions went out as plain text.
+
+10. **Settled after the sixth batch (pull request 28)**, each as recommended except the last:
+   - A personal agent in `~/.claude/agents/` without the covenant stays a warning; the covenant is an error in the
+     project and for any roster file.
+   - `eng-lead` drops SendMessage: the main session sends the fix rounds. The roster goes to version 2.
+   - `check-agents.mjs` gives a validate command that works for a folder not named `.claude/agents`.
+   - The launch-readiness secret check keeps flagging long camelCase names with digits; evidence cites `file:line`.
+   - A probe that fails on purpose: the agent offers the framework's expected-failure form as the recommended answer
+     and leaving it failing as the other.
+   - The three problems found before the batch (verify-app's skipped report block and source wave, `to-prd` step 2
+     asking the user) are fixed in the same follow-up pull request, not filed as issues (the owner's choice).
 
 ## Context budget
 
@@ -964,7 +979,7 @@ Asked for by the owner on 2026-10-19 and settled with `grill-me` in the same ses
     This narrows "The audit fails an agent without it".
   - The fix round is sent by the main session: an agent resumed with SendMessage runs in the background, and in the
     cold run `eng-lead` had to hand back before either builder's reply arrived. `eng-lead` returns one ready
-    fix-round message per builder instead. It keeps SendMessage in its tools, as settled.
+    fix-round message per builder instead. It kept SendMessage in its tools at first; decision 10 dropped it.
   - `eng-lead` starts no agent type other than `builder` and `reviewer` (an `Agent(type)` list is ignored in a
     subagent's file, so plain Agent could start general-purpose, which can push).
   - `builder` uses `git switch -c` and stops if the branch exists (`-C` reset a branch checked out in the main

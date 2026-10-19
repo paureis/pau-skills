@@ -133,7 +133,10 @@ skill changed is **Update**. If you cannot tell, ask which one, in one line.
    check and the overlap score's threshold. When `claude` is installed, also run `claude plugin validate .claude/agents`
    (and `claude plugin validate ~/.claude/agents` for the user scope). It reads the files with Claude Code's own
    parser: a parse error there is an error, since Claude Code skips that file, whatever the script said. The script
-   reports what it cannot parse as a warning and points at this command.
+   reports what it cannot parse as a warning and points at this command. Validate reads a folder of agents only at a
+   path ending in `.claude/agents`; any other folder (a `--dir` folder such as the bundled roster) fails with "No
+   manifest found". For such a folder, validate a copy, as the warning says: copy the folder to
+   `<a temporary folder>/.claude/agents` and run `claude plugin validate` on that path.
 2. Add what the script cannot judge, agent by agent, from the body. For a roster agent, first diff the installed
    copy against its bundled file and judge only the lines that differ: the bundled settings (such as `effort: xhigh`
    on eng-lead) are the design, not findings.

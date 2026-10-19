@@ -59,7 +59,7 @@ Scope: [files changed outside the contract, uncommitted changes, or "clean"]
 Tree left as found: [git status --short before and after]   Scratch folder: [path, removed]
 ```
 
-<!-- covenant start: geppetto roster 1 -->
+<!-- covenant start: geppetto roster 2 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.

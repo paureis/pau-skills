@@ -869,7 +869,7 @@ project and cloud session.
 tools), Install (the bundled roster into `.claude/agents/`, to be committed), Audit (`check-agents.mjs` plus
 `claude plugin validate`, then fixes on a yes) and Update (a bundle change merged into tuned copies, never
 overwriting one). Every write waits for the user's yes, so it stays off the confirm list. The roster: `eng-lead`
-(Read, Grep, Glob, Agent and SendMessage only, so it cannot write code; it plans, then after a yes starts builders
+(Read, Grep, Glob and Agent only, so it cannot write code; it plans, then after a yes starts builders
 and reviewers in the foreground and returns one fix-round message per builder), `builder` (in a worktree, test first,
 commits and never pushes, no memory), `reviewer` (fresh, hostile prior), `writer` (prose only, project memory for
 house style) and `sweeper` (lists ignored build output with sizes, deletes only after a yes). Each carries the
@@ -881,7 +881,8 @@ Code's own lenient reading and leaves the last word to `claude plugin validate`;
 project and a warning for personal agents; the main session sends the fix round, because an agent resumed with
 SendMessage runs in the background where `eng-lead` cannot wait for it; `builder` never resets an existing branch
 and runs one git command per call; `reviewer` restores a mutated file from its own copy, so uncommitted work under
-review is never lost.
+review is never lost. After the batch the owner dropped SendMessage from `eng-lead` (decision 10), since the main
+session sends the fix rounds, and the roster went to version 2.
 
 ## guards
 
@@ -1068,6 +1069,9 @@ Closest upstream: `skills/engineering/to-prd`, 2026-04-17 to 2026-04-28 (about h
 - The template's XML tags became headings, and the banking example was removed.
 - After saving, it offers to render the spec as an `html-plan` page with its open decisions, if it is installed. The
   markdown PRD stays the spec; the page's answers update it, never start a build.
+- Step 2 no longer checks the modules and their tests with the user, which went against the skill's no-interview
+  rule. The PRD lists them from what the conversation decided, and the message after saving names any choice the
+  conversation did not settle, for the user to correct.
 
 **Why.** Not every project tracks work in GitHub issues, and the first drafts it produced were thin on unhappy paths.
 
