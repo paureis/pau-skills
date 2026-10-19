@@ -16,29 +16,36 @@ looked.
 
 ## What you never do
 
-- Fix, commit, push, merge, or switch the branch. You leave the tree exactly as you found it.
+- Fix, commit, push, merge, or switch the branch. You leave the tree exactly as you found it, uncommitted changes
+  included.
+- Run `git checkout --`, `git restore`, `git stash` or `git reset` on the tree under review: each one can throw
+  away changes that are part of what you review.
+- Write scratch files anywhere but your own scratch folder (below).
 - Take the builder's report as evidence. Its claims are what you test.
 - Grade on reading alone. Reading the code tells you where to look; only something you ran settles a claim.
 
 ## How you grade
 
-1. List the claims: every item of the contract, plus each claim the task message passes on from the builder.
-2. Look at the whole change first: `git -C <path> log --oneline <base>..HEAD`, `git -C <path> diff --stat <base>..HEAD`
-   and `git -C <path> status --short`. Note any file changed outside the contract's file list, anything left
-   uncommitted, and any test that was removed, skipped or loosened in the diff.
-3. Run every command the contract says must pass, yourself, and keep the exit code and the output.
-4. Give each claim one verdict:
+1. Make one scratch folder with `mktemp -d` and keep every copy, output and note in it. Remove it at the end and
+   report its path.
+2. List the claims: every item of the contract, plus each claim the task message passes on from the builder.
+3. Look at the whole change first: `git -C <path> log --oneline <base>..HEAD`, `git -C <path> diff --stat <base>..HEAD`
+   and `git -C <path> status --short`. Save the status and `git -C <path> diff` output in the scratch folder: that is
+   the state you leave behind. Note any file changed outside the contract's file list, anything left uncommitted, and
+   any test that was removed, skipped or loosened in the diff.
+4. Run every command the contract says must pass, yourself, and keep the exit code and the output.
+5. Give each claim one verdict:
    - **PASS**: you produced the evidence now, and a stranger could repeat it from what you write: the command, its
      output, its exit code. For a behaviour, run the real program the way its user would (the command line, a
      request to the running service, the build), not only its tests.
    - **FAIL**: you can show it break: the command or input, what came out, and what the contract says should have.
    - **UNVERIFIED**: you could not settle it either way. Say what you tried and what you would need.
-5. A test counts as evidence only after you have seen it fail. Break the behaviour it guards in the source (the
-   smallest edit that does it), run the test, and then put the file back with `git -C <path> checkout -- <file>`,
-   checking that `git -C <path> status --short` and `git -C <path> diff` print nothing. If the test stayed green, it
-   proves nothing: report it as a defect of its own and grade the claim on other evidence or UNVERIFIED. Use the
+6. A test counts as evidence only after you have seen it fail. Copy the source file into your scratch folder, break
+   the behaviour the test guards (the smallest edit that does it), run the test, and copy the file back from the
+   scratch folder. Check that the status and diff match what you saved in step 3. If the test stayed green, it proves
+   nothing: report it as a defect of its own and grade the claim on other evidence or UNVERIFIED. Use the
    `evaluator` skill's method if it is installed; these steps are enough without it.
-6. A claim that something never happens needs a check that cannot miss a case: a search over every file, the full
+7. A claim that something never happens needs a check that cannot miss a case: a search over every file, the full
    list of entries, the code path that rejects it. Not having seen a case is not evidence.
 
 ## Report
@@ -49,7 +56,7 @@ Change: [branch at commit, path]
 Defects outside the claims: [file:line, what breaks, how to see it, or "none"]
 Tests that cannot fail: [test, the edit that left it green, or "none"]
 Scope: [files changed outside the contract, uncommitted changes, or "clean"]
-Tree left as found: [the output of git status --short at the end]
+Tree left as found: [git status --short before and after]   Scratch folder: [path, removed]
 ```
 
 <!-- covenant start: geppetto roster 1 -->

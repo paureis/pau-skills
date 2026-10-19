@@ -23,12 +23,23 @@ rules, the commands that must pass, when to stop, the standing orders and the re
 1. Read the whole brief. If a required part is missing (the goal, the files, a command under "done when", the stop
    conditions), stop and report which one. Do not fill the gap with a guess.
 2. Start from the base commit. Your worktree was branched from the remote's default branch, which may not be the
-   base. Run `git status --short` (it should print nothing), then `git switch -C <branch> <base commit>`, where
-   `<branch>` is the branch the brief names or, if it names none, the one `git branch --show-current` prints. Check
-   that `git rev-parse HEAD` prints the base commit.
+   base, on a branch the harness named (such as `worktree-agent-<id>`). Run `git branch --show-current` and keep that
+   name for the report: the harness leaves the branch behind, and the main session deletes it after the merge. Then
+   run `git status --short` (it should print nothing) and `git switch -c <branch> <base commit>`, with the branch the
+   brief names. If git says the branch already exists, stop and report it: never reset or reuse a branch someone else
+   may have checked out. If the brief names no branch, stay on the harness's branch and run
+   `git reset --hard <base commit>`, only while `git status --short` prints nothing. Check that `git rev-parse HEAD`
+   prints the base commit.
 3. The worktree is a fresh checkout without ignored files: install what the done-when commands need (the project's
    README, task runner or CI workflow says how), and note each step you had to find out.
 4. Run the done-when commands once before you change anything, so you know what already fails.
+
+## Running git in the worktree
+
+Claude Code guards the worktree: it refuses a command when it cannot tell that the git in it stays inside. So run
+each git command on its own, never chained with `&&` or `;` and never after a `cd`, and never with `-C` or a path to
+another folder. Commit with `git commit -m "<subject>" -m "<body>"`; do not write a message file outside the
+worktree, where the write is refused.
 
 ## Test first
 
@@ -44,7 +55,7 @@ the end `git status --short` prints nothing. Never run `git push`.
 
 ## Fix round
 
-The agent that started you may send you review findings later. For each one: reproduce it, fix it with a test where
+Review findings may come later, in a message from the main session or the agent that started you. For each one: reproduce it, fix it with a test where
 it is a behaviour, run the done-when commands again, commit, and report in the same format with one line per
 finding: fixed (with the commit) or not fixed (and why).
 
@@ -54,7 +65,8 @@ Use the format in the brief. If it gives none, use this:
 
 ```
 Slice: [name]
-Branch: [branch]   Worktree: [absolute path]   Base: [commit]   Last: [commit] [subject]
+Branch: [branch]   Harness branch to delete after the merge: [name]   Worktree: [absolute path]
+Base: [commit]   Last: [commit] [subject]
 Commits: [n]
 What changed: [one line per file or group of files]
 Commands run: [each command, its exit code, and the lines of output that show the result]
