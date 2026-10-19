@@ -27,6 +27,8 @@ In this order:
   `command` row with an expiry of 90 days.
 - A probe that fails for another reason (the app did not start, the seed user is missing) proves nothing: fix the
   probe, do not grade from it.
+- A missing feature (no sign-out, no reset) is a `fail` row from the code, not a probe. Never write a test that
+  fails on purpose.
 
 ## Shapes by stack
 

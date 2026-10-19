@@ -108,7 +108,8 @@ check and grade it:
 - `n/a`: with the profile reason.
 - `recheck`: set by the ledger when the evidence changed; grade it again.
 
-Cite only the files that prove the row, so editing one file sends one row back to recheck. For package
+Cite only the files that prove the row, so editing one file sends one row back to recheck. An `answer` row and
+an `n/a` row cite no files: the expiry and the profile recheck bring them back. For package
 vulnerabilities (SEC-13), use `dependency-security-audit` if it is installed; otherwise run the ecosystem's audit
 command. For pending migrations, use `migration-review` if it is installed; otherwise check locks and data loss by
 hand. Claude Code's built-in `/security-review` covers only the current branch's changes, not the whole app, so it
