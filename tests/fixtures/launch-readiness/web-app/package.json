@@ -1,0 +1,14 @@
+{
+  "name": "notes-shop",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "A small notes and orders app: users sign in, keep records and place orders.",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
