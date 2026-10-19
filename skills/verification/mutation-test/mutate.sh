@@ -160,14 +160,15 @@ if [ "$control" -ne 0 ]; then
 fi
 
 content_hash() { tr -d '\r' < "$1" | git hash-object --stdin; }
-# Puts the committed content of <file> back. When git checkout skipped the file (its size and time match the index),
-# the file is deleted and checked out again: git always writes a missing file from the index, through any filter and
-# line-ending conversion, with the index's mode. Only after a checkout that worked (see step 5).
+# Puts the committed content of <file> back and fails unless the file then holds it BY CONTENT. When git checkout
+# skipped the file (its size and time match the index), the file is deleted and checked out again: git always writes a
+# missing file from the index, through any filter and line-ending conversion, with the index's mode. Only after a
+# checkout that worked (see step 5).
 restore() {
   git checkout -- "$file" || return 1
   matches "$start_blob" && return 0
-  if [ ! -d "$file" ] || [ -L "$file" ]; then rm -f -- "$file" || return 1; fi
-  git checkout -- "$file"
+  if [ ! -d "$file" ] || [ -L "$file" ]; then rm -f -- "$file"; fi
+  git checkout -- "$file" && matches "$start_blob"
 }
 # $1 is set on the restores before the command ran: the file may hold no edit at all.
 restore_failed() {
@@ -221,15 +222,16 @@ code=$?
 # Kept for the verdicts that need them read before believing them: SURVIVED, and BROKE in refactor mode.
 verdict_lines="$(changed_lines)"
 
-restore || restore_failed
 end_head="$(git rev-parse -q --verify HEAD)"
 if [ "$end_head" != "$start_head" ] || [ "$(git rev-parse -q --verify ":$file")" != "$start_blob" ]; then
-  echo "${tag}ERROR: the command changed what git holds for $file (it staged or committed it, so the restore wrote that back; HEAD was $start_head, now ${end_head:-none}). To get the starting content back: rm -f -- $q && git checkout $start_head -- $q (and see git log --oneline $start_head..HEAD for any commit the command made)." >&2
+  echo "${tag}ERROR: the command changed what git holds for $file (it staged or committed it, so a restore would write that back; HEAD was $start_head, now ${end_head:-none}). To get the starting content back: rm -f -- $q && git checkout $start_head -- $q (and see git log --oneline $start_head..HEAD for any commit the command made)." >&2
   git status --short -- "$file" >&2
   exit 2
 fi
-# By content against the blob <file> held at the start; git diff and git status also catch a mode change.
-if ! matches "$start_blob" || ! git diff --quiet -- "$file" || [ -n "$(git status --porcelain -- "$file")" ]; then
+# restore checks the content against the blob <file> held at the start; git diff and git status also catch a mode
+# change.
+restore || restore_failed
+if ! git diff --quiet -- "$file" || [ -n "$(git status --porcelain -- "$file")" ]; then
   restore_failed
 fi
 echo "=== ${tag}RESTORED $file (same content as committed, no diff, no status)."
