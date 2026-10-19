@@ -352,14 +352,17 @@ test('a restore that leaves the mutant in place behind matching stat data exits 
   }
 });
 
-test('a tracked symlink mutated with sed restores as clean', { skip: process.platform === 'win32' ? 'symlinks need extra rights on Windows' : false }, () => {
+test('a tracked symlink mutated by a patch restores as clean', { skip: process.platform === 'win32' ? 'symlinks need extra rights on Windows' : false }, () => {
   const { dir, env, sgit } = pastTimeRepo('', { file: 'real.js' });
   symlinkSync('real.js', join(dir, 'link.js'));
-  // sed replaces the link with a regular file holding the mutant, so the check reads through the link.
+  writeFileSync(join(dir, 'mutant.js'), 'export const v = 2;\n');
+  // The patch points the link at the mutant, so the check reads through the link. A patch, not sed: BSD sed on macOS
+  // refuses to edit a symlink in place, and GNU sed replaces it with a regular file.
   writeFileSync(join(dir, 'touch.mjs'), "import { readFileSync } from 'node:fs';\nprocess.exit(readFileSync('link.js', 'utf8').includes('v = 1') ? 0 : 1);\n");
-  sgit('add', 'link.js', 'touch.mjs');
+  sgit('add', 'link.js', 'mutant.js', 'touch.mjs');
   sgit('commit', '-q', '-m', 'link');
-  const r = harness(['--sed', 's/v = 1/v = 2/', 'link.js', process.execPath, 'touch.mjs'], '', { env, cwd: dir });
+  const patch = 'diff --git a/link.js b/link.js\n--- a/link.js\n+++ b/link.js\n@@ -1 +1 @@\n-real.js\n\\ No newline at end of file\n+mutant.js\n\\ No newline at end of file\n';
+  const r = harness(['link.js', process.execPath, 'touch.mjs'], patch, { env, cwd: dir });
   assert.equal(r.code, 0, r.out);
   assert.match(r.out, /RESTORED link\.js[\s\S]*RESULT: CAUGHT/);
   assert.equal(readlinkSync(join(dir, 'link.js')), 'real.js');
