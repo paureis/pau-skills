@@ -45,7 +45,9 @@ makes the user ask for them.
 2. **Ask at most three questions, all at once**, and only ones whose answer changes which ideas are worth having.
    The usual three: the goal behind the ask (what the user needs once this works), which constraints are hard, and
    what a great outcome would look like (headers "Goal", "Hard limits" and "Outcome"). Give each 2 to 4 proposed
-   answers drawn from what you read, and mark none as recommended: the frame is the user's. Skip any the user has already answered; with none left, go to step 3.
+   answers drawn from what you read, and mark none as recommended: the frame is the user's. Skip any the user has
+   already answered; with none left, go to step 3. Send the questions alone and wait for the answers: the frame
+   comes after them, never as a draft beside the questions.
 3. **Sort the constraints.** A hard constraint is one the user confirmed, or that the code, a contract or the
    platform enforces. Everything else is assumed: inherited from the first idea, from habit, or from a guess.
    A check in the code that is itself what the question is about is assumed, not hard: when the question is how to
@@ -54,9 +56,10 @@ makes the user ask for them.
    that does not serve the goal goes, and one that would serve it is worth adding even if nobody asked for it.
 4. **Park the user's own idea.** If they came with one, write it down as a candidate. It goes into Diverge like any
    other option and is never the default.
-5. **Show the frame in five short lines**, with the goal restated in your own words (a restatement that surprises
-   the user is the most useful thing this phase can produce), and ask one question: is it right? Offer "Looks right"
-   and "Change it".
+5. **Once the answers are in, show the frame in five short lines**, built from them, with the goal restated in
+   your own words (a restatement that surprises the user is the most useful thing this phase can produce). In the
+   same message, ask one question: is it right? Offer "Looks right" and "Change it", and wait for the answer before
+   Diverge.
 
 ```
 Goal: <one sentence, in your words>
