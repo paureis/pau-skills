@@ -226,17 +226,64 @@ and the mutate.sh restore):
 
 ## Kickoff for the next session
 
-Every planned item is done (see "Order"). The next session starts from new work: the owner will describe new ideas,
-and Q1 below is already waiting. The owner starts it with a message like this one:
+The owner's new ideas are written up as section Q (Q1 to Q9, shaped on 2026-10-19). The next session runs batch 6:
+Q2, Q5 with Q9, Q6 and Q7. The owner starts it with this message:
 
 ```text
-Read CLAUDE.md, docs/ADDING-A-SKILL.md and docs/BACKLOG.md first (decisions 1 to 8, "How to work an item", "How to
-run a batch" with every list of things that bit earlier batches, and "Order"). Every item from the pstack review is
-done. I will describe some new ideas. For each one, help me shape it (offer brainstorm to widen it or grill-me to
-settle it, if they are installed), then write it into docs/BACKLOG.md as a work item in a new section, in the form
-the existing items use, with its upstream or origin, what it does and what done means. Q1, a test-value audit, is
-already there. When the items are written, propose how to group them into a batch and write the kickoff for it,
-the way the fifth batch's kickoff below was written. Do not build anything until I say so.
+You are the orchestrator for the sixth batch of work in this repository: Q2 geppetto and the agent roster, Q5
+html-plan with Q9 a lighter brainstorm, Q6 launch-readiness, and Q7 UI states in verify-app. Do not build the skills
+yourself; run builder subagents and integrate their work.
+
+Before anything else, read these in full:
+1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules, including step 2 and step 8's bump-listing command).
+2. docs/BACKLOG.md, especially the note at the top that every item is a starting point to review and improve,
+   decisions 7 and 8, "Policy since P0.5" under "Context budget", items Q2, Q5, Q6, Q7 and Q9 (all of each), "How to
+   work an item", "How to run a batch" (all 10 steps and every list of things that bit earlier batches) and "Order".
+3. skills/agent-orchestration/lean-subagent-dev/SKILL.md and its BRIEF-TEMPLATE.md and TRIAGE.md. Work that way for
+   the whole session. The usage budget is generous: same model for every subagent, a read-only plan check of every
+   brief before any builder starts, a fresh reviewer per item, and a cold run (headless, empty HOME) for every item,
+   since each one changes how a skill behaves when it runs.
+
+First, before any brief, two things:
+- The description budget. All descriptions total about 12,278 of the 13,000 characters tests/context-budget.test.mjs
+  allows. Q2 and Q6 each add a skill (about 350 characters each), Q7 may add a trigger to verify-app, and Q9 may
+  reword brainstorm's. Measure, then ask me to choose: raise MAX_TOTAL again, or trim existing descriptions, and say
+  which you recommend.
+- Review the four items against the code and the current Claude Code docs (code.claude.com, sub-agents and
+  plugins-reference). They came out of one planning session; tell me anything you would change before the briefs go
+  out, and record what changed and why in the items.
+
+The batch, one builder each, each in its own git worktree, with disjoint files:
+- Q2 geppetto (new skill in agent-orchestration, with check-agents.mjs and its tests, the bundled roster and
+  COVENANT.md). It also installs the roster into this repository's .claude/agents/. Settle in the plan check that it
+  stays off CONFIRM_LIST.
+- Q5 with Q9 as one builder: the html-plan links in architect, to-prd and grill-me, the lighter brainstorm, and the
+  grill-me question-tool line. You build html-plan.zip from upstream at a pinned commit and give it to me to upload.
+- Q6 launch-readiness (new skill in verification, with ledger.mjs, its tests and the area files, and two fixtures: a
+  small web app with seeded gaps and a small CLI tool).
+- Q7 the States heading and the skeleton recipe in verify-app, with check-map.mjs and its tests.
+You own README (skill badge 36 to 38, and html-plan under "I also use, unmodified"), CHANGELOG, marketplace.json
+versions, NOTICE, ORIGINS, which-skill, tests/standalone.test.mjs, the confirm-list test, "How to run a batch" and
+docs/BACKLOG.md.
+
+Rules that matter most:
+- Every skill works on its own; no em or en dashes; plain English; Node standard library only.
+- Descriptions stay at most 400 characters each and within the total you and I settle, with no angle-bracket tag;
+  quote only phrases that ask for the work.
+- Subagents can now start subagents up to three layers deep (checked on 2.1.303); a cold run of eng-lead may need
+  that, so check the depth setting in its headless environment.
+- To read the Q2 sources again, the cloud environment needs creatoreconomy.so, x.ai, docs.x.ai and x.com allowed.
+- Builders commit and never push. You push the working branch and open the PR. Never merge it yourself unless I say
+  so.
+- Watch CI on macOS as well as Linux, and the validate job.
+
+When the PR is open, tell me in plain words what changed, what the reviews and cold runs found, and anything I need
+to decide; if html-plan is installed by then, give me the decisions as an html-plan page published as a private
+artifact. After I merge it, run `node scripts/pack-skills.mjs --since <main before the batch>` on main and send me
+the changed skills' zips together in one bundle zip (a folder of per-skill zips plus HOW-TO-UPLOAD.txt, with
+html-plan.zip in it), say which replace a skill I have and which are new, mark the items done in docs/BACKLOG.md,
+update "How to run a batch" so batch 7 uses eng-lead, builder and reviewer, and update the skill count on my profile
+README in paureis/paureis. If any hook changed, bump pau-skills-hooks and give me the update commands.
 ```
 
 ### The fifth batch's kickoff, as a template
@@ -1041,6 +1088,33 @@ widened with `brainstorm` (18 options, two rounds of marks, direction D of four 
   screenshots are kept; `check-map.mjs` requires the States heading and says what is missing, with tests a mutation
   can break; existing fixture maps pass after a maintain run; the four repository checks pass.
 
+**Q9 a lighter brainstorm** (`todo`, planning; changes `brainstorm` and one line of `grill-me`). Asked for by the
+owner on 2026-10-19 after using `brainstorm` on Q6.
+- What went wrong in that session: the skill held its recommendations back until the shortlist, and the owner asked
+  for them twice and then took them as given, so holding back added two round trips and changed nothing. Typed marks
+  ("keep 1, 6, 8; kill 7, 18; combine 12 and 13") were fiddly, while the tap-to-answer questions of `grill-me` were
+  easy. Two marking rounds, eight status words (`not taken up`, `merged into`, `brought back`, `not shortlisted`) and
+  lens tags on every option made the output a wall of text. What worked: the lenses produced options nobody had in
+  mind (Q8 came from "delete the problem"), and the finalist table with one-line premortems made the choice clear.
+- Changes:
+  1. Frame: at most three questions, asked with the session's question tool (AskUserQuestion in Claude Code) when it
+     has one; the frame shown in five short lines.
+  2. Diverge: the lenses stay but are used internally. Show 8 to 12 options, grouped into 3 or 4 clusters, one line
+     each, with no lens tags.
+  3. Pick: one multiple-choice question per cluster, with the agent's picks labelled "(Recommended)" and a one-line
+     reason each, shown after the whole list. The question tool fits four clusters of up to four options in one call.
+     Without a question tool, fall back to typed marks. If the user says "blind", hold the picks back.
+  4. One round: ideas that strengthen the picks are folded into the finalists, not shown as a second marking round.
+  5. Converge: keep the finalist table (value, effort, risk, reversibility, never summed) and the one-line
+     premortems; the choice is a question with the recommendation first.
+  6. Summary: the question, the chosen direction and why, what it gives up, the runner-up, and open questions.
+     Statuses shrink to kept, dropped and chosen.
+  7. `grill-me`: say to ask each question with the session's question tool when it has one, recommended answer first.
+- Done when: a blind `skill-eval` (if it is installed; otherwise two headless runs read side by side) on the same
+  question, old against new, shows fewer user turns and less user typing to reach a decision, with at least one
+  option from a non-baseline lens still reaching the finalists; the descriptions stay within budget; the four
+  repository checks pass.
+
 **Q8 production rules from day one** (`todo`, after Q6; touches `project-setup`, `geppetto` from Q2 and `rule-to-hook`).
 Kept in Q6's brainstorm as a separate item.
 - What it does: prevent the common gaps instead of finding them later. `project-setup` offers a short set of
@@ -1066,7 +1140,11 @@ Kept in Q6's brainstorm as a separate item.
    hillclimb log guard and the mutate.sh restore by content.
 8. **Next:** the items in section Q: Q1 test-value audit, Q2 `geppetto` and the agent roster, Q3 designer agent
    (after Q2), Q4 file-size guard (after Q1), Q5 html-plan, Q6 `launch-readiness`, Q7 UI states in `verify-app`, Q8
-   production rules from day one (after Q6), and any further ideas the owner adds there.
+   production rules from day one (after Q6), Q9 a lighter brainstorm. Planned batches:
+   - Batch 6: Q2, Q5 with Q9 (one builder, both edit planning skills), Q6, Q7. Kickoff below.
+   - Batch 7: Q1, then Q4, one after the other: Q1 needs the owner's yes on which tests go, and Q4 touches nearly
+     every big file, so nothing runs beside it.
+   - Batch 8: Q3 and Q8, the first batch run with the Q2 roster.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
 
