@@ -127,6 +127,8 @@ context was compacted.
   behind a characterization test when you ask.
 - `architect` sketches the types and signatures in two different shapes before any code is written, and builds
   against the one that survives the red flags.
+- `engineering-principles` gives a name to each rule a design or code decision is made by ("apply build the lever"),
+  so one phrase steers the work and every citation says which decision it changed.
 
 ### 6. Several agents in one repository
 
@@ -307,6 +309,10 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   revert commits, this project's transcripts and instruction files for the mistakes agents repeat, and proposes a fix
   for each at the highest layer (architecture, types, lint, test, prose), proven on a past instance; `mine.mjs` does
   the read-only mining, with redaction. Writes nothing without your yes.
+- **[engineering-principles](skills/planning/engineering-principles/SKILL.md)** (adapted): An index of eleven named
+  engineering principles (build the lever, model the domain, subtract before you add and more), each with when it
+  applies, its rule and the sign you skipped it, and a reference file with the detail; steer with a name, and a
+  citation must name the decision it changed.
 
 [docs/ORIGINS.md](docs/ORIGINS.md) records, for every piece, the problem that led to it and, for each adapted skill,
 the upstream version it was compared against and what this version changes, taken from a diff.

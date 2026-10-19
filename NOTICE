@@ -79,6 +79,11 @@ docs/ORIGINS.md lists, for each one, what this version changes.
   skills/guards/rule-to-hook/SKILL.md
   skills/planning/improve-codebase-architecture/SKILL.md
   skills/planning/improve-codebase-architecture/EXECUTION.md
+  skills/planning/engineering-principles/SKILL.md
+  skills/planning/engineering-principles/PRINCIPLES.md
+
+engineering-principles also restores text from earlier commits of the same
+repository (e5136d8, ea32d95 and d73344b), under the same license.
 
 Those files are distributed under the upstream license, reproduced here:
 

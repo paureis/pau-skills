@@ -68,4 +68,6 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/session-discipline/retrospective/audit.mjs" -
 
 `${CLAUDE_PLUGIN_ROOT}` is substituted inside the plugin's skills; from a terminal, use the plugin's install path.
 Run from the project root. It reads `~/.claude/CLAUDE.md`, `./CLAUDE.md`, the project's memory directory under
-`~/.claude/projects/`, and every `SKILL.md` under `~/.claude/skills` and `./.claude/skills`.
+`~/.claude/projects/`, every `SKILL.md` under `~/.claude/skills` and `./.claude/skills`, and, for `--check` only,
+the skills synced from claude.ai under `~/.claude/skills/synced/<id>/<name>/`, printed with their path. `--check` gives
+a CLAUDE.md bullet of 12 or fewer content words a word score, a candidate to confirm by reading the bullet.
