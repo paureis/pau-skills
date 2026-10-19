@@ -9,7 +9,7 @@
     {
       "name": "pau-skills",
       "description": "Everything in this marketplace as one plugin: every skill and every hook from session-discipline, verification, agent-orchestration, guards and planning. Install this or the individual plugins, not both.",
-      "version": "0.13.0",
+      "version": "0.14.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -316,7 +316,7 @@
     {
       "name": "session-discipline",
       "description": "Start every session from the written roadmap and the git state, keep the facts a compaction loses, and close in a fixed order: retrospective, roadmap and log, handoff, commit. Plus an instruction-file audit, a guided project setup for new users, and a router over every skill.",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -381,7 +381,7 @@
     {
       "name": "verification",
       "description": "Prove work is correct: a mutation harness that also checks a pure refactor keeps a test green, a hostile evaluator, test-driven development, flaky-test diagnosis, database migration review, a CI cost method, review triage that decides which findings are worth fixing, bug fixing from runtime evidence, a generated skill that proves changes in the running app, metric hill climbing on a harness proven sensitive, blind checks of whether a skill change changes behaviour, and hooks that stop tests being weakened and \"done\" being claimed without a check.",
-      "version": "0.10.1",
+      "version": "0.11.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -439,7 +439,7 @@
     {
       "name": "agent-orchestration",
       "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, a codebase oracle that grades the evidence for every answer, parallel work in separate git worktrees, a lean one-subagent-at-a-time way of working that adjusts to your usage budget, and an arena where a blind judge helps pick among several attempts.",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -558,7 +558,7 @@
     {
       "name": "planning",
       "description": "Turn an idea into decided, sliced work: a brainstorm that widens the options first, a task restated before it starts, a relentless design interview, PRD synthesis, vertical-slice issues, architecture deepening, design sketches compared before any code is written, and an audit of the mistakes agents repeat in a project, with a fix for each at the highest layer. Adapted from mattpocock/skills, and architect, sharpen and agent-friendly-audit from pstack.",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"

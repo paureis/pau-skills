@@ -4,7 +4,7 @@ Skills: `methodology` (the method document, two adoption prompts and templates),
 `TIERS.md` and the explorer and explainer briefs),
 `parallel-worktrees` (with `worktrees.mjs`), `lean-subagent-dev` (with a brief template, `TRIAGE.md` and
 `review-scope.mjs`, identical copies of the ones in `review-triage`), `arena` (with `arena.mjs` and the candidate
-and judge briefs). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
+and judge briefs), `geppetto` (with `COVENANT.md`, `check-agents.mjs` and the five agents under `roster/`). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
 [hooks/README.md](../../hooks/README.md)).
 
 ## lean-subagent-dev configuration
@@ -54,3 +54,12 @@ To turn the hook off, disable the plugin.
 The PreToolUse path returns the complete tool input with only `prompt` changed, because Claude Code validates
 `updatedInput` as a complete input. If another hook also rewrites `Agent` launches, hooks run in parallel and the last
 one to resolve wins.
+
+## geppetto: the roster
+
+Install copies `roster/*.md` into the project's `.claude/agents/`, where it is committed so the agents work in cloud
+sessions and on every computer, and adds `.claude/worktrees/` to `.gitignore`. `eng-lead` plans, and after a yes
+starts the builders and reviewers; it then returns one fix-round message per builder, and the main session sends
+them and merges. Audit with `node check-agents.mjs --project <root> [--user <dir>] [--dir <folder>] [--json]`; it
+exits 1 on errors. A missing covenant is an error in the project and a warning for personal agents in the user
+scope. The overlap warning fires at a word-set score of 0.5.

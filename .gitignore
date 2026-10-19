@@ -1,2 +1,5 @@
 # Zips from scripts/pack-skills.mjs, built for upload to claude.ai and never committed.
 /dist/
+
+# Worktrees that Claude Code makes for agents with isolation: worktree (the builder agent). Never committed.
+.claude/worktrees/

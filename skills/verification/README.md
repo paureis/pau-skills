@@ -3,8 +3,9 @@
 Skills: `tdd`, `mutation-test` (with `mutate.sh`), `evaluator`, `flaky-test-hunt` (with `repeat.mjs`),
 `migration-review`, `ci-cost-and-cadence` (with `measure-minutes.mjs`), `review-triage` (with `TRIAGE.md` and
 `review-scope.mjs`), `bug-fix` (with `EVIDENCE.md`), `verify-app` (with `check-map.mjs`, `DRIVING.md`, `MAINTAIN.md`
-and templates), `hillclimb` (with `decisions.mjs` and `BENCHMARK-CHECKLIST.md`), `skill-eval` (with `skill-eval.mjs`
-and `JUDGE-BRIEF.md`). Hooks: `test-tamper-guard`, `suppression-reason` and `verify-before-done`.
+and templates, `templates/measure-boxes.js` among them), `hillclimb` (with `decisions.mjs` and `BENCHMARK-CHECKLIST.md`), `skill-eval` (with `skill-eval.mjs`
+and `JUDGE-BRIEF.md`), `launch-readiness` (with `ledger.mjs`, `table.mjs`, `rules.mjs`, `areas/`, `PROBES.md`,
+`QUESTIONNAIRE.md` and `READINESS-TEMPLATE.md`). Hooks: `test-tamper-guard`, `suppression-reason` and `verify-before-done`.
 
 All three hooks are on when the plugin is installed. To turn one off or change how it behaves (for example, make
 `test-tamper-guard` refuse instead of ask, or tell `verify-before-done` about your project's own check script), see

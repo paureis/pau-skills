@@ -39,3 +39,8 @@ Steps:
 - The CSV uses a comma separator and a dot for decimals whatever the locale. Do not judge it by opening it in a
   spreadsheet.
 - The export folder is in `$RUN`, which Cleanup deletes. Copy the files to the evidence folder before Cleanup.
+
+## States
+
+- No screen: `inv export` is a command, so there is no loading, empty or error screen. Its empty case
+  (`export-empty`) and its refusals are covered in Driving it.

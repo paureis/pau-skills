@@ -1,7 +1,7 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 36](https://img.shields.io/badge/skills-36-informational)
+![Skills: 38](https://img.shields.io/badge/skills-38-informational)
 ![Hooks: 12](https://img.shields.io/badge/hooks-12-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
@@ -70,6 +70,9 @@ green by skipping the failing test.
   history, and checks that a pure refactor leaves the test green.
 - `evaluator` has a fresh agent, which did not build the change, grade it against its acceptance criteria.
 - `verify-app` writes the project's own recipe for starting the real app and proving a change in it, with evidence.
+- `launch-readiness` says whether an app built mostly by agents is ready for the stage it is entering, from private
+  beta to paying customers, enterprise buyers or regulated data, with evidence for every row, probe tests for the
+  security suspects, and a ledger that rechecks only what changed on later runs.
 - `bug-fix` finds the actual cause of a bug from runtime evidence and ships only the change that evidence justifies,
   when the cause is not obvious or a first fix did not hold.
 - `hillclimb` makes a number better (run time, size, memory, a score) one measured change at a time, on a harness
@@ -144,6 +147,9 @@ context was compacted.
 - `overnight-run` lets an agent work while you are away without waking up to hours of motion and no way to tell what
   it did: it starts only after trust checks, stops on a check a script runs, logs every decision, and has a fresh
   reviewer audit the log against the transcript before you read the summary.
+- `geppetto` designs, installs and audits a project's agent files, with a starter roster (`eng-lead` plans and
+  dispatches without writing code, `builder`, `reviewer`, `writer`, `sweeper`) and a check for the mistakes that make
+  Claude Code skip an agent or quietly change its tools.
 - `no-idle` (hook) stops subagents from ending their turn waiting for something that will never wake them.
 
 ### 7. A review that never ends
@@ -182,7 +188,7 @@ Every skill loads on its own: the agent can start it when your words fit its des
 for this", "wrap up this session", "is this test any good"), and you can still type any of them as
 `/pau-skills:<skill>` or `/<plugin>:<skill>`. Claude Code puts every description into the context of every session,
 so each one is a short list of the phrases that should start it. `tests/context-budget.test.mjs` holds each
-description to 400 characters and all of them to 13,000 together.
+description to 400 characters and all of them to 14,000 together.
 
 Some skills cost something when they run, and nothing else in them stops for your yes first: they launch subagents
 or headless runs, commit, push or install with no other check, or change how the whole session works. When the agent
@@ -250,7 +256,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   the fix, and proves what the change cannot break.
 - **[verify-app](skills/verification/verify-app/SKILL.md)** (adapted): Generates a project skill, `.claude/skills/verify-<app>/`, that
   launches the real app, drives it like a user, keeps evidence that survives cleanup and cleans up only what it
-  started, with a feature map; `check-map.mjs` checks it, and `maintain` keeps it in step with the app.
+  started, with a feature map; each feature file says how to force its loading, empty and error states, and the skill
+  carries a recipe that measures a skeleton against the loaded screen and reads the layout-shift score;
+  `check-map.mjs` checks it, and `maintain` keeps it in step with the app.
 - **[hillclimb](skills/verification/hillclimb/SKILL.md)** (adapted): Improves one metric (time, size, memory, a score)
   step by step: a frozen harness proven sensitive with a deliberate regression, a stop predicate with a minimum number
   of attempts, one change and one measurement per attempt (keep or revert), a commit per win, and an append-only
@@ -263,6 +271,10 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 
 ### agent-orchestration
 
+- **[launch-readiness](skills/verification/launch-readiness/SKILL.md)**: An honest go or no-go for the stage an app is
+  entering (private beta, paying customers, enterprise, regulated data). The profile is confirmed first, every row has
+  `file:line` or command evidence, security suspects are confirmed by probe tests, what code cannot show goes through
+  a questionnaire with expiry, and `READINESS.md` rechecks only rows whose evidence changed; `ledger.mjs` keeps it.
 - **[methodology](skills/agent-orchestration/methodology/SKILL.md)**: Contracts, an evidence standard, an evaluator, convergence, a stop for every
   unattended run and two-file state, with templates.
 - **[codebase-oracle](skills/agent-orchestration/codebase-oracle/SKILL.md)** (adapted): Answers questions about a codebase from the
@@ -281,6 +293,10 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   contract: trust checks before the loop, a finish condition a script checks, a fresh worktree, an append-only
   decision log kept outside the repository by `log.mjs`, a control folder no turn can write, an off switch and a
   resume note, and a morning audit by a fresh reviewer; the summary ends with an Attention section.
+- **[geppetto](skills/agent-orchestration/geppetto/SKILL.md)**: Designs, installs, audits and updates a project's
+  Claude Code agent files, with a starter roster (eng-lead, builder, reviewer, writer, sweeper) that all carry one
+  covenant, and `check-agents.mjs`, which finds what makes Claude Code skip an agent or quietly change its tools.
+  Asks before every write.
 - Hook: [`no-idle`](hooks/agent-orchestration/no-idle.mjs).
 
 ### guards
@@ -308,8 +324,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   writing code, compares at least two shapes against red flags for agent contributors, then implements against the
   sketch test first and scraps it when deviations repeat.
 - **[brainstorm](skills/planning/brainstorm/SKILL.md)**: Widens the options before a decision is settled: frames the
-  goal in at most three questions, generates 10 to 20 options through named lenses, lets you keep, kill or combine
-  them, then converges on 3 to 5 rated without a score, with a premortem each, and a one-page summary for `grill-me`.
+  goal in at most three questions, shows 8 to 12 options from named lenses in 3 or 4 clusters with its own picks
+  marked, takes one round where you accept them with an "ok" or pick your own, then converges on 3 or 4 rated without
+  a score, with a premortem each, and a short summary for `grill-me`.
 - **[sharpen](skills/planning/sharpen/SKILL.md)** (adapted): Before a task, restates the goal and the problem behind
   it, asks how an expert would check the result, and confirms in six lines before working.
 - **[agent-friendly-audit](skills/planning/agent-friendly-audit/SKILL.md)** (adapted): Mines review comments, fix and
@@ -326,10 +343,15 @@ the upstream version it was compared against and what this version changes, take
 
 ### I also use, unmodified
 
-My copies of these differ from upstream only by being shorter, so I do not republish them. Use the originals:
+My copies of these differ from upstream only by being shorter, or I use them exactly as published, so I do not
+republish them. Use the originals:
 
 - [grill-with-docs](https://github.com/mattpocock/skills/tree/main/skills/engineering/grill-with-docs) by Matt Pocock
 - [prototype](https://github.com/mattpocock/skills/tree/main/skills/engineering/prototype) by Matt Pocock
+- [html-plan](https://github.com/anthropics/claude-plugins-community/tree/06ec7b6a0a82bdc4bec44bd82d4368c42f20d7c1/html-plan)
+  by Thariq Shihipar: writes a plan as one interactive HTML page with the decisions placed on the claims they change.
+  `architect`, `to-prd` and `grill-me` offer it when it is installed. Its `plugin.json` says MIT; the repository's root
+  LICENSE is Apache 2.0. I upload it unchanged, built from that commit; nothing of it ships from here.
 
 ## How the pieces fit into a session
 

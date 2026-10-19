@@ -1,0 +1,9 @@
+[project]
+name = "tally"
+version = "0.2.0"
+description = "Count lines, words and characters in text files, as a table or JSON."
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+tally = "tally.cli:main"

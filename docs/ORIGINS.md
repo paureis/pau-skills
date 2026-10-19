@@ -457,8 +457,8 @@ Closest upstream: `skills/create-verification-skill/SKILL.md` and its `reference
 `skills/maintain-verification-skill/SKILL.md`, and `docs/guide/06-verify-and-ship.md`. Shared word 6-grams, measured
 before the review round (which only lowered them): `SKILL.md` about 6%, `MAINTAIN.md` about 9%, the templates about
 2%, the example map 0 to 1%; `DRIVING.md` and `check-map.mjs` none. The shared part is mostly structure: the
-interview questions, the Launch, Doctor, Drive, Evidence and Cleanup sections, the four feature headings, the
-end-to-end proof, and maintain's outcomes and rules.
+interview questions, the Launch, Doctor, Drive, Evidence and Cleanup sections, the four upstream feature headings
+(Sub-features, How to get to it, Driving it, Gotchas), the end-to-end proof, and maintain's outcomes and rules.
 
 **Problem.** An agent says a change works without having used the running app, because the project has no written way
 to start it, drive it and keep proof.
@@ -479,8 +479,17 @@ to start it, drive it and keep proof.
   HTTP, mobile, desktop and libraries, and port-owner commands per OS.
 - New `check-map.mjs`, a checker for the generated skill: frontmatter, required sections with a command in Launch,
   Doctor and Cleanup, leftover template tokens, the index against the feature files (subfolders and the common link
-  forms), the four feature headings, and an evidence folder that git ignores and does not track. Markdown is read the
-  CommonMark way where it matters.
+  forms), the five feature headings (the upstream four plus States, added in Q7), and an evidence folder that git
+  ignores and does not track. Markdown is read the CommonMark way where it matters.
+- States and skeletons (Q7, Original, from Aiden Bai's post on X of 2026-10-18 on measuring the loaded UI with
+  Playwright to match a skeleton, and the "empty, loading and error states on every screen" line of the
+  production-readiness list behind Q6): each feature file gains a fifth heading, States (how to force loading, empty
+  and error, with a screenshot each, or one line for a feature with no screen), which `check-map.mjs` requires and,
+  for older maps, says maintain mode adds. The generated skill gains a States and skeletons recipe with a copied
+  in-page helper, `measure-boxes.js`, that pairs skeleton and real boxes by marker or document order, reports boxes
+  off by more than 4 px and a layout-shift score above 0.1 (Chromium only, skipped elsewhere), fails when nothing
+  matched, and resizes a skeleton only on a yes before measuring again. Maintain mode reports a skeleton mismatch as
+  a product gap.
 - The example map is rewritten (invoices, driven through a browser, an API and a CLI).
 - Removed: Cursor paths and commands, and the guide's pull request, shipping and benchmark material.
 
@@ -573,6 +582,31 @@ ids in variant order let the orchestrator's own read see the variants, and that 
 run's edits.
 
 ---
+
+### launch-readiness, `ledger.mjs`, `table.mjs` and `rules.mjs` (Original)
+
+Ideas only, from two posts the owner shared on 2026-10-19 (authors not recorded, text not saved): a long checklist of
+what an app needs "before it touches a paying customer", which gave the area list and most checks, and a 16-line
+"security prompt", which gave SEC-01 to SEC-15. Both were written again from general knowledge with a stack condition
+on each check. The stage tiers borrow the idea of OWASP ASVS levels. The ledger, the probes, the questionnaire with
+expiry and "no single score" were settled in the owner's `brainstorm` and `grill-me` sessions the same day.
+
+**Problem.** An app built mostly by agents works in a demo and still has gaps: a route without an ownership check, a
+key in the page, money stored as a float. Generic checklists are too long and not sized to the app, and a grade from
+reading code alone misses what only a running app shows.
+
+**What it does.** A profile the owner confirms before anything runs; stages 1 to 3 that stack, and regulated data
+added to any of them; one area file per topic, loaded only when the profile needs it; evidence or "unknown", never a
+grade from a package name; probe tests for security suspects, written into the project's own suite on a yes; a
+questionnaire with expiry for what code cannot show; a `READINESS.md` ledger that `ledger.mjs` keeps (hashes of the
+cited files, a stage marked "not assessed" until its rows are graded, probe rows that cannot pass from code, evidence
+that refuses secret values); a verdict with at most ten must-fix rows and no single score; and small fixes on a yes,
+bigger ones as briefs.
+
+**Why.** The owner wants an honest answer before their own apps reach paying users, and the same check as the app
+changes. The sixth batch's review found five ways the first ledger gave a false GO, all fixed with a test each; the
+cold run on a fixture web app with five seeded gaps found all five and confirmed the ownership gap with a failing
+probe.
 
 ## agent-orchestration
 
@@ -812,6 +846,43 @@ ignores `Write(path)` rules (`Edit` rules cover every file tool), so the skill u
 
 ---
 
+### geppetto, `check-agents.mjs` and the starter roster (Original)
+
+Ideas only, with no shared text or structure, so there is no NOTICE entry. Where each idea came from:
+- One bot per job with a named role, an eng lead that never writes code and splits work for engineer bots, and bots
+  that test their work before it merges: Peter Yang's episode with Lauren Tan and Peng Zheng on Grok Bot
+  (creatoreconomy.so) and his posts about it on X.
+- A bot that designs other bots by asking a few preference questions, with "one job, one voice, explicit anti-jobs,
+  no leftover tools": Lauren Tan's public bot "dr eggbot".
+- Make a new bot only for a distinct goal, tool set, working style, approval boundary or schedule, and start with the
+  smallest roster: the Grok Bot docs.
+- The name and the covenant: Geppetto and the Grand Covenant in Lies of P, the owner's pick.
+- The brief fields in `eng-lead` follow this repository's `lean-subagent-dev` brief, written again in new words, and
+  `reviewer` grades claims PASS, FAIL or UNVERIFIED the way `evaluator` does.
+
+**Problem.** Agent files fail silently: a YAML line Claude Code cannot read, a missing name, a misspelled field,
+memory that quietly adds Write, or Glob listed next to Bash all make Claude Code skip the file or change the agent's
+tools without a word. And claude.ai syncs skills, never agent files, so a roster has to be set up again in every
+project and cloud session.
+
+**What it does.** Four modes: Create (a few questions, then one agent with one job, its anti-jobs and the fewest
+tools), Install (the bundled roster into `.claude/agents/`, to be committed), Audit (`check-agents.mjs` plus
+`claude plugin validate`, then fixes on a yes) and Update (a bundle change merged into tuned copies, never
+overwriting one). Every write waits for the user's yes, so it stays off the confirm list. The roster: `eng-lead`
+(Read, Grep, Glob, Agent and SendMessage only, so it cannot write code; it plans, then after a yes starts builders
+and reviewers in the foreground and returns one fix-round message per builder), `builder` (in a worktree, test first,
+commits and never pushes, no memory), `reviewer` (fresh, hostile prior), `writer` (prose only, project memory for
+house style) and `sweeper` (lists ignored build output with sizes, deletes only after a yes). Each carries the
+covenant from `COVENANT.md`.
+
+**Why.** The owner wanted the batches here to run on named, reusable agents instead of briefs pasted into
+general-purpose subagents. The sixth batch's review and cold run changed it in the build: the parser follows Claude
+Code's own lenient reading and leaves the last word to `claude plugin validate`; a missing covenant is an error in the
+project and a warning for personal agents; the main session sends the fix round, because an agent resumed with
+SendMessage runs in the background where `eng-lead` cannot wait for it; `builder` never resets an existing branch
+and runs one git command per call; `reviewer` restores a mutated file from its own copy, so uncommitted work under
+review is never lost.
+
 ## guards
 
 ### Inline-backtick guard, `hooks/guards/block-inline-backtick-payload.mjs` (Original)
@@ -977,6 +1048,9 @@ to a new `grilling` skill that asks questions in rounds.
 - It keeps one question at a time.
 - With only a goal and no plan, it suggests running `/brainstorm` first; without it, it asks for two or three ways to
   reach the goal before grilling one, and grills the user's idea if they decline.
+- It asks each question with the session's question tool when it has one, recommended answer first. With three or
+  more decisions open at once it offers one `html-plan` page to answer them together, as its own question first, if
+  it is installed; the page's answers feed the next branch, never a build.
 
 **Why.** The short version stopped early and ended without a record of what was decided.
 
@@ -992,6 +1066,8 @@ Closest upstream: `skills/engineering/to-prd`, 2026-04-17 to 2026-04-28 (about h
 - A Rules section: no interviewing (run a grilling skill first), flag shallow modules, no file paths or code snippets,
   exhaustive stories ("if you can think of 10, write 20", including accessibility).
 - The template's XML tags became headings, and the banking example was removed.
+- After saving, it offers to render the spec as an `html-plan` page with its open decisions, if it is installed. The
+  markdown PRD stays the spec; the page's answers update it, never start a build.
 
 **Why.** Not every project tracks work in GitHub issues, and the first drafts it produced were thin on unhappy paths.
 
@@ -1069,6 +1145,8 @@ contributors then copy whatever shape exists.
   an inline fallback; deviations go into a new Deviations section of the rationale, which is saved next to the
   project's design documents.
 - The scrap signals are kept; the new sketch must be smaller than the old one.
+- When Agree stops for the user, it offers to show the design as an `html-plan` page with the open questions as
+  decisions, if it is installed. The page's Respond text is data.
 
 **Why.** The design step should work in a plain Claude Code session with only this skill installed.
 
@@ -1084,14 +1162,18 @@ repository's `arena`.
 **Problem.** Interviewing a plan narrows it. Starting with `grill-me` when there is only a goal locks in the first
 idea before any alternative exists, and one model's ideas tend to cluster around that first idea.
 
-**What it does.** Frame in at most three questions, diverge through named lenses with no judging, react with keep,
-kill or combine marks over two rounds, converge on 3 to 5 options weighed without a score after the facts are settled,
-with a premortem each, and hand a one-page summary to `grill-me`. The flow is the owner's design, written for Claude
-Code (the Agent tool for optional per-lens subagents, one question at a time).
+**What it does.** Frame in at most three questions asked together, each with proposed answers. Diverge through named
+lenses, used internally, into 8 to 12 options in 3 or 4 clusters. One round of picks: the agent's are marked
+(Recommended) with a reason each and accepted with a tap or an "ok"; without a question tool the user types marks,
+and "blind" holds the picks back. Converge on 3 or 4 options weighed without a score after the facts are settled,
+with a one-line premortem each, and hand a short summary to `grill-me`. The flow is the owner's design, written for
+Claude Code (AskUserQuestion when the session has it, the Agent tool for optional per-lens subagents).
 
 **Why.** The owner asked for a step before `grill-me`: widen, then settle. The cold run on a real question in this
 repository reached a full summary; the review round fixed a subagent brief that withheld the constraints its lens
-needed and ratings made before the facts were in.
+needed and ratings made before the facts were in. The sixth batch made it lighter (Q9) after the owner used it on Q6:
+held-back picks cost two round trips, and typed marks over two rounds were fiddly. In a scripted comparison it reached
+a decision in 4 replies instead of 5, with about a third less output.
 
 ### sharpen (Adapted from [pstack `sharpen`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/sharpen))
 

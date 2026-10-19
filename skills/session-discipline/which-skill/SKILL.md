@@ -49,8 +49,9 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 ## The main flow: from an idea to merged work
 
 0. **`brainstorm`** (planning). With a goal but only one idea or none ("brainstorm this", "give
-   me ideas", "what are my options"), widen the options first: lenses, keep, kill or combine, a shortlist with a
-   premortem each. Then run `grill-me` on the chosen direction.
+   me ideas", "what are my options"), widen the options first: 8 to 12 options from named lenses, the agent's picks
+   to accept with a tap or an "ok", 3 or 4 finalists with a premortem each. Then run `grill-me` on the chosen
+   direction.
 1. **`grill-me`** (planning). Settle every open decision before anything is built, one question at a time.
    Start here whenever the user has an idea that is not fully decided.
 2. **`to-prd`** (planning). Turn the decided conversation into a written spec, without interviewing again.
@@ -83,17 +84,20 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | "This test fails sometimes", an intermittent CI failure, a failed CI run someone wants to retry | `flaky-test-hunt` (verification): first checks for a stale base or a failure that repeats | `tdd` for the regression test; `bug-fix` if it fails every time |
 | A database migration about to run | `migration-review` (verification) | fix, then review again |
 | Outdated dependencies, a framework major version to adopt | `dependency-upgrade` (guards) | `dependency-security-audit` for known risk |
+| "Is this ready for paying customers", "can we launch", an app about to reach beta, paying customers, enterprise buyers or regulated data | `launch-readiness` (verification) | fix the must-fix rows, then run it again |
 | A CVE announcement, "are we vulnerable", "is this package safe" | `dependency-security-audit` (guards) | `dependency-upgrade` to apply fixes |
 | CI is slow or expensive, "how much CI should we run" | `ci-cost-and-cadence` (verification) | |
 | Review comments to work through, "which of these should I fix", a review loop that keeps going | `review-triage` (verification) | |
 | A bug whose cause is not obvious, a fix that did not hold, a bug that came back, "find the root cause" (happens every time; an obvious one-line fix needs no skill) | `bug-fix` (verification) | `evaluator` to attack the fix |
-| "Verify it in the app", "how can an agent test this app", no scripted way to drive the app | `verify-app` (verification) | `evaluator` cites its drives as evidence |
+| "Verify it in the app", "how can an agent test this app", no scripted way to drive the app, a skeleton or loading state that jumps | `verify-app` (verification) | `evaluator` cites its drives as evidence |
+| "Show me the plan as a page", a plan with several decisions to answer at once | `html-plan` (an outside skill, if it is installed) | `grill-me` on what the response leaves open |
 | A question about how the codebase works, or why it is built that way | `codebase-oracle` (agent-orchestration) | `grill-me` if it leads to a change |
 | "The code is getting messy", hard-to-test modules | `improve-codebase-architecture` (planning) | `grill-me` on the candidate picked |
 | A task about to start, "make sure you understand this", "restate this first", a vague or over-constrained request | `sharpen` (planning) | the skill that fits the task |
 | "Make it faster", "make it smaller", improve a number (run time, bundle size, memory, a score) over many attempts with proof for each step | `hillclimb` (verification) | `bug-fix` if a step uncovers a bug |
 | "Apply build the lever", "which principle applies here", a design choice such as a second flag, a new type or one edit across many files | `engineering-principles` (planning) | `architect` for new code, `improve-codebase-architecture` for existing code |
 | "Run this overnight", "keep going while I sleep", work to leave running while the user is away | `overnight-run` (agent-orchestration): trust checks first, a finish condition a script checks, a decision log and a morning audit | `hillclimb` when the goal is one number; the built-in `/loop` and `/schedule` only wake a session |
+| "Create an agent", "install the agent roster", "audit my agents", agents that overlap or carry leftover tools, a starter team to plan, build and review | `geppetto` (agent-orchestration): Create, Install (eng-lead, builder, reviewer, writer, sweeper), Audit, Update; asks before every write | `lean-subagent-dev` for one subagent at a time |
 | "Did this skill or prompt change help?", "A/B this prompt", does a new version of a skill behave differently | `skill-eval` (verification) | `arena` to pick between attempts at one task |
 
 ## Fix a run that went wrong
@@ -159,6 +163,10 @@ Hooks act on every session where their plugin is installed. Each can be turned o
 
 - **`brainstorm` or `grill-me`?** `brainstorm` widens: it generates and compares options when nothing is chosen yet.
   `grill-me` narrows: it settles the open decisions of a chosen plan. With only a goal, brainstorm first.
+- **`html-plan`, `to-prd` or `architect`?** `html-plan` (an outside skill, if it is installed) writes the plan as one
+  interactive HTML page, with each decision on the claim it changes, for the user to answer and copy back. `to-prd`
+  writes a markdown spec from what is already decided. `architect` writes types and signatures in code and builds
+  against them. Both offer an html-plan page when it is installed.
 - **`skill-eval` or `arena`?** `arena` runs several attempts at one task and builds on the best. `skill-eval` runs the
   same task with two versions of a skill or prompt and checks whether the change alters what the agent does.
 - **`hillclimb` or `bug-fix`?** `bug-fix` makes a wrong result right. `hillclimb` makes a correct result better on a
