@@ -819,4 +819,6 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   predicate; the morning audit did not work end to end) and in the mutate.sh restore (it could erase a hidden edit).
   CI caught one macOS-only test failure, fixed before the merge. The 8 changed skills were zipped with
   `pack-skills --since 8f44afa` and sent to the owner as one bundle (2 new, 6 replacing); the owner uploaded them
-  and all 8 were confirmed synced, identical to main. No hook changed. The profile README now says 36 skills.
+  and all 8 were confirmed synced, identical to main. In a new session `/context` showed Skills at 14.5k tokens
+  (1.5% of the 1M window, 92 skills listed) and none without a description. No hook changed. The profile README now
+  says 36 skills.
