@@ -182,7 +182,7 @@ Every skill loads on its own: the agent can start it when your words fit its des
 for this", "wrap up this session", "is this test any good"), and you can still type any of them as
 `/pau-skills:<skill>` or `/<plugin>:<skill>`. Claude Code puts every description into the context of every session,
 so each one is a short list of the phrases that should start it. `tests/context-budget.test.mjs` holds each
-description to 400 characters and all of them to 13,000 together.
+description to 400 characters and all of them to 14,000 together.
 
 Some skills cost something when they run, and nothing else in them stops for your yes first: they launch subagents
 or headless runs, commit, push or install with no other check, or change how the whole session works. When the agent

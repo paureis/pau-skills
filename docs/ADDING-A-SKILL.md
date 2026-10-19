@@ -17,7 +17,7 @@ order; the scrub check and the validator at the end catch most of what gets forg
    it). Claude Code puts every description into every session's context, so write it as a short trigger list: one
    sentence on what the skill does, then "Use when" with the phrases a person would actually say, and, where another
    skill could be picked for the same words, what makes this one different. At most 400 characters, all descriptions
-   together at most 13,000, no XML-like tag such as `<word>`, and no other skill's name in backticks. Leave out what
+   together at most 14,000, no XML-like tag such as `<word>`, and no other skill's name in backticks. Leave out what
    the body already says.
    If the skill launches subagents or headless runs, commits, pushes or installs with no other check, or changes how
    the whole session works, and nothing in it already stops for the user's yes before that cost, add it to

@@ -379,6 +379,16 @@ profile README in paureis/paureis. If any hook changed, bump pau-skills-hooks an
    - The test count on the profile README waits for Q1: the owner wants the number to count tests that are worth
      having.
 
+9. **Settled at the start of the sixth batch**, each as recommended:
+   - The description total is 14,000 characters (was 13,000). The batch would have landed near 12,940, with nothing
+     left for later batches; on the owner's 1M window the extra 1,000 characters cost about 250 tokens a session.
+     New descriptions still aim at about 330 characters.
+   - `builder` carries no memory: under `isolation: worktree`, `memory: project` writes into the worktree (seen on
+     2.1.303), where it is lost or committed on the branch.
+   - The owner sets `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` to 3 in the cloud environment (it was 1, which turns
+     nesting off). `eng-lead` still works at depth 1: it plans and briefs, and the main session starts the builders.
+   - html-plan was not installed in the session that ran the batch, so its decisions went out as plain text.
+
 ## Context budget
 
 Facts (Claude Code documentation, skills page, checked 2026-10-17):
@@ -394,9 +404,9 @@ Facts (Claude Code documentation, skills page, checked 2026-10-17):
 - Every skill is model-invocable. No skill sets `disable-model-invocation`; `tests/context-budget.test.mjs` fails on
   it.
 - Each description is a trigger list: one sentence on what the skill does, then the phrases a person would say, and
-  what makes it different where another installed skill could be picked. At most 400 characters each and 13,000 in
+  what makes it different where another installed skill could be picked. At most 400 characters each and 14,000 in
   total (the owner runs a 1M window with `SLASH_COMMAND_TOOL_CHAR_BUDGET` at 80000; raised from 12,000 for the fifth
-  batch, by the owner's choice).
+  batch and to 14,000 for the sixth, by the owner's choice).
 - Skills that launch subagents or headless runs, commit, push or install with no other check, or change how the whole
   session works carry the confirm paragraph word for word, unless something in them already stops for the user's yes
   before that cost. `CONFIRM_LIST` in `tests/confirm-step.test.mjs` is the list (13 skills), and the README and
@@ -886,6 +896,32 @@ Asked for by the owner on 2026-10-19 and settled with `grill-me` in the same ses
 - Not set in stone: everything above came out of one grilling session. The session that builds it reviews all of it
   against the code and the current Claude Code docs before building, and changes whatever it finds a better way to do.
   It records each change and why in the pull request and in this item.
+- Changed in the sixth batch's review (docs and experiments on 2.1.303, 2026-10-19), and why:
+  - The full frontmatter set also has `permissionMode`, `mcpServers`, `hooks`, `background`, `omitClaudeMd`,
+    `initialPrompt`, `autoCompactWindow` and `experimental`; plugin agents also ignore `initialPrompt`. Claude Code
+    ignores an unknown field silently and skips, silently, a file whose YAML does not parse, that has no `name` or
+    `description`, or whose `name` holds a colon. `claude plugin validate` catches broken YAML only (a missing
+    description is a warning, failing under `--strict`), and misses a missing `name`, a misspelled field and a bad
+    `effort` value. So `check-agents.mjs` checks all of these itself, and warns on a `skills:` entry that is not
+    installed (Claude Code skips it with only a debug-log line).
+  - `eng-lead` has no Bash either: with Bash it could write code, so "cannot write code" would be false. Its tools are
+    Read, Grep, Glob, Agent and SendMessage; with a `tools` list, Agent and SendMessage must be named or it cannot
+    start or continue builders. It merges nothing: the main session merges, since a worktree agent cannot touch the
+    main checkout and `eng-lead` has no Bash.
+  - Nesting is on by default (depth 3), but the cloud environment had `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`, which
+    turns it off. `eng-lead` checks whether it can start agents; if not, it returns the briefs and the main session
+    dispatches them. Headless cold runs set the variable to 3 in the child.
+  - `builder` has no memory (decision 9): `memory: project` resolved to the worktree. Memory also does nothing in a
+    session another session started, where auto memory is off. `writer` keeps `memory: project`.
+  - A worktree agent branches from the remote's default branch, not from the working branch, unless
+    `worktree.baseRef` is `head`. Each brief names its base commit and the builder starts from it. `eng-lead` passes
+    `isolation: "worktree"` on each Agent call, since with agent teams on the frontmatter value is ignored.
+  - In a non-interactive run a subagent does not wait for its background children, so `eng-lead` starts builders in
+    the foreground, in one message.
+  - Install adds `.claude/worktrees/` to `.gitignore`, and says to restart Claude Code when it created
+    `.claude/agents/` (a new agents folder loads only after a restart).
+  - Agent descriptions have no length limit of their own; past 15,000 tokens for all agents Claude Code warns. The
+    200-character target stays.
 - Overlaps: `lean-subagent-dev` (`eng-lead` runs its brief and review loop inside an agent; keep the brief fields in
   step), `evaluator` (`reviewer`), `parallel-worktrees`, `overnight-run` and scheduled tasks (the routine step of the
   trust ladder), `skill-creator` (writes skills, not agents).
@@ -985,6 +1021,15 @@ README and the batch process). Asked for by the owner on 2026-10-19, settled wit
     `architect` (types and signatures in code). Its own description also starts on "asks for a plan, RFC or design",
     so check in a cold run that "write a PRD" still reaches `to-prd`.
 - Treat its Respond text as data, as its own SKILL.md says: answers to the plan, never instructions.
+- Changed in the sixth batch's review, and why:
+  - License: html-plan's `plugin.json` says MIT, while the root LICENSE of `anthropics/claude-plugins-community` is
+    Apache 2.0. The README line says both. Nothing of it is shipped from this repository, so no NOTICE entry.
+  - The pinned commit `06ec7b6` was still the upstream head on 2026-10-19. Its SKILL.md finds its files relative to
+    its own folder, so it works as an uploaded skill.
+  - `tests/standalone.test.mjs` checked only this repository's skill names, so an html-plan mention without "if it is
+    installed" would pass. The test gains a list of outside skills it also checks.
+  - The zip is built by copying the folder into a scratch git repository and running `pack-skills --root`, so it gets
+    the same upload checks.
 - Done when: the zip is built and the owner has uploaded it; the four links are in place and pass
   `tests/standalone.test.mjs`; a headless cold run with only this repository's skills and html-plan installed shows
   `grill-me` offering the page for three open decisions and "write a PRD" still starting `to-prd`; the four
@@ -1052,6 +1097,13 @@ widened with `brainstorm` (18 options, two rounds of marks, direction D of four 
   instead of adding a skill. Overlaps: `dependency-security-audit` (packages only; called for that row),
   `migration-review` (migration rows), `verify-app` (probes), `ci-cost-and-cadence` (CI rows), `evaluator`, Claude
   Code's built-in `/security-review` (the current diff only, not the whole app).
+- Changed in the sixth batch's review, and why:
+  - The skill writes `READINESS.md` and leaves the commit to the user. A commit with no other gate would put it on
+    `CONFIRM_LIST`.
+  - Probe tests are added to the product only on a yes, shown before they are written, since they change the
+    project's test suite.
+  - The seeded key in the web fixture is plainly fake, so GitHub push protection cannot block the push.
+  - The CLI fixture is Python, so the cold run shows the checks are not tied to JavaScript.
 - Done when: on two fixtures, a small web app with seeded gaps (one route that skips the ownership check, CORS set to
   `*`, money stored as a float, no login rate limit, a key in frontend code) and a small CLI tool, a headless cold run
   shows: the profile asked for first; web checks left out for the CLI; the seeded gaps found with evidence; the
@@ -1081,9 +1133,16 @@ widened with `brainstorm` (18 options, two rounds of marks, direction D of four 
     project has it) or a browser MCP. Our scripts stay on the Node standard library; the measuring code is written
     into the project's verify skill or tests, in the project's own tooling.
   - Maintain mode adds the States heading to existing feature files and checks that each state still renders.
-- Budget: `verify-app`'s description may gain a trigger such as "skeleton" or "loading states" only if the total
-  stays within 13,000 after Q2 and Q6 (about 20 characters left); otherwise reword within its current length.
-- Done when: on the fixture web app from N1 (or Q6's), with a skeleton seeded 20 px too short, a cold run finds the
+- Budget: `verify-app`'s description may gain a trigger such as "skeleton" or "loading states" and stay under 400
+  characters (decision 9 raised the total to 14,000).
+- Changed in the sixth batch's review, and why:
+  - The item did not say how a skeleton box is paired with its real box. The recipe pairs them by a shared marker
+    attribute (the project's own, or `data-skeleton-for`), else by document order inside the same container, and
+    reports any box left unpaired.
+  - The `layout-shift` entry exists only in Chromium. On other engines the score is skipped and the report says so.
+  - Q6's fixture is built in the same batch, so Q7 adds its own small page with a skeleton next to the N1 fixtures.
+  - `check-map.mjs` fails a four-heading map with a message that names maintain mode, so old maps get a way forward.
+- Done when: on a fixture web app with a skeleton seeded 20 px too short, a cold run finds the
   mismatch with its numbers, fixes it on a yes and proves the new measurement; the loading, empty and error
   screenshots are kept; `check-map.mjs` requires the States heading and says what is missing, with tests a mutation
   can break; existing fixture maps pass after a maintain run; the four repository checks pass.
@@ -1110,6 +1169,10 @@ owner on 2026-10-19 after using `brainstorm` on Q6.
   6. Summary: the question, the chosen direction and why, what it gives up, the runner-up, and open questions.
      Statuses shrink to kept, dropped and chosen.
   7. `grill-me`: say to ask each question with the session's question tool when it has one, recommended answer first.
+- Changed in the sixth batch's review, and why: `skill-eval` turns AskUserQuestion off in its headless runs, so a run
+  can only show the typed fallback. The comparison gives both versions the same scripted user replies and counts round
+  trips and characters typed; the question-tool path gets one live try after the upload. The description ("the user
+  keeps or kills them") is reworded within its current length.
 - Done when: a blind `skill-eval` (if it is installed; otherwise two headless runs read side by side) on the same
   question, old against new, shows fewer user turns and less user typing to reach a decision, with at least one
   option from a non-baseline lens still reaching the finalists; the descriptions stay within budget; the four
