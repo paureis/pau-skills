@@ -12,7 +12,9 @@
  *       run's direction, among the latest baseline row and the keeps after it. Each attempt is stood for by its latest
  *       row, so a correction (a new row with the same --id) replaces the attempt's earlier rows everywhere: a keep
  *       corrected to a revert is no longer the reference, the best or a kept attempt, and a corrected keep is judged
- *       against the rows before it, not against itself.
+ *       against the rows before it, not against itself. A cell that a spreadsheet would read as a formula, such as
+ *       the delta "-0.5s -25.0% better, beyond noise" or a note typed as "=stop ...", is written with a single quote
+ *       in front (see "Spreadsheet guard" below); the message append prints shows the delta without it.
  *
  *   node decisions.mjs measure [--runs 5] [--warmup 1] [--value time|stdout] [--shell] -- <command> [args...]
  *       Runs the command --warmup times unrecorded, then --runs times, and prints one line in the measurement format.
@@ -47,6 +49,14 @@
  * cannot drift away from the best number one small step at a time).
  * Earlier rows are never rewritten: the file is only ever opened for appending.
  *
+ * Spreadsheet guard: a cell is written with a single quote in front when it starts with a tab or a carriage return,
+ * or with "=", "+", "-" or "@" after optional whitespace and an optional double quote (guardCell), so a spreadsheet
+ * that opens the TSV shows it as text instead of running it as a formula. Every read (append and summary) takes one
+ * leading quote off a cell when the rest would itself be guarded, so a value reads as it was typed: "'-1" reads as
+ * "-1", while "'tis cheaper" stays as it is. A log written before the guard, with unquoted cells, reads the same way.
+ * The one value that does not read back as typed is a quote followed by a formula character (typed "'=x" reads as
+ * "=x").
+ *
  * Exit codes: 0 done; 1 refused, a run failed, or a file error; 2 usage (unknown command or option, a bad value).
  * Node 20+, standard library only.
  */
@@ -63,6 +73,14 @@ export const SENSITIVITY = 'sensitivity';
 export const FINAL = 'final';
 const REFERENCE = /^reference \((lower|higher) is better\)$/;
 const NUMBER = /^([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)([A-Za-z%/]*)$/;
+
+/**
+ * A cell as written to the TSV: with a single quote in front when a spreadsheet would read it as a formula (it starts
+ * with a tab or a carriage return, or with "=", "+", "-" or "@" after optional whitespace and an optional double quote).
+ */
+export function guardCell(v) {
+  return /^[\t\r]/.test(v) || /^\s*"?\s*[=+\-@]/.test(v) ? "'" + v : v;
+}
 
 class Refusal extends Error {}
 const at = (row, name) => row[HEADER.indexOf(name)];
@@ -238,7 +256,15 @@ export function parseArgs(argv) {
   throw new Usage(cmd ? `unknown command ${cmd}` : 'no command');
 }
 
-/** Read and check an existing log: returns its rows as arrays of fields (no header), or [] when the file is missing. */
+/** A cell as read back: the quote guardCell put in front taken off, so a value reads as it was typed. */
+function unguardCell(v) {
+  return v.startsWith("'") && guardCell(v.slice(1)) !== v.slice(1) ? v.slice(1) : v;
+}
+
+/**
+ * Read and check an existing log: returns its rows as arrays of fields (no header), each field as it was typed
+ * (unguardCell), or [] when the file is missing.
+ */
 function readLog(log) {
   if (!existsSync(log)) return [];
   const text = readFileSync(log, 'utf8');
@@ -248,7 +274,7 @@ function readLog(log) {
   return lines.slice(1).map((line, i) => {
     const f = line.split('\t');
     if (f.length !== HEADER.length) throw new Refusal(`row ${i + 1} of ${log} has ${f.length} fields, not ${HEADER.length}; the file was edited by hand`);
-    return f;
+    return f.map(unguardCell);
   });
 }
 
@@ -311,7 +337,7 @@ function buildRow(log, fields, now) {
 function append(log, fields, out) {
   const { row, created } = buildRow(log, fields, new Date());
   mkdirSync(dirname(resolve(log)), { recursive: true });
-  appendFileSync(log, (created ? HEADER.join('\t') + '\n' : '') + row.join('\t') + '\n');
+  appendFileSync(log, (created ? HEADER.join('\t') + '\n' : '') + row.map(guardCell).join('\t') + '\n');
   const delta = at(row, 'delta');
   out(`appended attempt ${at(row, 'attempt')} (${at(row, 'decision')})${delta ? `: ${delta}` : ''} to ${resolve(log)}`);
   return 0;
