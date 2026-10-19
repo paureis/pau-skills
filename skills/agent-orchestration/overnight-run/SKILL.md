@@ -32,10 +32,13 @@ How it differs from its neighbours:
 
 Bundled files, open each when you reach its step:
 - `${CLAUDE_SKILL_DIR}/log.mjs` (Node 20+, no dependencies): `append` adds one row to the decision log, `show` prints
-  it with what supersedes what, and `calls` lists the tool calls in a transcript for the audit. Below, `LOG` stands for `node "${CLAUDE_SKILL_DIR}/log.mjs"`; write the full
-  command each time, since a shell variable does not survive from one Bash call to the next.
-- `${CLAUDE_SKILL_DIR}/LOOP.md`: each way to wake a run and what it needs, the outer shell loop around `claude -p`,
-  and where the log goes for a cloud scheduled task.
+  it with what supersedes what, and `calls` lists the tool calls in a transcript for the audit. Step 2 copies it
+  into the control folder; from then on `LOG` stands for `node <control>/log.mjs`, written exactly so, without
+  quotes, because a permission rule matches the command as written (`Bash(node <control>/log.mjs *)` does not match
+  `node "<control>/log.mjs"`). Write the full command each time: a shell variable does not survive from one Bash
+  call to the next.
+- `${CLAUDE_SKILL_DIR}/LOOP.md`: each way to wake a run and what it needs, the outer shell loop around `claude -p`
+  with its permission rules, and where the log goes for a cloud scheduled task.
 - `${CLAUDE_SKILL_DIR}/AUDIT.md`: the morning reviewer's prompt.
 
 Make a task list with one entry per step (Trust, Contract, Worktree, Wake, Loop, Stop, Audit, Summary) before you
@@ -57,6 +60,8 @@ whole run.
    and prints on its last line how far there is to go (`remaining: 12`: failing tests, old callers, lint errors).
    For example `! grep -rn 'oldParse(' src/` followed by the test command, or the test command alone when failing
    tests are the task (`pytest -q`, `go test ./...`, `cargo test`, `mvn -q test`, `dotnet test`, `npm test`).
+   Name the files that define it (the test files, the test configuration, the package scripts it runs): they are
+   frozen with it in step 2.
    - A duration is not a finish condition: "work on it for four hours" gives nothing to check, and the user wakes
      up to four hours of motion. A duration can be a budget (item 4).
    - "Better", "cleaner" or "faster" is not a predicate until it is a count or a check.
@@ -69,74 +74,98 @@ whole run.
    predicate, or no untried idea left, whichever comes first) and a budget (iterations, default 20; money, as
    `--max-budget-usd` per headless turn; and a wall clock time, as a budget, never as the finish). Reaching either
    stops the run. The run never raises its own budget.
-5. **Permissions settled in advance**, as concrete rules. List every command the run needs (the test command, the
-   predicate, the build, `git add`, `git commit`, `git restore`, `git status`, `git diff`, `git log`, `LOG`) as
-   allow rules (`--allowedTools 'Bash(pytest *)'` and so on), and the forbidden ones as deny rules
-   (`--disallowedTools`). The deny list holds at least: `git push` and every force push; deploys and releases
-   (`kubectl`, `terraform apply`, `npm publish`, `cargo publish`, `gh release`); deleting data (database drops,
-   `rm -rf` outside the worktree); and messaging people (mail, chat, issue and pull request comments, `gh`). Never a
-   blanket bypass: no `--dangerously-skip-permissions`, no `bypassPermissions` mode. In a session that stays open, a
-   permission prompt waits until morning, so the same rules go into `.claude/settings.local.json`
-   (`permissions.allow` and `permissions.deny`) before the user leaves. A run cannot read the flags it was started
-   with: take them from the user's message or from the settings file, and copy them into `RUN.md`. A rule covers one
-   command, so in a headless run `<test command>; echo $?` is refused unless `echo` is allowed too: run one command
-   per call. The state folder
-   and the worktree are outside the repository, so a headless run also needs `--add-dir` for their parent folder,
-   or its file tools cannot write there.
+5. **Permissions settled in advance, as an allow list.** See "What protects the repository" below. The run gets
+   exactly the commands it needs and nothing else, in a mode that refuses the rest without asking. A run cannot read
+   the flags it was started with: take them from the user's message or the settings, and copy them into `RUN.md`.
 6. **The work can be thrown away**: a fresh worktree on its own branch (step 3) and nothing pushed, so a bad night
    costs one branch.
 
 The predicate is never relaxed during the run: not a threshold, not a skipped or deleted test, not an excluded
 folder. A predicate that turns out wrong stops the run (step 6), and the user amends it.
 
+### What protects the repository
+
+Checked on Claude Code 2.1.303 with headless runs in October 2026.
+
+- **The allow list is the protection.** Run the turns with `--permission-mode dontAsk` and one allow rule per thing
+  the run does (LOOP.md has the full list): `Edit(/<worktree>/**)` and `Write(/<worktree>/**)` for the code (a rule
+  path that starts with `//` is absolute), `Edit` and `Write` for `<state>/resume.md` and `<state>/summary.md` only,
+  `Bash(node <control>/log.mjs *)` for the log, `Bash(bash <control>/done.sh)`, the exact test command, and
+  `Bash(git -C <worktree> add *)`, `commit *`, `restore *`, `status *`, `diff *`, `log *`, `show *` and
+  `clean -f -- *` (the rule must match the form the run types: `git -C <worktree> status` is not covered by
+  `Bash(git status *)`). In `dontAsk` everything else is refused: in the check, `rm -fr`, `mv`, `cp`, `sed -i`,
+  `touch`, an `echo >>` redirect and a `>` redirect from an allowed command into the control folder were all refused,
+  and so was plain `rm` in the worktree (revert a new file with `git -C <worktree> clean -f -- <file>`). A subagent
+  gets the same rules.
+- **Not `acceptEdits`, not a blanket bypass.** `acceptEdits` approves `rm`, `mv`, `cp`, `sed -i`, `mkdir` and
+  `touch` inside the working folders by mode, so a deny rule such as `Bash(rm -rf *)` is passed by `rm -fr`. Never
+  use `--dangerously-skip-permissions`, `bypassPermissions` or `auto` for the night.
+- **Deny rules are not a boundary.** Anything the run may execute that runs code the run can edit can push, deploy
+  or delete past every deny rule: the test command and its configuration, build and package scripts, and git
+  commit hooks (a `.husky/` folder, `core.hooksPath`). Deny rules only narrow a broad allow rule. Keep
+  `Bash(git push *)` and the project's deploy commands denied anyway.
+- **The strong protection takes the means away**: run the turns as a separate OS user, or in a container, that has
+  no push credentials (no SSH agent, no git credential helper, no `gh` login) and mounts the control folder read
+  only. Check it from inside before leaving: `git -C <worktree> push --dry-run` fails, `touch <control>/x` fails,
+  `ssh-add -l` and `gh auth status` fail. Without that, `loop.sh` sets a cheap layer, a git setting through the
+  environment that rewrites every push address to a path that does not exist (`bash <control>/loop.sh check` shows
+  that a push is refused); code the run executes can undo it.
+- **In a session that stays open**, check its permission mode first. In `auto` or `bypassPermissions` mode, or with
+  broad allow rules such as `Bash(*)`, nothing above holds. Start the night's session from the worktree with
+  `claude --permission-mode dontAsk` and the same allow and deny rules, or use the outer loop.
+
 ## Step 2. Write the contract
 
-Make a state folder outside the repository's work tree, where `git reset --hard` and `git clean -fdx` cannot reach
+Make a run folder outside the repository's work tree, where `git reset --hard` and `git clean -fdx` cannot reach
 it and every wake can find it: from the repository root, print `echo "$(cd .. && pwd)/<repo>-overnight/<label>"`,
-where the label is the date and a short slug (`2026-10-18-parser`). Use that absolute path as `<state>` below, and
-absolute paths everywhere. (A cloud scheduled task sees only its clone: see the end of LOOP.md.)
+where the label is the date and a short slug (`2026-10-18-parser`). It holds two folders, and every path below is
+absolute:
+- `<control>` (`<run>/control`): written now, attended, and never by a turn. No turn gets an allow rule to write
+  it, its folder is never passed with `--add-dir`, and `Edit(/<control>/**)` and `Write(/<control>/**)` are denied.
+  It holds `RUN.md` (the contract, from the template below), `done.sh` (the predicate, starting with
+  `cd <worktree>`), `predicate.sha` (the fingerprint below), and copies of `log.mjs` and `AUDIT.md`
+  (`cp ${CLAUDE_SKILL_DIR}/log.mjs ${CLAUDE_SKILL_DIR}/AUDIT.md <control>/`). The outer loop's `loop.sh` goes here
+  too, and the user's off switch, `<control>/STOP`.
+- `<state>` (`<run>/state`): what the run writes. `decisions.tsv` only through `LOG append`, which creates it with
+  the header, refuses a path inside a git work tree and never rewrites a row; `resume.md` and `summary.md`; and the
+  outer loop's own output.
 
-It holds:
-- `RUN.md`, the contract, from the template below. It also tells any wake what to do, so a run that resumes without
-  this skill loaded still follows it.
-- `done.sh`, the predicate as a script. It lives outside the work tree so the run cannot edit it into passing.
-  Record `git hash-object <state>/done.sh` in `RUN.md`; every check compares the hash first, and a change stops the
-  run.
-- `decisions.tsv`, the log. `LOG append` creates it and its folder with the header on the first row, and refuses a
-  path inside a git work tree.
-- Later: `resume.md` (step 6), `summary.md` (step 8), and the loop's own files (LOOP.md).
+The fingerprint freezes the predicate: `git hash-object <control>/done.sh <worktree>/<each file that defines the
+predicate>` (after step 3 makes the worktree), saved to `<control>/predicate.sha`. The loop compares it before every
+check and stops when it changed. (A cloud scheduled task sees only its clone: see the end of LOOP.md.)
 
 ```
 # Overnight run: <goal>
 Goal:        <one or two sentences, in the user's words>
 Base:        <branch or commit>      Branch: overnight/<label>      Worktree: <absolute path>
-Predicate:   bash <state>/done.sh    (git hash-object: <hash>)      At start: <its last line>
-Tests:       <the test command>
+Control:     <control> (never written by the run)      State: <state>
+Predicate:   bash <control>/done.sh   frozen with: <files that define it>   At start: <its last line>
+Tests:       <the exact test command>
 Budget:      <n> iterations; $<x> per headless turn; no new iteration after <time>
 Dead end:    <n> approaches with no progress, or no untried idea left
-Allowed:     <the allow rules>
-Forbidden:   <the deny rules>
+Mode:        dontAsk     Allowed: <the allow rules>     Denied: <the deny rules>
 Wake:        <the way from step 4>
-Off switch:  touch <state>/STOP
-Log:         <state>/decisions.tsv      Run ids: <session ids or labels, as they start>
+Off switch:  touch <control>/STOP
+Log:         node <control>/log.mjs append <state>/decisions.tsv ...      Run ids: <session ids, as they start>
 
-Each wake: if <state>/STOP exists, pause (resume.md, a stop row, end). Read this file and the last ten log rows
-(node <path of log.mjs> show <state>/decisions.tsv --last 10). Check the hash, then run the predicate: exit 0 means
-finished. Otherwise make one small change, run the tests and the predicate, commit it if the predicate moved and
-the tests pass, revert it if not, and log one row. Never push, deploy, delete data or message anyone.
+Each wake: check <control>/STOP on its own (ls <control>) and act on the answer before anything else: if it exists,
+pause (resume.md, a stop row, end). Read this file and the last ten log rows (node <control>/log.mjs show
+<state>/decisions.tsv --last 10). Run the predicate: exit 0 on a clean tree means finished. Otherwise make one small
+change, run the tests and the predicate, commit it if the predicate moved and the tests pass, revert it if not, and
+log one row. Never push, deploy, delete data or message anyone.
 ```
 
 Log the contract as the first row:
 
 ```bash
 LOG append <state>/decisions.tsv --phase contract --decision "overnight run: <goal>" \
-  --reason "the user asked for it; trust items 1 to 6 hold" --evidence "<state>/RUN.md, done.sh <hash>" \
+  --reason "the user asked for it; trust items 1 to 6 hold" --evidence "<control>/RUN.md, predicate.sha" \
   --result "<the predicate's last line>"
 ```
 
 The `run` column names the conversation that wrote each row, so the audit can find its transcript. In a Claude Code
-session `LOG` takes it from `$CLAUDE_CODE_SESSION_ID`; where that is not set, pass `--run <label>` and say in
-`RUN.md` which transcript the label stands for.
+session `LOG` takes it from `$CLAUDE_CODE_SESSION_ID`: never pass `--run` there. Pass `--run <label>` only where that
+is not set, and say in `RUN.md` which transcript the label stands for.
 
 ## Step 3. A fresh worktree
 
@@ -144,14 +173,13 @@ From the main checkout: `git worktree add <worktree> -b overnight/<label> <base>
 main checkout (a sibling folder). For the setup a new worktree needs (dependencies, environment files, ports), use
 `parallel-worktrees` if it is installed; without it, install dependencies the way the project's README or CI does.
 
-Then, in the worktree. A session keeps the folder it started in, so a session started in the main checkout runs a
-bare `pytest` there, not in the worktree: put `cd <worktree>` at the top of `done.sh`, use `git -C <worktree>`, and
-run the test command through `done.sh` or from the worktree. The outer loop in LOOP.md starts each turn in the
-worktree, which avoids this.
-1. Run the test command. It passes at the base, or fails only where failing tests are the task.
-2. Run the predicate. It fails, with the remaining count you expect.
-3. `git status --short` prints nothing. Files the build or the tests write go in the shared exclude file,
-   `$(git rev-parse --git-common-dir)/info/exclude`, never in a committed `.gitignore` change.
+A session keeps the folder it started in: one started in the main checkout runs a bare `pytest` there, not in the
+worktree. So `done.sh` starts with `cd <worktree>`, git commands use `git -C <worktree>`, and the outer loop starts
+each turn in the worktree. Then:
+1. Run the test command in the worktree. It passes at the base, or fails only where failing tests are the task.
+2. Run the predicate. It fails, with the remaining count you expect. Write `predicate.sha` now.
+3. `git -C <worktree> status --short` prints nothing. Files the build or the tests write go in the shared exclude
+   file, `$(git rev-parse --git-common-dir)/info/exclude`, never in a committed `.gitignore` change.
 4. Log a row: `--phase setup`, the worktree and branch, the test and predicate outputs as evidence.
 
 ## Step 4. Pick how the run wakes
@@ -160,7 +188,7 @@ Read `${CLAUDE_SKILL_DIR}/LOOP.md` now. In short:
 
 | The situation | Use | It needs |
 |---|---|---|
-| The session stays open (lunch, a long loop at the desk) | keep iterating in this turn, or the built-in `/loop` | the machine awake and the session open; permissions in settings |
+| The session stays open (lunch, a long loop at the desk) | a session started for it in `dontAsk` mode, iterating in its turn, or the built-in `/loop` | the machine awake and the session open |
 | The run must outlive this session | the outer shell loop around `claude -p` in LOOP.md | a machine that stays on; the login and the skill reachable by a headless run |
 | The machine will be off | a cloud scheduled task (`/schedule`) | the run branch pushed, which only the user can allow in advance |
 | Waiting on an event (CI, a long build) | Monitor or a background Bash command | the session open, and the tool in this session |
@@ -172,18 +200,22 @@ Read `${CLAUDE_SKILL_DIR}/LOOP.md` now. In short:
 ## Step 5. The loop
 
 Each iteration:
-1. **Off switch.** If `<state>/STOP` exists, go to step 6.
+1. **Off switch.** Check `<control>/STOP` in a call of its own (`ls <control>`), and act on its answer before any
+   edit: if it exists, go to step 6. Never send the check and a change in one message.
 2. **Read the state**, since a wake remembers nothing: `RUN.md`, `LOG show <state>/decisions.tsv --last 10`,
-   `git log --oneline -5` and `git status --short` in the worktree. After a context summary, read them again.
-3. **Check the predicate.** `git hash-object <state>/done.sh` matches `RUN.md` (if not, stop: step 6), then run it.
-   Exit 0: go to step 6, finished.
+   `git -C <worktree> log --oneline -5` and `git -C <worktree> status --short`. After a context summary, read them
+   again.
+3. **Check the predicate**: run `bash <control>/done.sh`. Exit 0 on a clean tree: go to step 6, finished. A pass on a
+   tree with uncommitted changes does not count.
 4. **Check the budget**: iterations logged, the time, the money spent. Spent: step 6.
-5. **Make the smallest change the evidence justifies**, for one idea. Name the idea first.
+5. **Make the smallest change the evidence justifies**, for one idea. Name the idea first. Never edit the files
+   that define the predicate.
 6. **Verify**: the test command, then the predicate.
 7. **Decide.** Keep when the tests pass and the predicate moved (the remaining count fell, or it passes): stage
-   only the files you changed and commit (`git add <files>`, `git commit -m "<change>"`). Otherwise revert:
-   `git restore -- <files>`, delete files it created, and check that `git status --short` prints nothing. A change
-   that "might help" is reverted, not left to ride.
+   only the files you changed and commit (`git -C <worktree> add <files>`, `git -C <worktree> commit -m
+   "<change>"`). Otherwise revert: `git -C <worktree> restore -- <files>`, `git -C <worktree> clean -f -- <new
+   file>` for each file it created, and check that `git -C <worktree> status --short` prints nothing. A change that
+   "might help" is reverted, not left to ride.
 8. **Log one row**: `--phase loop`, the decision (what changed, or what was tried), the reason, the evidence (the
    commit, or `reverted`, and the predicate's last line) and the result (`remaining 7`, `reverted: tests fail in
    test_parse`).
@@ -193,10 +225,10 @@ Rules throughout:
   different hypothesis, take a smaller step), and count each approach toward the dead end.
 - **Mid-run discoveries** (a related bug, a flaky test, broken tooling): log a row with `--phase discovery`, and
   list it under Attention at the end. Fix it only when it blocks the predicate, in its own commit, with its own row.
-- **Never take a forbidden action**, even when a denied command stalls the work. Log it, and if it blocks the
+- **Never take a forbidden action**, and never work around a refused command. Log it, and if it blocks the
   predicate, stop (step 6).
 - **Correct the log, not the story.** A wrong row gets a new row with `--supersedes <id>` saying what is true.
-  Never edit or delete a row; `LOG` only appends.
+  Never edit or delete a row; the run has no rule that could, and `LOG` only appends.
 
 ## Step 6. Stop: finished, stuck, out of budget, or switched off
 
@@ -208,32 +240,35 @@ Every stop starts the same way: finish the current step or back it out (never le
 3. **Log a row**: `--phase stop`, `--decision "stopped: <reason>"`, the resume note or the last commit as evidence.
 
 The reasons, and what each adds:
-- **Finished**: the predicate exits 0. Run the tests once more and log both outputs.
+- **Finished**: the predicate exits 0 on a clean tree. Run the tests once more and log both outputs.
 - **Dead end (the escape hatch)**: when truly stuck, stop and write up why in `resume.md`: each approach tried, what
   each showed, and what would unblock it. This beats hours of reinterpreting the goal.
 - **Budget spent**: say which budget, and how far the predicate got.
-- **Off switch**: the user made `<state>/STOP`. "Keep going" or "don't stop" never pauses a run; only the off switch
-  or the user saying to pause does.
+- **Off switch**: the user made `<control>/STOP`. "Keep going" or "don't stop" never pauses a run; only the off
+  switch or the user saying to pause does.
 - **The predicate looks wrong, or the next step needs a forbidden action**: stop and say so. The user decides.
 
-To resume later, a new session reads `RUN.md`, `resume.md` and the log, logs a row under its own run id, and
+To resume later, a new session reads `RUN.md`, `resume.md` and the log, logs a row under its own session id, and
 continues at step 5.
 
 ## Step 7. The morning audit
 
 After every stop, before the summary: a fresh reviewer that did not see the run reads the log against the
-transcript. It audits the trail (did the log tell the truth), not the code.
+transcript. It audits the trail (did the log tell the truth), not the code. In the outer loop this is the final
+turn, which does no work on the task.
 
-1. **Find this run's transcripts, and only those.** Claude Code keeps each session at
-   `$HOME/.claude/projects/<slug>/<session id>.jsonl`, where the slug is the session's working folder with every
-   `/` and `.` replaced by `-` (print it from the worktree with `pwd | tr '/.' '--'`). The `run` column names the
-   sessions; the outer loop also keeps a `--output-format stream-json --verbose` capture of each turn in `<state>`.
-   Never glob across `~/.claude/projects/`: the other folders hold the user's other conversations.
-2. **Start the reviewer** with the prompt in `${CLAUDE_SKILL_DIR}/AUDIT.md`, filled in. Use a subagent (the Agent
-   tool) given only that prompt: it starts without this conversation, and with this session's permission rules, so
-   it reads transcripts with `LOG calls` (covered by the log script's allow rule) rather than ad hoc scripts. Where there is no Agent tool, run a headless
-   `claude -p` with the prompt and the read-only rules AUDIT.md lists. Where neither works, audit it yourself and
-   say so on the first line of Attention.
+1. **Find this run's transcripts, and only those.** The outer loop keeps a `--output-format stream-json --verbose`
+   capture of each turn in `<state>`; use those. Otherwise Claude Code keeps each session at
+   `~/.claude/projects/<folder>/<session id>.jsonl` (under `$CLAUDE_CONFIG_DIR/projects` when that is set). Find it
+   by the session id in the `run` column: `ls ~/.claude/projects/*/<session id>.jsonl`. The folder name is the
+   folder the session started in, with every character other than a letter or a digit replaced by `-` (a long path
+   is cut at 200 characters and a hash is added), so a session started in the main checkout is filed under the main
+   checkout, not the worktree. Open only the files the `run` column names: the other folders hold the user's other
+   conversations.
+2. **Start the reviewer** with `<control>/AUDIT.md`, filled in. Use a subagent (the Agent tool) given only that
+   prompt: it starts without this conversation and with this session's permission rules, so it reads transcripts
+   with `LOG calls`, which the log rule already allows. Where there is no Agent tool, run the headless form at the top
+   of AUDIT.md. Where neither works, audit it yourself and say so on the first line of Attention.
 3. **Check what it reports**: open the rows and transcript lines it names. It appends its findings to the log with
    `--phase audit`, a gap as a new row and a wrong row as a row that supersedes it.
 
@@ -248,7 +283,7 @@ Write `<state>/summary.md` and reply with the same text:
 ## Overnight run: <goal>
 
 Verdict:     finished | stopped: dead end | budget spent (<which>) | off switch | predicate wrong | blocked
-Predicate:   bash <state>/done.sh -> <last line> (hash unchanged | changed)
+Predicate:   bash <control>/done.sh -> <last line> (fingerprint unchanged | changed; tree clean | dirty)
 Iterations:  <n> (kept <k>, reverted <r>)   Budget used: <iterations, money, time>
 Kept:        <sha> <subject>   (one line each)
 Reverted:    <count>; the ideas that did not work, in a few words each
@@ -264,6 +299,6 @@ reviewed by a fresh subagent that did not see the run
 The Attention section is last, and lists each flag with the rows or the transcript lines it points at. "No flags"
 is a valid list. If no fresh reviewer read the trail, its first line says who did instead.
 
-Leave the branch, the worktree and the state folder in place, and do not push or open a pull request: the user
+Leave the branch, the worktree and the run folder in place, and do not push or open a pull request: the user
 decides in the morning. If they want the trail with the change, copy the log into the repository once at the end
 (`cp <state>/decisions.tsv <worktree>/docs/overnight/<label>.tsv`) and commit it on the run branch.
