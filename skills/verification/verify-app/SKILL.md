@@ -214,6 +214,10 @@ person and agent drives the app the same way. Commit only on a yes. Say that thi
 the map honest when the app changes (`/verification:verify-app maintain` from the plugin, `/verify-app maintain` when
 the skill is installed on its own); suggest a schedule only if the user asks.
 
+The run ends with the block below, filled in, as the first lines of its final message: every field has a value
+(`none` where nothing applies). Prose or a table in its place is not the report. Anything else, the commit offer
+included, comes after the block.
+
 ```
 Verify skill: .claude/skills/verify-<app>/ (<surface>, harness <harness>)
 Features mapped: <n>: <names>; not covered yet: <surfaces or features, or none>
