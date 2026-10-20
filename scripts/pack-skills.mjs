@@ -6,7 +6,7 @@
 //   node scripts/pack-skills.mjs --since <git ref>      pack every skill with a committed change between <ref> and HEAD
 //   node scripts/pack-skills.mjs --all                  pack every skill
 //   options: --out <dir> (default: dist/ in the repository), --root <dir> (default: the repository this script is in)
-// `--help` prints the full usage (the HELP text below): what each option and status means, and the exit codes.
+// `--help` prints the full usage (the HELP text in scripts/pack-skills-args.mjs): what each option and status means, and the exit codes.
 //
 // What goes in: the files committed at HEAD, read with `git ls-tree` and `git cat-file`, never the files on disk. So
 // the zip is exactly what was reviewed and merged, untracked files (editor backups, test output) never leak in, and
@@ -42,11 +42,15 @@
 // inside a git hook cannot read or touch the repository that runs the hook instead of --root.
 //
 // Exit: 0 packed (or nothing to pack), 1 an upload rule failed, 2 usage error, unknown skill, bad ref or bad --out.
-import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, realpathSync, existsSync, statSync, readdirSync, unlinkSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import zlib from 'node:zlib';
+import { buildZip } from './pack-skills-zip.mjs';
+import { Failure, git, branchWarning, skillFolders, readBlobs } from './pack-skills-repo.mjs';
+import { parseArgs, selectTargets } from './pack-skills-args.mjs';
+
+export { crc32Table, buildZip } from './pack-skills-zip.mjs';
+export { parseArgs } from './pack-skills-args.mjs';
 
 export const XML_TAG = /<[A-Za-z/!?]/;
 export const RESERVED_NAME = /claude|anthropic/i;
@@ -185,188 +189,6 @@ function parseDescription(front) {
   }
 }
 
-// CRC-32 (the zip polynomial). zlib.crc32 exists only from Node 20.15 and 22.2, and this repository supports Node 20+.
-const CRC_TABLE = (() => {
-  const t = new Uint32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    t[n] = c >>> 0;
-  }
-  return t;
-})();
-
-export function crc32Table(buf) {
-  let c = 0xffffffff;
-  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
-}
-
-const crc32 = typeof zlib.crc32 === 'function' ? (buf) => zlib.crc32(buf) >>> 0 : crc32Table;
-
-// MS-DOS date and time, from UTC so the bytes do not depend on the time zone. Zip times start in 1980.
-function dosTime(seconds) {
-  const d = new Date(Math.max(seconds, 315532800) * 1000);
-  return {
-    time: (d.getUTCHours() << 11) | (d.getUTCMinutes() << 5) | (d.getUTCSeconds() >> 1),
-    date: ((d.getUTCFullYear() - 1980) << 9) | ((d.getUTCMonth() + 1) << 5) | d.getUTCDate(),
-  };
-}
-
-/**
- * A zip of `files` ([{ path, mode, data }], paths relative to the zip root, mode as a Unix file mode) with a folder
- * entry for every folder, sorted by path, every entry stamped with `seconds` (Unix time).
- */
-export function buildZip(files, seconds) {
-  const { time, date } = dosTime(seconds);
-  const folders = new Set();
-  for (const f of files) {
-    const parts = f.path.split('/');
-    for (let i = 1; i < parts.length; i++) folders.add(`${parts.slice(0, i).join('/')}/`);
-  }
-  const entries = [
-    ...[...folders].map((path) => ({ path, mode: 0o040755, data: Buffer.alloc(0), folder: true })),
-    ...files.map((f) => ({ ...f, folder: false })),
-  ].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
-
-  const locals = [];
-  const centrals = [];
-  let offset = 0;
-  for (const e of entries) {
-    const name = Buffer.from(e.path, 'utf8');
-    const flags = /[^\x00-\x7f]/.test(e.path) ? 0x0800 : 0; // bit 11: the name is UTF-8
-    const deflated = e.folder ? e.data : zlib.deflateRawSync(e.data, { level: 9 });
-    const method = !e.folder && deflated.length < e.data.length ? 8 : 0;
-    const body = method === 8 ? deflated : e.data;
-    const crc = crc32(e.data);
-
-    const local = Buffer.alloc(30);
-    local.writeUInt32LE(0x04034b50, 0);
-    local.writeUInt16LE(20, 4); // version needed: 2.0
-    local.writeUInt16LE(flags, 6);
-    local.writeUInt16LE(method, 8);
-    local.writeUInt16LE(time, 10);
-    local.writeUInt16LE(date, 12);
-    local.writeUInt32LE(crc, 14);
-    local.writeUInt32LE(body.length, 18);
-    local.writeUInt32LE(e.data.length, 22);
-    local.writeUInt16LE(name.length, 26);
-    local.writeUInt16LE(0, 28);
-    locals.push(local, name, body);
-
-    const central = Buffer.alloc(46);
-    central.writeUInt32LE(0x02014b50, 0);
-    central.writeUInt16LE((3 << 8) | 30, 4); // made by Unix (3), so readers take the mode from the external attributes
-    central.writeUInt16LE(20, 6);
-    central.writeUInt16LE(flags, 8);
-    central.writeUInt16LE(method, 10);
-    central.writeUInt16LE(time, 12);
-    central.writeUInt16LE(date, 14);
-    central.writeUInt32LE(crc, 16);
-    central.writeUInt32LE(body.length, 20);
-    central.writeUInt32LE(e.data.length, 24);
-    central.writeUInt16LE(name.length, 28);
-    // extra length, comment length, disk number, internal attributes: all 0 (bytes 30 to 37)
-    central.writeUInt32LE(((e.mode << 16) | (e.folder ? 0x10 : 0)) >>> 0, 38); // Unix mode, plus the DOS folder bit
-    central.writeUInt32LE(offset, 42);
-    centrals.push(central, name);
-    offset += local.length + name.length + body.length;
-  }
-  const cd = Buffer.concat(centrals);
-  const end = Buffer.alloc(22);
-  end.writeUInt32LE(0x06054b50, 0);
-  end.writeUInt16LE(entries.length, 8);
-  end.writeUInt16LE(entries.length, 10);
-  end.writeUInt32LE(cd.length, 12);
-  end.writeUInt32LE(offset, 16);
-  return Buffer.concat([...locals, cd, end]);
-}
-
-class Failure extends Error {
-  constructor(message, code) {
-    super(message);
-    this.code = code;
-  }
-}
-
-const GIT_ENV = ['GIT_DIR', 'GIT_INDEX_FILE', 'GIT_WORK_TREE'];
-const gitEnv = () => Object.fromEntries(Object.entries(process.env).filter(([k]) => !GIT_ENV.includes(k)));
-
-function git(root, args, { input, buffer = false } = {}) {
-  try {
-    return execFileSync('git', ['-C', root, ...args], {
-      input, encoding: buffer ? undefined : 'utf8', maxBuffer: 1 << 30, stdio: ['pipe', 'pipe', 'pipe'], env: gitEnv(),
-    });
-  } catch (e) {
-    throw new Failure(`git ${args.join(' ')} failed: ${String(e.stderr || e.message).trim()}`, 2);
-  }
-}
-
-/** The trimmed output of a git command, or null when it exits non-zero. */
-function gitTry(root, args) {
-  try {
-    return git(root, args).trim();
-  } catch {
-    return null;
-  }
-}
-
-/** A warning when HEAD is not the default branch (origin/HEAD, else main, else master), or null. */
-function branchWarning(root) {
-  let name = null;
-  const remote = gitTry(root, ['symbolic-ref', '--quiet', 'refs/remotes/origin/HEAD']);
-  if (remote) name = remote.replace(/^refs\/remotes\/origin\//, '');
-  else name = ['main', 'master'].find((n) => gitTry(root, ['rev-parse', '--verify', '--quiet', `refs/heads/${n}`]) !== null) || null;
-  if (!name) return null;
-  if (gitTry(root, ['symbolic-ref', '--quiet', '--short', 'HEAD']) === name) return null;
-  const head = gitTry(root, ['rev-parse', 'HEAD']);
-  for (const ref of [`refs/heads/${name}`, `refs/remotes/origin/${name}`]) {
-    if (head && gitTry(root, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]) === head) return null;
-  }
-  const at = gitTry(root, ['symbolic-ref', '--quiet', '--short', 'HEAD']) || 'a detached HEAD';
-  return `WARNING: HEAD (${at}) is not on the default branch (${name}). The zips are meant to be built from ${name} after the merge.`;
-}
-
-/** Every folder skills/<plugin>/<name>/ at `rev`, as a map from name to [{ plugin, name, dir, hasSkillMd, files }]. */
-function skillFolders(root, rev) {
-  const out = new Map();
-  const raw = git(root, ['ls-tree', '-r', '-z', '--full-tree', rev, '--', 'skills/']);
-  for (const rec of raw.split('\0').filter(Boolean)) {
-    const tab = rec.indexOf('\t');
-    const [mode, type, sha] = rec.slice(0, tab).split(' ');
-    const path = rec.slice(tab + 1);
-    const parts = path.split('/');
-    if (parts.length < 4) continue; // skills/<plugin>/README.md and the like are not skills
-    const [, plugin, name] = parts;
-    const dir = `skills/${plugin}/${name}`;
-    let list = out.get(name);
-    if (!list) out.set(name, (list = []));
-    let folder = list.find((f) => f.dir === dir);
-    if (!folder) list.push((folder = { plugin, name, dir, hasSkillMd: false, files: [] }));
-    const rel = parts.slice(3).join('/');
-    if (rel === 'SKILL.md') folder.hasSkillMd = true;
-    folder.files.push({ rel, mode, type, sha });
-  }
-  return out;
-}
-
-/** The blobs for `shas`, read in one `git cat-file --batch`. */
-function readBlobs(root, shas) {
-  const out = new Map();
-  if (!shas.length) return out;
-  const buf = git(root, ['cat-file', '--batch'], { input: `${shas.join('\n')}\n`, buffer: true });
-  let p = 0;
-  for (const sha of shas) {
-    const nl = buf.indexOf(0x0a, p);
-    const [got, type, size] = buf.toString('utf8', p, nl).split(' ');
-    if (got !== sha || type !== 'blob') throw new Failure(`could not read ${sha} from git`, 2);
-    const start = nl + 1;
-    out.set(sha, buf.subarray(start, start + Number(size)));
-    p = start + Number(size) + 1;
-  }
-  return out;
-}
-
 /** The upload-rule problems of one skill folder; an empty list means it may be uploaded. */
 export function uploadProblems(folder, files, { maxBytes = MAX_UNCOMPRESSED } = {}) {
   const id = folder.dir;
@@ -407,111 +229,6 @@ export function uploadProblems(folder, files, { maxBytes = MAX_UNCOMPRESSED } = 
     }
   }
   return problems;
-}
-
-const USAGE = 'Usage: node scripts/pack-skills.mjs (<skill> [<skill>...] | --since <git ref> | --all) [--out <dir>] [--root <dir>]';
-
-const HELP = `${USAGE}
-       npm run pack-skills -- <the same arguments>
-
-Writes one zip per skill for upload to claude.ai (Customize, Skills, Upload a skill), with the skill's folder at the
-zip root. The zips hold the files committed at HEAD, not the files on disk, and are built only when every skill passes
-the upload rules.
-
-  <skill> [<skill>...]  pack these skills, by name (verify-app) or as <plugin>/<skill> (verification/verify-app)
-  --since <git ref>     pack every skill with a committed change between <ref> and HEAD (use the commit of the last
-                        upload, for example main before the batch)
-  --all                 pack every skill
-  --out <dir>           write the zips to <dir>, relative to the current folder, instead of dist/ in the repository;
-                        nothing in <dir> is deleted
-  --root <dir>          the repository to pack from, relative to the current folder (default: the repository this
-                        script is in)
-  --help                show this text
-
-Without --out the zips go to dist/ in the repository, and the zips already in dist/ are deleted first.
-
-Each zip is listed with its status:
-  new       (--since) no skill of that name existed at <ref>: upload it as a new skill
-  changed   (--since) it replaces the uploaded skill of the same name: open that skill on claude.ai and upload the zip
-  packed    (named skills or --all) there is no ref to compare with, so new or changed is not known
-and each skill that is gone with:
-  removed   (--since) it existed at <ref> and has no SKILL.md at HEAD: delete it on claude.ai by hand
-
-Exit codes:
-  0  zips written, or nothing to pack
-  1  an upload rule failed; no zip was written
-  2  usage error, unknown skill, bad ref, or --out is not a folder`;
-
-export function parseArgs(argv) {
-  const opts = { names: [], since: null, all: false, out: null, root: null };
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    const value = () => {
-      if (i + 1 >= argv.length || argv[i + 1].startsWith('--')) throw new Failure(`${a} needs a value\n${USAGE}`, 2);
-      return argv[++i];
-    };
-    if (a === '--since') opts.since = value();
-    else if (a === '--out') opts.out = value();
-    else if (a === '--root') opts.root = value();
-    else if (a === '--all') opts.all = true;
-    else if (a === '--help' || a === '-h') throw new Failure(HELP, 0);
-    else if (a.startsWith('-')) throw new Failure(`unknown option ${a}\n${USAGE}`, 2);
-    else opts.names.push(a);
-  }
-  const modes = [opts.names.length > 0, opts.since !== null, opts.all].filter(Boolean).length;
-  if (modes !== 1) throw new Failure(`give skill names, --since <ref> or --all (one of them)\n${USAGE}`, 2);
-  return opts;
-}
-
-/** Which skill folders to pack, each with a status, and which skills were removed. */
-function selectTargets(root, opts, head, warn) {
-  const pick = (list, label) => {
-    if (list.length > 1) throw new Failure(`${label} is in more than one plugin: ${list.map((f) => f.dir).join(', ')}`, 2);
-    return list[0];
-  };
-  if (opts.all) {
-    return { targets: [...head.values()].map((list) => ({ folder: pick(list, list[0].name), status: 'packed' })), removed: [] };
-  }
-  if (opts.names.length) {
-    const targets = [];
-    for (const raw of opts.names) {
-      const arg = raw.replace(/\\/g, '/').replace(/^skills\//, '').replace(/\/+$/, '');
-      const parts = arg.split('/');
-      let folder;
-      if (parts.length === 1) folder = head.has(arg) ? pick(head.get(arg), arg) : null;
-      else if (parts.length === 2) folder = (head.get(parts[1]) || []).find((f) => f.plugin === parts[0]) || null;
-      if (!folder) throw new Failure(`unknown skill: ${raw} (no folder skills/<plugin>/${parts[parts.length - 1]}/ at HEAD)`, 2);
-      if (!targets.some((t) => t.folder === folder)) targets.push({ folder, status: 'packed' });
-    }
-    return { targets, removed: [] };
-  }
-
-  const ref = opts.since;
-  try {
-    git(root, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]);
-  } catch {
-    throw new Failure(`unknown git ref: ${ref}`, 2);
-  }
-  if (gitTry(root, ['merge-base', '--is-ancestor', ref, 'HEAD']) === null) {
-    warn(`WARNING: ${ref} is not an ancestor of HEAD (it is on another branch, or HEAD was moved back). The lists below compare the two trees, so new and removed may be wrong: a skill that only ever existed on ${ref}'s side shows as removed.`);
-  }
-  const before = skillFolders(root, ref);
-  const hadSkill = (name) => (before.get(name) || []).some((f) => f.hasSkillMd);
-  const touched = new Set();
-  const diff = git(root, ['diff', '--name-status', '--no-renames', '-z', ref, 'HEAD', '--', 'skills/']).split('\0').filter(Boolean);
-  for (let i = 0; i + 1 < diff.length; i += 2) {
-    const parts = diff[i + 1].split('/');
-    if (parts.length >= 4) touched.add(parts[2]);
-  }
-  const targets = [];
-  const removed = [];
-  for (const name of [...touched].sort()) {
-    const live = (head.get(name) || []).filter((f) => f.hasSkillMd);
-    if (live.length) targets.push({ folder: pick(live, name), status: hadSkill(name) ? 'changed' : 'new' });
-    else if (hadSkill(name)) removed.push(before.get(name).find((f) => f.hasSkillMd));
-    // otherwise a folder with no SKILL.md at either end: not a skill
-  }
-  return { targets, removed };
 }
 
 export function main(argv, { cwd = process.cwd(), log = console.log, warn = console.error, maxBytes = MAX_UNCOMPRESSED } = {}) {
