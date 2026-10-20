@@ -12,9 +12,11 @@ metadata:
 
 Asked for: $ARGUMENTS
 
-Eleven named rules for design and code decisions. This file is the index. `${CLAUDE_SKILL_DIR}/PRINCIPLES.md` holds
-each principle in full, under a heading with the same name. The names are a shared vocabulary: the user steers with
-one ("apply build the lever"), and you check the index before a decision one of them covers.
+Eleven named rules for design and code decisions. This file is the index. `${CLAUDE_SKILL_DIR}/PRINCIPLES.md` (Build
+the lever to Minimize reader load) and `${CLAUDE_SKILL_DIR}/PRINCIPLES-2.md` (Separate before serializing shared state
+to Experience first) hold each principle in full, under a heading with the same name. The names are a shared
+vocabulary: the user steers with one ("apply build the lever"), and you check the index before a decision one of them
+covers.
 
 This skill gives the rules a decision is made by; it reviews no code and sketches nothing. To review existing code,
 offer to run `improve-codebase-architecture` if it is installed. To sketch new code before building it, offer to run
@@ -22,12 +24,13 @@ offer to run `improve-codebase-architecture` if it is installed. To sketch new c
 
 ## How to use it
 
-Read `${CLAUDE_SKILL_DIR}/PRINCIPLES.md` with the Read tool. The whole file is fine (about 370 lines); a command
-that cuts out one section may be refused, and a section read only in part does not count as read.
+Read `${CLAUDE_SKILL_DIR}/PRINCIPLES.md` or `${CLAUDE_SKILL_DIR}/PRINCIPLES-2.md`, whichever holds the principle, with
+the Read tool. The whole file is fine (215 lines and 160 lines); a command that cuts out one section may be refused,
+and a section read only in part does not count as read.
 
 1. **The user names a principle.** Match the name loosely (case, hyphens, a missing "the"). Read its section in
-   PRINCIPLES.md to its end, then apply it to the work in front of you. A name that is not in the index is not a
-   principle here: say so, and work from the plain meaning of the words without citing anything.
+   PRINCIPLES.md or PRINCIPLES-2.md to its end, then apply it to the work in front of you. A name that is not in the
+   index is not a principle here: say so, and work from the plain meaning of the words without citing anything.
 2. **The decision this skill was started for.** When it was started for a decision in the user's current request (a
    data shape, a type, a module split, the order of a change, one edit in many places), read the "When it applies"
    lines below. For each one that matches that decision, read its section, then decide. When none matches, decide
@@ -35,8 +38,8 @@ that cuts out one section may be refused, and a section read only in part does n
    against the index only if the skill is started for it.
 3. **Citing a principle.** When you cite one, in a reply, a plan or a review, name the decision it changed: "subtract
    before you add: deleted the unused adapter before writing the new one". Cite only a principle whose section in
-   PRINCIPLES.md you read in this session; the index line alone is not enough. A citation with no decision behind it
-   is name dropping, so leave it out.
+   PRINCIPLES.md or PRINCIPLES-2.md you read in this session; the index line alone is not enough. A citation with no
+   decision behind it is name dropping, so leave it out.
 4. **Two principles pull apart.** Several sections say where they meet the others. The common case: subtract before
    you add asks for the smallest change, and redesign from first principles asks you to rebuild around the new
    requirement. Think the whole redesign through, then deliver it in steps, each the smallest change that moves the
