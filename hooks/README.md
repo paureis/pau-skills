@@ -88,9 +88,14 @@ files with `@generated` or `DO NOT EDIT` in their first 5 lines, paths marked `l
 `linguist-vendored` in `.gitattributes`, and git-ignored paths. The two git rules run only for a change that would
 be refused; without git they do not apply. An edit the tool itself would refuse passes: an `old_string` that is not in
 the file, or is in it more than once without `replace_all`. Claude Code's Edit may match after turning CRLF line
-endings into LF; such an edit is not measured and passes. The message gives a split recipe for the file's kind (code,
-test file, long document, log, SKILL.md) and asks the agent to tell you, instead of starting a large refactor, when
-splitting is not part of your task.
+endings into LF; such an edit is not measured and passes. The message gives a recipe for the file's kind (code, test
+file, long document, log, SKILL.md, data file), worded for a new file or for one that grows, and asks the agent to
+tell you, instead of starting a large refactor, when splitting is not part of your task. It also gives the
+`pathLimits` entry and the off switch as whole JSON files. A `pathLimits` glob without a `/` matches that file name
+in every folder, so a limit for the root `README.md` covers every `README.md`.
+
+It sees only the Write, Edit and MultiEdit tools. A file written by a Bash command (a heredoc, a redirect, or a
+generator script) is not checked; a check in CI, like this repository's `tests/file-size.test.mjs`, catches those.
 
 ### destructive-guard
 

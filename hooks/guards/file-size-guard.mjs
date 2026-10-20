@@ -15,6 +15,9 @@
 // not blank (an empty old_string on a missing or blank file makes a file of new_string). Claude Code's Edit may match
 // after turning CRLF line endings into LF; an exact match then misses and the call passes (it fails open).
 //
+// It sees only the Write, Edit and MultiEdit tools. A file written by a Bash command (a heredoc, a redirect, a
+// generator script run with node or python) is never checked here; the repository test is what catches those.
+//
 // Only files inside the project count (real paths, so a project reached through a link still counts). Skipped:
 // lockfiles by name, notebooks (.ipynb), minified files (*.min.*), binaries (a NUL byte), "@generated" or "DO NOT
 // EDIT" in the first 5 lines, paths git marks linguist-generated or linguist-vendored (git check-attr), git-ignored
