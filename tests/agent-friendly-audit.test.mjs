@@ -163,6 +163,18 @@ describe('redact', () => {
     assert.doesNotMatch(row, /MARKER/);
     assert.ok(row.length < 450);
     assert.ok(took < 5000, `took ${took} ms`);
+
+    // Plain text with no secret: redaction leaves it long, so only the cut after redaction keeps the row short.
+    const plainDir = join(tempDir('afa-big-'), '-b-d');
+    mkdirSync(plainDir);
+    const plain = { type: 'user', timestamp: '2026-04-03T00:00:00Z', message: { role: 'user', content: 'a'.repeat(5 * 1024 * 1024) } };
+    writeFileSync(join(plainDir, 's.jsonl'), JSON.stringify(plain) + '\n');
+    const plainStart = Date.now();
+    const p = runNode(SCRIPT, { args: ['transcripts', plainDir] });
+    const plainTook = Date.now() - plainStart;
+    assert.equal(p.code, 0, p.stderr);
+    assert.ok(p.stdout.split('\n').find((l) => l.startsWith('1\t')).length < 450);
+    assert.ok(plainTook < 5000, `took ${plainTook} ms`);
   });
 });
 
