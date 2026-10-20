@@ -1,15 +1,18 @@
-// engineering-principles keeps an index in SKILL.md and the detail in PRINCIPLES.md. The user steers with the names
-// and the agent reads a principle's section before citing it, so the two files must name the same principles, in the
-// same order, and every index entry must give its three parts: when it applies, the rule, the sign you skipped it.
+// engineering-principles keeps an index in SKILL.md and the detail in PRINCIPLES.md and PRINCIPLES-2.md, read as one
+// text in that order. The user steers with the names and the agent reads a principle's section before citing it, so
+// the two files must name the same principles, in the same order, and every index entry must give its three parts:
+// when it applies, the rule, the sign you skipped it.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { repo } from './helpers.mjs';
 
 const DIR = repo('skills', 'planning', 'engineering-principles');
+// The detail files, in the order of the index. A fixed list, not a sorted listing: "-" sorts before ".".
+const DETAIL_FILES = ['PRINCIPLES.md', 'PRINCIPLES-2.md'];
 const PARTS = ['When it applies', 'Rule', 'Sign you skipped it'];
-// What the opening of PRINCIPLES.md promises for every section: the rule and why it holds (a plain paragraph before
-// the first labelled one), how to apply it, and the sign you skipped it.
+// What the opening of PRINCIPLES.md and PRINCIPLES-2.md promises for every section: the rule and why it holds (a plain
+// paragraph before the first labelled one), how to apply it, and the sign you skipped it.
 const SECTION_LABELS = ['How to apply it', 'Sign you skipped it'];
 
 // Lines outside fenced code blocks, so an example in a fence is never read as a heading.
@@ -52,7 +55,7 @@ export function parseIndex(text) {
   return entries.map(({ name, parts }) => ({ name, parts }));
 }
 
-// PRINCIPLES.md has one `## <name>` section per principle, with its text up to the next `## ` heading.
+// PRINCIPLES.md and PRINCIPLES-2.md, read as one text, have one `## <name>` section per principle, with its text up to the next `## ` heading.
 export function parseSections(text) {
   const sections = [];
   for (const line of outsideFences(text)) {
@@ -102,7 +105,7 @@ export function problems(skillText, principlesText) {
 
 test('every principle in the index has a section of the same name in PRINCIPLES.md, and the other way round', () => {
   const skill = readFileSync(`${DIR}/SKILL.md`, 'utf8');
-  const principles = readFileSync(`${DIR}/PRINCIPLES.md`, 'utf8');
+  const principles = DETAIL_FILES.map((f) => readFileSync(`${DIR}/${f}`, 'utf8')).join('\n');
   assert.deepEqual(problems(skill, principles), []);
   assert.ok(parseIndex(skill).length >= 10, 'the index lists the principles');
 });

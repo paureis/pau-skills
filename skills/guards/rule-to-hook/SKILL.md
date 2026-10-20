@@ -27,6 +27,9 @@ Bundled files, open them when you reach their step:
 - `${CLAUDE_SKILL_DIR}/templates/settings-snippet.json`: the registration block
 - `${CLAUDE_SKILL_DIR}/templates/ratchet.mjs`: a count-against-a-baseline check for a pattern that is already common,
   with expiring exceptions (Node.js, scans files of any language)
+- `${CLAUDE_SKILL_DIR}/MESSAGES-AND-RATCHETS.md`: step 2's error messages, ratchets and exceptions on the line
+- `${CLAUDE_SKILL_DIR}/MUTATION.md`: step 4's mutation for each layer and the run on a real past mistake
+- `${CLAUDE_SKILL_DIR}/REPORT.md`: the report template
 
 The templates above are enough to build a guard. For worked examples, read the guards in `hooks/guards/` of the
 pau-skills repository (no-verify, merge, destructive, secret and inline-backtick guards), with their tests in its
@@ -74,7 +77,7 @@ each layer above the chosen one did not work; the report asks for it.
 2. **Types: make the bad state impossible to write.** A distinct type for a validated value, a closed set instead of
    a string, a required field instead of an optional one that is always set.
 3. **A lint or CI check whose error names what to use instead.** If the pattern is already common, make it a
-   ratchet. Both are described after the table.
+   ratchet. Both are described in `${CLAUDE_SKILL_DIR}/MESSAGES-AND-RATCHETS.md`.
 4. **A test of the behaviour.** The rule is really a requirement.
 5. **Prose, last, and only for judgment calls.** Nothing fails when an agent skips it.
 
@@ -106,64 +109,8 @@ Choosing between hook outputs (details in `HOOK-EVENTS.md`):
 Often the answer is two layers: a hook that stops the agent early and a CI check that catches everyone else. Say
 which layer covers what.
 
-**Every message names what to use instead.** A hook reason, a lint message or a CI error says what was found and
-which file, function or command to use: "use `config.load()` from `app/config`, not `os.environ` (rule
-no-env-read, see CLAUDE.md)", not "forbidden call". An agent that reads only "denied" tries variations until one gets
-through. Linters take the message in the rule's configuration: ESLint `no-restricted-syntax` and
-`no-restricted-imports` take a `message` per entry, Ruff's `lint.flake8-tidy-imports.banned-api` a `msg`, Clippy's
-`disallowed-methods` in `clippy.toml` a `reason` and a `replacement`, golangci-lint `forbidigo` a `msg` per
-pattern. A grep step in CI prints the replacement itself.
-
-**A ratchet, for a pattern that is already common.** When the live count from step 1 is too large to fix in this
-change, the check counts the instances against a committed baseline and fails only when a change adds more. When
-the count drops, it asks for the baseline to be lowered in the same change, so the count cannot climb back. The
-baseline is a number per rule (or per file and rule), not a list of exceptions. Use the project's tool when it has
-one:
-- ESLint: `eslint --suppress-rule <rule>` (or `--suppress-all`) writes the current counts per file and rule to
-  `eslint-suppressions.json` (moved with `--suppressions-location`); later runs fail when a file goes over its
-  count, and fail when a count drops until `--prune-suppressions` lowers it. `--max-warnings <n>` is a cruder ratchet
-  on the warning total.
-- Ruff: `ruff check --add-noqa="<reason>"` writes a `noqa` comment with the reason on every current violation, so
-  only new lines fail. It records each line, not a count; the `RUF100` rule reports `noqa` comments that no longer
-  match anything.
-- golangci-lint: `--new-from-merge-base <branch>`, `--new-from-rev <rev>` or `--new-from-patch <file>` report only
-  issues in code the change touched. This is a diff ratchet, not a count: an old instance moved into a touched line
-  reappears.
-- Anything else, in any language: `${CLAUDE_SKILL_DIR}/templates/ratchet.mjs` counts the lines matching a regular
-  expression in the files chosen by git globs and compares the count with a baseline file. It needs Node.js 20 or
-  later wherever it runs, locally and in CI, whatever the project's language. Copy it into the project (for example
-  `scripts/ratchet.mjs`), run it once with `--update` to write the baseline, commit both, then run the same command
-  locally and in CI. Its usage is at the top of the file, and its error names the replacement you pass with
-  `--instead`. `--files` and `--baseline` are relative to the repository root, whatever folder it runs from. Each
-  `--files` value is a git glob, quoted so the shell does not expand it: `*.py` matches top-level files only,
-  `**/*.py` matches every folder. A value that starts with `:(` goes to git unchanged, so
-  `:(exclude)app/config.py` leaves out the one file that is allowed to do it. Globs that match no file are an
-  error, not a baseline of 0.
-
-Prefer a linter rule that parses the code when one exists (Ruff `banned-api`, TID251; ESLint `no-restricted-imports`
-or `no-restricted-syntax`; Clippy `disallowed-methods`; golangci-lint `forbidigo`). A regular expression counts the
-pattern inside strings, comments and docstrings, and misses aliases such as `import os as o` or
-`from os import environ`. Use `ratchet.mjs` for plain text patterns, or as the count over a linter that has no
-baseline of its own: silence today's instances with the linter's suppression comment and point `ratchet.mjs` at that
-comment (for example `--pattern 'allow\(clippy::disallowed_methods\)'`), so the linter catches every new instance,
-aliases included, and the number of suppressions can only fall.
-
-Two changes merged one after the other that each lower the baseline can leave the main branch red, because the
-second still holds the first one's number; the fix is one more `--update`. ESLint's suppressions file behaves the
-same way. When the project has no CI, add the check to the command it already runs (its test or lint script), and
-tell the user that nothing enforces the rule on merge.
-
-**Exceptions go on the offending line**, with a reason, an expiry date and who approved it:
-`<comment marker> <check id>: allowed until <date>, <reason>, approved by <role or handle>`, for example
-`# no-env-read: allowed until 2026-12-31, read before the config loader exists, approved by @org/platform-owners`.
-Record the approver the way the project records approvals (a code owner team, a reviewer handle), never a person's
-name. An agent may propose an exception; a human approves it. A script cannot tell who wrote "approved by", so code
-review is the human gate: a CODEOWNERS entry on the files, or a reviewer who checks each new exception line.
-`ratchet.mjs` lists every valid exception (file and line, expiry, approver) on each run so the reviewer sees them, and
-fails on an expired or incomplete one. An exception on a counted line takes it out of the count, so the baseline is
-lowered in the same change. When the tool has its own suppression comment, put the same fields in the text it allows
-after the codes, on the same line (`# noqa: T201 <fields>`, `// eslint-disable-line <rule> -- <fields>`), and add a
-small CI step that fails on an expired date.
+Read `${CLAUDE_SKILL_DIR}/MESSAGES-AND-RATCHETS.md` now: every message names what to use instead, a pattern that is
+already common gets a ratchet, and exceptions go on the offending line with a reason, an expiry date and an approver.
 
 Done when you have named the layer and why the layers above it did not work, the mechanism, the event and matcher
 (for a hook), the output style, whether it needs a ratchet, and the reason.
@@ -213,40 +160,7 @@ Done when the guard file and its test exist and every test passes.
 
 A test you have never seen fail proves nothing. Break the check on purpose and watch it go red, then run it on a real
 past mistake. What to break depends on the layer:
-- **Hook, lint rule with its own code, CI script:** the decision function, as below.
-- **Ratchet:** the comparison (in `ratchet.mjs`, `count > base` to `count > base + 1`) or the pattern (a regex that
-  no longer matches the violation), and see the baseline cases from step 3 fail. With a linter's own baseline
-  (ESLint suppressions, Ruff `noqa`), there is no code of yours to break: add one instance to a scratch copy and see
-  it fail.
-- **Architecture or types:** nothing to mutate. The proof is the step 3 case that no longer builds, or the old way
-  that no longer exists. Skip to the past mistake.
-
-Any mutation, on the guard or on whichever file you break:
-
-1. **Commit** the guard and its test first (or, if the user does not want a commit yet, copy the guard to a scratch
-   file to restore from). Restoring with `git checkout --` erases uncommitted work, and does nothing on an untracked
-   file, so a mutation applied to an uncommitted file can silently stick.
-2. **Apply one mutation and assert it applied**, by reading the content, not by trusting the edit command: for
-   example change `return why` to `return null` in `check()`, then `grep -n "return null" <guard>` to see it.
-3. **Run the tests and expect red.** Every DENY case should fail. If the suite stays green, the test does not exercise
-   the decision function; fix the test, not the mutation.
-4. **Restore and assert clean**: `git checkout -- <guard>` (or copy the scratch file back), then
-   `git diff --exit-code -- <guard>` must print nothing, and the tests must be green again.
-
-These steps work by hand. If the `mutation-test` skill is also installed, its `mutate.sh` automates them, with each
-step checked by the script; its usage is at the top of the file. With any pau-skills plugin the path is
-`${CLAUDE_PLUGIN_ROOT}/skills/verification/mutation-test/mutate.sh` (every plugin ships the whole repository); with
-the skill installed on its own, it is in that skill's folder.
-
-Then the real past mistake, when step 1 found a commit that fixed a violation. With a clean tree, put the version
-of that one file from before the fix into the current tree, `git show <sha>^:<path> > <path>`, run the check (or
-the build, for a type fix), see it fail with its message naming what to use instead, then restore with
-`git checkout -- <path>` (or delete the file if it no longer exists) and check that `git diff --exit-code` prints
-nothing. One file in today's tree keeps git, today's baseline and today's configuration in place; a whole old tree
-(`git archive <sha>^ | tar -x -C <tmp>`) suits only a check that needs none of them, such as a linter run on a
-folder, because it is not a git repository and the old tree's count is not today's. With no fixed violation in
-history, say "no past mistake" in the report; the mutation (or, for architecture and types, the case that no longer
-builds) is then the only proof.
+read `${CLAUDE_SKILL_DIR}/MUTATION.md` now. It also gives the steps of a mutation and the run on the past mistake.
 
 Done when you have seen the check fail on the mutation (or the old case fail to build) and pass again after the
 restore, and fail on the past mistake (or noted that there is none).
@@ -303,18 +217,4 @@ and the rule text and row are gone.
 
 ## Report
 
-```
-Rule:        <precise one-sentence rule>   (from <file:line>)
-Layer:       <architecture | types | lint or CI check | test | hook | prose>
-             Higher layers: <why each layer above did not work, one line each>
-Mechanism:   <hook event + matcher | git hook | linter rule | CI check | test>, output <exit 2 | ask | context>
-             Ratchet: <none | baseline n in <file>>   Why: <one line>
-Files:       <guard path>, <test path>, <settings or config path>
-Tests:       <n> DENY, <n> PASS, subprocess checks | ratchet: <n> counted, <n> not, baseline cases | the case that
-             no longer builds; all green
-Mutation:    <what you broke> -> <n> tests red; restored, clean diff, green again | none (architecture or types)
-Past mistake: <sha>^: fails with "<message>" | no past mistake in history
-Live check:  denied: <harmless command> | passed: <near-miss> | CI: <run that failed on the violation>
-Rule text:   updated with "Enforced by: ..." at <file:line>; rule table row at <file:line> | dropped, mistake impossible
-Not covered: <variants the guard knowingly misses, and why; or "none known">
-```
+Read `${CLAUDE_SKILL_DIR}/REPORT.md` now, and reply with its template filled in.
