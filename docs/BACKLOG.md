@@ -301,46 +301,49 @@ Things that bit the seventh batch (Q1, the first batch run with the roster):
 
 ## Kickoff for the next session
 
-The sixth batch is done (pull request 28). The next session runs batch 7: Q1, then Q4, one after the other, and it is
-the first batch run with the roster ("With the roster" under "How to run a batch"). The owner starts it with this
-message:
+Batch 7 is half done: Q1 merged as pull request 31, and its follow-up fixed `instructions-audit` inside worktrees. The
+next session runs Q4, the file-size guard, on its own (it touches nearly every big file). Read "Things that bit the
+seventh batch" first: nesting is off in the cloud, so plan for the main session to start every agent. The owner starts
+it with this message:
 
 ```text
-You are the orchestrator for the seventh batch of work in this repository: Q1 the test-value audit, then Q4 the
-file-size guard, one after the other. Do not build them yourself; run the roster in .claude/agents/ (eng-lead,
-builder, reviewer) and integrate their work.
+You are the orchestrator for the rest of the seventh batch in this repository: Q4, the file-size guard. Do not build
+it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and integrate their work.
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules, including step 2 and step 8's bump-listing command).
 2. docs/BACKLOG.md: the note at the top that every item is a starting point to review and improve, decisions 7 to 10,
-   "Policy since P0.5" under "Context budget", items Q1 and Q4 (all of each), "How to work an item", "How to run a
-   batch" (all 10 steps, "With the roster", and every list of things that bit earlier batches) and "Order".
+   "Policy since P0.5" under "Context budget", item Q4 (all of it, including "Changed at the start of batch 7"),
+   Q10, "How to work an item", "How to run a batch" (all 10 steps, "With the roster", and every list of things that
+   bit earlier batches, the seventh's included) and "Order".
 3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, and the five agent
    files in .claude/agents/. Work that way for the whole session. The usage budget is generous: same model for every
    agent, a read-only plan check of every brief, a fresh reviewer per slice, and a cold run (headless, empty HOME)
-   for anything that changes how a skill or hook behaves when it runs.
+   for the hook.
 
 First, before any brief:
-- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH. At 2 or more, eng-lead dispatches; at 1, it returns briefs and you
+- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it was 1 in the cloud in batch 7). At 1, eng-lead returns briefs and you
   start each builder and reviewer yourself.
-- Review Q1 and Q4 against the code and tell me anything you would change; record what changed and why in the items.
-- Q1 needs my yes on which tests go before anything is removed. Q4 starts only after Q1 is merged, and splits the
-  big files before its test turns on.
+- Measure the big files again (Q4 has the command; 26 tracked files were over 5,000 tokens after Q1) and review Q4
+  against the code; tell me anything you would change and record it in the item.
+- Split the big files first, in their own slices, before the hook's test turns on. Keep docs/BACKLOG.md and
+  docs/ORIGINS.md as the indexes.
 
 Rules that matter most:
 - Every skill works on its own; no em or en dashes; plain English; Node standard library only.
 - Descriptions stay at most 400 characters each and 14,000 in total, with no angle-bracket tag.
-- Builders commit and never push. You push the working branch and open the PR. Never merge it yourself unless I say
-  so.
-- Watch CI on macOS as well as Linux, and the validate job. Before pushing a change that compares paths, run its
-  tests with TMPDIR set to a link.
-- Q4 changes a hook: bump pau-skills-hooks and give me the update commands.
+- Builders commit and never push. You push the working branch and open the PR. When CI is green on Linux, macOS and
+  the validate job and every review is clean, merge it yourself and carry on.
+- Before pushing a change that compares paths, run its tests with a short TMPDIR link (a path with a part that starts
+  with "-" makes skill-eval warn on purpose).
+- Give long briefs to agents as files they read, with a "Corrections after the plan check" section.
+- Q4 adds a hook: bump pau-skills-hooks and give me the update commands; the hook count goes from 12 to 13.
 
 When the PR is open, tell me in plain words what changed, what the reviews and cold runs found, and anything I need
 to decide; if html-plan is installed, give me the decisions as an html-plan page published as a private artifact.
-After I merge it, run `node scripts/pack-skills.mjs --since <main before the batch>` on main and send me the changed
-skills' zips in one bundle zip with HOW-TO-UPLOAD.txt, mark the items done in docs/BACKLOG.md with what worked and
-what did not with the roster, and update the test count on my profile README in paureis/paureis in my words (Q1).
+After the merge, run `node scripts/pack-skills.mjs --since <main before the batch>` on main and send me the changed
+skills' zips in one bundle zip with HOW-TO-UPLOAD.txt, mark Q4 done in docs/BACKLOG.md with what worked and what did
+not with the roster, and update the hook count on my profile README in paureis/paureis ("38 skills and 12 hooks").
 ```
 
 ### The fifth batch's kickoff, as a template
