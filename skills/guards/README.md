@@ -1,9 +1,10 @@
 # guards
 
-Hooks: `secret-guard`, `destructive-guard`, `no-verify-guard`, the merge guard and the inline-backtick guard. Skills:
-`rule-to-hook` (with hook templates in Node.js and Python and `ratchet.mjs`), `safe-merge`, `dependency-upgrade`, `dependency-security-audit`.
+Hooks: `secret-guard`, `file-size-guard`, `destructive-guard`, `no-verify-guard`, the merge guard and the inline-backtick
+guard. Skills: `rule-to-hook` (with hook templates in Node.js and Python, `ratchet.mjs`, `HOOK-EVENTS.md`,
+`MESSAGES-AND-RATCHETS.md`, `MUTATION.md` and `REPORT.md`), `safe-merge`, `dependency-upgrade`, `dependency-security-audit`.
 
-The three newer hooks, and how to turn any hook off or set its options, are documented in
+The four newer hooks, and how to turn any hook off or set its options, are documented in
 [hooks/README.md](../../hooks/README.md). The sections below cover the two older guards and the safe-merge script.
 
 ## Inline-backtick guard

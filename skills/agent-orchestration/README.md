@@ -2,9 +2,11 @@
 
 Skills: `methodology` (the method document, two adoption prompts and templates), `codebase-oracle` (with
 `TIERS.md` and the explorer and explainer briefs),
-`parallel-worktrees` (with `worktrees.mjs`), `lean-subagent-dev` (with a brief template, `TRIAGE.md` and
-`review-scope.mjs`, identical copies of the ones in `review-triage`), `arena` (with `arena.mjs` and the candidate
-and judge briefs), `geppetto` (with `COVENANT.md`, `check-agents.mjs` and the five agents under `roster/`). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
+`parallel-worktrees` (with `worktrees.mjs`), `lean-subagent-dev` (with a brief template, `TRIAGE.md`,
+`review-scope.mjs` and `review-scope-rules.mjs`, identical copies of the ones in `review-triage`), `arena` (with `arena.mjs` and the candidate
+and judge briefs), `overnight-run` (with `log.mjs`, `LOOP.md`, `AUDIT.md`,
+`PROTECTION.md`, `CONTRACT.md` and `WAKE.md`), `geppetto` (with `COVENANT.md`, `check-agents.mjs` and its modules
+`check-agents-yaml.mjs` and `check-agents-checks.mjs`, and the five agents under `roster/`). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
 [hooks/README.md](../../hooks/README.md)).
 
 ## lean-subagent-dev configuration

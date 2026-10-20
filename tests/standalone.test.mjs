@@ -21,6 +21,7 @@ const OPTIONAL_OUTSIDE = {
 const COPIES = [
   ['skills/session-discipline/retrospective/audit.mjs', 'skills/session-discipline/session-close/audit.mjs'],
   ['skills/verification/review-triage/review-scope.mjs', 'skills/agent-orchestration/lean-subagent-dev/review-scope.mjs'],
+  ['skills/verification/review-triage/review-scope-rules.mjs', 'skills/agent-orchestration/lean-subagent-dev/review-scope-rules.mjs'],
   ['skills/verification/review-triage/TRIAGE.md', 'skills/agent-orchestration/lean-subagent-dev/TRIAGE.md'],
 ];
 

@@ -40,6 +40,9 @@ Bundled files, open each when you reach its step:
 - `${CLAUDE_SKILL_DIR}/LOOP.md`: each way to wake a run and what it needs, the outer shell loop around `claude -p`
   with its permission rules, and where the log goes for a cloud scheduled task.
 - `${CLAUDE_SKILL_DIR}/AUDIT.md`: the morning reviewer's prompt.
+- `${CLAUDE_SKILL_DIR}/PROTECTION.md`: what protects the repository (step 1).
+- `${CLAUDE_SKILL_DIR}/CONTRACT.md`: the `RUN.md` template and the first log row (step 2).
+- `${CLAUDE_SKILL_DIR}/WAKE.md`: the ways to wake a run, in a table (step 4).
 
 Make a task list with one entry per step (Trust, Contract, Worktree, Wake, Loop, Stop, Audit, Summary) before you
 start.
@@ -85,36 +88,8 @@ folder. A predicate that turns out wrong stops the run (step 6), and the user am
 
 ### What protects the repository
 
-Checked on Claude Code 2.1.303 with headless runs in October 2026.
-
-- **The allow list is the protection.** Run the turns with `--permission-mode dontAsk` and one allow rule per thing
-  the run does (LOOP.md has the full list): `Edit(/<worktree>/**)` for the code (an `Edit` rule covers Write and
-  every other file-editing tool, Claude Code ignores `Write(path)` rules, and a rule path that starts with `//` is
-  absolute), `Edit` for `<state>/resume.md` and `<state>/summary.md` only,
-  `Bash(node <control>/log.mjs *)` for the log, `Bash(bash <control>/done.sh)`, the exact test command, and
-  `Bash(git -C <worktree> add *)`, `commit *`, `restore *`, `status *`, `diff *`, `log *`, `show *` and
-  `clean -f -- *` (the rule must match the form the run types: `git -C <worktree> status` is not covered by
-  `Bash(git status *)`). In `dontAsk` everything else is refused: in the check, `rm -fr`, `mv`, `cp`, `sed -i`,
-  `touch`, an `echo >>` redirect and a `>` redirect from an allowed command into the control folder were all refused,
-  and so was plain `rm` in the worktree (revert a new file with `git -C <worktree> clean -f -- <file>`). A subagent
-  gets the same rules. Commands Claude Code treats as read only (`cat`, `grep`, `ls`, a plain `git log`) still run
-  without a rule: they read, and cannot write.
-- **Not `acceptEdits`, not a blanket bypass.** `acceptEdits` approves `rm`, `mv`, `cp`, `sed -i`, `mkdir` and
-  `touch` inside the working folders by mode, so a deny rule such as `Bash(rm -rf *)` is passed by `rm -fr`. Never
-  use `--dangerously-skip-permissions`, `bypassPermissions` or `auto` for the night.
-- **Deny rules are not a boundary.** Anything the run may execute that runs code the run can edit can push, deploy
-  or delete past every deny rule: the test command and its configuration, build and package scripts, and git
-  commit hooks (a `.husky/` folder, `core.hooksPath`). Deny rules only narrow a broad allow rule. Keep
-  `Bash(git push *)` and the project's deploy commands denied anyway.
-- **The strong protection takes the means away**: run the turns as a separate OS user, or in a container, that has
-  no push credentials (no SSH agent, no git credential helper, no `gh` login) and mounts the control folder read
-  only. Check it from inside before leaving: `git -C <worktree> push --dry-run` fails, `touch <control>/x` fails,
-  `ssh-add -l` and `gh auth status` fail. Without that, `loop.sh` sets a cheap layer, a git setting through the
-  environment that rewrites every push address to a path that does not exist (`bash <control>/loop.sh check` shows
-  that a push is refused); code the run executes can undo it.
-- **In a session that stays open**, check its permission mode first. In `auto` or `bypassPermissions` mode, or with
-  broad allow rules such as `Bash(*)`, nothing above holds. Start the night's session from the worktree with
-  `claude --permission-mode dontAsk` and the same allow and deny rules, or use the outer loop.
+Read `${CLAUDE_SKILL_DIR}/PROTECTION.md` now: the allow list in `dontAsk` mode is the protection, and the strong
+protection takes the means away.
 
 ## Step 2. Write the contract
 
@@ -124,7 +99,7 @@ where the label is the date and a short slug (`2026-10-18-parser`). It holds two
 absolute:
 - `<control>` (`<run>/control`): written now, attended, and never by a turn. No turn gets an allow rule to write
   it, its folder is never passed with `--add-dir`, and `Edit(/<control>/**)` is denied.
-  It holds `RUN.md` (the contract, from the template below), `done.sh` (the predicate, starting with
+  It holds `RUN.md` (the contract, from the template in `CONTRACT.md`), `done.sh` (the predicate, starting with
   `cd <worktree>`), `predicate.sha` (the fingerprint below), and copies of `log.mjs` and `AUDIT.md`
   (`cp ${CLAUDE_SKILL_DIR}/log.mjs ${CLAUDE_SKILL_DIR}/AUDIT.md <control>/`). The outer loop's `loop.sh` goes here
   too, and the user's off switch, `<control>/STOP`.
@@ -136,34 +111,7 @@ The fingerprint freezes the predicate: `git hash-object <control>/done.sh <workt
 predicate>` (after step 3 makes the worktree), saved to `<control>/predicate.sha`. The loop compares it before every
 check and stops when it changed. (A cloud scheduled task sees only its clone: see the end of LOOP.md.)
 
-```
-# Overnight run: <goal>
-Goal:        <one or two sentences, in the user's words>
-Base:        <branch or commit>      Branch: overnight/<label>      Worktree: <absolute path>
-Control:     <control> (never written by the run)      State: <state>
-Predicate:   bash <control>/done.sh   frozen with: <files that define it>   At start: <its last line>
-Tests:       <the exact test command>
-Budget:      <n> iterations; $<x> per headless turn; no new iteration after <time>
-Dead end:    <n> approaches with no progress, or no untried idea left
-Mode:        dontAsk     Allowed: <the allow rules>     Denied: <the deny rules>
-Wake:        <the way from step 4>
-Off switch:  touch <control>/STOP
-Log:         node <control>/log.mjs append <state>/decisions.tsv ...      Run ids: <session ids, as they start>
-
-Each wake: check <control>/STOP on its own (ls <control>) and act on the answer before anything else: if it exists,
-pause (resume.md, a stop row, end). Read this file and the last ten log rows (node <control>/log.mjs show
-<state>/decisions.tsv --last 10). Run the predicate: exit 0 on a clean tree means finished. Otherwise make one small
-change, run the tests and the predicate, commit it if the predicate moved and no test that passed before fails,
-revert it if not, and log one row. Never push, deploy, delete data or message anyone.
-```
-
-Log the contract as the first row:
-
-```bash
-LOG append <state>/decisions.tsv --phase contract --decision "overnight run: <goal>" \
-  --reason "the user asked for it; trust items 1 to 6 hold" --evidence "<control>/RUN.md, predicate.sha" \
-  --result "<the predicate's last line>"
-```
+Read `${CLAUDE_SKILL_DIR}/CONTRACT.md` now: fill in its `RUN.md` template, then log the contract as the first row.
 
 The `run` column names the conversation that wrote each row, so the audit can find its transcript. In a Claude Code
 session `LOG` takes it from `$CLAUDE_CODE_SESSION_ID`: never pass `--run` there. Pass `--run <label>` only where that
@@ -186,15 +134,8 @@ each turn in the worktree. Then:
 
 ## Step 4. Pick how the run wakes
 
-Read `${CLAUDE_SKILL_DIR}/LOOP.md` now. In short:
-
-| The situation | Use | It needs |
-|---|---|---|
-| The session stays open (lunch, a long loop at the desk) | a session started for it in `dontAsk` mode, iterating in its turn, or the built-in `/loop` | the machine awake and the session open |
-| The run must outlive this session | the outer shell loop around `claude -p` in LOOP.md | a machine that stays on; the login and the skill reachable by a headless run |
-| The machine will be off | a cloud scheduled task (`/schedule`) | the run branch pushed, which only the user can allow in advance |
-| Waiting on an event (CI, a long build) | Monitor or a background Bash command | the session open, and the tool in this session |
-| A self check-in at a time | a `send_later`-style tool | the tool in this session's tool list |
+Read `${CLAUDE_SKILL_DIR}/LOOP.md` now. For the short version, the table in `${CLAUDE_SKILL_DIR}/WAKE.md` says which
+way to wake fits the situation, and what it needs.
 
 `/loop` and session scheduled jobs live inside this Claude process: they end when it exits, and never wake a
 `claude -p` that has exited. Never assume a tool exists; look at the tool list. Write the choice into `RUN.md`.

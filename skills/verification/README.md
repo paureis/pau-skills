@@ -1,10 +1,12 @@
 # verification
 
 Skills: `tdd`, `mutation-test` (with `mutate.sh`), `evaluator`, `flaky-test-hunt` (with `repeat.mjs`),
-`migration-review`, `ci-cost-and-cadence` (with `measure-minutes.mjs`), `review-triage` (with `TRIAGE.md` and
-`review-scope.mjs`), `bug-fix` (with `EVIDENCE.md`), `verify-app` (with `check-map.mjs`, `DRIVING.md`, `MAINTAIN.md`
-and templates, `templates/measure-boxes.js` among them), `hillclimb` (with `decisions.mjs` and `BENCHMARK-CHECKLIST.md`), `skill-eval` (with `skill-eval.mjs`
-and `JUDGE-BRIEF.md`), `launch-readiness` (with `ledger.mjs`, `table.mjs`, `rules.mjs`, `areas/`, `PROBES.md`,
+`migration-review`, `ci-cost-and-cadence` (with `measure-minutes.mjs`), `review-triage` (with `TRIAGE.md`,
+`review-scope.mjs` and `review-scope-rules.mjs`), `bug-fix` (with `EVIDENCE.md`), `verify-app` (with `check-map.mjs` and
+`check-map-rules.mjs`, `DRIVING.md`, `MAINTAIN.md` and templates, `templates/measure-boxes.js` among them), `hillclimb`
+(with `decisions.mjs`, `decisions-core.mjs`, `decisions-log.mjs`, `HARNESS.md` and `BENCHMARK-CHECKLIST.md`),
+`skill-eval` (with `skill-eval.mjs` and its modules `skill-eval-core.mjs`, `skill-eval-files.mjs`, `skill-eval-setup.mjs`
+and `skill-eval-blind.mjs`, `ISOLATION.md` and `JUDGE-BRIEF.md`), `launch-readiness` (with `ledger.mjs`, `table.mjs`, `rules.mjs`, `areas/`, `PROBES.md`,
 `QUESTIONNAIRE.md` and `READINESS-TEMPLATE.md`). Hooks: `test-tamper-guard`, `suppression-reason` and `verify-before-done`.
 
 All three hooks are on when the plugin is installed. To turn one off or change how it behaves (for example, make

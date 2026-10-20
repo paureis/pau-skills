@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// A stand-in for the `claude` command, for tests/skill-eval.test.mjs. It records how it was called and prints output
+// A stand-in for the `claude` command, for tests/skill-eval-run.test.mjs. It records how it was called and prints output
 // in the shape the real command prints, so the tests never call a model.
 //
 // Every call writes <FAKE_CLAUDE_LOG>/<pid>.json: { kind, argv, cwd, home, stdin, names } where names lists every
