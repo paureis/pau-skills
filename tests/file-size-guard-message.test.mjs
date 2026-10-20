@@ -14,12 +14,16 @@ import { kindOf } from '../hooks/guards/file-size-guard.mjs';
 
 const big = 'a'.repeat(LIMIT_BYTES + 1);
 
+// Code whose name looks like a log ("decision", "history", "changelog") is still code: the log patterns apply to text
+// files only. Data files get their own kind wherever they are, test fixtures included.
 const KINDS = {
-  code: ['src/server.ts', 'lib/parse.py', 'cmd/main.go', 'Makefile'],
+  code: ['src/server.ts', 'lib/parse.py', 'cmd/main.go', 'Makefile', 'skills/verification/hillclimb/decisions.mjs',
+    'src/decision_tree.py', 'lib/history.py', 'src/changelog_parser.go', 'app/HistoryService.java'],
   test: ['tests/a.js', 'test/b.rb', 'spec/c_spec.rb', 'src/__tests__/d.js', 'src/e.test.ts', 'src/f.spec.js', 'pkg/g_test.go', 'app/test_h.py'],
   document: ['docs/guide.md', 'README.mdx', 'manual.rst', 'notes.txt', 'book.adoc'],
-  log: ['CHANGELOG.md', 'docs/HISTORY.rst', 'server.log', 'docs/decisions.md', 'decision-log.md'],
+  log: ['CHANGELOG.md', 'docs/HISTORY.rst', 'server.log', 'docs/decisions.md', 'decision-log.md', 'HISTORY', 'notes/decisions.adoc'],
   skill: ['skills/x/SKILL.md'],
+  data: ['test/fixtures/big.json', 'data/rows.csv', 'tests/fixtures/events.jsonl', 'x.tsv', 'conf.yaml', 'k8s/deploy.yml', 'feed.xml', 'db/seed.sql'],
 };
 const RECIPE = {
   code: /by responsibility into modules.*old path re-export/s,
@@ -27,6 +31,7 @@ const RECIPE = {
   document: /short index plus one file per section/,
   log: /keep recent entries.*archive file by period/s,
   skill: /keep its steps.*reference file next to it/s,
+  data: /generate it from a script at test or build time.*small sample.*ignorePaths/s,
 };
 
 describe('file-size guard: the kind of file', () => {

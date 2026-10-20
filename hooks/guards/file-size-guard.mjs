@@ -160,12 +160,17 @@ export function gitSkipped({ dir, rest }, git = runGit) {
   return attrs.status === 0 && attrHits(attrs.stdout).size > 0;
 }
 
+const LOG_EXT = new Set(['', 'md', 'txt', 'rst', 'adoc', 'log']); // a log is a text file; decisions.mjs is code
+const DATA_EXT = new Set(['json', 'jsonl', 'csv', 'tsv', 'yaml', 'yml', 'xml', 'sql']);
+
 /** The kind of file, for the split recipe. */
 export function kindOf(path) {
   const p = String(path).replace(/\\/g, '/');
   const base = p.slice(p.lastIndexOf('/') + 1);
+  const ext = (/\.([^.]+)$/.exec(base)?.[1] ?? '').toLowerCase();
   if (base === 'SKILL.md') return 'skill';
-  if (/^(CHANGELOG|HISTORY)/i.test(base) || /\.log$/i.test(base) || /decision/i.test(base)) return 'log';
+  if (LOG_EXT.has(ext) && (/^(CHANGELOG|HISTORY)/i.test(base) || ext === 'log' || /decision/i.test(base))) return 'log';
+  if (DATA_EXT.has(ext)) return 'data';
   if (/(^|\/)(tests?|spec|__tests__)\//.test(p) || /\.(test|spec)\.[^./]+$/.test(base) || /_test\.[^./]+$/.test(base) || /^test_.*\.py$/.test(base)) return 'test';
   if (/\.(md|mdx|rst|txt|adoc)$/i.test(base)) return 'document';
   return 'code';
@@ -177,6 +182,7 @@ export const RECIPES = {
   document: ['long document', 'make it a short index plus one file per section, each linked from the index.'],
   log: ['log', 'keep recent entries and move older ones to an archive file by period (one per year or release), linked from the top.'],
   skill: ['SKILL.md', 'keep its steps and move detail to a reference file next to it, named in the step that needs it.'],
+  data: ['data file', 'generate it from a script at test or build time, or keep a small sample checked in; if it must be big, add it to "ignorePaths".'],
 };
 
 const fmt = (n) => n.toLocaleString('en-US');
