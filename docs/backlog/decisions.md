@@ -64,3 +64,11 @@
      and leaving it failing as the other.
    - The three problems found before the batch (verify-app's skipped report block and source wave, `to-prd` step 2
      asking the user) are fixed in the same follow-up pull request, not filed as issues (the owner's choice).
+
+11. **Settled after Q4 (pull request 33)**, each as recommended, on an html-plan page:
+   - The file-size guard sees only Write, Edit and MultiEdit; a file written by a Bash command stays a documented
+     gap, which the repository test catches in CI. No Bash check is planned.
+   - The nine files between 18,000 and 20,000 bytes are split when an edit needs it; the hook asks then.
+   - `rule-to-hook` gets `allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)`, so reading its own reference files does not
+     prompt.
+   - The test gaps the Q4 reviews found, all present before the batch, go into Q10.

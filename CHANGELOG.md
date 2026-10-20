@@ -3,6 +3,14 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-20: after Q4, the owner's decisions (decision 11)
+
+- `rule-to-hook`: `allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)`, so reading its reference files and templates does
+  not prompt.
+- Q10 holds the test gaps the Q4 reviews found; the file-size guard's Bash gap stays documented, and files near the
+  limit are split when an edit needs it.
+- Versions: guards 0.8.1, pau-skills 0.15.1. No hook changed.
+
 ## 2026-10-20: the seventh batch, Q4 file-size guard
 
 - New hook `file-size-guard` (guards): refuses a Write, Edit or MultiEdit that leaves a file in the project over 5,000
