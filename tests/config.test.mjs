@@ -86,7 +86,7 @@ test('the existing hooks honour the switch: no-idle and the backtick guard', () 
   const { home, project } = dirs();
   writeFileSync(join(project, '.claude', 'pau-skills.json'), JSON.stringify({ hooks: { 'no-idle': false, 'inline-backtick-guard': false } }));
   const env = { PAU_SKILLS_HOME: home, CLAUDE_PROJECT_DIR: '', PAU_SKILLS_DISABLE: '' };
-  const agent =JSON.stringify({ hook_event_name: 'SubagentStart', cwd: project });
+  const agent = JSON.stringify({ hook_event_name: 'SubagentStart', cwd: project });
   assert.equal(runNode(repo('hooks', 'agent-orchestration', 'no-idle.mjs'), { input: agent, env }).stdout, '');
   const bt = JSON.stringify({ tool_name: 'Bash', cwd: project, tool_input: { command: 'node -e "console.log(`x`)"' } });
   assert.equal(runNode(repo('hooks', 'guards', 'block-inline-backtick-payload.mjs'), { input: bt, env }).code, 0);

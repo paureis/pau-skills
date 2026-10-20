@@ -38,7 +38,7 @@ describe('shell splitting', () => {
 describe('destructive guard: rm', () => {
   for (const c of ['rm -rf /', 'rm -rf /*', 'rm -fr ~', 'rm -rf ~/', 'rm -rf $HOME', 'rm -Rf .', 'rm -rf *', 'rm -rf ..',
     'rm -rf ../other', 'rm -rf "$BUILD_DIR/"', 'rm -rf ${OUT}/dist', 'rm --recursive --force /etc', 'rm -rf /usr/local/lib',
-    'rm -r --no-preserve-root build','sudo rm -rf /var/lib', `rm -rf ${ROOT}`, 'cd x && rm -rf ~/Documents']) {
+    'rm -r --no-preserve-root build', 'sudo rm -rf /var/lib', `rm -rf ${ROOT}`, 'cd x && rm -rf ~/Documents']) {
     test(`denies ${c}`, () => denied(c));
   }
   for (const c of ['rm -rf node_modules', 'rm -rf ./dist build', `rm -rf ${ROOT}/target`, 'rm -rf /tmp/scratch-123',

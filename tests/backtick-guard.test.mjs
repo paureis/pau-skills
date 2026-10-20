@@ -2,9 +2,10 @@
 // and an ignored gate is worse than no gate.
 //
 // The "printf prose" and "single-quoted payload" cases were added after the hook blocked its own retrospective commit:
-// a printf whose PROSE mentioned "node -e" and contained backticks, executing nothing. That false positive exposed two
-// real flaws: matching the interpreter anywhere rather than at a command position, and ignoring that backticks inside
-// SINGLE quotes are literal.
+// a printf whose PROSE mentioned "node -e" and contained backticks. That false positive exposed two real flaws:
+// matching the interpreter anywhere rather than at a command position, and ignoring that backticks inside SINGLE quotes
+// are literal. The printf case now uses double quotes, so it checks the command-position rule on its own; the
+// single-quote rule has its own cases.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { repo, runNode, tempDir } from './helpers.mjs';
