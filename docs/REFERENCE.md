@@ -105,7 +105,7 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[dependency-upgrade](../skills/guards/dependency-upgrade/SKILL.md)**: Plans and applies dependency and toolchain upgrades in any ecosystem, step by step.
 - **[dependency-security-audit](../skills/guards/dependency-security-audit/SKILL.md)**: A ranked vulnerability, reachability and supply-chain audit for any ecosystem and
   container image, built on native audit tools and OSV-based scanners, not a raw scanner dump.
-- Hooks: [`secret-guard`](../hooks/guards/secret-guard.mjs), [`destructive-guard`](../hooks/guards/destructive-guard.mjs), [`no-verify-guard`](../hooks/guards/no-verify-guard.mjs), [`merge-guard`](../hooks/guards/merge-guard.mjs), [`inline-backtick-guard`](../hooks/guards/block-inline-backtick-payload.mjs).
+- Hooks: [`secret-guard`](../hooks/guards/secret-guard.mjs), [`file-size-guard`](../hooks/guards/file-size-guard.mjs), [`destructive-guard`](../hooks/guards/destructive-guard.mjs), [`no-verify-guard`](../hooks/guards/no-verify-guard.mjs), [`merge-guard`](../hooks/guards/merge-guard.mjs), [`inline-backtick-guard`](../hooks/guards/block-inline-backtick-payload.mjs).
 
 ## planning
 

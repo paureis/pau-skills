@@ -2,7 +2,7 @@
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Skills: 38](https://img.shields.io/badge/skills-38-informational)
-![Hooks: 12](https://img.shields.io/badge/hooks-12-informational)
+![Hooks: 13](https://img.shields.io/badge/hooks-13-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
 The Claude Code skills, hooks and scripts I use every day, packaged as a plugin marketplace. I am Alvaro "Pau" Reis,
@@ -91,6 +91,8 @@ green by skipping the failing test.
 - `agent-friendly-audit` mines review comments, fix commits, transcripts and instruction files for the mistakes agents
   repeat, and proposes a fix for each at the highest layer it can live in (architecture, types, a lint or CI check, a
   test, then prose), proven on a past instance.
+- `file-size-guard` (hook) blocks a change that grows a file past 5,000 tokens, the file an agent keeps appending to,
+  and says how to split it.
 - `skill-eval` checks whether a change to a skill or prompt changes what the agent actually does, with blind runs.
 
 ### 3. One command that cannot be undone

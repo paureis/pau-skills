@@ -84,6 +84,7 @@ Cursor's plugin repository. pstack is a single snapshot, so there is no history 
 - [rule-to-hook](origins/guards/rule-to-hook.md): Original; since 2026-10-17 adapted in part from [pstack `correct`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/correct)
 - [dependency-upgrade](origins/guards/dependency-upgrade.md): Original
 - [Secret guard, `hooks/guards/secret-guard.mjs`](origins/guards/secret-guard.md): Original
+- [File-size guard, `hooks/guards/file-size-guard.mjs`](origins/guards/file-size-guard.md): Original
 - [Destructive guard, `hooks/guards/destructive-guard.mjs` and `hooks/lib/shell.mjs`](origins/guards/destructive-guard.md): Original
 - [No-verify guard, `hooks/guards/no-verify-guard.mjs`](origins/guards/no-verify-guard.md): Original
 
