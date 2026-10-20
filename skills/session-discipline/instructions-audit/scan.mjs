@@ -465,7 +465,7 @@ export function discoverFiles(root, { home = homedir(), maxDepth = 6, ancestors 
       const p = join(dir, e.name);
       if (e.isDirectory()) {
         if (depth < maxDepth && !SKIP_DIRS.has(e.name) && (!e.name.startsWith('.') || e.name === '.claude' || e.name === '.github')) queue.push([p, depth + 1]);
-      } else if (dir !== root && NESTED_NAMES.includes(e.name) && !p.includes(`${sep}.claude${sep}`)) {
+      } else if (dir !== root && NESTED_NAMES.includes(e.name) && !relative(root, p).split(sep).includes('.claude')) {
         add(p, 'nested', e.name === 'AGENTS.md' ? 'other-tool' : 'in-subtree');
       }
     }
