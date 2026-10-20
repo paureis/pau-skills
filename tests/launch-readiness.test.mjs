@@ -10,6 +10,9 @@ import {
 } from '../skills/verification/launch-readiness/ledger.mjs';
 import { NOW, day, SAMPLE, project, newLedger, put, row, git, commitAll, run } from './launch-readiness.helpers.mjs';
 
+// The tests fix the clock at noon UTC and expect that UTC date, while ledger.mjs stamps the local date.
+process.env.TZ = 'UTC';
+
 describe('applyRows', () => {
   test('hashes each cited file whole (sha256, 16 hex characters) and stamps the date', () => {
     const root = project({ 'a.js': 'one\ntwo\n' });
