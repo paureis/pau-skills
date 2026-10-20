@@ -146,8 +146,8 @@ separate the way you expect, and have the harness print its error and work count
 
 ## Step 5. Plan the hypotheses
 
-Profile the case once, name the limiter, and write the hypotheses in the task list, cheapest first. Read
-`${CLAUDE_SKILL_DIR}/HARNESS.md` now, section "Step 5. Plan the hypotheses", for how to word and order them.
+Profile the case once, name the limiter, and write the hypotheses in the task list: cheapest first, or for a score
+by expected gain over cost. Read `${CLAUDE_SKILL_DIR}/HARNESS.md` now, section "Step 5. Plan the hypotheses".
 
 ## Step 6. The loop: one hypothesis per attempt
 
@@ -162,6 +162,7 @@ For each attempt:
    at once slow each other.)
 4. Run the regression gate (the test command from step 2).
 5. Check that the harness is unchanged and that `uptime` is close to the baseline's (within about 0.5 of it).
+   The harness check is "Freeze it" in `${CLAUDE_SKILL_DIR}/HARNESS.md`.
    If the load is higher, find what is running and wait for it, or stop it if it is yours. If it stays high,
    re-baseline under the same load: `git stash -u`, measure the kept code (HEAD), append a new baseline row with the
    same `--better` and a note `re-baseline: load <x>`, `git stash pop`. Then measure with the same command and run
@@ -190,8 +191,8 @@ For each attempt:
      one, and a note on what you learned. A tweak that "might help" is not kept.
 7. The attempt is done when the tree is clean and the row is in the log. Only then start the next one.
 
-**Corrections.** When a row is wrong, or a kept change later turns out to break behaviour, never edit the log: read
-`${CLAUDE_SKILL_DIR}/HARNESS.md` now, section "Step 6. Corrections", and append the correction rows it describes.
+**Corrections.** Never edit the log: a wrong row gets a new row with its `--id`; a kept change that breaks behaviour
+gets `git revert`, a correction row and a re-baseline. Read `${CLAUDE_SKILL_DIR}/HARNESS.md` now, "Step 6. Corrections".
 
 After each keep, profile again: the limiter often moves, and the next hypothesis should target the new one.
 
@@ -200,6 +201,7 @@ After each keep, profile again: the limiter often moves, and the next hypothesis
 - After three reverts in a row, change tack: move to another mantra, combine two near misses as one new hypothesis,
   profile again, reread the code the case runs, or try something more radical before you conclude the hill is
   climbed.
+  The mantras are in step 5 of `${CLAUDE_SKILL_DIR}/HARNESS.md`.
 - Correctness and simplicity outrank the number. Revert a win that breaks behaviour; keep a simplification that
   holds the number.
 - **The noise floor.** When the spread is as large as the gains left (fixed costs such as startup or data setup now
