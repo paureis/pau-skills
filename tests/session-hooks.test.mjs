@@ -3,20 +3,20 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, writeFileSync, utimesSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, readdirSync, writeFileSync, utimesSync, realpathSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { repo as repoPath, runNode, tempDir } from './helpers.mjs';
 import { summarize, gather } from '../hooks/session-discipline/branch-context.mjs';
 import { extract, render, writeSnapshot, latestSnapshot } from '../hooks/session-discipline/compact-snapshot.mjs';
 
 const BRANCH = repoPath('hooks', 'session-discipline', 'branch-context.mjs');
 const SNAP = repoPath('hooks', 'session-discipline', 'compact-snapshot.mjs');
-const env = () => ({ PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: '' });
+const env = () => ({ PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: '', PAU_SKILLS_DISABLE: '' });
 
 function repo() {
   const dir = tempDir();
   const g = (...a) => execFileSync('git', a, { cwd: dir, stdio: 'ignore' });
-  g('init', '-q', '-b', 'main'); g('config', 'user.email', 'a@example.com'); g('config', 'user.name', 'a');
+  g('init', '-q', '-b', 'main'); g('config', 'user.email', 'a@example.com'); g('config', 'user.name', 'a'); g('config', 'commit.gpgsign', 'false');
   writeFileSync(join(dir, 'a.txt'), '1'); g('add', '.'); g('commit', '-qm', 'first commit');
   return { dir, g };
 }
@@ -49,7 +49,9 @@ describe('branch-context', () => {
     assert.match(text, /on branch main/); assert.match(text, /1 untracked/); assert.match(text, /first commit/); assert.match(text, /protected/);
   });
   test('silent outside a repository', () => {
-    const r = runNode(BRANCH, { input: JSON.stringify({ hook_event_name: 'SessionStart', cwd: tempDir() }), env: env() });
+    // The ceiling stops git looking above the folder, so a repository around the temp folder does not count.
+    const d = tempDir();
+    const r = runNode(BRANCH, { input: JSON.stringify({ hook_event_name: 'SessionStart', cwd: d }), env: { ...env(), GIT_CEILING_DIRECTORIES: dirname(realpathSync(d)) } });
     assert.equal(r.code, 0); assert.equal(r.stdout, '');
   });
 });
