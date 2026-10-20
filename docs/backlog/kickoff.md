@@ -4,7 +4,7 @@
 
 Batch 7 is half done: Q1 merged as pull request 31, and its follow-up fixed `instructions-audit` inside worktrees. The
 next session runs Q4, the file-size guard, on its own (it touches nearly every big file). Read "Things that bit the
-seventh batch" first: nesting is off in the cloud, so plan for the main session to start every agent. The owner starts
+seventh batch" (`docs/backlog/things-that-bit/batch-7.md`) first: nesting is off in the cloud, so plan for the main session to start every agent. The owner starts
 it with this message:
 
 ```text
@@ -13,10 +13,10 @@ it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules, including step 2 and step 8's bump-listing command).
-2. docs/BACKLOG.md: the note at the top that every item is a starting point to review and improve, decisions 7 to 10,
-   "Policy since P0.5" under "Context budget", item Q4 (all of it, including "Changed at the start of batch 7"),
-   Q10, "How to work an item", "How to run a batch" (all 10 steps, "With the roster", and every list of things that
-   bit earlier batches, the seventh's included) and "Order".
+2. docs/BACKLOG.md: the note at the top that every item is a starting point to review and improve, decisions 7 to 10 (docs/backlog/decisions.md),
+   "Policy since P0.5" under "Context budget" (docs/backlog/context-budget.md), item Q4 in docs/backlog/q4.md (all of it, including "Changed at the start of batch 7"),
+   Q10 (docs/backlog/q10.md), "How to work an item", "How to run a batch" in docs/backlog/how-to-run-a-batch.md (all 10 steps, "With the roster", and every list of things that
+   bit earlier batches in docs/backlog/things-that-bit/, the seventh's included) and "Order".
 3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, and the five agent
    files in .claude/agents/. Work that way for the whole session. The usage budget is generous: same model for every
    agent, a read-only plan check of every brief, a fresh reviewer per slice, and a cold run (headless, empty HOME)
@@ -25,7 +25,7 @@ Before anything else, read these in full:
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it was 1 in the cloud in batch 7). At 1, eng-lead returns briefs and you
   start each builder and reviewer yourself.
-- Measure the big files again (Q4 has the command; 26 tracked files were over 5,000 tokens after Q1) and review Q4
+- Measure the big files again (Q4 in docs/backlog/q4.md has the command; 26 tracked files were over 5,000 tokens after Q1) and review Q4
   against the code; tell me anything you would change and record it in the item.
 - Split the big files first, in their own slices, before the hook's test turns on. Keep docs/BACKLOG.md and
   docs/ORIGINS.md as the indexes.
@@ -43,7 +43,7 @@ Rules that matter most:
 When the PR is open, tell me in plain words what changed, what the reviews and cold runs found, and anything I need
 to decide; if html-plan is installed, give me the decisions as an html-plan page published as a private artifact.
 After the merge, run `node scripts/pack-skills.mjs --since <main before the batch>` on main and send me the changed
-skills' zips in one bundle zip with HOW-TO-UPLOAD.txt, mark Q4 done in docs/BACKLOG.md with what worked and what did
+skills' zips in one bundle zip with HOW-TO-UPLOAD.txt, mark Q4 done in docs/BACKLOG.md and docs/backlog/ with what worked and what did
 not with the roster, and update the hook count on my profile README in paureis/paureis ("38 skills and 12 hooks").
 ```
 
@@ -59,9 +59,9 @@ subagents and integrate their work.
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules, including step 2 and step 8's bump-listing command).
-2. docs/BACKLOG.md, especially decision 7, "Policy since P0.5" under "Context budget", items N8, N9, P1.6, P1.7 and
-   P1.8 (all of each), "How to work an item", "How to run a batch" (all 10 steps and every list of things that bit
-   earlier batches, the fourth batch's included) and "Order".
+2. docs/BACKLOG.md, especially decision 7 (docs/backlog/decisions.md), "Policy since P0.5" under "Context budget" (docs/backlog/context-budget.md), items N8, N9 (docs/backlog/n-new-skills.md), P1.6, P1.7 and
+   P1.8 (docs/backlog/p1-small-tooling.md; all of each), "How to work an item", "How to run a batch" in docs/backlog/how-to-run-a-batch.md (all 10 steps and every list of things that bit
+   earlier batches in docs/backlog/things-that-bit/, the fourth batch's included) and "Order".
 3. skills/agent-orchestration/lean-subagent-dev/SKILL.md and its BRIEF-TEMPLATE.md and TRIAGE.md. Work that way for
    the whole session. The usage budget is generous: same model for every subagent, a read-only plan check of every
    brief before any builder starts, a fresh reviewer per item, and a cold run (headless, empty HOME) for any item that
@@ -81,7 +81,7 @@ The batch, one builder each, each in its own git worktree, with disjoint files:
 - P1.6, P1.7 and P1.8 as a small third builder: audit.mjs sees short CLAUDE.md bullets and synced skills (both copies,
   tests first), mutate.sh and Python bytecode, and the evaluator's evidence line.
 You own README (skill badge 34 to 36), CHANGELOG, marketplace.json versions, NOTICE, ORIGINS, which-skill,
-tests/standalone.test.mjs, the confirm-list test and docs/BACKLOG.md.
+tests/standalone.test.mjs, the confirm-list test and docs/BACKLOG.md and docs/backlog/.
 
 Rules that matter most:
 - Every skill works on its own; no em or en dashes; plain English; Node standard library only.
@@ -94,6 +94,6 @@ Rules that matter most:
 When the PR is open, tell me in plain words what changed, what the reviews and cold runs found, and anything I need
 to decide. After I merge it, run `node scripts/pack-skills.mjs --since <main before the batch>` on main and send me
 the changed skills' zips together in one bundle zip (a folder of per-skill zips plus HOW-TO-UPLOAD.txt), say which
-replace a skill I have and which are new, mark the items done in docs/BACKLOG.md, and update the skill count on my
+replace a skill I have and which are new, mark the items done in docs/BACKLOG.md and docs/backlog/, and update the skill count on my
 profile README in paureis/paureis. If any hook changed, bump pau-skills-hooks and give me the update commands.
 ```

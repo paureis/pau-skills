@@ -36,20 +36,20 @@ change and why in its pull request and in the item.
    - Scripts are rewritten in Node with no dependencies. Never copy Bun, `commander` or `jq` usage.
    - A mention of another pstack skill becomes either our equivalent ("if it is installed") or an inline fallback.
 4. **Attribution.** pstack is MIT, copyright 2026 Lauren Tan. When text or structure comes from it:
-   - add the file to `NOTICE` under a pstack section with the upstream license (see item P0.3);
+   - add the file to `NOTICE` under a pstack section with the upstream license (see item P0.3 in `docs/backlog/p0-groundwork.md`);
    - add `license: MIT (adapted from cursor/plugins pstack; see NOTICE)` and `metadata.upstream: <upstream URL>` to
      the frontmatter;
    - mark it "(Adapted from ...)" in `docs/ORIGINS.md`, with a "What this version changes" list taken from a real
      diff against the upstream file, and "(adapted)" in the README.
    A skill that only takes an idea, with no shared text or structure, is Original; say in ORIGINS which upstream idea
    it came from.
-5. **Write its description as a trigger list** within the limits in "Context budget" below, and add the confirm
+5. **Write its description as a trigger list** within the limits in "Context budget" (`docs/backlog/context-budget.md`), and add the confirm
    paragraph if the skill spends, takes over the session or writes outside the conversation.
 6. **Prove it.** `npm test`, `npm run scrub`, `node scripts/build-marketplace.mjs --check`,
    `claude plugin validate . --strict`, and a mutation run through `mutate.sh` for every new script test. Where the
    skill is a process with no script, run it once on a real or fixture repository and keep the transcript summary for
    the PR.
-7. **Update this file**: move the item to "Done" with the PR link.
+7. **Update the backlog**: move the item to "Done" (`docs/backlog/done.md`) with the PR link.
 
 ## How to run a batch
 

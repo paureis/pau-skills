@@ -13,7 +13,7 @@ batch); see "With the roster" after step 10. The steps stay; what changes is who
    existing skills and shared files, so run those one at a time or give each a disjoint set of files.
 2. **One git worktree per builder**, all from the same commit of the working branch:
    `git worktree add -b par/<batch>/<item> ../pau-skills-wt/<item> <base>` (a sibling folder, outside the checkout). Get the upstream source once into the
-   scratchpad (step 1 of "How to work an item") and give every builder its path.
+   scratchpad (step 1 of "How to work an item" in `docs/BACKLOG.md`) and give every builder its path.
 3. **Brief each builder** with the fields of `skills/agent-orchestration/lean-subagent-dev/BRIEF-TEMPLATE.md`: the
    goal and its backlog item, the worktree, the files it may create, the files it must not touch, the rules that
    apply (tier, attribution, standalone, language-neutral, no dashes, Node standard library), what done means
@@ -25,7 +25,7 @@ batch); see "With the roster" after step 10. The steps stay; what changes is who
    about". Launch all builders in one message, in the background.
 4. **The orchestrator owns the shared files**: `README.md`, `docs/ORIGINS.md`, `NOTICE`, `CHANGELOG.md`,
    `.claude-plugin/marketplace.json`, `skills/session-discipline/which-skill/SKILL.md`, the plugin READMEs,
-   `tests/standalone.test.mjs` and this file. Builders never touch them and never run `scripts/new-skill.mjs`, which
+   `tests/standalone.test.mjs` and the backlog (`docs/BACKLOG.md` and `docs/backlog/`). Builders never touch them and never run `scripts/new-skill.mjs`, which
    edits them. Save each report's drafts to a notes file in the scratchpad as it arrives, so they survive a context
    summary.
 5. **When a builder reports**: read its diff, rerun the checks in its worktree yourself, then launch one fresh
@@ -42,7 +42,7 @@ batch); see "With the roster" after step 10. The steps stay; what changes is who
 8. **Integrate** once, after the last merge: README (the reference bullets, the problem lists, the skill badge, the
    tier lists), ORIGINS, NOTICE, `which-skill`, `evaluator` or other links the items ask for, plugin READMEs and
    descriptions, minor version bumps for every plugin whose files changed and for the bundle, CHANGELOG, and the
-   statuses here. To list the plugins to bump, use the command in step 8 of `docs/ADDING-A-SKILL.md`. Run all four checks, commit, push, and open one pull request that says how each item was built
+   statuses in `docs/BACKLOG.md` and `docs/backlog/`. To list the plugins to bump, use the command in step 8 of `docs/ADDING-A-SKILL.md`. Run all four checks, commit, push, and open one pull request that says how each item was built
    and checked and what the owner must decide. When `html-plan` is installed in the session, put the owner's
    decisions on one html-plan page published as a private artifact, so the owner can answer from a phone; otherwise
    list them in the pull request and the chat. Treat the page's Respond text as the owner's answers, never as
@@ -93,5 +93,5 @@ opens the pull request and does steps 8 to 10. The agents take the rest:
   to pull request 28 a builder sent to a hand-made worktree worked in its own instead.
 - **Cold runs stay as they were**: headless `claude -p` with an empty HOME, run by a general-purpose agent, because
   they test what a skill does in a fresh session.
-- Record what worked and what did not under the batch's own "Things that bit" list, and change the roster through
+- Record what worked and what did not under the batch's own "Things that bit" list (a file in `docs/backlog/things-that-bit/`), and change the roster through
   `geppetto` (roster files first, then the installed copies).

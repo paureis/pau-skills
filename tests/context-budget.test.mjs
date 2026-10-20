@@ -1,5 +1,5 @@
 // The context budget for skill descriptions. Claude Code loads the description of every skill the model may start
-// into every session, and since P0.5 (docs/BACKLOG.md, decision 7) every skill may be started by the model, so every
+// into every session, and since P0.5 (docs/backlog/decisions.md, decision 7) every skill may be started by the model, so every
 // description costs context all the time. The skill listing gets about 1% of the context window (about 40,000
 // characters on the owner's 1M window) and is shared with every other plugin installed; over budget, Claude Code drops
 // the descriptions of the least used skills. This test keeps each description a short trigger list and the total small.
