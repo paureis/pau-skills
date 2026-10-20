@@ -220,7 +220,7 @@ export function message(rel, bytesAfter, bytesBefore, limit) {
     what +
     `A per-path limit, if the user agrees: put this in .claude/pau-skills.json, or merge it into that file if it exists (${scope}):\n` +
     `{ "file-size-guard": { "pathLimits": { ${JSON.stringify(rel)}: ${suggest} } } }\n` +
-    'To turn this hook off, the user can put this in .claude/pau-skills.json:\n' +
+    'To turn this hook off, the user can put this in .claude/pau-skills.json, or merge it into that file if it exists:\n' +
     '{ "hooks": { "file-size-guard": false } }\n' +
     'or start Claude Code with PAU_SKILLS_DISABLE=file-size-guard set; an agent cannot set it for its own session.'
   );
