@@ -96,7 +96,7 @@ describe('secret guard: decide', () => {
 
 describe('secret guard: as a hook', () => {
   const key = j('gh', 'p_', 'A1b2C3d4'.repeat(5));
-  const env = (home) => ({ PAU_SKILLS_HOME: home, CLAUDE_PROJECT_DIR: '' });
+  const env = (home) => ({ PAU_SKILLS_HOME: home, CLAUDE_PROJECT_DIR: '', PAU_SKILLS_DISABLE: '' });
   test('denies with exit 2 and a reason on stderr', () => {
     const p = tempDir();
     const r = runNode(GUARD, { input: JSON.stringify({ tool_name: 'Write', cwd: p, tool_input: { file_path: join(p, 'src/a.js'), content: `const t = '${key}'` } }), env: env(tempDir()) });

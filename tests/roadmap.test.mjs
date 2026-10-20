@@ -37,6 +37,11 @@ test('tables() finds every table with the header and stops at the first non-tabl
   const t = tables(ROADMAP, 'Item');
   assert.equal(t.length, 2);
   assert.deepEqual(t[0].rows.map((r) => r[0]), ['1', '2', '2b']);
+  // A prose line or an empty line right after the rows ends the table; a row-shaped line after it is not a row.
+  for (const stop of ['Not a table line.', '']) {
+    const text = ['| # | Item | Status |', '|---|---|---|', '| 1 | a | done |', stop, '| 9 | stray | pending |'].join('\n');
+    assert.deepEqual(tables(text, 'Item').map((x) => x.rows.map((r) => r[0])), [['1']], `stop line: ${JSON.stringify(stop)}`);
+  }
 });
 
 test('summary: counts, in progress, next pending, blocked with reason, open questions only, log, handoff', () => {
@@ -64,12 +69,14 @@ test('as a hook: JSON additionalContext from CLAUDE_PROJECT_DIR, config file hon
   mkdirSync(join(dir, '.claude'));
   writeFileSync(join(dir, 'plan', 'ORDER.md'), ROADMAP);
   writeFileSync(join(dir, '.claude', 'roadmap.json'), JSON.stringify({ roadmap: 'plan/ORDER.md' }));
-  const r = runNode(HOOK, { env: { CLAUDE_PROJECT_DIR: dir } });
+  // roadmap reads CLAUDE_PROJECT_DIR, never the input cwd; the user config and PAU_SKILLS_DISABLE are the test's own.
+  const env = { CLAUDE_PROJECT_DIR: dir, PAU_SKILLS_HOME: tempDir(), PAU_SKILLS_DISABLE: '' };
+  const r = runNode(HOOK, { env });
   assert.equal(r.code, 0);
   const out = JSON.parse(r.stdout);
   assert.equal(out.hookSpecificOutput.hookEventName, 'SessionStart');
   assert.match(out.hookSpecificOutput.additionalContext, /ROADMAP \(plan\/ORDER\.md\)/);
-  assert.match(runNode(HOOK, { env: { CLAUDE_PROJECT_DIR: dir }, args: ['--text'] }).stdout, /^ROADMAP/);
+  assert.match(runNode(HOOK, { env, args: ['--text'] }).stdout, /^ROADMAP/);
 });
 
 test('as a hook: no roadmap file means no output and exit 0', () => {

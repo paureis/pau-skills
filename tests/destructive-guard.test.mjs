@@ -19,7 +19,8 @@ function fakeGit({ branch = 'feature/x', dirty = false } = {}) {
     return null;
   };
 }
-const ctx = (git = fakeGit(), options = {}) => context({ root: ROOT, options, git });
+// A fixed home outside the temp folders and the project, so the caller's HOME cannot change which rm targets pass.
+const ctx = (git = fakeGit(), options = {}) => ({ ...context({ root: ROOT, options, git }), home: '/srv/test-home' });
 const denied = (cmd, c = ctx()) => assert.ok(check(cmd, c), `should deny: ${cmd}`);
 const passes = (cmd, c = ctx()) => assert.equal(check(cmd, c), null, `should pass: ${cmd}`);
 
@@ -37,7 +38,7 @@ describe('shell splitting', () => {
 describe('destructive guard: rm', () => {
   for (const c of ['rm -rf /', 'rm -rf /*', 'rm -fr ~', 'rm -rf ~/', 'rm -rf $HOME', 'rm -Rf .', 'rm -rf *', 'rm -rf ..',
     'rm -rf ../other', 'rm -rf "$BUILD_DIR/"', 'rm -rf ${OUT}/dist', 'rm --recursive --force /etc', 'rm -rf /usr/local/lib',
-    'rm -r --no-preserve-root /', 'sudo rm -rf /var/lib', `rm -rf ${ROOT}`, 'cd x && rm -rf ~/Documents']) {
+    'rm -r --no-preserve-root build','sudo rm -rf /var/lib', `rm -rf ${ROOT}`, 'cd x && rm -rf ~/Documents']) {
     test(`denies ${c}`, () => denied(c));
   }
   for (const c of ['rm -rf node_modules', 'rm -rf ./dist build', `rm -rf ${ROOT}/target`, 'rm -rf /tmp/scratch-123',
@@ -111,11 +112,11 @@ describe('destructive guard: as a hook, with real git', () => {
   test('denies git reset --hard in a repo with an uncommitted change, passes once committed', () => {
     const repo = tempDir();
     const g = (...a) => execFileSync('git', a, { cwd: repo, stdio: 'ignore' });
-    g('init', '-q'); g('config', 'user.email', 'a@example.com'); g('config', 'user.name', 'a');
+    g('init', '-q'); g('config', 'user.email', 'a@example.com'); g('config', 'user.name', 'a'); g('config', 'commit.gpgsign', 'false');
     writeFileSync(join(repo, 'a.txt'), '1'); g('add', '.'); g('commit', '-qm', 'one');
     writeFileSync(join(repo, 'a.txt'), '2');
     const input = JSON.stringify({ tool_name: 'Bash', cwd: repo, tool_input: { command: 'git reset --hard' } });
-    const env = { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: '' };
+    const env = { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: '', PAU_SKILLS_DISABLE: '' };
     const r = runNode(GUARD, { input, env });
     assert.equal(r.code, 2);
     assert.match(r.stderr, /destructive-guard/);
