@@ -22,3 +22,16 @@ Things that bit the seventh batch (Q1, the first batch run with the roster):
   device. Say "not even as a redirect target".
 - A `TMPDIR` link must be short: a path with a part that starts with `-` (the scratchpad's) makes skill-eval warn on
   purpose, which looks like a failure.
+
+Things that bit Q4, the second part of the seventh batch:
+- Reviewers still found something on most slices after the plan checks, and the cold run found what they missed:
+  in a fresh session the agent wrote a big fixture with a Bash generator, which no Write or Edit hook sees.
+- A hook that skips "generated" files by a header marker skipped its own test file, which quoted the marker. Keep
+  such markers out of the first lines of every file, and test that no tracked file matches the skip rule.
+- `export *` in a split entry exports helpers the old file kept private; re-export by name and diff the export list.
+  A class checked with `instanceof` must be declared once, or the check fails silently while every test passes.
+- A builder's worktree guard refuses a command with a `find` that names `./.git`, `env -u` inside `$(...)`, and a
+  `{ ...; } > file` group; put such steps in a script file and run `bash <file>`.
+- When the orchestrator's shell runs `cd` into an agent's worktree, the session's working folder moves there. Use
+  absolute paths and `git -C` from the orchestrator.
+- Nine tracked files ended between 18,000 and 20,000 bytes; the hook will ask when any of them grows past 20,000.

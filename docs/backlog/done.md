@@ -89,3 +89,21 @@
     off agents whose status said "completed"; the worktree guard refused HOME, GIT_CONFIG_GLOBAL and shell loops, so
     those runs went to the reviewers; builders still wrote to /dev/null, and missed shared rules unless a brief named
     them. The per-file audits went to the owner as a zip, since the session cannot push the audit branches.
+- 2026-10-20: Q4 file-size guard, merged as [pull request 33](https://github.com/paureis/pau-skills/pull/33), the
+  second batch run with the roster. `eng-lead` planned 15 slices (14 splits, then the hook) and wrote the briefs; a
+  read-only plan check built each slice in a clone and corrected every brief; 15 builders in worktrees, a fresh
+  reviewer per slice, fix rounds on four slices with a second look, and a headless cold run of the hook (four
+  sessions, empty HOME). The 26 files over 5,000 tokens were split with text moved unchanged, the new
+  `file-size-guard` hook and `tests/file-size.test.mjs` keep every tracked file under the limit, and the suite went
+  from 1,178 to 1,249 tests, green on Linux and macOS. The 12 changed skills went to the owner as one bundle (all
+  replacing), `pau-skills-hooks` went to 0.3.0, and the profile README now says 13 hooks. With the roster:
+  - Worked: briefs as files with a common part and a "Corrections after the plan check" section, so one correction
+    reached every brief at once; plan checks that built the whole slice in a clone (all 15 found something);
+    moving text with sed by line range, checked by a moved-lines diff plus a per-range diff; a full-name test
+    reporter that sees a test moved between describes; the cold run, which found five problems with the refusal
+    message that no reviewer saw.
+  - Did not: nesting was still off, so the main session ran about 50 agents by hand; the builders' worktree guard
+    refused many compound commands (finds that name `./.git`, `env -u`, shell variables passed to sed or node), so
+    every builder rediscovered the script-file workaround; agents still wrote to /dev/null now and then; and the
+    orchestrator once committed to the profile repository under the owner's name by copying the last commit's
+    author. Use the session's default author.
