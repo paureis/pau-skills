@@ -3,11 +3,13 @@
 //
 //   node scripts/new-skill.mjs <plugin> <skill-name> [--root <repo dir>]
 //
-// Creates skills/<plugin>/<skill-name>/SKILL.md with frontmatter, adds a stub section for it at the end of
-// the plugin's group in docs/ORIGINS.md, and adds a bullet for it to the plugin's list in the README reference. Every
+// Creates skills/<plugin>/<skill-name>/SKILL.md with frontmatter and the ORIGINS stub file
+// docs/origins/<plugin>/<skill-name>.md, adds a line linking that file at the end of the plugin's list in the
+// docs/ORIGINS.md index, and adds a bullet for the skill at the end of the plugin's list in docs/REFERENCE.md. Every
 // placeholder is marked TODO(new-skill); the scrub check fails while any is left, so a half-filled scaffold cannot be
 // committed by accident. Refuses an unknown plugin, a name that is not kebab-case, a name that already exists in any
-// plugin, and a repository whose anchors are missing or ambiguous. It changes nothing unless every check passes.
+// plugin, a stub file, index line or reference bullet that already exists, and a repository whose anchors are missing
+// or ambiguous. It changes nothing unless every check passes.
 // Exit codes: 0 created; 2 refused. See docs/ADDING-A-SKILL.md for the rest of the checklist.
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, realpathSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -15,7 +17,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const MARK = 'TODO(new-skill)';
 
-/** Plan the three edits without touching the disk. Returns { files: [{ path, text }] } or throws with the reason. */
+/** Plan the four edits without touching the disk. Returns { files: [{ path, text }] } or throws with the reason. */
 export function plan(root, pluginName, skill) {
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(skill || '')) throw new Error(`the skill name must be kebab-case (a-z, 0-9, single dashes): ${skill}`);
   // claude.ai refuses to upload a skill whose name contains either word anywhere.
@@ -28,21 +30,21 @@ export function plan(root, pluginName, skill) {
   }
 
   const originsPath = join(root, 'docs', 'ORIGINS.md');
-  const readmePath = join(root, 'README.md');
+  const stubPath = join(root, 'docs', 'origins', pluginName, skill + '.md');
+  const referencePath = join(root, 'docs', 'REFERENCE.md');
   const origins = readFileSync(originsPath, 'utf8');
-  const readme = readFileSync(readmePath, 'utf8');
-  if (new RegExp('^### ' + skill + ' \\(', 'm').test(origins)) throw new Error(`docs/ORIGINS.md already has a section for ${skill}`);
-  if (readme.includes('- **' + skill + '**') || readme.includes('- **[' + skill + '](')) throw new Error(`README.md already lists ${skill}`);
+  const reference = readFileSync(referencePath, 'utf8');
+  const stubLink = `origins/${pluginName}/${skill}.md`;
+  if (existsSync(stubPath)) throw new Error(`docs/${stubLink} already exists`);
+  if (origins.includes('](' + stubLink + ')')) throw new Error(`docs/ORIGINS.md already has a line for ${skill}`);
+  if (reference.includes('- **' + skill + '**') || reference.includes('- **[' + skill + '](')) throw new Error(`docs/REFERENCE.md already lists ${skill}`);
 
-  // ORIGINS: insert before the "---" that closes the plugin's group. The group heading must occur exactly once.
-  const heading = '\n## ' + pluginName + '\n';
-  const at = origins.indexOf(heading);
-  if (at < 0 || origins.indexOf(heading, at + 1) >= 0) throw new Error(`docs/ORIGINS.md must have exactly one "## ${pluginName}" heading`);
-  const close = origins.indexOf('\n---\n', at + heading.length);
-  if (close < 0) throw new Error(`docs/ORIGINS.md: no "---" closes the ${pluginName} group`);
+  // ORIGINS stub: one file per entry, its heading at level 1, then a link back to the index.
+  const classification = `${MARK}: Original | Adapted from <upstream link>`;
   const stub = [
+    `# ${skill} (${classification})`,
     '',
-    `### ${skill} (${MARK}: Original | Adapted from <upstream link>)`,
+    'Back to the [origins index](../../ORIGINS.md).',
     '',
     `${MARK}: for an adapted skill, the closest upstream version and how much text is shared.`,
     '',
@@ -52,23 +54,23 @@ export function plan(root, pluginName, skill) {
     `"What this version changes" list taken from a diff against upstream, and why.`,
     '',
   ].join('\n');
-  const newOrigins = origins.slice(0, close) + '\n' + stub + origins.slice(close);
 
-  // README: insert a bullet at the end of the plugin's skill list in its "### <plugin>" reference section, before the
-  // "- Hook" line when there is one.
-  const lines = readme.split('\n');
-  const head = lines.findIndex((l) => l === '### ' + pluginName);
-  if (head < 0 || lines.indexOf('### ' + pluginName, head + 1) >= 0) throw new Error(`README.md must have exactly one "### ${pluginName}" heading`);
-  let first = head + 1;
-  while (first < lines.length && lines[first] === '') first++;
-  let insert = -1;
-  for (let k = first; k < lines.length && !lines[k].startsWith('#'); k++) {
-    if (/^- Hooks?:/.test(lines[k])) { insert = k; break; }
-    if (lines[k].startsWith('- **') || lines[k].startsWith('  ')) insert = k + 1;
-    else if (lines[k] === '' && insert >= 0) break;
-  }
-  if (insert < 0) throw new Error(`README.md: no skill list under "### ${pluginName}"`);
-  lines.splice(insert, 0, `- **[${skill}](skills/${pluginName}/${skill}/SKILL.md)**: ${MARK}: one line on what it does (add " (adapted)" after the name if it is).`);
+  // ORIGINS index: a line at the end of the plugin's list. The group heading must occur exactly once.
+  const index = origins.split('\n');
+  const group = index.indexOf('## ' + pluginName);
+  if (group < 0 || index.indexOf('## ' + pluginName, group + 1) >= 0) throw new Error(`docs/ORIGINS.md must have exactly one "## ${pluginName}" heading`);
+  const at = listEnd(index, group, (l) => l.startsWith('- ['));
+  if (at < 0) throw new Error(`docs/ORIGINS.md: no entry list under "## ${pluginName}"`);
+  index.splice(at, 0, `- [${skill}](${stubLink}): ${classification}`);
+
+  // REFERENCE: a bullet at the end of the plugin's skill list in its "## <plugin>" section, before the "- Hook" line
+  // when there is one.
+  const lines = reference.split('\n');
+  const head = lines.indexOf('## ' + pluginName);
+  if (head < 0 || lines.indexOf('## ' + pluginName, head + 1) >= 0) throw new Error(`docs/REFERENCE.md must have exactly one "## ${pluginName}" heading`);
+  const insert = listEnd(lines, head, (l) => l.startsWith('- **'));
+  if (insert < 0) throw new Error(`docs/REFERENCE.md: no skill list under "## ${pluginName}"`);
+  lines.splice(insert, 0, `- **[${skill}](../skills/${pluginName}/${skill}/SKILL.md)**: ${MARK}: one line on what it does (add " (adapted)" after the name if it is).`);
 
   const skillMd = [
     '---',
@@ -87,10 +89,26 @@ export function plan(root, pluginName, skill) {
   return {
     files: [
       { path: join(pluginsDir, pluginName, skill, 'SKILL.md'), text: skillMd, create: true },
-      { path: originsPath, text: newOrigins },
-      { path: readmePath, text: lines.join('\n') },
+      { path: stubPath, text: stub, create: true },
+      { path: originsPath, text: index.join('\n') },
+      { path: referencePath, text: lines.join('\n') },
     ],
   };
+}
+
+/**
+ * The line index just after the list that follows the heading at `head`, or before its "- Hook:" or "- Hooks:" line
+ * when there is one. `isItem` tells a list item; an indented line continues one. A paragraph between the heading and
+ * the list is skipped. Returns -1 when the section has neither a list nor a hooks line.
+ */
+function listEnd(lines, head, isItem) {
+  let insert = -1;
+  for (let k = head + 1; k < lines.length && !lines[k].startsWith('#') && lines[k] !== '---'; k++) {
+    if (/^- Hooks?:/.test(lines[k])) return k;
+    if (isItem(lines[k]) || lines[k].startsWith('  ')) insert = k + 1;
+    else if (lines[k] === '' && insert >= 0) break;
+  }
+  return insert;
 }
 
 function main(argv) {
