@@ -3,6 +3,13 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-20: instructions-audit inside a worktree
+
+- `instructions-audit`: `scan.mjs` found no nested CLAUDE.md or AGENTS.md when the project itself sat below a
+  `.claude` folder, which every Claude Code worktree under `.claude/worktrees/` does. Now only a `.claude` folder
+  inside the project hides nested files. Found by the Q1 audit; a new test covers it.
+- Versions: session-discipline 0.11.1, pau-skills 0.14.2. No hook changed.
+
 ## 2026-10-20: the seventh batch, Q1 test-value audit
 
 - Every test file was sampled by mutation: 448 runs over the 39 files, 428 caught, and the reviews reran 219 of

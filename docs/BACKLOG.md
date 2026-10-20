@@ -1355,10 +1355,9 @@ owner on 2026-10-19 after using `brainstorm` on Q6.
   repository checks pass.
 
 **Q10 what the Q1 audit left** (`todo`, small; found in batch 7, each checked by a run).
-- `skills/session-discipline/instructions-audit/scan.mjs` line 468 skips a nested file when its absolute path holds
-  `/.claude/`, so a project that lives under a `.claude` folder, which includes every Claude Code worktree under
-  `.claude/worktrees/`, loses its nested CLAUDE.md files. Test the part of the path below the project root instead.
-  `tests/instructions-audit.test.mjs` "discoverFiles ..." fails with `TMPDIR` under a `.claude` folder because of it.
+- Done (2026-10-20, the follow-up to pull request 31, by the owner's choice): `instructions-audit/scan.mjs` skipped a
+  nested file when its absolute path held `/.claude/`, so a project under a `.claude` folder, such as every Claude
+  Code worktree, lost its nested CLAUDE.md files. It now tests the path below the project root, with a test.
 - Behaviour with no test: the backtick guard's "only a backtick after the flag counts" (bt-4, bt-4b), a double
   quote in its command-position group (h-bt-dq), `rm --no-preserve-root -r` with the flag before `-r` (h-dg-rec),
   roadmap rows found with `includes('|')` instead of `startsWith('|')` (h-rm-pipe), measure-minutes `keyOf` grouping
