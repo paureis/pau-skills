@@ -1142,6 +1142,25 @@ settled with `grill-me`.
   - A split script or test file is proven by the same full test names and the same pass count before and after; a
     moved COPIES file keeps its pair, with new modules added as pairs.
   - The hook count goes from 12 to 13 (README badge, and the profile README's "12 hooks").
+- Changed at the start of Q4 (2026-10-20), after measuring again and a second review against the code:
+  - 26 tracked files are over 5,000 tokens after Q1: `docs/BACKLOG.md` grew to 34,802 and `docs/ORIGINS.md` to
+    26,141; `README.md` (7,917) and `CHANGELOG.md` (7,345) are both over, so both are split, not "if still over".
+  - One rule covers both refusals: refuse when the size after the change is over the limit and larger than the size
+    before (a new file counts as 0 before). A file that crosses the limit always grows, so no second case is needed.
+  - The skip rules that cost a process (`git check-attr`, `git check-ignore`) run only when the change would be
+    refused. Every Write and Edit runs the hook, so the common case reads one file and starts nothing.
+  - The repository test reads the limit and overrides from this repository's `.claude/pau-skills.json` only, never
+    the user's file under HOME, so CI and every computer judge the same way.
+  - The refusal message also says: when splitting is not part of the task the user gave, tell the user and offer the
+    split or a per-path override, instead of starting a large refactor unasked. The hook runs in every project where
+    `pau-skills-hooks` is installed, where old big files are common.
+  - A log that keeps growing is split by period from the start: the "things that bit" lists become one file per
+    batch, so no single file grows back over the limit; the same holds for the CHANGELOG archive.
+  - Split test files keep the `tests/<name>.test.mjs` form that `npm test` globs (`tests/<name>-<part>.test.mjs`), and
+    shared setup goes to a `tests/<name>.helpers.mjs` module, as `launch-readiness.helpers.mjs` already does.
+  - Paths that follow a move, beyond the ones listed above: the P0.4 paragraph exemption in `tests/style.test.mjs`,
+    the scrub check's author-name allow list (README, LICENSE, NOTICE, marketplace.json) if a credit line moves, the
+    `which-skill` hooks table, and `hooks/README.md`.
 
 **Q5 html-plan, installed and linked** (`done`, sixth batch, small; touches `architect`, `to-prd`, `grill-me`, `which-skill`, the
 README and the batch process). Asked for by the owner on 2026-10-19, settled with `grill-me`.
