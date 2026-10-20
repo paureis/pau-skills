@@ -28,7 +28,7 @@ can be judged after a week; and "when to step up" to the heavier methods.
 
 **pstack additions (2026-10-17).** Ideas from `skills/poteto-mode/playbooks/orchestrate.md` and
 `skills/setup-pstack/SKILL.md`, no shared text: `SKILL.md` and `BRIEF-TEMPLATE.md` share 0 word 6-grams with them. The
-adapted text is in `TRIAGE.md`, the identical copy of review-triage's (see there). What this version changes:
+adapted text is in `TRIAGE.md`, the identical copy of [review-triage's](../verification/review-triage.md) (see there). What this version changes:
 - The budget table gets a "Subagent effort" row, set through the Agent tool's `effort` field. setup-pstack gives every
   role one level per budget (medium, high, xhigh, max) and never uses low. Here the builder gets medium, high and
   high, the plan checker high then xhigh, and the reviewer xhigh. The split is this skill's choice: the builder's work
