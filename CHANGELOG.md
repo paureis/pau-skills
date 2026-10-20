@@ -3,6 +3,36 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-20: the seventh batch, Q4 file-size guard
+
+- New hook `file-size-guard` (guards): refuses a Write, Edit or MultiEdit that leaves a file in the project over 5,000
+  tokens (bytes / 4) and larger than it was. The message gives a recipe for the file's kind (code, test, document,
+  log, SKILL.md, data), is worded for a new file or a growing one, shows bytes as well as tokens, and tells the agent
+  to ask the user before a large refactor; it gives the per-path limit and the off switch as whole JSON objects.
+  Lockfiles, notebooks, minified, binary, generated, vendored, git-ignored and `ignorePaths` files are skipped, and
+  the git checks run only when a change would be refused. It does not see files written by Bash commands. Options
+  `maxTokens`, `pathLimits` and `ignorePaths` in `.claude/pau-skills.json`. 13 hooks now.
+- `tests/file-size.test.mjs` applies the same rule to every tracked file, with options from this repository's
+  `.claude/pau-skills.json` only, which gives the generated `.claude-plugin/marketplace.json` 8,000 tokens.
+- Every tracked file was split to 5,000 tokens or less (26 were over), text moved unchanged:
+  - `docs/BACKLOG.md` is an index over `docs/backlog/` (one file per item group or item, one "things that bit" file
+    per batch); `docs/ORIGINS.md` is an index over `docs/origins/<plugin>/<name>.md`; the README's per-plugin
+    reference moved to `docs/REFERENCE.md` and its workflow sections to `docs/WORKFLOW.md`; older CHANGELOG weeks
+    moved to `docs/changelog/`. `scripts/new-skill.mjs` writes the ORIGINS stub file, its index line and the
+    REFERENCE bullet, with tests for every refusal.
+  - SKILL.md and reference files: `rule-to-hook`, `overnight-run` (steps 5 to 8, which night turns follow,
+    unchanged), `hillclimb`, `skill-eval` and `engineering-principles` (`PRINCIPLES-2.md`) keep their steps and read
+    the moved detail at the step that needs it.
+  - Scripts split into modules next to them, each entry re-exporting the same names with the same command line:
+    `skill-eval.mjs`, `decisions.mjs` (hillclimb), `check-map.mjs` (verify-app), `check-agents.mjs` (geppetto),
+    `scan.mjs` (instructions-audit), `mine.mjs` (agent-friendly-audit), both copies of `review-scope.mjs` (a new
+    COPIES pair) and `scripts/pack-skills.mjs`.
+  - Test files split by behaviour, with shared setup in `tests/<name>.helpers.mjs`: skill-eval, verify-app,
+    hillclimb, geppetto, pack-skills, mutate, arena and agent-friendly-audit; the same test names and pass counts.
+- The suite goes from 1,178 to 1,249 tests (65 for the hook and the repository test, 6 for new-skill).
+- Versions: session-discipline 0.11.2, verification 0.11.2, agent-orchestration 0.10.2, guards 0.8.0, planning
+  0.8.2, pau-skills 0.15.0, pau-skills-hooks 0.3.0.
+
 ## 2026-10-20: instructions-audit inside a worktree
 
 - `instructions-audit`: `scan.mjs` found no nested CLAUDE.md or AGENTS.md when the project itself sat below a
