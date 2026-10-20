@@ -5,7 +5,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { writeFileSync, mkdirSync, realpathSync, utimesSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import { redact, classify, encodeProjectPath } from '../skills/planning/agent-friendly-audit/mine.mjs';
 
@@ -222,7 +222,9 @@ describe('commits', () => {
   });
 
   test('a folder that is not a git repository is refused', () => {
-    const r = runNode(SCRIPT, { args: ['commits', '--repo', tempDir('afa-nogit-')] });
+    // The ceiling stops git from finding a repository above the temporary folder.
+    const d = tempDir('afa-nogit-');
+    const r = runNode(SCRIPT, { args: ['commits', '--repo', d], env: { GIT_CEILING_DIRECTORIES: dirname(realpathSync(d)) } });
     assert.equal(r.code, 1);
     assert.match(r.stderr, /not a git repository/);
   });
