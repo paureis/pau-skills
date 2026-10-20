@@ -53,7 +53,7 @@ test('creates the skill, the ORIGINS stub file and index line in its group, and 
 
 test('refuses an existing name in any plugin, an unknown plugin and a bad name, changing nothing', () => {
   const dir = fixture();
-  // A skill in another plugin with no ORIGINS section and no README bullet, so only the "any plugin" check can
+  // A skill in another plugin with no ORIGINS section and no REFERENCE bullet, so only the "any plugin" check can
   // refuse a second skill of the same name.
   mkdirSync(join(dir, 'skills', 'verification', 'foo-bar'));
   writeFileSync(join(dir, 'skills', 'verification', 'foo-bar', 'SKILL.md'), '---\nname: foo-bar\ndescription: A fixture skill.\n---\n');
@@ -109,6 +109,34 @@ test('refuses when the plugin heading occurs twice in docs/ORIGINS.md, changing 
   const r = refusesPortLock(dir);
   assert.match(r.stderr, /exactly one "## guards" heading/);
   assert.equal(existsSync(stubPath(dir, 'guards', 'port-lock')), false);
+});
+
+test('refuses when the plugin heading occurs twice in docs/REFERENCE.md, changing nothing', () => {
+  const dir = fixture();
+  appendFileSync(join(dir, 'docs', 'REFERENCE.md'), '\n## guards\n\n- **[x](../skills/guards/x/SKILL.md)**: A fixture bullet.\n');
+  const r = refusesPortLock(dir);
+  assert.match(r.stderr, /docs\/REFERENCE\.md must have exactly one "## guards" heading/);
+  assert.equal(existsSync(stubPath(dir, 'guards', 'port-lock')), false);
+});
+
+test('in a group whose list follows an opening paragraph, the index line goes after the last entry', () => {
+  const dir = fixture();
+  const before = readFileSync(join(dir, 'docs', 'ORIGINS.md'), 'utf8').split('\n');
+  const r = runNode(SCRIPT, { args: ['planning', 'foo-plan', '--root', dir] });
+  assert.equal(r.code, 0, r.stderr);
+
+  const group = before.indexOf('## planning');
+  const close = before.indexOf('---', group);
+  const lastEntry = before.slice(0, close).findLastIndex((l) => l.startsWith('- ['));
+  assert.ok(before[group + 2] !== '' && !before[group + 2].startsWith('- ['), 'the fixture group opens with a paragraph');
+  assert.ok(lastEntry > group + 2, 'the fixture group has entry lines after its paragraph');
+
+  // The whole file is the old one with exactly one line added after the group's last entry: the opening paragraph,
+  // the other entries and the closing "---" are untouched.
+  const expected = [...before];
+  expected.splice(lastEntry + 1, 0, '- [foo-plan](origins/planning/foo-plan.md): TODO(new-skill): Original | Adapted from <upstream link>');
+  assert.deepEqual(readFileSync(join(dir, 'docs', 'ORIGINS.md'), 'utf8').split('\n'), expected);
+  assert.equal(existsSync(stubPath(dir, 'planning', 'foo-plan')), true);
 });
 
 test('running it twice refuses the second time', () => {
