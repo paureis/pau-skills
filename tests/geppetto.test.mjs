@@ -158,7 +158,7 @@ test('shadowed: one name in the project and the user scope is a warning that say
   const r = check({ 'a.md': agent() }, { user: { 'a.md': agent() } });
   const w = found(r, 'shadowed', 'warning');
   assert.equal(w.length, 1);
-  assert.match(w[0].message, /project/);
+  assert.match(w[0].message, /project's file wins over the user's/);
   assert.deepEqual(found(check({ 'a.md': agent() }, { user: { 'b.md': agent({ name: 'other', description: 'Something unrelated: counts sheep in a field at night.' }) } }), 'shadowed'), []);
 });
 
