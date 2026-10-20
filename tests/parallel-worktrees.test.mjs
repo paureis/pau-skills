@@ -84,6 +84,7 @@ describe('findOverlaps', () => {
 
   test('identical globs that match nothing are still reported', () => {
     const r = findOverlaps({ pieces: [{ name: 'a', files: ['gen/**/*.pb.go'] }, { name: 'b', files: ['./gen/**/*.pb.go'] }] }, FILES);
+    assert.equal(r.overlaps.length, 1);
     assert.deepEqual(r.overlaps[0].sameGlobs, ['gen/**/*.pb.go']);
   });
 
