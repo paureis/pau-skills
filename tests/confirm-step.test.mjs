@@ -1,4 +1,4 @@
-// Every skill loads on its own (docs/BACKLOG.md, decision 7), so the model can start a skill the user never asked for.
+// Every skill loads on its own (docs/backlog/decisions.md, decision 7), so the model can start a skill the user never asked for.
 // The skills that launch subagents or paid runs, take over the session, or write outside the conversation first say
 // what they will do and what it costs, and wait for a yes. They all use the same paragraph, word for word, so the
 // rule reads the same everywhere and this test can find it. The list below is the only place it is decided: a skill
