@@ -2,6 +2,7 @@
 name: rule-to-hook
 description: "Turn one rule that keeps getting broken, not a new automation, into an enforced check (types, lint, CI, a test or a Claude Code hook) proven on a past mistake. Use when the user says 'enforce this rule', 'make this a hook', 'block this command the agent keeps running', 'stop the agent from doing X', or when one rule keeps getting broken or the user keeps repeating the same correction."
 argument-hint: "[the rule, or where it is written, e.g. 'CLAUDE.md: never git add -A']"
+allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
   upstream: https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/correct
