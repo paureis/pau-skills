@@ -16,13 +16,15 @@ const hookInput = (command, tool = 'Bash') => JSON.stringify({
   session_id: 's', hook_event_name: 'PreToolUse', tool_name: tool,
   tool_input: { command, description: 'd', timeout: 120000, run_in_background: false }, tool_use_id: 't',
 });
+// The hook reads the user and project config and PAU_SKILLS_DISABLE; this env keeps the caller's own out of the result.
+const ISOLATED = { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: tempDir(), PAU_SKILLS_DISABLE: '' };
 function denied(command, tool = 'Bash') {
-  const r = runNode(GUARD, { input: hookInput(command, tool) });
+  const r = runNode(GUARD, { input: hookInput(command, tool), env: ISOLATED });
   assert.equal(r.code, 2, `should deny: ${command}`);
   assert.match(r.stderr, /safe-merge\.mjs/);
 }
 function passes(command, tool = 'Bash') {
-  const r = runNode(GUARD, { input: hookInput(command, tool) });
+  const r = runNode(GUARD, { input: hookInput(command, tool), env: ISOLATED });
   assert.equal(r.code, 0, `should pass: ${command}\n${r.stderr}`);
   assert.equal(r.stderr, '');
 }
@@ -130,8 +132,9 @@ describe('safe-merge', () => {
     assert.ok(!calls.some((c) => c.startsWith('pr merge')));
   });
   test('allows a configured promotion pair and never deletes its head', () => {
-    const { gh, calls } = fakeGh({ pr: { baseRefName: 'main', headRefName: 'develop' }, trunk: 'develop' });
-    const r = safeMerge(9, optionsFromEnv({ SAFE_MERGE_PROMOTIONS: 'develop->main' }), gh);
+    // staging is neither the trunk nor in the built-in list, so only the promotion pair protects it.
+    const { gh, calls } = fakeGh({ pr: { baseRefName: 'main', headRefName: 'staging' }, trunk: 'develop' });
+    const r = safeMerge(9, optionsFromEnv({ SAFE_MERGE_PROMOTIONS: 'staging->main' }), gh);
     assert.equal(r.code, 0);
     assert.ok(calls.some((c) => c.startsWith('pr merge 9')));
     assert.ok(!calls.some((c) => c.startsWith('api -X DELETE')));
@@ -161,8 +164,8 @@ describe('safe-merge', () => {
     assert.ok(!calls.some((c) => c.startsWith('pr merge') || c.startsWith('api -X')));
   });
   test('options: bad promotion and bad method are rejected', () => {
-    assert.throws(() => optionsFromEnv({ SAFE_MERGE_PROMOTIONS: 'develop' }));
-    assert.throws(() => optionsFromEnv({ SAFE_MERGE_METHOD: 'octopus' }));
+    assert.throws(() => optionsFromEnv({ SAFE_MERGE_PROMOTIONS: 'develop' }), /SAFE_MERGE_PROMOTIONS entry not understood/);
+    assert.throws(() => optionsFromEnv({ SAFE_MERGE_METHOD: 'octopus' }), /SAFE_MERGE_METHOD must be/);
     assert.equal(optionsFromEnv({ SAFE_MERGE_METHOD: 'squash' }).method, 'squash');
   });
   test('the real program: usage error, and a dry run against a fake gh script', () => {
