@@ -870,7 +870,7 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 
 ### Q. After the pstack review
 
-**Q1 test-value audit** (`in progress`, verification, no new skill). Asked for by the owner on 2026-10-19 before the test
+**Q1 test-value audit** (`done`, batch 7, pull request 31, verification, no new skill). Asked for by the owner on 2026-10-19 before the test
 count on the profile README is updated.
 - The suite has 1,069 tests. Find the ones that are not worth having, by the list in `tdd` ("prefer no new test over
   a bad test": mostly tests a mock, pins implementation details, depends on timing or unrelated global state, would
@@ -1393,8 +1393,8 @@ Kept in Q6's brainstorm as a separate item.
 8. Done: the sixth batch, Q2 `geppetto` and the agent roster, Q5 html-plan with Q9 a lighter brainstorm, Q6
    `launch-readiness` and Q7 UI states in `verify-app`.
 9. **Next:** the rest of section Q. Planned batches:
-   - Batch 7: Q1, then Q4, one after the other: Q1 needs the owner's yes on which tests go, and Q4 touches nearly
-     every big file, so nothing runs beside it. The first batch run with the roster. Kickoff above.
+   - Batch 7: Q1 is done (pull request 31). Q4 next, on its own: it touches nearly every big file, so nothing runs
+     beside it. Q10 after it, or beside it if its files do not overlap.
    - Batch 8: Q3 designer agent and Q8 production rules from day one.
 
 When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
@@ -1509,3 +1509,17 @@ When the batch is merged, update the skill count on the author's GitHub profile 
   zipped with `pack-skills --since 7fd0230` and sent to the owner as one bundle with html-plan (3 new, 6 replacing),
   and this repository's `.claude/agents/` now holds the roster. No hook changed. The profile README now says 38
   skills.
+- 2026-10-20: Q1 test-value audit, merged as [pull request 31](https://github.com/paureis/pau-skills/pull/31), the
+  first batch run with the roster. Phase A: `eng-lead` planned three audit slices, a read-only plan check fixed every
+  brief, three builders ran 447 mutations over all 39 test files, and three fresh reviewers reran 219 of them. Phase B,
+  after the owner chose what goes: the same shape, with plan checks that built each whole slice in a clone first, one
+  fix round and a second look. 1 test removed, 12 added, about 40 rewritten or isolated; 1,166 to 1,177 tests, green on
+  Linux and macOS. Tests only, so there were no zips; the profile README now says "with over 1,100 tests". With the
+  roster:
+  - Worked: the `eng-lead` briefs were thorough and caught false parts of the item; plan checks and reviewers found
+    real problems every time; long briefs as files the agent reads, with a corrections section, kept each round in
+    step.
+  - Did not: nesting was off (depth 1 in the cloud), so the main session ran every agent; two container restarts cut
+    off agents whose status said "completed"; the worktree guard refused HOME, GIT_CONFIG_GLOBAL and shell loops, so
+    those runs went to the reviewers; builders still wrote to /dev/null, and missed shared rules unless a brief named
+    them. The per-file audits went to the owner as a zip, since the session cannot push the audit branches.
