@@ -5,11 +5,23 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, readFileSync, appendFileSync, mkdirSync, existsSync, symlinkSync, realpathSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
   HEADER, guardCell, flatten, cleanCell, insideGitTree, appendRow, main,
 } from '../skills/agent-orchestration/overnight-run/log.mjs';
+
+// log.mjs refuses a log inside a git work tree, and every log here sits in the temporary folder. Inside a work tree
+// most tests below would fail for that one reason, so say it once instead.
+for (const start of new Set([resolve(tmpdir()), realpathSync(tmpdir())])) {
+  for (let dir = start; ; dir = dirname(dir)) {
+    if (existsSync(join(dir, '.git'))) {
+      throw new Error(`the temporary folder ${start} is inside the git work tree at ${dir}, where log.mjs refuses to write a log: set TMPDIR to a folder outside any git work tree`);
+    }
+    if (dirname(dir) === dir) break;
+  }
+}
 
 const SCRIPT = repo('skills', 'agent-orchestration', 'overnight-run', 'log.mjs');
 const ROW = { run: 'run-1', phase: 'loop', decision: 'kept the parser fix', reason: 'two more fixtures pass', evidence: 'commit 3a9f1c2', result: 'remaining 4' };
