@@ -249,12 +249,13 @@ test('discoverFiles: user, project, local, rules, other tools and nested; skips 
 
 test('discoverFiles: a project below a .claude folder keeps its nested files; its own .claude folder still hides them', () => {
   const home = tempDir('cma-home-'); const root = join(tempDir('cma-outer-'), '.claude', 'proj');
-  put(root, 'CLAUDE.md'); put(root, 'services/api/CLAUDE.md'); put(root, '.claude/inner/CLAUDE.md');
+  put(root, 'CLAUDE.md'); put(root, 'services/api/CLAUDE.md'); put(root, '.claude/inner/CLAUDE.md'); put(root, 'services/x/.claude/CLAUDE.md');
   const got = discoverFiles(root, { home, ancestors: false }).map((f) => [f.path.slice(root.length).split('\\').join('/'), f.loads]);
   const map = Object.fromEntries(got);
   assert.equal(map['/CLAUDE.md'], 'every-session');
   assert.equal(map['/services/api/CLAUDE.md'], 'in-subtree');
   assert.ok(!('/.claude/inner/CLAUDE.md' in map), 'a .claude folder inside the project hides its nested files');
+  assert.ok(!('/services/x/.claude/CLAUDE.md' in map), 'a deeper .claude folder hides them too');
 });
 
 test('a byte order mark does not hide a rules file\'s frontmatter or a package.json script', () => {
