@@ -3,7 +3,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, realpathSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
@@ -146,7 +146,7 @@ describe('parseArgs', () => {
 describe('against a real repository', () => {
   const g = (dir, ...args) => execFileSync('git', ['-C', dir, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
   const put = (dir, path, text) => { mkdirSync(dirname(join(dir, path)), { recursive: true }); writeFileSync(join(dir, path), text); };
-  const commit = (dir, msg) => { g(dir, 'add', '-A'); g(dir, '-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-q', '-m', msg); return g(dir, 'rev-parse', 'HEAD'); };
+  const commit = (dir, msg) => { g(dir, 'add', '-A'); g(dir, '-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false', 'commit', '-q', '-m', msg); return g(dir, 'rev-parse', 'HEAD'); };
   const run = (dir, ...args) => runNode(SCRIPT, { args: [...args, '--repo', dir], env: { [BUDGET_ENV]: '' } });
 
   function setup() {
@@ -266,6 +266,9 @@ describe('against a real repository', () => {
   test('a since that is not a commit, and a folder that is not a repository, exit 2', () => {
     const { dir } = setup();
     assert.equal(run(dir, 'fix', '--since', 'no-such-ref').code, 2);
-    assert.equal(run(tempDir('not-a-repo-'), 'config').code, 2);
+    // GIT_CEILING_DIRECTORIES stops git above the folder, so a repository around the temporary folder cannot make it one.
+    const d = tempDir('not-a-repo-');
+    const outside = runNode(SCRIPT, { args: ['config', '--repo', d], env: { [BUDGET_ENV]: '', GIT_CEILING_DIRECTORIES: dirname(realpathSync(d)) } });
+    assert.equal(outside.code, 2);
   });
 });
