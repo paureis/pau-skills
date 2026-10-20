@@ -48,6 +48,7 @@ To remove every hook from one plugin, disable the plugin: `claude plugin disable
 | Hook | Plugin | Event | What it does | Blocks? |
 |---|---|---|---|---|
 | [`secret-guard`](guards/secret-guard.mjs) | guards | PreToolUse (Write, Edit, MultiEdit, NotebookEdit) | Denies writing a credential into a file: known token formats, private keys, passwords in URLs, random-looking literals assigned to secret names | Denies |
+| [`file-size-guard`](guards/file-size-guard.mjs) | guards | PreToolUse (Write, Edit, MultiEdit) | Denies a change that leaves a file in the project over 5,000 tokens (bytes / 4) and larger than it was, with a split recipe for the file's kind | Denies |
 | [`destructive-guard`](guards/destructive-guard.mjs) | guards | PreToolUse (Bash, PowerShell) | Denies `rm -r` on the root, home, `..` or outside the project; force pushes to protected branches; `reset --hard`, `checkout .` or `stash clear` over uncommitted work; `git clean -f`; `DROP DATABASE`, `terraform destroy`, `kubectl delete ns` and similar | Denies |
 | [`no-verify-guard`](guards/no-verify-guard.mjs) | guards | PreToolUse (Bash, PowerShell) | Denies `--no-verify`, `commit -n`, `core.hooksPath` overrides, `HUSKY=0`, `SKIP=`, and skipped commit signing | Denies |
 | [`merge-guard`](guards/merge-guard.mjs) | guards | PreToolUse (Bash, PowerShell) | Denies a raw `gh pr merge`, and `gh pr close` with branch deletion, which close stacked PRs | Denies |
@@ -70,6 +71,26 @@ To remove every hook from one plugin, disable the plugin: `claude plugin disable
 
 Placeholders never count: values containing `example`, `test`, `changeme`, `your-`, `xxxx`, `${...}`, or an
 environment lookup such as `process.env` or `os.environ`.
+
+### file-size-guard
+
+| Option | Default | Meaning |
+|---|---|---|
+| `maxTokens` | `5000` | The limit in tokens (UTF-8 bytes / 4) for every file. Exactly the limit is not over it. |
+| `pathLimits` | `{}` | Globs (relative to the project, or a file name alone) mapped to a limit in tokens for the files that must be big, such as `{ "docs/api.md": 8000 }`. The first matching glob wins. |
+| `ignorePaths` | `[]` | Globs of files never checked. |
+
+A value that is not a positive number falls back to the default. It refuses a Write, Edit or MultiEdit when the file
+would be over its limit after the change and larger than before (a new file counts as 0 before), so a change that
+keeps an old big file the same size or smaller passes. Only files inside the project count. Always skipped: lockfiles
+(`package-lock.json`, `yarn.lock`, `Cargo.lock`, `poetry.lock`, `go.sum` and others), notebooks, `*.min.*`, binaries,
+files with `@generated` or `DO NOT EDIT` in their first 5 lines, paths marked `linguist-generated` or
+`linguist-vendored` in `.gitattributes`, and git-ignored paths. The two git rules run only for a change that would
+be refused; without git they do not apply. An edit the tool itself would refuse passes: an `old_string` that is not in
+the file, or is in it more than once without `replace_all`. Claude Code's Edit may match after turning CRLF line
+endings into LF; such an edit is not measured and passes. The message gives a split recipe for the file's kind (code,
+test file, long document, log, SKILL.md) and asks the agent to tell you, instead of starting a large refactor, when
+splitting is not part of your task.
 
 ### destructive-guard
 
