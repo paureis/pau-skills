@@ -29,7 +29,7 @@
 // Refuses with exit 2 and the message on stderr. Exits 0 on input it does not understand.
 //
 // tests/file-size.test.mjs applies the same rule to every tracked file with listOversized(), exported below.
-import { lstatSync, readFileSync, realpathSync } from 'node:fs';
+import { lstatSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -101,9 +101,15 @@ export function textAfter(toolName, toolInput, current) {
   return text;
 }
 
-/** A file's text: a string, null when it does not exist, undefined when it cannot be read. */
+/**
+ * A file's text: a string, null when it does not exist, undefined when it cannot be read or is not a regular file
+ * (reading a named pipe or a device would block the hook).
+ */
 export function readText(path) {
-  try { return readFileSync(path, 'utf8'); } catch (e) { return e && e.code === 'ENOENT' ? null : undefined; }
+  try {
+    if (!statSync(path).isFile()) return undefined;
+    return readFileSync(path, 'utf8');
+  } catch (e) { return e && e.code === 'ENOENT' ? null : undefined; }
 }
 
 /**

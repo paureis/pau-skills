@@ -12,10 +12,11 @@
 // The skip rules and the lister are in file-size-guard-skips.test.mjs, the message in file-size-guard-message.test.mjs.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, readFileSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo, tempDir } from './helpers.mjs';
-import { LIMIT_BYTES, put, write, edit, multi, check, hook, makeRepo, plainDir } from './file-size-guard.helpers.mjs';
+import { GUARD, LIMIT_BYTES, put, write, edit, multi, check, hook, makeRepo, plainDir } from './file-size-guard.helpers.mjs';
 
 const pad = (n) => 'a'.repeat(n);
 
@@ -176,6 +177,19 @@ describe('file-size guard: inputs', () => {
       { tool_name: 'MultiEdit', tool_input: { file_path: join(p, 'a.js'), edits: 'x' } },
     ];
     for (const input of inputs) assert.deepEqual(hook(p, input, env), { code: 0, stdout: '', stderr: '' }, JSON.stringify(input).slice(0, 80));
+  });
+
+  test('a named pipe is not read: the hook does not hang and lets the call through', { skip: process.platform === 'win32' }, () => {
+    const { dir: p, env } = plainDir();
+    execFileSync('mkfifo', [join(p, 'pipe')]);
+    for (const input of [write(p, 'pipe', pad(LIMIT_BYTES + 1)), edit(p, 'pipe', 'x', pad(LIMIT_BYTES + 1))]) {
+      const r = spawnSync(process.execPath, [GUARD], {
+        input: JSON.stringify(input), encoding: 'utf8', timeout: 4000,
+        env: { ...process.env, PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: p, PAU_SKILLS_DISABLE: '', ...env },
+      });
+      assert.equal(r.signal, null, `${input.tool_name}: the hook was killed after 4 seconds`);
+      assert.equal(r.status, 0, input.tool_name);
+    }
   });
 
   test('a path outside the project passes; a relative path is resolved against the project', () => {
