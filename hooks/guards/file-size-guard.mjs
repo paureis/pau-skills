@@ -176,29 +176,50 @@ export function kindOf(path) {
   return 'code';
 }
 
+const DATA_RECIPE = 'generate it from a script at test or build time, or keep a small sample checked in; if it must be big, add it to "ignorePaths".';
+
+// Per kind: [label, how to split an existing file, how to write a new one].
 export const RECIPES = {
-  code: ['code file', 'split it by responsibility into modules, and keep the old path re-exporting what moved so callers do not change.'],
-  test: ['test file', 'split it by the behaviour each group covers, into files the test runner still finds, with shared setup in a helpers module.'],
-  document: ['long document', 'make it a short index plus one file per section, each linked from the index.'],
-  log: ['log', 'keep recent entries and move older ones to an archive file by period (one per year or release), linked from the top.'],
-  skill: ['SKILL.md', 'keep its steps and move detail to a reference file next to it, named in the step that needs it.'],
-  data: ['data file', 'generate it from a script at test or build time, or keep a small sample checked in; if it must be big, add it to "ignorePaths".'],
+  code: ['code file', 'split it by responsibility into modules, and keep the old path re-exporting what moved so callers do not change.',
+    'write it as one module per responsibility, with a small entry file that imports them.'],
+  test: ['test file', 'split it by the behaviour each group covers, into files the test runner still finds, with shared setup in a helpers module.',
+    'write one test file per behaviour group, with shared setup in a helpers module.'],
+  document: ['long document', 'make it a short index plus one file per section, each linked from the index.',
+    'write a short index plus one file per section, each linked from the index.'],
+  log: ['log', 'keep recent entries and move older ones to an archive file by period (one per year or release), linked from the top.',
+    'keep recent entries in it and older ones in an archive file by period.'],
+  skill: ['SKILL.md', 'keep its steps and move detail to a reference file next to it, named in the step that needs it.',
+    'keep the steps in SKILL.md and put detail in a reference file next to it.'],
+  data: ['data file', DATA_RECIPE, DATA_RECIPE],
 };
 
 const fmt = (n) => n.toLocaleString('en-US');
 
-/** The refusal message. */
+/** The refusal message. A file of 0 bytes before is worded as a new file. */
 export function message(rel, bytesAfter, bytesBefore, limit) {
-  const [label, recipe] = RECIPES[kindOf(rel)];
+  const [label, splitRecipe, newRecipe] = RECIPES[kindOf(rel)];
   const suggest = Math.ceil(tokensOf(bytesAfter) / 1000) * 1000;
+  const head = `[file-size-guard] ${rel} would be `;
+  const limitText = `the limit is ${fmt(limit)} tokens (bytes / 4). Agents read big files in pieces`;
+  const what = bytesBefore === 0
+    ? `${head}a new file of ${fmt(tokensOf(bytesAfter))} tokens (${fmt(bytesAfter)} bytes); ${limitText}, so write it as several smaller files instead, or generate it.\n` +
+      `For a new ${label}: ${newRecipe}\n` +
+      'If several files are not what the user asked for, tell the user and offer that or a per-path limit, instead of deciding on your own.\n'
+    : `${head}${fmt(tokensOf(bytesAfter))} tokens after this change (${fmt(tokensOf(bytesBefore))} now; ${fmt(bytesAfter)} bytes, up from ` +
+      `${fmt(bytesBefore)}); ${limitText}, so split it instead of growing it.\n` +
+      `To split this ${label}: ${splitRecipe}\n` +
+      'If splitting is not part of the task the user gave, tell the user and offer the split or a per-path limit, ' +
+      'instead of starting a large refactor unasked.\n';
+  const scope = rel.includes('/')
+    ? 'the glob matches this path from the project root'
+    : `a glob without a "/" such as "${rel}" matches that file name in every folder, so this also covers every other ${rel}`;
   return (
-    `[file-size-guard] ${rel} would be ${fmt(tokensOf(bytesAfter))} tokens after this change (${fmt(tokensOf(bytesBefore))} now); ` +
-    `the limit is ${fmt(limit)} tokens (bytes / 4). Agents read big files in pieces, so split it instead of growing it.\n` +
-    `To split this ${label}: ${recipe}\n` +
-    'If splitting is not part of the task the user gave, tell the user and offer the split or a per-path limit, ' +
-    'instead of starting a large refactor unasked.\n' +
-    `A per-path limit, in .claude/pau-skills.json: "file-size-guard": { "pathLimits": { "${rel}": ${suggest} } }. ` +
-    'To turn this hook off: "hooks": { "file-size-guard": false } in that file, or PAU_SKILLS_DISABLE=file-size-guard.'
+    what +
+    `A per-path limit, if the user agrees: put this in .claude/pau-skills.json, or merge it into that file if it exists (${scope}):\n` +
+    `{ "file-size-guard": { "pathLimits": { ${JSON.stringify(rel)}: ${suggest} } } }\n` +
+    'To turn this hook off, the user can put this in .claude/pau-skills.json:\n' +
+    '{ "hooks": { "file-size-guard": false } }\n' +
+    'or start Claude Code with PAU_SKILLS_DISABLE=file-size-guard set; an agent cannot set it for its own session.'
   );
 }
 

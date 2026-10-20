@@ -42,11 +42,24 @@ describe('file-size guard: the kind of file', () => {
   }
 });
 
+/** The message for an existing 1-byte file that a Write grows over the limit. */
+const grown = (rel, options) => { const p = tempDir(); put(p, rel, 'x'); return check(write(p, rel, big), p, options).reason; };
+/** The message for a new file written over the limit. */
+const created = (rel) => { const p = tempDir(); return check(write(p, rel, big), p).reason; };
+
+const NEW_RECIPE = {
+  code: /one module per responsibility/,
+  test: /one test file per behaviour group/,
+  document: /short index plus one file per section/,
+  log: /archive file by period/,
+  skill: /reference file next to it/,
+  data: /generate it from a script at test or build time/,
+};
+
 describe('file-size guard: the refusal message', () => {
   for (const [kind, paths] of Object.entries(KINDS)) {
     test(`gives the recipe for ${kind}, and only that one`, () => {
-      const p = tempDir();
-      const { reason } = check(write(p, paths[0], big), p);
+      const reason = grown(paths[0]);
       assert.match(reason, RECIPE[kind]);
       for (const [other, re] of Object.entries(RECIPE)) if (other !== kind) assert.doesNotMatch(reason, re, other);
     });
@@ -62,25 +75,61 @@ describe('file-size guard: the refusal message', () => {
     assert.match(reason, /limit is 4,000 tokens/);
   });
 
-  test('a new file is 0 tokens now', () => {
-    const p = tempDir();
-    assert.match(check(write(p, 'src/new.js', big), p).reason, /5,001 tokens.*0 now/s);
+  test('a growth of one byte shows in bytes when the tokens round to the same number', () => {
+    const p = tempDir(); put(p, 'src/a.js', 'x' + 'a'.repeat(30000)); // 30,001 bytes, 7,501 tokens
+    const { reason } = check(edit(p, 'src/a.js', 'x', 'xy'), p); // 30,002 bytes, still 7,501 tokens
+    assert.match(reason, /30,002 bytes/);
+    assert.match(reason, /up from 30,001/);
   });
 
+  test('a new file is worded as a new file, with no growth, split or refactor', () => {
+    const reason = created('src/new.js');
+    assert.match(reason, /src\/new\.js would be a new file of 5,001 tokens \(20,001 bytes\); the limit is 5,000 tokens/);
+    assert.match(reason, /write it as several smaller files/);
+    assert.match(reason, /tell the user/);
+    for (const re of [/0 now/, /growing it/, /large refactor/, /split it/i]) assert.doesNotMatch(reason, re);
+  });
+
+  for (const [kind, paths] of Object.entries(KINDS)) {
+    test(`a new ${kind} file gets the recipe for writing one`, () => assert.match(created(paths[0]), NEW_RECIPE[kind]));
+  }
+
   test('says to tell the user instead of starting a large refactor unasked', () => {
-    const p = tempDir();
-    const { reason } = check(write(p, 'src/a.js', big), p);
+    const reason = grown('src/a.js');
     assert.match(reason, /If splitting is not part of the task the user gave, tell the user and offer the split or a per-path limit/);
     assert.match(reason, /instead of starting a large refactor unasked/);
   });
 
   test('says how to set a pathLimits entry and how to turn the hook off', () => {
-    const p = tempDir();
-    const { reason } = check(write(p, 'src/a.js', big), p);
+    const reason = grown('src/a.js');
     assert.match(reason, /"file-size-guard": \{ "pathLimits": \{ "src\/a\.js": \d+ \} \}/);
     assert.match(reason, /\.claude\/pau-skills\.json/);
     assert.match(reason, /"hooks": \{ "file-size-guard": false \}/);
     assert.match(reason, /PAU_SKILLS_DISABLE=file-size-guard/);
+  });
+
+  test('gives each config as a whole JSON file on its own line', () => {
+    const reason = grown('src/a.js');
+    const objects = reason.split('\n').filter((l) => l.startsWith('{')).map((l) => JSON.parse(l));
+    assert.equal(objects.length, 2);
+    assert.deepEqual(Object.keys(objects[0]['file-size-guard'].pathLimits), ['src/a.js']);
+    assert.ok(objects[0]['file-size-guard'].pathLimits['src/a.js'] > 5000);
+    assert.deepEqual(objects[1], { hooks: { 'file-size-guard': false } });
+  });
+
+  test('says what the glob matches: the path from the root, or a bare file name in every folder', () => {
+    const nested = grown('docs/guide.md');
+    assert.match(nested, /matches this path from the project root/);
+    assert.doesNotMatch(nested, /every folder/);
+    const root = grown('README.md');
+    assert.match(root, /"README\.md" matches that file name in every folder/);
+    assert.doesNotMatch(root, /matches this path from the project root/);
+  });
+
+  test('says the environment switch is for the user to set when starting Claude Code', () => {
+    const reason = grown('src/a.js');
+    assert.match(reason, /the user can .*start Claude Code with PAU_SKILLS_DISABLE=file-size-guard/s);
+    assert.match(reason, /an agent cannot set it for its own session/);
   });
 
   test('the hook prints it on stderr and exits 2', () => {
