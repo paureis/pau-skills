@@ -2,12 +2,13 @@
 // and an ignored gate is worse than no gate.
 //
 // The "printf prose" and "single-quoted payload" cases were added after the hook blocked its own retrospective commit:
-// a printf whose PROSE mentioned "node -e" and contained backticks, executing nothing. That false positive exposed two
-// real flaws: matching the interpreter anywhere rather than at a command position, and ignoring that backticks inside
-// SINGLE quotes are literal.
+// a printf whose PROSE mentioned "node -e" and contained backticks. That false positive exposed two real flaws:
+// matching the interpreter anywhere rather than at a command position, and ignoring that backticks inside SINGLE quotes
+// are literal. The printf case now uses double quotes, so it checks the command-position rule on its own; the
+// single-quote rule has its own cases.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { repo, runNode } from './helpers.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
 
 const HOOK = repo('hooks', 'guards', 'block-inline-backtick-payload.mjs');
 const BT = String.fromCharCode(96); // keep literal backticks out of this file's source
@@ -28,9 +29,10 @@ const cases = [
   ['PASS', 'grep for a backtick in a file', "grep -n '" + BT + "' docs/KNOWN-TRAPS.md"],
   ['PASS', 'npm test', 'npm test'],
   ['PASS', 'a backtick inside a CLI query string, no inline interpreter', 'az webapp list --query "[?name==' + BT + 'x' + BT + '].name" -o tsv'],
-  // The false positive that caught the hook's own commit.
+  // The false positive that caught the hook's own commit. The prose is in double quotes, so the single-quote blanking
+  // of step 1 cannot hide "node -e": only the command-position rule lets this pass.
   ['PASS', 'printf PROSE that merely MENTIONS node -e and contains backticks',
-    "printf 'retrospective: mechanize the node -e rule\\n\\nbash executed " + BT + 'ORACLE-ALL' + BT + ' and ' + BT + 'D2' + BT + " as commands\\n' > /tmp/m.txt && git commit -F /tmp/m.txt"],
+    'printf "retrospective: mechanize the node -e rule, bash executed ' + BT + 'ORACLE-ALL' + BT + ' as a command\\n" > /tmp/m.txt && git commit -F /tmp/m.txt'],
   ['PASS', 'SINGLE-quoted inline payload: bash does no substitution', "node -e 'console.log(" + BT + 'safe' + BT + ")'"],
   // Single quotes NESTED in a double-quoted payload protect nothing.
   ['BLOCK', 'JS string literal in single quotes inside node -e "..."', 'cd ./x && node -e "\nconst s=\'(see the memory ' + BT + 'accounts-note' + BT + ').\';\nconsole.log(s);\n"'],
@@ -39,7 +41,8 @@ const cases = [
 
 for (const [want, label, command] of cases) {
   test(`${want}: ${label}`, () => {
-    const r = runNode(HOOK, { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command } }) });
+    const env = { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: tempDir(), PAU_SKILLS_DISABLE: '' };
+    const r = runNode(HOOK, { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command } }), env });
     assert.equal(r.code === 2 ? 'BLOCK' : 'PASS', want, `command: ${command.replace(/\n/g, '\\n')}\nstderr: ${r.stderr}`);
     if (want === 'BLOCK') assert.match(r.stderr, /write the script/);
   });

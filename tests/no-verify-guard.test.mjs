@@ -23,7 +23,7 @@ test('allowSigningBypass lets --no-gpg-sign through but not --no-verify', () => 
 });
 
 test('as a hook: exit 2 with the reason, exit 0 on odd input', () => {
-  const env = { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: '' };
+  const env = { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: '', PAU_SKILLS_DISABLE: '' };
   const r = runNode(GUARD, { input: JSON.stringify({ tool_name: 'Bash', cwd: tempDir(), tool_input: { command: 'git commit -n -m x' } }), env });
   assert.equal(r.code, 2);
   assert.match(r.stderr, /no-verify-guard/);

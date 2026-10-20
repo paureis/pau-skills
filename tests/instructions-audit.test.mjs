@@ -194,6 +194,10 @@ test('findSecrets: provider tokens, assignments, private keys, emails and phones
   for (const s of got) assert.ok(!text.split('\n').some((l) => s.preview.length > 8 && l.includes(s.preview)), 'previews are masked');
   assert.equal(mask('abcdefghijklmnop'), 'abcd**********op');
   assert.equal(mask('short'), '*****');
+  // Eight characters or fewer are all stars; from nine on, the first four and the last two show.
+  assert.equal(mask('abcdefg'), '*******');
+  assert.equal(mask('abcdefgh'), '********');
+  assert.equal(mask('abcdefghi'), 'abcd***hi');
 });
 
 test('findVague and findEmphasis: vague wording without anchors; capitals and "again"', () => {

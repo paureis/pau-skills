@@ -278,6 +278,27 @@ Things that bit the sixth batch (Q2, Q5 with Q9, Q6, Q7):
   checkout after each agent reports.
 - `claude plugin validate <folder>` accepts a folder of agents only at a `.claude/agents` path.
 
+Things that bit the seventh batch (Q1, the first batch run with the roster):
+- `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` set to 3 in the cloud environment arrived as 1: the cloud runtime overrides
+  it. `eng-lead` planned and wrote the briefs, and the main session started every builder and reviewer itself. That
+  worked; plan for it.
+- The plan checks were worth more than ever: the ones in phase B built the whole slice in a clone before any builder
+  started, and found an edit that could not catch its own mutation, a wrong path walk and a race that would have
+  sent a builder to "fix" a good test. Every reviewer still found something the builder missed.
+- The worktree guard refuses, for builders: a command that sets HOME or GIT_CONFIG_GLOBAL, a shell loop that passes a
+  variable to node or sed, heredocs or python text that name git, and git chained with anything. A loop in a script
+  file run as `bash <file>`, or a `.mjs` driver, works. Leave the HOME and git-config runs to the reviewer.
+- The container restarted twice. Background agents were cut off mid-command while their status said "completed";
+  their transcripts and worktrees survived, and each was resumed by id with SendMessage.
+- The permission check refused writing "the owner said yes" into a brief before the owner had answered. Ask first,
+  then write the answer.
+- Long briefs worked better as files the agent reads than as pasted prompts, with a "Corrections after the plan
+  check" section that wins over earlier text, and with shared parts pointing at one brief instead of repeated.
+- Builders and reviewers redirected to `/dev/null` several times despite the standing order; it stayed a character
+  device. Say "not even as a redirect target".
+- A `TMPDIR` link must be short: a path with a part that starts with `-` (the scratchpad's) makes skill-eval warn on
+  purpose, which looks like a failure.
+
 ## Kickoff for the next session
 
 The sixth batch is done (pull request 28). The next session runs batch 7: Q1, then Q4, one after the other, and it is
@@ -849,7 +870,7 @@ read its frontmatter and route by its description; the prompt checklist (or poin
 
 ### Q. After the pstack review
 
-**Q1 test-value audit** (`todo`, verification, no new skill). Asked for by the owner on 2026-10-19 before the test
+**Q1 test-value audit** (`in progress`, verification, no new skill). Asked for by the owner on 2026-10-19 before the test
 count on the profile README is updated.
 - The suite has 1,069 tests. Find the ones that are not worth having, by the list in `tdd` ("prefer no new test over
   a bad test": mostly tests a mock, pins implementation details, depends on timing or unrelated global state, would
@@ -860,6 +881,38 @@ count on the profile README is updated.
   pull request that removes or rewrites the ones the owner agrees to, never weakening a test to make it pass.
 - Done when: every test file has been sampled, the table is in the pull request, and the profile README states the
   count of tests kept, in the owner's words.
+- Changed at the start of batch 7 (2026-10-19), after a review against the code:
+  - The suite now has 1,166 tests in 39 files (1,165 pass, 1 skipped as root), not 1,069. The count is the `# tests`
+    line of `npm test`, skipped tests included, because skips differ by machine (root, python3, unzip); the owner
+    chose this on 2026-10-19. The profile README says "with over 500 tests" today.
+  - "Redundant" joins the list (from `tdd`'s rules: "A redundant or brittle test is a cost"): a test that catches
+    only mutations another test in the file also catches and checks nothing else. Table-driven cases that each cover a
+    different input the code treats differently are not redundant.
+  - "A sample per file" was vague. Now: at least 3 mutations per test file and at least one per 10 tests, each aimed
+    at a different behaviour named by the tests. A doc-checking test (style, context budget, standalone, marketplace,
+    confirm step) is mutated through the file it guards. A SURVIVED counts only after the changed lines are read and a
+    second mutation of the same behaviour also survives, since a mutant can be equivalent.
+  - Timing: the full suite runs 5 times and once with `TMPDIR` set to a link; a test that fails once goes to
+    `flaky-test-hunt`.
+  - Two phases with a stop between: the audit changes nothing and every table row lists its exact `mutate.sh`
+    commands, so a reviewer can repeat them; the removal or rewrite starts only after the owner's yes. A rewritten
+    test must catch the mutation the old one missed, shown with `mutate.sh`.
+- Phase A result (2026-10-19): three audit builders, one per group of test files, and a fresh reviewer each. 448
+  mutation runs over all 39 files, 428 caught; the reviewers reran 219 with the same verdicts. Found: 1 test worth
+  removing (verify-app line 149, a copy of line 100), about 15 that pass with the behaviour broken, about 160 that
+  depend on the machine (the caller's hook config or `PAU_SKILLS_DISABLE`, the time zone, a global git config that
+  signs commits, the home folder, a `.git` or `.claude` folder above the temporary folder), and behaviour with no
+  test (the off switch of 6 hooks, the backtick guard's "a backtick after the flag" rule, measure-minutes `keyOf`
+  grouping by conclusion). Also: `hooks/guards/secret-guard.mjs` line 72 is dead code.
+- The owner's choices: remove the one copy, do every rewrite, and add tests for the off switches only. The backtick
+  rule, the `keyOf` grouping and the dead code wait in the backlog.
+- Phase B result (2026-10-20): three builders by the same groups, each brief checked by a read-only plan check that
+  built the whole slice in a clone first, a fresh reviewer each, one fix round (rest) and a second look. Tests only:
+  1 removed, 12 added (one off-switch test per hook), about 40 rewritten, every one proven by a mutation that
+  SURVIVED on the base and is CAUGHT after, and every earlier catch rerun. The suite went from 1,166 to 1,177 tests,
+  and passes under `TZ=Pacific/Kiritimati`, `PAU_SKILLS_DISABLE=all`, a user or project config that turns every hook
+  off, an empty HOME, a global git config that signs commits, and `TMPDIR` inside a git work tree (where the tests
+  that cannot pass there fail once with a message). What the reviews found that this item did not fix is in Q10.
 
 **Q2 geppetto and a starter agent roster** (`done`, sixth batch, agent-orchestration, one new skill with bundled agent files).
 Asked for by the owner on 2026-10-19 and settled with `grill-me` in the same session.
@@ -1062,6 +1115,30 @@ settled with `grill-me`.
   skip rule, a config override, the hook turned off, and input it does not understand; a mutation breaks each; the
   repository test passes with no tracked file over the limit; the four repository checks pass; the changed skills'
   zips go to the owner; `pau-skills-hooks` is bumped and the owner gets the update commands.
+- Changed at the start of batch 7 (2026-10-19), after a review against the code. The plan check of Q4's briefs
+  settles the details; these are the starting points:
+  - 25 tracked files are now over 5,000 tokens, not 20 (the two copies of `review-scope.mjs` at 5,299 each among the
+    new ones). Measure again after Q1.
+  - Per-plugin ORIGINS files would still be too big (the verification group alone is about 35 KB), and BACKLOG's
+    work items alone are about 76 KB. So ORIGINS becomes one file per entry, `docs/origins/<plugin>/<name>.md`, and the
+    backlog one file per item group or item under `docs/backlog/`, with the "things that bit" lists in their own file.
+    `docs/BACKLOG.md` and `docs/ORIGINS.md` stay as the indexes, so CLAUDE.md, the tests and the owner's kickoff
+    message keep working. `scripts/new-skill.mjs` then writes a new ORIGINS stub file and an index line, and its test
+    follows.
+  - The shared size and skip logic lives in the hook file as exported pure functions with a main guard, the way
+    `secret-guard.mjs` exports `decide`. Not in `hooks/lib/`: a change there bumps every plugin with hooks.
+  - The hook checks only files inside the project. A write outside it (the scratchpad, memory under `~/.claude`,
+    `/tmp`) passes.
+  - Size after the change is computed by applying the edit to the file's current text (each `MultiEdit` edit in
+    order, `replace_all` on every occurrence), in UTF-8 bytes. An `old_string` not in the file passes: the tool fails
+    anyway. Notebooks (`NotebookEdit`, `.ipynb`) are skipped: outputs and images make their size meaningless.
+  - Generated and vendored files are found with `git check-attr linguist-generated linguist-vendored`, ignored ones
+    with `git check-ignore`, which handle nested `.gitattributes` and patterns; without git or outside a repository
+    those two rules do not apply. Header markers are read from the first 5 lines.
+  - It refuses the way the other guards do: exit 2 with the message on stderr.
+  - A split script or test file is proven by the same full test names and the same pass count before and after; a
+    moved COPIES file keeps its pair, with new modules added as pairs.
+  - The hook count goes from 12 to 13 (README badge, and the profile README's "12 hooks").
 
 **Q5 html-plan, installed and linked** (`done`, sixth batch, small; touches `architect`, `to-prd`, `grill-me`, `which-skill`, the
 README and the batch process). Asked for by the owner on 2026-10-19, settled with `grill-me`.
@@ -1276,6 +1353,19 @@ owner on 2026-10-19 after using `brainstorm` on Q6.
   question, old against new, shows fewer user turns and less user typing to reach a decision, with at least one
   option from a non-baseline lens still reaching the finalists; the descriptions stay within budget; the four
   repository checks pass.
+
+**Q10 what the Q1 audit left** (`todo`, small; found in batch 7, each checked by a run).
+- `skills/session-discipline/instructions-audit/scan.mjs` line 468 skips a nested file when its absolute path holds
+  `/.claude/`, so a project that lives under a `.claude` folder, which includes every Claude Code worktree under
+  `.claude/worktrees/`, loses its nested CLAUDE.md files. Test the part of the path below the project root instead.
+  `tests/instructions-audit.test.mjs` "discoverFiles ..." fails with `TMPDIR` under a `.claude` folder because of it.
+- Behaviour with no test: the backtick guard's "only a backtick after the flag counts" (bt-4, bt-4b), a double
+  quote in its command-position group (h-bt-dq), `rm --no-preserve-root -r` with the flag before `-r` (h-dg-rec),
+  roadmap rows found with `includes('|')` instead of `startsWith('|')` (h-rm-pipe), measure-minutes `keyOf` grouping
+  by conclusion, and the secret rule's lower-case limit in launch-readiness `rules.mjs`.
+- `hooks/guards/secret-guard.mjs` line 72 is dead code: line 73 already needs a digit.
+- When the flaky-test-hunt kill is broken, the hanging fixture is left running after the test fails (the test's
+  SIGKILL reaches only `repeat.mjs`).
 
 **Q8 production rules from day one** (`todo`, after Q6; touches `project-setup`, `geppetto` from Q2 and `rule-to-hook`).
 Kept in Q6's brainstorm as a separate item.

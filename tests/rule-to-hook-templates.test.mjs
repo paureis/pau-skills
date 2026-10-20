@@ -5,7 +5,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync, realpathSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import { check, decide, splitCommands } from '../skills/guards/rule-to-hook/templates/pretooluse-guard.mjs';
@@ -183,7 +183,9 @@ describe('ratchet template', () => {
     }
     assert.equal(ratchet(dir, ['--pattern', '(']).code, 2);
     assert.equal(ratchet(dir, ['--today', 'tomorrow']).code, 2);
-    assert.equal(runNode(RATCHET, { cwd: tempDir('ratchet-nogit-'), args: ARGS }).code, 2);
+    // The ceiling stops git from finding a repository above the temporary folder.
+    const d = tempDir('ratchet-nogit-');
+    assert.equal(runNode(RATCHET, { cwd: d, args: ARGS, env: { GIT_CEILING_DIRECTORIES: dirname(realpathSync(d)) } }).code, 2);
   });
 
   // ARGS with each given flag's value replaced (all --files values replaced by the given list).

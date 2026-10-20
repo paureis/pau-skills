@@ -50,11 +50,17 @@ describe('secrets in evidence', () => {
   const random = createHash('sha256').update('launch-readiness').digest('base64').replace(/[+/=]/g, '');
 
   test('a known key prefix or a long random token is found; ordinary evidence is not', () => {
-    for (const s of [stripeLike, awsLike, random, ['gh' + 'p', 'x'.repeat(36)].join('_'), `-----BEGIN ${'RSA PRIVATE'} KEY-----`]) {
+    // At each limit of the random-token rule: 20 characters, 2 upper case, 2 digits, entropy 3.722 (limit 3.7).
+    const atLimits = ['Acd1efgh', 'Bcde2fgh', 'ijkm'].join('');
+    // Just under it: entropy 3.622 (7 letters twice), and 19 characters.
+    const lowEntropy = ['Acd1efgh', 'iBcde2fg', 'hijk'].join('');
+    const short = ['AB12', 'cdefghijk', 'mnopqr'].join('');
+    for (const s of [stripeLike, awsLike, random, atLimits, ['gh' + 'p', 'x'.repeat(36)].join('_'), `-----BEGIN ${'RSA PRIVATE'} KEY-----`]) {
       assert.ok(secretIn(`config.js:2 holds ${s} here`), s.slice(0, 6));
     }
     for (const s of ['public/config.js:2 holds a key ("demo...")', 'commit 6de2805552f3812beef914d57a96c3aad52e5033',
-      'Access-Control-Allow-Origin: * at src/cors.mjs:3', 'sk_l... in src/pay.js:4', 'src/Components/HeaderLayout2.tsx:12', 'handleOAuth2CallbackRequest']) {
+      'Access-Control-Allow-Origin: * at src/cors.mjs:3', 'sk_l... in src/pay.js:4', 'src/Components/HeaderLayout2.tsx:12', 'handleOAuth2CallbackRequest',
+      `config.js:2 holds ${lowEntropy} here`, `config.js:2 holds ${short} here`]) {
       assert.equal(secretIn(s), null, s);
     }
   });

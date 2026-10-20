@@ -3,6 +3,24 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-20: the seventh batch, Q1 test-value audit
+
+- Every test file was sampled by mutation: 448 runs over the 39 files, 428 caught, and the reviews reran 219 of
+  them with the same verdict. Tests only; no skill, hook or script changed, so no version moved.
+- Removed one test that repeated another (verify-app, "a feature with no screen passes with a one-line States
+  body"; its one extra check moved into the clean-file test).
+- Rewritten so they catch the break they missed: `rm -r --no-preserve-root`, the safe-merge promotion pair and its
+  error messages, the backtick guard's printf case, roadmap `tables()`, the 5 MB transcript message, new-skill's
+  cross-plugin refusal, instructions-audit masking at 7 to 9 characters, geppetto's shadowed warning, the
+  parallel-worktrees overlap count, the CRLF ledger, the secret-token limits and the hanging-run timeout.
+- Isolated from the machine: every hook test sets its own user config, project folder and `PAU_SKILLS_DISABLE`;
+  test repositories commit unsigned; launch-readiness runs in UTC; nothing writes to the real home folder; tests
+  that cannot pass with the temporary folder below a `.git` or `.claude` folder fail once with a clear message, and
+  the not-a-repository cases stop git at the temporary folder.
+- Added one off-switch test per hook (12): with the hook turned off in the project config, or with
+  `PAU_SKILLS_DISABLE`, it exits 0 and prints nothing.
+- The suite goes from 1,166 to 1,177 tests.
+
 ## 2026-10-19: after the sixth batch, the owner's decisions (decision 10)
 
 - `geppetto`: `eng-lead` drops SendMessage (the main session sends the fix rounds); the roster goes to version 2, so

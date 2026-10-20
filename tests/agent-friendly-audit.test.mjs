@@ -5,7 +5,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { writeFileSync, mkdirSync, realpathSync, utimesSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import { redact, classify, encodeProjectPath } from '../skills/planning/agent-friendly-audit/mine.mjs';
 
@@ -146,13 +146,35 @@ describe('redact', () => {
   test('a 5 MB message is cut and printed quickly', () => {
     const dir = join(tempDir('afa-big-'), '-b-c');
     mkdirSync(dir);
-    const big = { type: 'user', timestamp: '2026-04-03T00:00:00Z', message: { role: 'user', content: 'a'.repeat(5 * 1024 * 1024) } };
+    // A token longer than the 400 + 2,048 characters read before redaction, then a marker past it. Only a message
+    // cut before redaction keeps the marker out: redacting the whole text turns the token into [secret] and the
+    // marker then lands inside the first 400 characters.
+    const token = 'sk' + '-' + 'q9'.repeat(1500);
+    const head = token + ' MARKER ';
+    const content = head + 'a'.repeat(5 * 1024 * 1024 - head.length);
+    const big = { type: 'user', timestamp: '2026-04-03T00:00:00Z', message: { role: 'user', content } };
     writeFileSync(join(dir, 's.jsonl'), JSON.stringify(big) + '\n');
     const start = Date.now();
     const r = runNode(SCRIPT, { args: ['transcripts', dir] });
+    const took = Date.now() - start;
     assert.equal(r.code, 0, r.stderr);
-    assert.ok(Date.now() - start < 5000, `took ${Date.now() - start} ms`);
-    assert.ok(r.stdout.split('\n').find((l) => l.startsWith('1\t')).length < 450);
+    const row = r.stdout.split('\n').find((l) => l.startsWith('1\t'));
+    assert.match(row, /\[secret\]/);
+    assert.doesNotMatch(row, /MARKER/);
+    assert.ok(row.length < 450);
+    assert.ok(took < 5000, `took ${took} ms`);
+
+    // Plain text with no secret: redaction leaves it long, so only the cut after redaction keeps the row short.
+    const plainDir = join(tempDir('afa-big-'), '-b-d');
+    mkdirSync(plainDir);
+    const plain = { type: 'user', timestamp: '2026-04-03T00:00:00Z', message: { role: 'user', content: 'a'.repeat(5 * 1024 * 1024) } };
+    writeFileSync(join(plainDir, 's.jsonl'), JSON.stringify(plain) + '\n');
+    const plainStart = Date.now();
+    const p = runNode(SCRIPT, { args: ['transcripts', plainDir] });
+    const plainTook = Date.now() - plainStart;
+    assert.equal(p.code, 0, p.stderr);
+    assert.ok(p.stdout.split('\n').find((l) => l.startsWith('1\t')).length < 450);
+    assert.ok(plainTook < 5000, `took ${plainTook} ms`);
   });
 });
 
@@ -212,7 +234,9 @@ describe('commits', () => {
   });
 
   test('a folder that is not a git repository is refused', () => {
-    const r = runNode(SCRIPT, { args: ['commits', '--repo', tempDir('afa-nogit-')] });
+    // The ceiling stops git from finding a repository above the temporary folder.
+    const d = tempDir('afa-nogit-');
+    const r = runNode(SCRIPT, { args: ['commits', '--repo', d], env: { GIT_CEILING_DIRECTORIES: dirname(realpathSync(d)) } });
     assert.equal(r.code, 1);
     assert.match(r.stderr, /not a git repository/);
   });

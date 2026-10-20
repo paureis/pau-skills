@@ -48,7 +48,7 @@ export function newLedger(root, profile = { profile: { stack: 'Node 20' }, stage
 export const put = (l, rows, root) => applyRows(l, rows, { root, now: NOW });
 export const row = (o) => ({ area: 'security', stage: 2, severity: 'must-fix', status: 'pass', source: 'code', evidence: 'a.js:1 ok', files: ['a.js'], ...o });
 
-export const git = (root, ...args) => execFileSync('git', ['-C', root, '-c', 'user.name=t', '-c', 'user.email=t@example.com', ...args], { encoding: 'utf8' });
+export const git = (root, ...args) => execFileSync('git', ['-C', root, '-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false', ...args], { encoding: 'utf8' });
 /** Make root a git repository with one commit; returns the commit. */
 export function commitAll(root) {
   git(root, 'init', '-q');
