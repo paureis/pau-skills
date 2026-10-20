@@ -4,8 +4,11 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { escapeCell, unescapeCell, splitRow, parseLedger, formatLedger } from '../skills/verification/launch-readiness/ledger.mjs';
+import { escapeCell, unescapeCell, splitRow, parseLedger, formatLedger, setProfile } from '../skills/verification/launch-readiness/ledger.mjs';
 import { SKILL, NOW, SAMPLE, project, put, row } from './launch-readiness.helpers.mjs';
+
+// The tests fix the clock at noon UTC and expect that UTC date, while ledger.mjs stamps the local date.
+process.env.TZ = 'UTC';
 
 describe('cells', () => {
   test('escape |, newlines and backslashes, and read back what was written', () => {
@@ -52,6 +55,19 @@ describe('parse and write', () => {
   test('CRLF files keep their line endings', () => {
     const crlf = SAMPLE.replace(/\n/g, '\r\n');
     assert.equal(formatLedger(parseLedger(crlf)), crlf);
+    const bareLf = /(?<!\r)\n/;
+    const root = project({ 'a.js': 'x\n' });
+    const changedRow = formatLedger(put(parseLedger(crlf), [row({ id: 'SEC-08', status: 'likely', evidence: 'a.js:1 fixed' })], root));
+    assert.notEqual(changedRow, crlf, 'the row was changed');
+    assert.doesNotMatch(changedRow, bareLf, 'a changed row keeps CRLF');
+    const changedProfile = formatLedger(setProfile(parseLedger(crlf), { profile: { stack: 'Go 1.23' }, stage: 2 }, { root }));
+    assert.match(changedProfile, /"stack": "Go 1\.23"/);
+    assert.doesNotMatch(changedProfile, bareLf, 'a changed profile block keeps CRLF');
+    const noBlock = SAMPLE.replace(/```json launch-readiness\n[\s\S]*?\n```\n\n/, '').replace(/\n/g, '\r\n');
+    assert.doesNotMatch(noBlock, /```json launch-readiness/);
+    const added = formatLedger(parseLedger(noBlock));
+    assert.match(added, /```json launch-readiness/, 'the profile block was added');
+    assert.doesNotMatch(added, bareLf, 'an added profile block keeps CRLF');
   });
 
   test('a new row is added at the end of the table; a row with every awkward character round-trips', () => {
