@@ -4,6 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import { parseArgs, wilson, runsNeeded, normalizeSignature, signatureId, summarize, repeat } from '../skills/verification/flaky-test-hunt/repeat.mjs';
@@ -170,8 +171,12 @@ test('end to end: --until-fail stops at the first failure and exit code 0 when a
 
 test('end to end: a hanging run is killed by --timeout and reported as T', () => {
   const { fixture, counter } = setup();
-  const r = runNode(SCRIPT, { args: ['--runs', '2', '--timeout', '1', '--quiet', '--', process.execPath, fixture], env: { COUNTER_FILE: counter, HANG_ON: '2' } });
-  assert.equal(r.code, 1);
+  // A timeout of its own, so a run that is never killed fails here instead of hanging the whole suite.
+  const r = spawnSync(process.execPath, [SCRIPT, '--runs', '2', '--timeout', '1', '--quiet', '--', process.execPath, fixture], {
+    encoding: 'utf8', env: { ...process.env, COUNTER_FILE: counter, HANG_ON: '2' }, timeout: 30000, killSignal: 'SIGKILL',
+  });
+  assert.equal(r.error?.code, undefined, 'repeat.mjs did not finish in 30 s because the hanging run was not killed');
+  assert.equal(r.status, 1);
   assert.match(r.stdout, /timed out: 1/);
   assert.match(r.stdout, /: \.T/);
 });

@@ -97,7 +97,10 @@ describe('headings', () => {
 });
 
 describe('checkFeature', () => {
-  test('a file with the five headings in order, each with content, is clean', () => assert.deepEqual(checkFeature(FEATURE), []));
+  test('a file with the five headings in order, each with content, is clean', () => {
+    assert.match(FEATURE, /## States\n\n- No screen[^\n]*\n$/);
+    assert.deepEqual(checkFeature(FEATURE), []);
+  });
 
   test('accepts the upstream spellings of the headings and any harness name', () => {
     const text = FEATURE.replace("(user's point of view)", '(user POV)').replace('with curl', 'with tmux');
@@ -144,11 +147,6 @@ describe('checkFeature', () => {
     const p = checkFeature(`${FOUR_HEADINGS}\n## States\n\n`);
     assert.equal(p.length, 1, p.join('\n'));
     assert.match(p[0], /"## States" is empty/);
-  });
-
-  test('a feature with no screen passes with a one-line States body', () => {
-    assert.match(FEATURE, /## States\n\n- No screen[^\n]*\n$/);
-    assert.deepEqual(checkFeature(FEATURE), []);
   });
 
   test('a feature with a screen passes with its three states, which the checker does not parse', () => {

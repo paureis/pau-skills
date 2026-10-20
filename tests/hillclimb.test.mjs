@@ -4,11 +4,25 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, readFileSync, mkdirSync, existsSync, symlinkSync, realpathSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import {
   HEADER, parseMeasurement, formatNumber, median, describeDelta, insideGitTree, parseArgs, main, guardCell,
 } from '../skills/verification/hillclimb/decisions.mjs';
+
+// append refuses a log inside a git work tree, and most tests here put their logs in the temporary folder. Look once,
+// from the temporary folder and from its real path as append does, so a temporary folder inside a work tree gives
+// one clear failure instead of dozens of unrelated ones.
+for (const start of [resolve(tmpdir()), realpathSync(tmpdir())]) {
+  for (let dir = start; ; dir = dirname(dir)) {
+    if (existsSync(join(dir, '.git'))) {
+      throw new Error(`the temporary folder ${tmpdir()} is inside the git work tree at ${dir}, where append refuses every log. `
+        + 'Set TMPDIR to a folder outside any git work tree.');
+    }
+    if (dirname(dir) === dir) break;
+  }
+}
 
 const SCRIPT = repo('skills', 'verification', 'hillclimb', 'decisions.mjs');
 const BASE = 'median=2.00s runs=5 spread=0.10s';

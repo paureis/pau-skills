@@ -10,7 +10,23 @@ import { repo, runNode, tempDir } from './helpers.mjs';
 import {
   META_WORDS, findMetaWords, extractActions, renderActions, childEnv, candidateArgv, judgeArgv, validateRubric,
   parseScores, disagreements, variantMeans, skillNameOf, parseArgs, rubricTemplate, platformProblem, ALLOWED_ENV,
+  INHERITED,
 } from '../skills/verification/skill-eval/skill-eval.mjs';
+
+// Every test here makes its roots in the temporary folder, and setup refuses a root below a folder that holds an
+// INHERITED entry. Look once, with this file's own walk from the real path setup checks, so a temporary folder in
+// the wrong place gives one clear failure instead of dozens of unrelated ones.
+{
+  const found = [];
+  for (let dir = realpathSync(tmpdir()); ; dir = dirname(dir)) {
+    for (const f of INHERITED) if (existsSync(join(dir, f))) found.push(join(dir, f));
+    if (dirname(dir) === dir) break;
+  }
+  if (found.length) {
+    throw new Error(`the temporary folder ${tmpdir()} is below ${found.join(', ')}. setup refuses a root below any of them, `
+      + 'and every test here makes its roots in the temporary folder. Set TMPDIR to a folder with none of them in it or above it.');
+  }
+}
 
 const SCRIPT = repo('skills', 'verification', 'skill-eval', 'skill-eval.mjs');
 const FIX = repo('tests', 'fixtures', 'skill-eval');
@@ -614,9 +630,10 @@ describe('run', () => {
     assert.match(out.stderr, /logged in.*--real-home/s);
     assert.equal(out.calls.length, 0, 'no run started');
     assert.ok(out.auth.length >= 1);
-    const real = runFake(s.lab, { extra: ['--real-home'], env: { FAKE_CLAUDE_LOGGED_OUT: emptyHomes } });
+    const home = scratch();
+    const real = runFake(s.lab, { extra: ['--real-home'], env: { FAKE_CLAUDE_LOGGED_OUT: emptyHomes, HOME: home } });
     assert.equal(real.code, 0, real.stderr);
-    for (const c of real.calls) assert.equal(c.home, process.env.HOME);
+    for (const c of real.calls) assert.equal(c.home, home);
     assert.equal(JSON.parse(readFileSync(join(s.lab, 'run.json'), 'utf8')).realHome, true);
   });
 

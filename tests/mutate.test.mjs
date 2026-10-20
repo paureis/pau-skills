@@ -34,6 +34,7 @@ before(() => {
   git('config', 'user.email', 'test@example.com');
   git('config', 'user.name', 'test');
   git('config', 'core.autocrlf', 'false');
+  git('config', 'commit.gpgsign', 'false');
   writeFileSync(join(repo, 'lib.mjs'), SOURCE);
   writeFileSync(join(repo, 'check.mjs'), CHECK);
   writeFileSync(join(repo, 'other.mjs'), 'export const x = 1;\n');
@@ -400,6 +401,7 @@ test('Python: a mutant of the same size, in the same second, runs instead of a c
   pgit('config', 'user.email', 'test@example.com');
   pgit('config', 'user.name', 'test');
   pgit('config', 'core.autocrlf', 'false');
+  pgit('config', 'commit.gpgsign', 'false');
   const MOD = 'def ok():\n    return 1 < 2\n';
   writeFileSync(join(py, 'mod.py'), MOD);
   // A fixed time in the future for every run: the original and the mutant then share a time and a size, which is what

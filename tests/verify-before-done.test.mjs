@@ -75,7 +75,7 @@ describe('verify-before-done: as a hook', () => {
     const dir = tempDir();
     const path = join(dir, 't.jsonl');
     writeFileSync(path, jsonl([user('fix it'), edit('src/a.rs'), result()]));
-    const env = { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: '' };
+    const env = { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: '', PAU_SKILLS_DISABLE: '' };
     const r = runNode(HOOK, { input: JSON.stringify({ hook_event_name: 'Stop', cwd: dir, transcript_path: path, stop_hook_active: false }), env });
     assert.equal(r.code, 0);
     assert.equal(JSON.parse(r.stdout).decision, 'block');
