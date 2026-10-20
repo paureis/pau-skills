@@ -7,11 +7,11 @@
 // The on/off switch is not read: turning the hook off for a session must not turn this check off.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT, tempDir } from './helpers.mjs';
 import { loadConfig, hookOptions } from '../hooks/lib/config.mjs';
-import { listOversized, NAME } from '../hooks/guards/file-size-guard.mjs';
+import { listOversized, skippedByContent, runGit, NAME } from '../hooks/guards/file-size-guard.mjs';
 
 /** The options the repository test uses: this repository's config file, with a HOME that has none. */
 const repoOptions = () => hookOptions(NAME, loadConfig({ project: ROOT, home: tempDir() }));
@@ -30,6 +30,19 @@ test('the options come from the repository config only, never from HOME', () => 
   } finally {
     if (saved === undefined) delete process.env.PAU_SKILLS_HOME; else process.env.PAU_SKILLS_HOME = saved;
   }
+});
+
+// A hand-written file that quotes a generated-file marker near its top would be exempt from the size check for good.
+test('no tracked file under hooks/ or tests/ counts as generated or binary by its content', () => {
+  const ls = runGit(['ls-files', '-z', '--', 'hooks', 'tests'], ROOT, process.env, 60000);
+  assert.equal(ls.status, 0);
+  const files = ls.stdout.split('\0').filter(Boolean);
+  assert.ok(files.length > 20, `only ${files.length} files listed`);
+  const skipped = files.filter((f) => {
+    const st = lstatSync(join(ROOT, f));
+    return st.isFile() && skippedByContent(readFileSync(join(ROOT, f), 'utf8'));
+  });
+  assert.deepEqual(skipped, [], 'these files would never be size-checked; move the marker below line 5');
 });
 
 test('no tracked file is over its token limit', () => {

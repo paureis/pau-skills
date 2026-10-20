@@ -1,11 +1,12 @@
 // The file-size guard's skip list, and the lister the repository test uses. From docs/BACKLOG.md, item Q4:
-//   "What it does": "Skipped: lockfiles by name across ecosystems (...); files marked generated or vendored
-//   (`linguist-generated` or `linguist-vendored` in `.gitattributes`, an `@generated` or "DO NOT EDIT" header);
-//   git-ignored paths; minified files; binaries; and a configured exclude list."
 //   "Changed at the start of batch 7": "Notebooks (`NotebookEdit`, `.ipynb`) are skipped" and "Generated and vendored
 //   files are found with `git check-attr linguist-generated linguist-vendored`, ignored ones with `git check-ignore`,
 //   which handle nested `.gitattributes` and patterns; without git or outside a repository those two rules do not
 //   apply. Header markers are read from the first 5 lines."
+//   (The quote below names the markers, so it stays below line 5 or this file would count as generated.)
+//   "What it does": "Skipped: lockfiles by name across ecosystems (...); files marked generated or vendored
+//   (`linguist-generated` or `linguist-vendored` in `.gitattributes`, an `@generated` or "DO NOT EDIT" header);
+//   git-ignored paths; minified files; binaries; and a configured exclude list."
 //   "Changed at the start of Q4": "The skip rules that cost a process (`git check-attr`, `git check-ignore`) run only
 //   when the change would be refused."
 import { test, describe } from 'node:test';
