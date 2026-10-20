@@ -10,8 +10,9 @@ order; the scrub check and the validator at the end catch most of what gets forg
    (name, description, version, keywords) in `.claude-plugin/marketplace.json`; `scripts/build-marketplace.mjs` fills
    in the rest.
 
-2. **Scaffold it**: `node scripts/new-skill.mjs <plugin> <skill-name>`. This creates the `SKILL.md` and adds a stub
-   to `docs/ORIGINS.md` and a bullet to the plugin's list in the README reference. Every placeholder is marked
+2. **Scaffold it**: `node scripts/new-skill.mjs <plugin> <skill-name>`. This creates the `SKILL.md` and the ORIGINS
+   stub `docs/origins/<plugin>/<skill-name>.md`, adds a line linking the stub to the plugin's list in the
+   `docs/ORIGINS.md` index, and adds a bullet to the plugin's list in `docs/REFERENCE.md`. Every placeholder is marked
    `TODO(new-skill)`, and the scrub check fails until none is left. The script refuses a name that already exists in any plugin.
    Every skill loads on its own: never add `disable-model-invocation: true` (`tests/context-budget.test.mjs` fails on
    it). Claude Code puts every description into every session's context, so write it as a short trigger list: one
@@ -54,7 +55,8 @@ order; the scrub check and the validator at the end catch most of what gets forg
    - Keep scripts dependency-free and cross-platform (Node standard library; bash only where bash is the point).
    - A hook script exits 0 on input it does not understand, unless failing closed is the point of the hook.
 
-4. **Record its origin** in the stub in `docs/ORIGINS.md`:
+4. **Record its origin** in the stub `docs/origins/<plugin>/<skill>.md`, and give its line in the `docs/ORIGINS.md`
+   index the same classification as the stub's heading:
    - Original or adapted. If you are not sure, diff it against the likely upstream before deciding, and do not
      guess.
    - The problem that led to it, with the names removed.
@@ -64,8 +66,8 @@ order; the scrub check and the validator at the end catch most of what gets forg
    - A skill that differs from upstream only by being shorter is not published here. List it in the README under
      "I also use, unmodified".
 
-5. **Fill in the README bullet**: one line on what it does, with " (adapted)" after the name if it is adapted. Add
-   it to the right section under "Problems this fixes" too, and to the `which-skill` router
+5. **Fill in the bullet in `docs/REFERENCE.md`**: one line on what it does, with " (adapted)" after the name if it is
+   adapted. Add it to the right section under "Problems this fixes" in the README too, and to the `which-skill` router
    (`skills/session-discipline/which-skill/SKILL.md`). Update the skill and hook count badges if they changed.
    For a hook: import `../lib/config.mjs`, call `hookEnabled(<name>, config)` before acting, add a row and an
    options section to `hooks/README.md`, and register it in `hooks/<plugin>/hooks.json` as
