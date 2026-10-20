@@ -71,7 +71,7 @@ describe('test-tamper guard: as a hook', () => {
     const p = tempDir(); mkdirSync(join(p, 'tests'));
     writeFileSync(join(p, 'tests', 'test_a.py'), 'def test_a():\n    assert 1 == 1\n');
     const input = JSON.stringify({ tool_name: 'Write', cwd: p, tool_input: { file_path: join(p, 'tests', 'test_a.py'), content: 'def test_a():\n    pass\n' } });
-    const r = runNode(GUARD, { input, env: { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: '' } });
+    const r = runNode(GUARD, { input, env: { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: '', PAU_SKILLS_DISABLE: '' } });
     assert.equal(r.code, 0);
     assert.equal(JSON.parse(r.stdout).hookSpecificOutput.permissionDecision, 'ask');
   });
