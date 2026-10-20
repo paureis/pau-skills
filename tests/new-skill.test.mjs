@@ -2,7 +2,7 @@
 // end of the plugin's skill list; it refuses duplicates and bad input without changing anything.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cpSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
+import { cpSync, readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { ROOT, runNode, tempDir } from './helpers.mjs';
@@ -43,13 +43,21 @@ test('creates the skill, the ORIGINS stub in its group and the README bullet in 
 
 test('refuses an existing name in any plugin, an unknown plugin and a bad name, changing nothing', () => {
   const dir = fixture();
+  // A skill in another plugin with no ORIGINS section and no README bullet, so only the "any plugin" check can
+  // refuse a second skill of the same name.
+  mkdirSync(join(dir, 'skills', 'verification', 'foo-bar'));
+  writeFileSync(join(dir, 'skills', 'verification', 'foo-bar', 'SKILL.md'), '---\nname: foo-bar\ndescription: A fixture skill.\n---\n');
   const before = snapshot(dir);
   for (const args of [['planning', 'handoff'], ['guards', 'tdd'], ['nope', 'x-y'], ['guards', 'Bad_Name'], ['guards', 'claude-thing'], ['guards', 'my-claude-audit'], ['guards', 'anthropic-x'], ['guards']]) {
     const r = runNode(SCRIPT, { args: [...args, '--root', dir] });
     assert.equal(r.code, 2, `should refuse ${args.join(' ')}`);
   }
+  const other = runNode(SCRIPT, { args: ['guards', 'foo-bar', '--root', dir] });
+  assert.equal(other.code, 2, 'should refuse guards foo-bar');
+  assert.match(other.stderr, /already exists in plugin verification/);
   assert.equal(snapshot(dir), before);
   assert.equal(existsSync(join(dir, 'skills', 'guards', 'x-y')), false);
+  assert.equal(existsSync(join(dir, 'skills', 'guards', 'foo-bar')), false);
 });
 
 test('running it twice refuses the second time', () => {
