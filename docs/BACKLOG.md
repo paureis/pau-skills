@@ -278,6 +278,27 @@ Things that bit the sixth batch (Q2, Q5 with Q9, Q6, Q7):
   checkout after each agent reports.
 - `claude plugin validate <folder>` accepts a folder of agents only at a `.claude/agents` path.
 
+Things that bit the seventh batch (Q1, the first batch run with the roster):
+- `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` set to 3 in the cloud environment arrived as 1: the cloud runtime overrides
+  it. `eng-lead` planned and wrote the briefs, and the main session started every builder and reviewer itself. That
+  worked; plan for it.
+- The plan checks were worth more than ever: the ones in phase B built the whole slice in a clone before any builder
+  started, and found an edit that could not catch its own mutation, a wrong path walk and a race that would have
+  sent a builder to "fix" a good test. Every reviewer still found something the builder missed.
+- The worktree guard refuses, for builders: a command that sets HOME or GIT_CONFIG_GLOBAL, a shell loop that passes a
+  variable to node or sed, heredocs or python text that name git, and git chained with anything. A loop in a script
+  file run as `bash <file>`, or a `.mjs` driver, works. Leave the HOME and git-config runs to the reviewer.
+- The container restarted twice. Background agents were cut off mid-command while their status said "completed";
+  their transcripts and worktrees survived, and each was resumed by id with SendMessage.
+- The permission check refused writing "the owner said yes" into a brief before the owner had answered. Ask first,
+  then write the answer.
+- Long briefs worked better as files the agent reads than as pasted prompts, with a "Corrections after the plan
+  check" section that wins over earlier text, and with shared parts pointing at one brief instead of repeated.
+- Builders and reviewers redirected to `/dev/null` several times despite the standing order; it stayed a character
+  device. Say "not even as a redirect target".
+- A `TMPDIR` link must be short: a path with a part that starts with `-` (the scratchpad's) makes skill-eval warn on
+  purpose, which looks like a failure.
+
 ## Kickoff for the next session
 
 The sixth batch is done (pull request 28). The next session runs batch 7: Q1, then Q4, one after the other, and it is
@@ -885,6 +906,13 @@ count on the profile README is updated.
   grouping by conclusion). Also: `hooks/guards/secret-guard.mjs` line 72 is dead code.
 - The owner's choices: remove the one copy, do every rewrite, and add tests for the off switches only. The backtick
   rule, the `keyOf` grouping and the dead code wait in the backlog.
+- Phase B result (2026-10-20): three builders by the same groups, each brief checked by a read-only plan check that
+  built the whole slice in a clone first, a fresh reviewer each, one fix round (rest) and a second look. Tests only:
+  1 removed, 12 added (one off-switch test per hook), about 40 rewritten, every one proven by a mutation that
+  SURVIVED on the base and is CAUGHT after, and every earlier catch rerun. The suite went from 1,166 to 1,177 tests,
+  and passes under `TZ=Pacific/Kiritimati`, `PAU_SKILLS_DISABLE=all`, a user or project config that turns every hook
+  off, an empty HOME, a global git config that signs commits, and `TMPDIR` inside a git work tree (where the tests
+  that cannot pass there fail once with a message). What the reviews found that this item did not fix is in Q10.
 
 **Q2 geppetto and a starter agent roster** (`done`, sixth batch, agent-orchestration, one new skill with bundled agent files).
 Asked for by the owner on 2026-10-19 and settled with `grill-me` in the same session.
@@ -1325,6 +1353,19 @@ owner on 2026-10-19 after using `brainstorm` on Q6.
   question, old against new, shows fewer user turns and less user typing to reach a decision, with at least one
   option from a non-baseline lens still reaching the finalists; the descriptions stay within budget; the four
   repository checks pass.
+
+**Q10 what the Q1 audit left** (`todo`, small; found in batch 7, each checked by a run).
+- `skills/session-discipline/instructions-audit/scan.mjs` line 468 skips a nested file when its absolute path holds
+  `/.claude/`, so a project that lives under a `.claude` folder, which includes every Claude Code worktree under
+  `.claude/worktrees/`, loses its nested CLAUDE.md files. Test the part of the path below the project root instead.
+  `tests/instructions-audit.test.mjs` "discoverFiles ..." fails with `TMPDIR` under a `.claude` folder because of it.
+- Behaviour with no test: the backtick guard's "only a backtick after the flag counts" (bt-4, bt-4b), a double
+  quote in its command-position group (h-bt-dq), `rm --no-preserve-root -r` with the flag before `-r` (h-dg-rec),
+  roadmap rows found with `includes('|')` instead of `startsWith('|')` (h-rm-pipe), measure-minutes `keyOf` grouping
+  by conclusion, and the secret rule's lower-case limit in launch-readiness `rules.mjs`.
+- `hooks/guards/secret-guard.mjs` line 72 is dead code: line 73 already needs a digit.
+- When the flaky-test-hunt kill is broken, the hanging fixture is left running after the test fails (the test's
+  SIGKILL reaches only `repeat.mjs`).
 
 **Q8 production rules from day one** (`todo`, after Q6; touches `project-setup`, `geppetto` from Q2 and `rule-to-hook`).
 Kept in Q6's brainstorm as a separate item.
