@@ -172,6 +172,7 @@ describe('file-size guard: inputs', () => {
       { tool_name: 'Write', tool_input: { file_path: 42, content: big } },
       { tool_name: 'Write', tool_input: { file_path: join(p, 'a.js'), content: 42 } },
       { tool_name: 'Edit', tool_input: { file_path: join(p, 'dir'), old_string: 'x', new_string: big } },
+      { tool_name: 'Write', tool_input: { file_path: join(p, 'dir'), content: big } }, // unreadable: a folder
       { tool_name: 'MultiEdit', tool_input: { file_path: join(p, 'a.js'), edits: 'x' } },
     ];
     for (const input of inputs) assert.deepEqual(hook(p, input, env), { code: 0, stdout: '', stderr: '' }, JSON.stringify(input).slice(0, 80));
