@@ -32,7 +32,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync, statSync, realpathSync } from 'node:fs';
-import { join, resolve, relative, isAbsolute, basename, dirname, posix } from 'node:path';
+import { join, resolve, relative, isAbsolute, basename, dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { MARKER, checkFeature, indexLinks, compareIndex, evidenceFolder, checkSkill, placeholders, parseArgs } from './check-map-rules.mjs';
 export * from './check-map-rules.mjs';

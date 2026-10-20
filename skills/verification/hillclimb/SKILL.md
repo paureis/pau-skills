@@ -29,10 +29,10 @@ Bundled files:
   every keep, the final result).
 - `${CLAUDE_SKILL_DIR}/HARNESS.md`: the detail of step 3 (build and freeze the harness), step 5 (plan the hypotheses)
   and step 6's corrections; read each part at its step.
-- `${CLAUDE_SKILL_DIR}/decisions.mjs` (Node 20+, no dependencies): `append` adds a row to the decision log,
-  `measure` runs a command N times and prints the measurement, `summary` prints the log as a table. Below, `DECIDE`
-  stands for `node "${CLAUDE_SKILL_DIR}/decisions.mjs"`. Write the full command each time: a shell variable does
-  not survive from one Bash call to the next.
+- `${CLAUDE_SKILL_DIR}/decisions.mjs` (with `decisions-core.mjs` and `decisions-log.mjs`; Node 20+, no dependencies):
+  `append` adds a row to the decision log, `measure` runs a command N times and prints the measurement, `summary`
+  prints the log as a table. Below, `DECIDE` stands for `node "${CLAUDE_SKILL_DIR}/decisions.mjs"`. Write the full
+  command each time: a shell variable does not survive from one Bash call to the next.
 
 Make a task list with one entry per step (Pin, Prepare, Harness, Baseline and sensitivity, Hypotheses, Loop, Report)
 before you start. Without a task tool, keep the same list in a `notes.md` next to the decision log and tick it off

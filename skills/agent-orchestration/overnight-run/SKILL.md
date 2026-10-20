@@ -134,8 +134,8 @@ each turn in the worktree. Then:
 
 ## Step 4. Pick how the run wakes
 
-Read `${CLAUDE_SKILL_DIR}/LOOP.md` now. In short, read the table in `${CLAUDE_SKILL_DIR}/WAKE.md` now: which way to
-wake fits the situation, and what it needs.
+Read `${CLAUDE_SKILL_DIR}/LOOP.md` now. For the short version, the table in `${CLAUDE_SKILL_DIR}/WAKE.md` says which
+way to wake fits the situation, and what it needs.
 
 `/loop` and session scheduled jobs live inside this Claude process: they end when it exits, and never wake a
 `claude -p` that has exited. Never assume a tool exists; look at the tool list. Write the choice into `RUN.md`.

@@ -20,10 +20,11 @@ batch); see "With the roster" after step 10. The steps stay; what changes is who
    (`npm test`, `npm run scrub`, `node scripts/build-marketplace.mjs --check`, `claude plugin validate . --strict`,
    mutations through `mutate.sh` after committing, and a dry run on a real or fixture target), when to stop and
    report, "commit, never push", and a fixed report format. Ask the report for the drafts of everything the builder
-   may not write: the README bullet, the ORIGINS section (from a real `git diff --no-index` against upstream, with a
+   may not write: the `docs/REFERENCE.md` bullet, the ORIGINS entry for `docs/origins/<plugin>/<name>.md` (from a real `git diff --no-index` against upstream, with a
    shared-text estimate), the NOTICE file list, the `which-skill` line, any `COPIES` entry, and "anything I was unsure
    about". Launch all builders in one message, in the background.
-4. **The orchestrator owns the shared files**: `README.md`, `docs/ORIGINS.md`, `NOTICE`, `CHANGELOG.md`,
+4. **The orchestrator owns the shared files**: `README.md`, `docs/REFERENCE.md`, `docs/ORIGINS.md` and
+   `docs/origins/`, `NOTICE`, `CHANGELOG.md` and `docs/changelog/`,
    `.claude-plugin/marketplace.json`, `skills/session-discipline/which-skill/SKILL.md`, the plugin READMEs,
    `tests/standalone.test.mjs` and the backlog (`docs/BACKLOG.md` and `docs/backlog/`). Builders never touch them and never run `scripts/new-skill.mjs`, which
    edits them. Save each report's drafts to a notes file in the scratchpad as it arrives, so they survive a context
@@ -39,9 +40,10 @@ batch); see "With the roster" after step 10. The steps stay; what changes is who
    the owner.
 7. **Merge** each finished branch into the working branch with `git merge --no-ff`, one at a time, and run the full
    suite after each merge.
-8. **Integrate** once, after the last merge: README (the reference bullets, the problem lists, the skill badge, the
-   tier lists), ORIGINS, NOTICE, `which-skill`, `evaluator` or other links the items ask for, plugin READMEs and
-   descriptions, minor version bumps for every plugin whose files changed and for the bundle, CHANGELOG, and the
+8. **Integrate** once, after the last merge: README (the problem lists, the skill and hook badges, the tier lists),
+   the reference bullets in `docs/REFERENCE.md`, the ORIGINS entry files and their index lines, NOTICE, `which-skill`, `evaluator` or other links the items ask for, plugin READMEs and
+   descriptions, minor version bumps for every plugin whose files changed and for the bundle, CHANGELOG (when the
+   current ISO week has ended, first move its entries to `docs/changelog/<year>-W<week>.md`), and the
    statuses in `docs/BACKLOG.md` and `docs/backlog/`. To list the plugins to bump, use the command in step 8 of `docs/ADDING-A-SKILL.md`. Run all four checks, commit, push, and open one pull request that says how each item was built
    and checked and what the owner must decide. When `html-plan` is installed in the session, put the owner's
    decisions on one html-plan page published as a private artifact, so the owner can answer from a phone; otherwise

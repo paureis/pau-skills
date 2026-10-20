@@ -115,7 +115,7 @@ the plugin they installed is bumped.
 
 ## Older entries
 
-Each earlier ISO week is in its own file in docs/changelog/, named <year>-W<week>.md.
+Each earlier ISO week is in its own file in docs/changelog/, named `<year>-W<week>.md`.
 
 - [2026-W42: 2026-10-12 to 2026-10-18](docs/changelog/2026-W42.md)
 - [2026-W41: 2026-10-05 to 2026-10-11](docs/changelog/2026-W41.md)

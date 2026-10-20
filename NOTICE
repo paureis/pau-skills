@@ -64,13 +64,18 @@ docs/ORIGINS.md lists, for each one, what this version changes.
   skills/agent-orchestration/overnight-run/LOOP.md
   skills/agent-orchestration/overnight-run/AUDIT.md
   skills/agent-orchestration/overnight-run/log.mjs
+  skills/agent-orchestration/overnight-run/PROTECTION.md
+  skills/agent-orchestration/overnight-run/CONTRACT.md
+  skills/agent-orchestration/overnight-run/WAKE.md
   skills/planning/architect/SKILL.md
   skills/planning/architect/RED-FLAGS.md
   skills/planning/architect/SKETCH-BRIEF.md
   skills/planning/architect/RATIONALE-TEMPLATE.md
   skills/verification/hillclimb/SKILL.md
   skills/verification/hillclimb/BENCHMARK-CHECKLIST.md
+  skills/verification/hillclimb/HARNESS.md
   skills/verification/skill-eval/SKILL.md
+  skills/verification/skill-eval/ISOLATION.md
   skills/planning/agent-friendly-audit/SKILL.md
   skills/planning/sharpen/SKILL.md
   skills/verification/tdd/SKILL.md
@@ -81,10 +86,14 @@ docs/ORIGINS.md lists, for each one, what this version changes.
   skills/agent-orchestration/codebase-oracle/EXPLORER-BRIEF.md
   skills/agent-orchestration/codebase-oracle/EXPLAINER-BRIEF.md
   skills/guards/rule-to-hook/SKILL.md
+  skills/guards/rule-to-hook/MESSAGES-AND-RATCHETS.md
+  skills/guards/rule-to-hook/MUTATION.md
+  skills/guards/rule-to-hook/REPORT.md
   skills/planning/improve-codebase-architecture/SKILL.md
   skills/planning/improve-codebase-architecture/EXECUTION.md
   skills/planning/engineering-principles/SKILL.md
   skills/planning/engineering-principles/PRINCIPLES.md
+  skills/planning/engineering-principles/PRINCIPLES-2.md
 
 engineering-principles also restores text from earlier commits of the same
 repository (e5136d8, ea32d95 and d73344b), under the same license.

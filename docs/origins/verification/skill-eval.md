@@ -28,7 +28,7 @@ the skill, measures the wrong thing.
   scores blind first, and the script refuses to start the reviewer until it has.
 - Runs get random ids in a shuffled order, so nothing printed before the orchestrator's own read gives the variants
   away; `run --force` rebuilds every run folder from the lab's pristine copies; scores use one strict `n/5` format.
-- The login is checked under the empty HOME before any run; `--real-home` is the fallback, and SKILL.md says what it
+- The login is checked under the empty HOME before any run; `--real-home` is the fallback, and `ISOLATION.md` says what it
   loses. Windows is refused for the real command rather than quoted half right.
 - `--grade-reply` covers a skill whose reply is the work product (an interview skill such as `grill-me`), and the
   report says that a headless run shows only the first turn.

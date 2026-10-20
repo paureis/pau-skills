@@ -8,7 +8,7 @@
   Cursor model rules, Cursor Automations or Slack.
 - `typescript-best-practices`: language-specific; three rules go into N9.
 - `interrogate`, `how`, `why`, `swarm`, `reflect`, `correct`, `show-me-your-work`, `benchmark-checklist`,
-  `blast-radius`: their best parts are folded into the items above instead of becoming separate skills.
+  `blast-radius`: their best parts are folded into the N and M items (`n-new-skills.md`, `m-existing-skills.md`) instead of becoming separate skills.
 - `in-your-own-words`, `bro`, `ketchup`, `teach`, `figure-it-out`, `no-comments`, `unslop` as skills: too small, or
   covered by N10, P0.4 and M11.
 - Playbooks `visual-parity`, `multi-phase-plan`, `pause-safely`, `runtime-forensics`, `trace-forensics`,

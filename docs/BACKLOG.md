@@ -39,8 +39,8 @@ change and why in its pull request and in the item.
    - add the file to `NOTICE` under a pstack section with the upstream license (see item P0.3 in `docs/backlog/p0-groundwork.md`);
    - add `license: MIT (adapted from cursor/plugins pstack; see NOTICE)` and `metadata.upstream: <upstream URL>` to
      the frontmatter;
-   - mark it "(Adapted from ...)" in `docs/ORIGINS.md`, with a "What this version changes" list taken from a real
-     diff against the upstream file, and "(adapted)" in the README.
+   - mark it "(Adapted from ...)" in its `docs/origins/<plugin>/<name>.md` entry and index line, with a "What this
+     version changes" list taken from a real diff against the upstream file, and "(adapted)" in `docs/REFERENCE.md`.
    A skill that only takes an idea, with no shared text or structure, is Original; say in ORIGINS which upstream idea
    it came from.
 5. **Write its description as a trigger list** within the limits in "Context budget" (`docs/backlog/context-budget.md`), and add the confirm

@@ -25,7 +25,7 @@ offer to run `improve-codebase-architecture` if it is installed. To sketch new c
 ## How to use it
 
 Read `${CLAUDE_SKILL_DIR}/PRINCIPLES.md` or `${CLAUDE_SKILL_DIR}/PRINCIPLES-2.md`, whichever holds the principle, with
-the Read tool. The whole file is fine (215 lines and 160 lines); a command that cuts out one section may be refused,
+the Read tool. Reading the whole file is fine (215 lines and 160 lines); a command that cuts out one section may be refused,
 and a section read only in part does not count as read.
 
 1. **The user names a principle.** Match the name loosely (case, hyphens, a missing "the"). Read its section in

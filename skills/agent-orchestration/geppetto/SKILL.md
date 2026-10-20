@@ -16,7 +16,8 @@ The request: $ARGUMENTS
 Bundled files, open each when its mode needs it:
 - `${CLAUDE_SKILL_DIR}/COVENANT.md`: the laws every agent carries, between two marker lines, and the roster version.
 - `${CLAUDE_SKILL_DIR}/check-agents.mjs`: the audit script (Node 20+, standard library, read only). It prints what is
-  wrong with each agent file and exits 1 when there is an error.
+  wrong with each agent file and exits 1 when there is an error. It imports `check-agents-yaml.mjs` and
+  `check-agents-checks.mjs`, which sit next to it; run only `check-agents.mjs`.
 - The roster: `${CLAUDE_SKILL_DIR}/roster/eng-lead.md`, `${CLAUDE_SKILL_DIR}/roster/builder.md`,
   `${CLAUDE_SKILL_DIR}/roster/reviewer.md`, `${CLAUDE_SKILL_DIR}/roster/writer.md` and
   `${CLAUDE_SKILL_DIR}/roster/sweeper.md`.

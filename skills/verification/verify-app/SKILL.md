@@ -44,8 +44,8 @@ Bundled files, all read only:
 - `${CLAUDE_SKILL_DIR}/templates/measure-boxes.js`: browser JavaScript that measures a loading skeleton against the
   loaded screen and reads the layout-shift score. Copied into the generated skill for an app with a screen.
 - `${CLAUDE_SKILL_DIR}/references/feature-map-example/`: a worked feature map, an index and three feature files.
-- `${CLAUDE_SKILL_DIR}/check-map.mjs` (Node 20+, no dependencies): checks a generated skill. Exit 0 clean, 1
-  problems, 2 usage.
+- `${CLAUDE_SKILL_DIR}/check-map.mjs` (with `check-map-rules.mjs` next to it; Node 20+, no dependencies): checks a
+  generated skill. Exit 0 clean, 1 problems, 2 usage.
 
 ## Create mode
 
