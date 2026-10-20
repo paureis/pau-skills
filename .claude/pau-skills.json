@@ -1,0 +1,1 @@
+{ "file-size-guard": { "pathLimits": { ".claude-plugin/marketplace.json": 8000 } } }

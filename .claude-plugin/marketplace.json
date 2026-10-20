@@ -136,6 +136,11 @@
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/secret-guard.mjs\"",
                 "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/file-size-guard.mjs\"",
+                "timeout": 5
               }
             ]
           }
@@ -284,6 +289,11 @@
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/secret-guard.mjs\"",
+                "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/file-size-guard.mjs\"",
                 "timeout": 5
               }
             ]
@@ -548,6 +558,11 @@
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/secret-guard.mjs\"",
+                "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/file-size-guard.mjs\"",
                 "timeout": 5
               }
             ]
