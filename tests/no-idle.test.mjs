@@ -3,12 +3,14 @@
 // blocks, and stays silent on input it does not understand.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { repo, runNode } from './helpers.mjs';
+import { repo, runNode, tempDir } from './helpers.mjs';
 import { decide, DEFAULT_RULE, blocks } from '../hooks/agent-orchestration/no-idle.mjs';
 
 const BOM = String.fromCharCode(0xfeff);
 const E_ACUTE = String.fromCharCode(0xe9); // non-ASCII on purpose, kept out of the source
 const HOOK = repo('hooks', 'agent-orchestration', 'no-idle.mjs');
+// The hook reads the user and project config and PAU_SKILLS_DISABLE; this env keeps the caller's own out of the result.
+const isolated = () => ({ PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: tempDir(), PAU_SKILLS_DISABLE: '' });
 const launch = (extra = {}) => ({
   hook_event_name: 'PreToolUse', tool_name: 'Agent',
   tool_input: { description: 'Build it', prompt: 'Do the work.', subagent_type: 'general-purpose', name: 'builder', some_future_field: { x: 1 }, ...extra },
@@ -42,7 +44,7 @@ test('SubagentStart: additionalContext with the start-signed block', () => {
 });
 
 test('as a process: one ASCII line, exit 0, nothing on stderr, BOM tolerated', () => {
-  const r = runNode(HOOK, { input: BOM + JSON.stringify(launch({ prompt: 'caf' + E_ACUTE })) });
+  const r = runNode(HOOK, { input: BOM + JSON.stringify(launch({ prompt: 'caf' + E_ACUTE })), env: isolated() });
   assert.equal(r.code, 0);
   assert.equal(r.stderr, '');
   assert.match(r.stdout, /^[\x20-\x7e]+\n$/);
@@ -59,6 +61,6 @@ test('as a process: garbage, empty and unrelated events are silent with exit 0',
 });
 
 test('NO_IDLE_RULE replaces the rule text', () => {
-  const r = runNode(HOOK, { input: JSON.stringify({ hook_event_name: 'SubagentStart' }), env: { NO_IDLE_RULE: 'Custom rule.' } });
+  const r = runNode(HOOK, { input: JSON.stringify({ hook_event_name: 'SubagentStart' }), env: { ...isolated(), NO_IDLE_RULE: 'Custom rule.' } });
   assert.equal(JSON.parse(r.stdout).hookSpecificOutput.additionalContext, 'Custom rule. (via: start)');
 });
