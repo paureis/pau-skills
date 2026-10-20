@@ -31,7 +31,7 @@ const AI_PROSE = [
 // of the paragraph; the whole paragraph is skipped.
 const QUOTES_UPSTREAM = [
   // The backlog item for this very rule names the words it bans.
-  ['docs/BACKLOG.md', /^\*\*P0\.4 Style word list\*\*/],
+  ['docs/backlog/p0-groundwork.md', /^\*\*P0\.4 Style word list\*\*/],
 ];
 
 function markdownFiles() {
