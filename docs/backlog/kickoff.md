@@ -2,10 +2,10 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-Batch 7 is half done: Q1 merged as pull request 31, and its follow-up fixed `instructions-audit` inside worktrees. The
-next session runs Q4, the file-size guard, on its own (it touches nearly every big file). Read "Things that bit the
-seventh batch" (`docs/backlog/things-that-bit/batch-7.md`) first: nesting is off in the cloud, so plan for the main session to start every agent. The owner starts
-it with this message:
+Batch 7 is nearly done: Q1 merged as pull request 31 and Q4 as pull request 33. Q10 is left; it can run with the
+message below as a template, with the item list and the rules that matter changed. Read "Things that bit the
+seventh batch" (`docs/backlog/things-that-bit/batch-7.md`) first: nesting is off in the cloud, so plan for the main
+session to start every agent. The Q4 kickoff, as the owner sent it:
 
 ```text
 You are the orchestrator for the rest of the seventh batch in this repository: Q4, the file-size guard. Do not build

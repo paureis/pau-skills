@@ -125,8 +125,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 8. Done: the sixth batch, Q2 `geppetto` and the agent roster, Q5 html-plan with Q9 a lighter brainstorm, Q6
    `launch-readiness` and Q7 UI states in `verify-app`.
 9. **Next:** the rest of section Q. Planned batches:
-   - Batch 7: Q1 is done (pull request 31). Q4 next, on its own: it touches nearly every big file, so nothing runs
-     beside it. Q10 after it, or beside it if its files do not overlap.
+   - Batch 7: Q1 is done (pull request 31) and Q4 is done (pull request 33). Q10 is left.
    - Batch 8: Q3 designer agent and Q8 production rules from day one.
 
-When the batch is merged, update the skill count on the author's GitHub profile README (`paureis/paureis`).
+When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
