@@ -179,7 +179,8 @@ describe('usage', () => {
 
   test('an append option given twice exits 2, names the option and writes no log', () => {
     const log = newLog();
-    // Valid if either value were kept, so only the repeat itself can fail it.
+    // Valid if the later value were kept. The earlier one alone is refused too, but with exit 1 ("a baseline needs
+    // passing tests"), so exit 2 comes only from the repeat.
     const r = run(['append', log, '--decision', 'baseline', '--tests', 'fail', '--tests', 'pass', '--better', 'lower',
       '--measurement', BASE, '--hypothesis', 'baseline', '--change', 'none']);
     assert.equal(r.code, 2, r.out);
