@@ -1,6 +1,6 @@
 // The instructions-audit scanner, the rule units: sizes, heading sections, code fences, how a file splits into rules,
-// overlap and near-duplicate rules, secret-shaped lines, and vague or emphatic wording. Every detector has a control:
-// something that looks similar and must not be flagged.
+// overlap and near-duplicate rules, secret-shaped lines, vague or emphatic wording, and how a long rule is shortened in
+// the results. Every detector has a control: something that looks similar and must not be flagged.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -144,4 +144,18 @@ test('findVague and findEmphasis: vague wording without anchors; capitals and "a
   assert.deepEqual(vague[0].phrases, ['clean code', 'best practices']);
   const emph = findEmphasis(units);
   assert.deepEqual(emph.map((e) => [e.line, e.marker]), [[4, 'NEVER'], [5, 'again']]);
+});
+
+test('findEmphasis and findDuplicates shorten a long rule to its first words and "..."; a short rule comes back whole', () => {
+  const long = 'NEVER deploy on a Friday ' + 'unless the release notes, the rollback plan and the on-call rota are written down. '.repeat(12).trim();
+  assert.ok(long.length > 1000, String(long.length));
+  const short = 'NEVER push to main without review.';
+  const units = [{ file: 'CLAUDE.md', line: 3, text: long }, { file: 'CLAUDE.md', line: 7, text: short }];
+  const [cut, whole] = findEmphasis(units);
+  assert.ok(cut.text.length < 200, String(cut.text.length));
+  assert.ok(cut.text.startsWith('NEVER deploy on a Friday unless'), cut.text);
+  assert.ok(cut.text.endsWith('...'), cut.text);
+  assert.equal(whole.text, short);
+  const [pair] = findDuplicates([{ file: 'CLAUDE.md', line: 3, text: long }, { file: 'AGENTS.md', line: 9, text: long }]);
+  assert.ok(pair.a.text.length < 200 && pair.a.text.endsWith('...'), pair.a.text);
 });

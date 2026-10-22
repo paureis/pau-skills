@@ -1,8 +1,10 @@
 // The instructions-audit scanner, finding and scanning files: path-scoped rules, which instruction files an agent
-// reads, a byte order mark, the whole scan with imports followed one level, and the command line.
+// reads (a linked file counts once), a byte order mark, the whole scan with imports followed one level and bare file
+// names, and the command line.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { join } from 'node:path';
+import { symlinkSync } from 'node:fs';
+import { join, basename } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import { put } from './instructions-audit.helpers.mjs';
 import {
@@ -53,6 +55,14 @@ test('discoverFiles: a project below a .claude folder keeps its nested files; it
   assert.ok(!('/services/x/.claude/CLAUDE.md' in map), 'a deeper .claude folder hides them too');
 });
 
+test('discoverFiles: an AGENTS.md that is a link to CLAUDE.md is the same file and is listed once', () => {
+  const home = tempDir('cma-home-'); const root = tempDir('cma-root-');
+  put(root, 'CLAUDE.md', '# Rules\n');
+  symlinkSync('CLAUDE.md', join(root, 'AGENTS.md'));
+  const got = discoverFiles(root, { home, ancestors: false });
+  assert.deepEqual(got.map((f) => basename(f.path)), ['CLAUDE.md']);
+});
+
 test('a byte order mark does not hide a rules file\'s frontmatter or a package.json script', () => {
   const home = tempDir('cma-home-'); const root = tempDir('cma-root-');
   put(root, '.claude/rules/api.md', '\uFEFF---\npaths:\n  - "api/**"\n---\nScoped rule.\n');
@@ -97,6 +107,15 @@ test('scan: a CLAUDE.md that imports AGENTS.md promotes it to every-session and 
   const agents = r.files.find((f) => f.path === 'AGENTS.md');
   assert.equal(agents.loads, 'every-session');
   assert.deepEqual(agents.importedBy, ['CLAUDE.md']);
+});
+
+test('scan: a bare file name resolves anywhere in the project, but not inside a skipped folder', () => {
+  const home = tempDir('cma-home-'); const root = tempDir('cma-root-');
+  put(root, 'CLAUDE.md', '# Rules\n- Shared helpers live in `helpers.rb`.\n- The client comes from `vendored.rb`.\n');
+  put(root, 'lib/util/helpers.rb');
+  put(root, 'node_modules/pkg/vendored.rb');
+  const r = scan(root, { home, ancestors: false });
+  assert.deepEqual(r.missingReferences.map((m) => `${m.file}:${m.kind}:${m.ref}`), ['CLAUDE.md:path:vendored.rb']);
 });
 
 test('parseArgs and the CLI: JSON output, threshold, errors', () => {
