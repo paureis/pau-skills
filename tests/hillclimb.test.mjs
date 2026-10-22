@@ -160,7 +160,7 @@ describe('measure', () => {
     ].join('\n'));
     const r = runNode(SCRIPT, { args: ['measure', '--runs', '2', '--warmup', '0', '--value', 'stdout', '--', process.execPath, prog] });
     assert.equal(r.code, 1, r.stdout);
-    assert.match(r.stderr, /unit/);
+    assert.match(r.stderr, /unit "MB" differs from the earlier runs' "KB"/);
     assert.equal(r.stdout.trim(), '', 'no measurement is printed');
   });
 });
