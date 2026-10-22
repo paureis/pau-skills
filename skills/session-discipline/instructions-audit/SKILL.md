@@ -2,6 +2,7 @@
 name: instructions-audit
 description: "Audit existing agent instruction files (CLAUDE.md, AGENTS.md, rules) for token cost, duplicates, contradictions, stale paths, vague rules and secrets, and propose edits. Use when the user says 'audit my CLAUDE.md' or 'clean up CLAUDE.md', or when CLAUDE.md is too long, the agent keeps ignoring its rules, or the instructions may be stale."
 argument-hint: "[project root, default: current directory]"
+allowed-tools: Read(~/.claude/CLAUDE.md), Read(~/.claude/rules/**)
 ---
 
 # CLAUDE.md audit
@@ -59,7 +60,9 @@ What it reports, and what each number means:
 - **Near-duplicate pairs**: rule units (bullets, paragraphs, table rows) whose content-word bigrams overlap above the
   threshold, within and across files. `exact` means the same words after normalising.
 - **Unresolved references**: backticked or path-like paths, `@imports`, and `npm`/`pnpm`/`yarn`/`bun run`, `make` and
-  `just` targets that do not exist. Bare file names resolve if that name exists anywhere in the tree.
+  `just` targets that do not exist. Bare file names resolve if that name exists anywhere in the tree. A path with a
+  slash and no file extension (such as `src/handlers/`) can be a branch name, so it is reported only when its first
+  folder exists; check the others by hand.
 - **Possible secrets or personal data**, masked.
 - **Vague-rule candidates**: rules that use phrases like "clean code" or "when appropriate" and name nothing checkable.
 - **Emphasised rules**: capitals, "NEVER", "again". Often a sign that the rule has been broken before.
