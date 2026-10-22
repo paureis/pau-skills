@@ -57,7 +57,9 @@ Things that bit Q10, the third part of the seventh batch:
   refused, and so is a redirect to a folder outside the working directory. The agent then dropped a step without
   saying so, until the skill told it to run `mktemp -d` alone, write the path literally and report a skipped step.
 - A headless child under an empty HOME was logged in through the container's agent proxy; no login variable was
-  needed. Reads of `~/.claude` files were refused for a project skill without `allowed-tools`.
+  needed. Reads of `~/.claude` files were refused for a project skill without `allowed-tools`. With them in
+  `allowed-tools`, the reads worked only when `--allowedTools` also listed `Skill(<name>)`; without it the skill did
+  not load at all, and the agent did the audit by hand.
 - A builder's worktree guard also refused `sed -f <file>` on a worktree file and `git diff` in a command with a pipe.
   A plain `sed -i '<expression>' <file>`, or a node script run from the scratchpad, worked.
 - A foreground `sleep` of more than a few seconds is refused in an agent's Bash; a wait is a Bash call with

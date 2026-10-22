@@ -76,6 +76,8 @@
 12. **Settled after Q10 (pull request 38)**, each as recommended, on an html-plan page:
    - `instructions-audit` gets `allowed-tools: Read(~/.claude/CLAUDE.md), Read(~/.claude/rules/**)`, so the user-level
      files are read without a prompt; in every Q10 cold run those reads were refused and a contradiction between the
-     user-level and project files was missed. Proven with one more cold run.
+     user-level and project files was missed. Proven with one more cold run: with `Skill(instructions-audit)` allowed,
+     both reads succeeded and the report found that contradiction. A headless run that does not allow the skill now
+     cannot load it, as for every skill with `allowed-tools`.
    - Its SKILL.md says that a path with a slash and no file extension is reported only when its first folder exists,
      so the agent checks the others by hand.
