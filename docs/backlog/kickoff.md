@@ -2,60 +2,70 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-Batch 7 is nearly done: Q1 merged as pull request 31 and Q4 as pull request 33, with the owner's decisions after it
-in pull request 35. The next session runs Q10, the last item of the batch. Read "Things that bit the seventh batch"
-(`docs/backlog/things-that-bit/batch-7.md`) first. Nesting was off in the cloud until `.claude/settings.json` set the
-spawn depth to 3 (2026-10-22), so this is the first batch where `eng-lead` can start the builders and reviewers itself.
-The owner starts it with this message:
+Batch 7 is done: Q1 merged as pull request 31, Q4 as pull request 33 and Q10 as pull request 38. The next session runs
+batch 8, Q3 designer agent and Q8 production rules from day one, the last items of section Q. Read "Things that bit
+the seventh batch" (`docs/backlog/things-that-bit/batch-7.md`) first, the Q10 part most of all: with nesting on,
+`eng-lead` started the builders but they ran in the background, so the main session started the reviewers. The owner
+starts it with this message:
 
 ```text
-You are the orchestrator for the last item of the seventh batch in this repository: Q10, what the Q1 audit and
-the Q4 reviews left. Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
-integrate their work.
+You are the orchestrator for the eighth batch in this repository: Q3 designer agent and Q8 production rules from day
+one. Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and integrate their
+work.
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules, including step 2 and step 8's bump-listing command).
 2. docs/BACKLOG.md (the index: the note at the top that every item is a starting point to review and improve, "How
-   to work an item", the Contents and "Order"), then docs/backlog/q10.md (all of it), decisions 7 to 11 in
-   docs/backlog/decisions.md, "Policy since P0.5" in docs/backlog/context-budget.md, docs/backlog/how-to-run-a-batch.md
-   (all 10 steps and "With the roster"), and every file in docs/backlog/things-that-bit/, batch-7.md first.
-3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, and the five agent
-   files in .claude/agents/. Work that way for the whole session. The usage budget is generous: same model for every
-   agent, a read-only plan check of every brief that builds the slice in a clone, a fresh reviewer per slice, and a
-   cold run (headless, empty HOME) for the instructions-audit SKILL.md change.
+   to work an item", the Contents and "Order"), then docs/backlog/q3.md and docs/backlog/q8.md (all of each),
+   docs/backlog/q2.md and docs/backlog/q6.md (the items they build on), decisions 7 to 12 in
+   docs/backlog/decisions.md, "Policy since P0.5" in docs/backlog/context-budget.md,
+   docs/backlog/how-to-run-a-batch.md (all 10 steps and "With the roster"), and every file in
+   docs/backlog/things-that-bit/, batch-7.md first.
+3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, the five agent files
+   in .claude/agents/, and skills/agent-orchestration/geppetto/SKILL.md with its roster/ folder. Work that way for the
+   whole session. The usage budget is generous: same model for every agent, a read-only plan check of every brief
+   that builds the slice in a clone, a fresh reviewer per slice, and a cold run (headless, empty HOME) for each
+   changed skill behaviour: project-setup on a fixture project, and the designer agent on a fixture design system.
 
 First, before any brief:
-- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH. .claude/settings.json sets it to 3, so eng-lead should start the
-  builders and reviewers itself after my yes; if it reads 1, eng-lead returns briefs and you start each builder and
-  reviewer yourself, and tell me.
-- Review Q10 against the code and tell me anything you would change; record it in the item. Group its parts into
-  slices with disjoint files: the instructions-audit SKILL.md fixes, the tests with no behaviour check (one slice per
-  area: hooks, verification scripts, agent-orchestration and planning scripts), the secret-guard dead code, and the
-  flaky-test-hunt hanging fixture.
-- The file-size rule is on: tests/file-size.test.mjs fails if any tracked file passes 5,000 tokens (20,000 bytes).
-  Several test files a slice may grow are close to the limit (tests/suppression-reason.test.mjs,
-  tests/launch-readiness.test.mjs, tests/instructions-audit.test.mjs). A slice that would push one over splits it
-  first, the way Q4 did (tests/<name>-<part>.test.mjs plus a tests/<name>.helpers.mjs).
+- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Expect eng-lead's builders to run in the background:
+  their reports come to you, so you start the reviewers and send the fix rounds, with the reviewer contract as a file.
+- Check whether the Figma connector works in this session (ToolSearch for figma, then one read call). It failed with a
+  proxy 403 in the sessions of 2026-10-19 and 2026-10-22. If it fails again, build Q3 on a code design system (a
+  tokens file and components), as q3.md allows, and tell me.
+- Review Q3 and Q8 against the code and tell me anything you would change; record it in each item. Both touch
+  geppetto: Q3 adds a designer agent that geppetto creates on request, and Q8 puts production rules into the covenant
+  for coding agents, which changes the roster (raise the roster number on every covenant marker, then update the
+  installed copies in .claude/agents/). Either make the geppetto changes one slice, or order the slices and say which
+  merges first. Q8 also touches project-setup and rule-to-hook, takes its rules from Q6's area files in
+  launch-readiness, and copies them into each skill that needs them; the COPIES entries in tests/standalone.test.mjs
+  are yours to add.
+- The file-size rule is on: no tracked file may pass 20,000 bytes. A slice that would push a file over splits it
+  first (tests/<name>-<part>.test.mjs plus a tests/<name>.helpers.mjs).
 
 Rules that matter most:
 - Every skill works on its own; no em or en dashes; plain English; Node standard library only.
-- Descriptions stay at most 400 characters each and 14,000 in total, with no angle-bracket tag.
-- Every new test must fail when the behaviour it covers breaks: prove each with mutate.sh after committing.
+- Descriptions stay at most 400 characters each and 14,000 in total, with no angle-bracket tag. project-setup's first
+  visible text stays its introduction.
+- Every new test must fail when the behaviour it covers breaks: prove each with mutate.sh after committing, and have
+  every run report its "# tests" line (a glob that matches no file passes the control and reads as SURVIVED).
 - Builders commit and never push. You push the working branch and open the PR. When CI is green on Linux, macOS and
   the validate job and every review is clean, merge it yourself and carry on.
 - Before pushing a change that compares paths, run its tests with a short TMPDIR link (made with mktemp -d while
-  TMPDIR is unset; a path with a part that starts with "-" makes skill-eval warn on purpose).
-- Give long briefs to agents as files they read, with a common part and a "Corrections after the plan check" section.
+  TMPDIR is unset).
+- Give long briefs to agents as files they read, with a common part and a "Corrections after the plan check"
+  section. Describe an escape such as a byte order mark in words; one typed into a tool call arrives as the raw
+  character.
 - Use absolute paths and git -C from the orchestrator; never cd into an agent's worktree.
-- Commit as the session's default author. If a hook file changes (secret-guard), bump pau-skills-hooks too and give
-  me the update commands.
+- Commit as the session's default author. If a hook file changes, bump pau-skills-hooks too and give me the update
+  commands.
 
-When the PR is open, tell me in plain words what changed, what the reviews and cold run found, and anything I need
+When the PR is open, tell me in plain words what changed, what the reviews and cold runs found, and anything I need
 to decide; if html-plan is installed, give me the decisions as an html-plan page published as a private artifact.
 After the merge, run `node scripts/pack-skills.mjs --since <main before the batch>` on main and send me the changed
-skills' zips in one bundle zip with HOW-TO-UPLOAD.txt, mark Q10 and batch 7 done in docs/backlog/ with what worked and
-what did not with the roster, write the kickoff for batch 8 (Q3 designer agent and Q8 production rules from day one)
-into docs/backlog/kickoff.md, and update my profile README in paureis/paureis if a count changed.
+skills' zips in one bundle zip with HOW-TO-UPLOAD.txt, mark Q3, Q8 and batch 8 done in docs/backlog/ with what worked
+and what did not with the roster, write the kickoff for whatever is left in the backlog (or say it is empty) into
+docs/backlog/kickoff.md, and update my profile README in paureis/paureis if a count changed.
 ```
 
 ## The fifth batch's kickoff, as a template

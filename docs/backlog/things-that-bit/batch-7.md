@@ -39,3 +39,26 @@ Things that bit Q4, the second part of the seventh batch:
 - When the orchestrator's shell runs `cd` into an agent's worktree, the session's working folder moves there. Use
   absolute paths and `git -C` from the orchestrator.
 - Nine tracked files ended between 18,000 and 20,000 bytes; the hook will ask when any of them grows past 20,000.
+
+Things that bit Q10, the third part of the seventh batch:
+- With nesting on, `eng-lead` started six builders, but the session ran them in the background and `eng-lead` handed
+  back before any reported. The main session then started the reviewers and sent the fix rounds, with the reviewer
+  contract as a file every reviewer read. Plan for it: the builders' reports come to the main session.
+- A plan check found that a mutation's test glob matched no file at the base (`tests/<name>-*.test.mjs` before the
+  split), so node ran 0 tests, the control passed and the mutation read as SURVIVED. Every mutate.sh run reports its
+  `# tests` line, and a base run for a split file waits for the split commit.
+- A backslash-u escape typed into a tool call parameter reached the file as the raw character: a brief told the
+  builder to use the BOM escape and held a raw BOM, and the builder's Edit tool did the same. Describe an escape in
+  words (a backslash, the letter u, FEFF), build it with `String.fromCharCode(92)`, and check with
+  `grep -P '\xEF\xBB\xBF'`.
+- An order check `indexOf(a) < indexOf(b)` passes when `a` is missing (-1); check the index is not -1. Two agents
+  with the same default name are never compared by `geppetto`'s overlap check; give them names.
+- In a headless cold run, a compound command with a shell variable (`S=$(mktemp -d) && ...`, or an `echo rc=$?`) is
+  refused, and so is a redirect to a folder outside the working directory. The agent then dropped a step without
+  saying so, until the skill told it to run `mktemp -d` alone, write the path literally and report a skipped step.
+- A headless child under an empty HOME was logged in through the container's agent proxy; no login variable was
+  needed. Reads of `~/.claude` files were refused for a project skill without `allowed-tools`.
+- A builder's worktree guard also refused `sed -f <file>` on a worktree file and `git diff` in a command with a pipe.
+  A plain `sed -i '<expression>' <file>`, or a node script run from the scratchpad, worked.
+- A foreground `sleep` of more than a few seconds is refused in an agent's Bash; a wait is a Bash call with
+  `run_in_background: true`, read when it completes.
