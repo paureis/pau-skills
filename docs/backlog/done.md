@@ -107,3 +107,21 @@
     every builder rediscovered the script-file workaround; agents still wrote to /dev/null now and then; and the
     orchestrator once committed to the profile repository under the owner's name by copying the last commit's
     author. Use the session's default author.
+- 2026-10-22: Q10 what the Q1 audit and the Q4 reviews left, merged as
+  [pull request 38](https://github.com/paureis/pau-skills/pull/38), the last item of the seventh batch and the first
+  run with nesting on. `eng-lead` planned six slices with disjoint files (the `instructions-audit` text, tests for
+  hooks, for verification scripts and for agent-orchestration and planning scripts, the `secret-guard` dead line, the
+  hanging flaky-test-hunt fixture) and started the six builders itself; a read-only plan check built each slice in a
+  clone first and corrected every brief; a fresh reviewer per slice, fix rounds for three slices with a second look,
+  and three cold runs of `instructions-audit` (the base, the build and the fix, each headless with an empty HOME and
+  nobody to answer). 20 tests added, each proven by a mutation that survived before and is caught after (54
+  mutations); 1,249 to 1,269 tests, green on Linux and macOS. The changed `instructions-audit` went to the owner as a
+  bundle, and `pau-skills-hooks` went to 0.3.1 for `secret-guard`. The profile README counts (38 skills, 13 hooks,
+  over 1,100 tests) still hold. The owner's two decisions after it (decision 12) were applied in the follow-up pull request. With the roster:
+  - Worked: `eng-lead` read the code well and found more than the item named (19 untested lockfile names, a second
+    surviving `keyOf` mutation, a swap hidden by equal counts); every plan check found something, and one caught a
+    glob that matched no file, which would have made every base run a false SURVIVED; reviewers found a real problem
+    in three of six slices; the cold run found what the reviewer could not, a refused shell form in headless use.
+  - Did not: `eng-lead` started the builders in the background and handed back before they reported, so the main
+    session started the reviewers and sent the fix rounds; a backslash-u escape typed into a tool call reached the
+    brief as the raw character, and the builder copied it into a test.

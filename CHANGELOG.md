@@ -3,6 +3,15 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-22: after Q10, the owner's decisions (decision 12)
+
+- `instructions-audit`: `allowed-tools: Read(~/.claude/CLAUDE.md), Read(~/.claude/rules/**)`, so the user-level
+  files are read without a prompt, and SKILL.md says that a path with a slash and no file extension is reported only
+  when its first folder exists.
+- Q10 and batch 7 are marked done in the backlog, with what bit them, and the kickoff for batch 8 (Q3 and Q8) is in
+  `docs/backlog/kickoff.md`.
+- Versions: session-discipline 0.11.4, pau-skills 0.15.3. No hook changed.
+
 ## 2026-10-22: the seventh batch, Q10 what the Q1 audit and the Q4 reviews left
 
 - `instructions-audit` runs to the end with nobody to answer. Phase 1 says where `scan.json` goes (a folder made

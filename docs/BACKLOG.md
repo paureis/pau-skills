@@ -67,7 +67,7 @@ under "Work items" below.
 - [How to run a batch](backlog/how-to-run-a-batch.md): the 10 steps and "With the roster".
 - [Kickoff for the next session](backlog/kickoff.md): the next session's kickoff, and the fifth batch's kickoff as a
   template.
-- [Decisions](backlog/decisions.md): decisions 1 to 10, taken on 2026-10-17 and 2026-10-19.
+- [Decisions](backlog/decisions.md): decisions 1 to 12, taken from 2026-10-17 to 2026-10-22.
 - [Context budget](backlog/context-budget.md): the facts and the policy since P0.5.
 - [Things that bit the first batch](backlog/things-that-bit/batch-1.md)
 - [Things that bit the second batch](backlog/things-that-bit/batch-2.md)
@@ -124,8 +124,9 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
    hillclimb log guard and the mutate.sh restore by content.
 8. Done: the sixth batch, Q2 `geppetto` and the agent roster, Q5 html-plan with Q9 a lighter brainstorm, Q6
    `launch-readiness` and Q7 UI states in `verify-app`.
-9. **Next:** the rest of section Q. Planned batches:
-   - Batch 7: Q1 is done (pull request 31) and Q4 is done (pull request 33). Q10 is left.
-   - Batch 8: Q3 designer agent and Q8 production rules from day one.
+9. Done: the seventh batch, Q1 test-value audit (pull request 31), Q4 file-size guard (pull request 33) and Q10 what
+   the Q1 audit and the Q4 reviews left (pull request 38).
+10. **Next:** batch 8, Q3 designer agent and Q8 production rules from day one. The kickoff is in
+    [backlog/kickoff.md](backlog/kickoff.md).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
