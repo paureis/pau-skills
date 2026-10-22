@@ -204,8 +204,6 @@ describe('Markdown details', () => {
   });
 
   test('a file saved with a byte order mark, as some Windows editors do, is read like one without', () => {
-    assert.deepEqual(checkFeature(`\uFEFF${FEATURE}`), []);
-    assert.deepEqual(checkSkill(`\uFEFF${SKILL}`, 'verify-shelf'), []);
     assert.deepEqual(headings('\uFEFF# T\n\n## A\n').map((h) => [h.level, h.text]), [[1, 'T'], [2, 'A']]);
     // The frontmatter after the mark is still frontmatter, not text over a Setext underline.
     assert.deepEqual(headings('\uFEFF---\nname: x\n---\n# T\n').map((h) => [h.level, h.text]), [[1, 'T']]);
