@@ -173,6 +173,15 @@ test(`overlap: two descriptions with a word-overlap score of ${OVERLAP_THRESHOLD
   assert.deepEqual(found(check({ 'a.md': agent({ name: 'one', description: a }), 'b.md': agent({ name: 'two', description: c }) }), 'overlap'), []);
 });
 
+test('overlap: the score divides the shared words by all the words of both, so two shared of four each is no warning', () => {
+  // Four content words each ("into" is a filler word), two of them shared: 2 of 6 words, not 2 of 4.
+  const a = 'Parses invoices into ledger rows.';
+  const b = 'Parses receipts into ledger totals.';
+  assert.equal(overlapScore(a, b), 2 / 6);
+  const r = check({ 'a.md': agent({ name: 'one', description: a }), 'b.md': agent({ name: 'two', description: b }) });
+  assert.deepEqual(found(r, 'overlap'), []);
+});
+
 test('worktree-ignore: an agent with isolation: worktree needs .claude/worktrees/ git-ignored', () => {
   // The developer's own git config must not decide this test: a global excludes file that ignores .claude/ would
   // make the first case pass. Point git at an empty global config and no system config while the test runs.
@@ -208,4 +217,18 @@ test('the CLI walks subfolders, exits 1 on errors and 0 on warnings only, and re
   const json = JSON.parse(runNode(SCRIPT, { args: ['--project', project, '--user', home, '--json'] }).stdout);
   assert.ok(json.findings.some((f) => f.scope === 'user' && f.check === 'covenant'));
   assert.equal(runNode(SCRIPT, { args: ['--bogus'] }).code, 2);
+});
+
+test('the CLI summary lines count agent files by scope, skipped documentation files, errors and warnings', () => {
+  const project = tempDir('geppetto-cli-');
+  const home = tempDir('geppetto-cli-user-');
+  // One error (no covenant) and two warnings (a long description, the tools list), so a swap of the counts shows.
+  put(project, '.claude/agents/a.md', agent({ description: 'x'.repeat(DESCRIPTION_MAX + 1), tools: 'Read, Bash, Grep' }, { covenant: '' }));
+  put(project, '.claude/agents/README.md', '# Notes about these agents\n');
+  const r = runNode(SCRIPT, { args: ['--project', project, '--user', home] });
+  assert.equal(r.code, 1, r.stdout + r.stderr);
+  const lines = r.stdout.trim().split('\n');
+  assert.match(lines[0], /^check-agents: 1 agent file\(s\) in /);
+  assert.match(lines[0], / \(project 1\), 1 documentation file\(s\) skipped$/);
+  assert.equal(lines.at(-1), '1 error(s), 2 warning(s)');
 });

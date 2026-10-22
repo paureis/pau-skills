@@ -62,6 +62,24 @@ describe('commits', () => {
     assert.match(r.stderr, /must name a branch or commit/);
   });
 
+  test('a refusal is printed as it is, without the "failed:" of an unexpected error', () => {
+    const { dir } = history();
+    const r = runNode(SCRIPT, { args: ['commits', '--repo', dir, '--rev', '--all'] });
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /^--rev must name a branch or commit/);
+  });
+
+  test('a file touched by exactly two of the commits is a hot file, in the text and in --json', () => {
+    const { dir } = history();
+    commit(dir, 'Fix the contact form again', { 'src/form.py': 'g\n' });
+    const text = runNode(SCRIPT, { args: ['commits', '--repo', dir] });
+    assert.equal(text.code, 0, text.stderr);
+    assert.match(text.stdout, /^# 2\tsrc\/form\.py$/m);
+    const json = runNode(SCRIPT, { args: ['commits', '--repo', dir, '--json'] });
+    assert.equal(json.code, 0, json.stderr);
+    assert.deepEqual(JSON.parse(json.stdout).hotFiles, [{ file: 'src/parser.py', count: 3 }, { file: 'src/form.py', count: 2 }]);
+  });
+
   test('a folder that is not a git repository is refused', () => {
     // The ceiling stops git from finding a repository above the temporary folder.
     const d = tempDir('afa-nogit-');

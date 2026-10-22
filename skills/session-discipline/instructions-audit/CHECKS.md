@@ -122,11 +122,14 @@ old value), and suggest where it belongs instead (an environment variable, a sec
 ```
 # Instruction file audit: <repository name>
 
-Scanned <date>. <n> files; ~<N> tokens load every session.
+Scanned <date>. <n> files; ~<N> tokens load every session, ~<S> in-subtree, ~<C> conditional, ~<O> other-tool.
 If every proposed edit is accepted: ~<M> tokens every session (<delta>).
 
 ## Files
 | File | Loads | Lines | ~Tokens | Notes |
+
+None found by the scan: <each kind of file it did not list: user-level, parent folder, project, nested>
+<a skipped step, such as the --json output, and why>
 
 ## Findings
 
@@ -151,6 +154,16 @@ Why: <one or two sentences>
 
 ## Decisions needed from you
 <contradictions where either side could win; content whose relevance only the user can judge>
+
+## Checked, nothing found
+<one line per Phase 2 checklist item in SKILL.md; a file whose read was refused is "not read" on every line>
+Contradictions: <files where nothing was found>
+Stale facts the scan missed: <files>
+Relevance: <files>
+Obvious rules: <files>
+Rules that keep being broken: <files>
+Missing essentials: <files>
+Imports and layering: <files>
 ```
 
 Number findings by severity letter (C, H, M, L) so the user can approve them as "C1, H1-H3, M2".

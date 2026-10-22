@@ -41,6 +41,13 @@ node "${CLAUDE_SKILL_DIR}/scan.mjs" <root>
 node "${CLAUDE_SKILL_DIR}/scan.mjs" <root> --json > <scratch>/scan.json
 ```
 
+`<scratch>` is a folder of your own outside the project: write `scan.json` in the session's scratch folder, or a
+temporary folder you remove afterwards. To make one, run `mktemp -d` as a command of its own and write the path it
+prints into the scan command literally, not through a shell variable (a permission check can refuse a variable). Run
+each scan command in a Bash call of its own, with no `;`, `$?` or `$(...)`. Never inside the repository: Phases 1 to
+3 change nothing in the repository. If the `--json` step cannot run, say so in the report (a line under the
+`## Files` table) instead of dropping it.
+
 Useful options: `--threshold 0.5` to see looser near-duplicates (default 0.6), `--global-refs` to also check paths
 cited in the user-level file, `--max-depth N` for deep monorepos, `--no-ancestors` to ignore parent directories.
 
@@ -59,6 +66,23 @@ What it reports, and what each number means:
 
 The scan is a list of candidates, not verdicts. Read each hit in context before it goes into the report. A
 near-duplicate may be a deliberate summary; an unresolved path may be a file that is generated at build time.
+
+The scan has already found the files: `~/.claude/CLAUDE.md` and the `.md` files under `~/.claude/rules/` (down to
+4 folders), `CLAUDE.md` and `CLAUDE.local.md` in every folder above the root (unless `--no-ancestors`), the project's
+files, nested files, and their `@imports` one level deep. Do not search for these files by hand. Read each one at the
+path the scan prints: in the file list, a path that starts with `~/` is in the home folder the scan used (the
+`--home` folder if one was passed), one that starts with `/` (or a drive letter on Windows) is a full path, and any
+other path is relative to `<root>`, which the scan prints in its first line. A file of these kinds that the scan does
+not list was not found, so the report says "none found by the scan", not "unchecked". The search has limits: it
+skips dependency, build and output folders, hidden folders other than `.claude` and `.github`, nested files inside
+`.claude`, folders below `--max-depth` (default 6), and stops after 20,000 folders. Imports: the scan follows the
+first level and names the second only under its Notes, as `<file>:<line> imports <ref>`, where `<ref>` is relative
+to the file that imports it (`sub/b.md` in a note on `docs/a.md` is `docs/sub/b.md`) unless it starts with `~/`.
+Read each noted file and follow its own `@imports` by hand; the scan does not name the third level. If your Read
+tool is refused a file outside the project, name it in the Notes column of the report's `## Files` table and say
+what still ran on it: the scan's mechanical checks (duplicates, secrets, vague and emphasised rules, imports; path
+references in user-level files only with `--global-refs`), not the Phase 2 checklist. If the scan lists that file at
+0 B, the scan could not read it either (or it is empty) and none of its checks ran; say that in the Notes.
 
 Done when: the scan has run, and you have read every file it lists in full (not only the flagged lines). If it
 lists no files, say so and offer to draft a minimal file from the "missing essentials" list in `CHECKS.md` instead.
@@ -80,7 +104,9 @@ Open `CHECKS.md` and work through its checklist for every file. The scan cannot 
 - [ ] **Rules that keep being broken**: check `git log -p` on the instruction files for rules that were reworded or
       repeated, and ask the user which rules the agent ignores. Each becomes a hook candidate: name the event, what it
       matches and what it blocks. If the `rule-to-hook` skill is installed, use it to build the hook once the user
-      approves that finding.
+      approves that finding. When nobody can answer (a headless run, a brief that says so, or no reply), do not wait:
+      judge from `git log -p` and the scan's emphasised rules (from those rules alone if the project has no git
+      history, and say so), and put the question in the report under "Decisions needed from you".
 - [ ] **Missing essentials**: how to install, build, test (all and a single test), lint and format; where the main
       code, tests and config live; anything an agent must never touch. Check that each answer is true now.
 - [ ] **Imports and layering**: an imported file that is huge or mostly irrelevant; a local file
@@ -90,7 +116,8 @@ Done when: every checklist item has either findings or an explicit "nothing foun
 
 ## Phase 3: Write the report
 
-Use the template in `CHECKS.md`. Order findings by severity, then by token cost:
+Use the template in `CHECKS.md`. Each "nothing found" from Phase 2 goes in its `## Checked, nothing found` section,
+one line per checklist item. Order findings by severity, then by token cost:
 
 1. **Critical**: secrets or personal data in a tracked file; contradictions on safety or destructive actions.
 2. **High**: other contradictions; stale commands or paths the agent would act on; broken `@imports`.
@@ -110,7 +137,9 @@ you", and nothing has been changed on disk.
 
 ## Phase 4: Apply approved edits only
 
-1. Ask which findings to apply. Accept numbers, ranges, "all critical and high", or "none".
+1. Ask which findings to apply. Accept numbers, ranges, "all critical and high", or "none". When nobody can answer
+   (the same cases as in Phase 2), stop after the Phase 3 report, apply nothing, and say in the final report that
+   every finding is pending.
 2. For each approved finding, show the final diff for that file, then apply it with the editor tool. Group edits by
    file so the user sees one diff per file.
 3. After editing, re-run the scan and show the before and after token totals and finding counts. Read each edited
@@ -118,13 +147,13 @@ you", and nothing has been changed on disk.
 4. List what was left unapplied, so it is not lost.
 
 Done when: only approved edits are on disk, the re-scan output is shown, and nothing was committed unless the user
-asked for a commit.
+asked for a commit. When nobody could answer: nothing was applied, and the final report marks every finding pending.
 
 ## Final report format
 
 ```
 CLAUDE.md audit: <root>
-Files: <n> (<every-session tokens> tokens every session, <other> conditional or other tools)
+Files: <n> (tokens: <a> every-session, <b> in-subtree, <c> conditional, <d> other-tool)
 Findings: <critical> critical, <high> high, <medium> medium, <low> low
 Applied: <ids>   Declined or pending: <ids>
 Always-loaded tokens: <before> -> <after>

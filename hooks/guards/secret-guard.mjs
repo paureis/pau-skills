@@ -69,7 +69,7 @@ export function findSecret(text) {
   for (const m of text.matchAll(ASSIGNMENT)) {
     const [, name, value] = m;
     if (!SECRET_NAME.test(name) || PLACEHOLDER.test(value)) continue;
-    if (/^[a-z]+(?:[._-][a-z]+)*$/i.test(value)) continue; // words: a variable or a setting name, not a secret
+    // A value needs a digit, so words alone (a variable or a setting name) never count.
     if (/[A-Za-z]/.test(value) && /\d/.test(value) && entropy(value) >= 3.5) return { label: `literal assigned to "${name}"`, match: value };
   }
   return null;

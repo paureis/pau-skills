@@ -22,6 +22,11 @@ const LOCKFILES = [
   'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lock', 'Cargo.lock', 'poetry.lock',
   'uv.lock', 'Pipfile.lock', 'Gemfile.lock', 'composer.lock', 'go.sum', 'mix.lock', 'pubspec.lock', 'Podfile.lock',
   'packages.lock.json', 'flake.lock', 'deno.lock', 'gradle.lockfile', 'Package.resolved',
+  // Each name is a promise to users, so it is listed here, not read from the hook's own set.
+  'bun.lockb', 'pdm.lock', 'pixi.lock', 'conda-lock.yml', 'go.work.sum', 'Cartfile.resolved', 'paket.lock',
+  'project.assets.json', 'buildscript-gradle.lockfile', 'Manifest.toml', 'shard.lock', 'stack.yaml.lock',
+  'cabal.project.freeze', 'rebar.lock', 'renv.lock', 'vcpkg-lock.json', 'conan.lock', 'MODULE.bazel.lock',
+  '.terraform.lock.hcl',
 ];
 
 describe('file-size guard: skipped by name or content', () => {

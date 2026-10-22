@@ -2,7 +2,7 @@
 // a log inside a git work tree, a file edited by hand, and the append-only guarantee.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync, mkdirSync, existsSync, symlinkSync, realpathSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, existsSync, symlinkSync, realpathSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tempDir } from './helpers.mjs';
 import { HEADER, insideGitTree } from '../skills/verification/hillclimb/decisions.mjs';
@@ -261,6 +261,20 @@ describe('append', () => {
     assert.equal(insideGitTree(dangling), dir);
     assert.match(baseline(dangling).err, /git/);
     assert.equal(existsSync(join(dir, 'new.tsv')), false);
+  });
+
+  test('refuses a log under a folder link into a git work tree, when the folders below the link do not exist yet', () => {
+    const dir = realpathSync(tempDir('hillclimb-repo-'));
+    mkdirSync(join(dir, '.git'));
+    mkdirSync(join(dir, 'data'));
+    const link = join(tempDir('hillclimb-'), 'data-link');
+    symlinkSync(join(dir, 'data'), link, 'dir');
+    const log = join(link, 'not-yet', 'decision.tsv');
+    assert.equal(insideGitTree(log), dir);
+    const r = baseline(log);
+    assert.equal(r.code, 1);
+    assert.match(r.err, /git/);
+    assert.deepEqual(readdirSync(join(dir, 'data')), [], 'nothing is created inside the work tree');
   });
 
   test('creates the parent folder when it is missing', () => {
