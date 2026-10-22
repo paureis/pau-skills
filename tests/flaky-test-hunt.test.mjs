@@ -123,6 +123,9 @@ test('repeat: until-fail stops scheduling, parallel respects the limit, a start 
 
 // The fixture keeps its own invocation counter in a file, like a real test with leaked state, and fails on every
 // third invocation with output whose numbers and timestamps change each time. A separate failure mode on invocation 5.
+// With HANG_ON set, that invocation hangs for 45 s and then exits on its own. repeat.mjs runs it in its own process
+// group, so when the kill on timeout is broken nothing else ends it. The 45 s must stay above the 30 s limit of the
+// hanging-run test: a shorter hang ends before that limit, and the test would pass with the kill broken.
 const FIXTURE = [
   "import { readFileSync, writeFileSync, existsSync } from 'node:fs';",
   'const f = process.env.COUNTER_FILE;',
@@ -131,7 +134,7 @@ const FIXTURE = [
   "console.log('running case, worker id ' + (40000 + n));",
   "if (n === 5) { console.error('TypeError: cannot read properties of undefined'); process.exit(1); }",
   "if (n % 3 === 0) { console.error('Error: expected 200, got 503 after ' + (1000 + n) + 'ms at ' + new Date().toISOString()); process.exit(1); }",
-  "if (process.env.HANG_ON && Number(process.env.HANG_ON) === n) setInterval(() => {}, 1000);",
+  "if (process.env.HANG_ON && Number(process.env.HANG_ON) === n) setTimeout(() => {}, 45000);",
 ].join('\n');
 
 function setup() {
@@ -171,7 +174,8 @@ test('end to end: --until-fail stops at the first failure and exit code 0 when a
 
 test('end to end: a hanging run is killed by --timeout and reported as T', () => {
   const { fixture, counter } = setup();
-  // A timeout of its own, so a run that is never killed fails here instead of hanging the whole suite.
+  // A timeout of its own, so a run that is never killed fails here instead of hanging the whole suite. That limit
+  // kills only repeat.mjs, not the hanging fixture in its own process group; the fixture ends itself after 45 s.
   const r = spawnSync(process.execPath, [SCRIPT, '--runs', '2', '--timeout', '1', '--quiet', '--', process.execPath, fixture], {
     encoding: 'utf8', env: { ...process.env, COUNTER_FILE: counter, HANG_ON: '2' }, timeout: 30000, killSignal: 'SIGKILL',
   });
