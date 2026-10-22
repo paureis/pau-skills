@@ -116,7 +116,8 @@
   and three cold runs of `instructions-audit` (the base, the build and the fix, each headless with an empty HOME and
   nobody to answer). 20 tests added, each proven by a mutation that survived before and is caught after (54
   mutations); 1,249 to 1,269 tests, green on Linux and macOS. The changed `instructions-audit` went to the owner as a
-  bundle, and `pau-skills-hooks` went to 0.3.1 for `secret-guard`. The profile README counts (38 skills, 13 hooks,
+  bundle (the one from the follow-up, with decision 12), which the owner uploaded, and `pau-skills-hooks` went to 0.3.1
+  for `secret-guard`, which the owner updated on their computers. The profile README counts (38 skills, 13 hooks,
   over 1,100 tests) still hold. The owner's two decisions after it (decision 12) were applied in the follow-up pull request. With the roster:
   - Worked: `eng-lead` read the code well and found more than the item named (19 untested lockfile names, a second
     surviving `keyOf` mutation, a swap hidden by equal counts); every plan check found something, and one caught a
