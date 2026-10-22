@@ -265,7 +265,8 @@ describe('against a real repository', () => {
     assert.equal(lines[0], '.claude/review-rules.json');
     assert.match(r.stdout, /^Budget: tight \(from LEAN_SUBAGENT_BUDGET\); delegate changes of \d+\+ files, make smaller changes yourself$/m);
     assert.ok(lines.includes('Delegation log: .claude/delegation.log'), r.stdout);
-    assert.ok(lines.indexOf('Must fix:') < lines.indexOf('  - a migration with no way back'), r.stdout);
+    const mustFix = lines.indexOf('Must fix:');
+    assert.ok(mustFix !== -1 && mustFix < lines.indexOf('  - a migration with no way back'), r.stdout);
     assert.ok(lines.includes('Risky paths: core/**'), r.stdout);
     assert.ok(lines.includes('Checks: make test; make lint'), r.stdout);
   });
