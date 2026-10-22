@@ -66,18 +66,22 @@ What it reports, and what each number means:
 The scan is a list of candidates, not verdicts. Read each hit in context before it goes into the report. A
 near-duplicate may be a deliberate summary; an unresolved path may be a file that is generated at build time.
 
-The scan has already found the files: `~/.claude/CLAUDE.md` and every `.md` under `~/.claude/rules/`, `CLAUDE.md` and
-`CLAUDE.local.md` in every folder above the root (unless `--no-ancestors`), the project's files, nested files, and
-their `@imports` one level deep. Do not search for these files by hand. Read each one at the path the scan prints: a
-path that starts with `~/` is in the home folder the scan used (the `--home` folder if one was passed), one that
-starts with `/` (or a drive letter on Windows) is a full path, and any other path is relative to `<root>`, which the
-scan prints in its first line. A file of these kinds that the scan does not list was not found, so the report says
-"none found by the scan", not "unchecked". Two exceptions: an import past the first level appears only under the
-scan's Notes, and you read it too; nested files in skipped folders (dependency and build folders, `tmp`, hidden
-folders other than `.claude` and `.github`) and below `--max-depth` (default 6) are not searched. If a read outside
-the project is refused, name the file in the Notes column of the report's `## Files` table and say what still ran on
-it: the scan's mechanical checks (duplicates, secrets, vague and emphasised rules, imports; path references in
-user-level files only with `--global-refs`), not the Phase 2 checklist.
+The scan has already found the files: `~/.claude/CLAUDE.md` and the `.md` files under `~/.claude/rules/` (down to
+4 folders), `CLAUDE.md` and `CLAUDE.local.md` in every folder above the root (unless `--no-ancestors`), the project's
+files, nested files, and their `@imports` one level deep. Do not search for these files by hand. Read each one at the
+path the scan prints: in the file list, a path that starts with `~/` is in the home folder the scan used (the
+`--home` folder if one was passed), one that starts with `/` (or a drive letter on Windows) is a full path, and any
+other path is relative to `<root>`, which the scan prints in its first line. A file of these kinds that the scan does
+not list was not found, so the report says "none found by the scan", not "unchecked". The search has limits: it
+skips dependency, build and output folders, hidden folders other than `.claude` and `.github`, nested files inside
+`.claude`, folders below `--max-depth` (default 6), and stops after 20,000 folders. Imports: the scan follows the
+first level and names the second only under its Notes, as `<file>:<line> imports <ref>`, where `<ref>` is relative
+to the file that imports it (`sub/b.md` in a note on `docs/a.md` is `docs/sub/b.md`) unless it starts with `~/`.
+Read each noted file and follow its own `@imports` by hand; the scan does not name the third level. If your Read
+tool is refused a file outside the project, name it in the Notes column of the report's `## Files` table and say
+what still ran on it: the scan's mechanical checks (duplicates, secrets, vague and emphasised rules, imports; path
+references in user-level files only with `--global-refs`), not the Phase 2 checklist. If the scan lists that file at
+0 B, the scan could not read it either (or it is empty) and none of its checks ran; say that in the Notes.
 
 Done when: the scan has run, and you have read every file it lists in full (not only the flagged lines). If it
 lists no files, say so and offer to draft a minimal file from the "missing essentials" list in `CHECKS.md` instead.
