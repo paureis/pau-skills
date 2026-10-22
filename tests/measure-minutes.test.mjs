@@ -59,6 +59,15 @@ test('keyOf names the branch for non-PR events and rejects an unknown grouping',
   assert.throws(() => keyOf(run, job('x', 1), 'colour'));
 });
 
+test('grouping by conclusion keys an unfinished run by its status, and a finished one by its conclusion', () => {
+  // The API sends both fields: status "in_progress" with conclusion null, then status "completed" with the outcome.
+  const running = { path: '.github/workflows/ci.yml', status: 'in_progress', conclusion: null, jobs: [job('suite', 30)] };
+  const failed = { path: '.github/workflows/ci.yml', status: 'completed', conclusion: 'failure', jobs: [job('suite', 90)] };
+  assert.equal(keyOf(running, job('x', 1), 'conclusion'), 'in_progress');
+  assert.equal(keyOf(failed, job('x', 1), 'conclusion'), 'failure');
+  assert.deepEqual(group([running, failed], 'conclusion').rows.map((r) => r.key).sort(), ['failure', 'in_progress']);
+});
+
 test('parseArgs requires a repository and a start date', () => {
   assert.ok(parseArgs([]).error);
   assert.ok(parseArgs(['--repo', 'o/r']).error);

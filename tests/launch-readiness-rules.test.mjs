@@ -65,6 +65,17 @@ describe('secrets in evidence', () => {
     }
   });
 
+  test('a long random token needs two lower-case letters, as it needs two of each other kind', () => {
+    // 20 distinct characters, so length and entropy (4.32) are at or above their limits: 13 capitals, 5 digits, 2 lower.
+    const twoLower = ['ABCDEFGHJ', 'KLMN', '23456', 'qr'].join('');
+    // The same length, one lower-case letter swapped for a capital that is not in the token yet.
+    const oneLower = ['ABCDEFGHJ', 'KLMN', '23456', 'qT'].join('');
+    assert.equal(twoLower.length, 20);
+    assert.equal(new Set(oneLower).size, 20);
+    assert.ok(secretIn(`config.js:2 holds ${twoLower} here`));
+    assert.equal(secretIn(`config.js:2 holds ${oneLower} here`), null);
+  });
+
   test('a row whose evidence quotes a secret is refused with a message to cite the line', () => {
     const root = project({ 'a.js': 'x\n' });
     assert.throws(() => put(newLedger(root), [row({ id: 'SEC-01', status: 'fail', evidence: `a.js:1 has ${stripeLike}` })], root),

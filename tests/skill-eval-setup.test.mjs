@@ -159,6 +159,7 @@ describe('setup', () => {
     ['a typed prompt for a variant that has no skill', { variants: ['without=none', `with=${join(FIX, 'variant-b')}`] }, /without.*\/tidy-notes/],
     ['variants with different skill names', { variants: [`alpha=${join(FIX, 'variant-a')}`, `bravo=${join(FIX, 'other-name')}`] }, /same name/],
     ['fewer than two variants', { variants: [`alpha=${join(FIX, 'variant-a')}`] }, /two variants/],
+    ['two variants with the same name', { variants: [`alpha=${join(FIX, 'variant-a')}`, `alpha=${join(FIX, 'variant-b')}`] }, /repeat/],
   ]) {
     test(`refuses ${why}, and writes nothing`, () => {
       const r = setup(opts);
