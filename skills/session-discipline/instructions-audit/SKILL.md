@@ -43,9 +43,10 @@ node "${CLAUDE_SKILL_DIR}/scan.mjs" <root> --json > <scratch>/scan.json
 
 `<scratch>` is a folder of your own outside the project: write `scan.json` in the session's scratch folder, or a
 temporary folder you remove afterwards. To make one, run `mktemp -d` as a command of its own and write the path it
-prints into the scan command literally, not through a shell variable (a permission check can refuse a variable).
-Never inside the repository: Phases 1 to 3 change nothing in the repository. If the `--json` step cannot run, say so
-in the report (the Notes of the `## Files` table) instead of dropping it.
+prints into the scan command literally, not through a shell variable (a permission check can refuse a variable). Run
+each scan command in a Bash call of its own, with no `;`, `$?` or `$(...)`. Never inside the repository: Phases 1 to
+3 change nothing in the repository. If the `--json` step cannot run, say so in the report (a line under the
+`## Files` table) instead of dropping it.
 
 Useful options: `--threshold 0.5` to see looser near-duplicates (default 0.6), `--global-refs` to also check paths
 cited in the user-level file, `--max-depth N` for deep monorepos, `--no-ancestors` to ignore parent directories.

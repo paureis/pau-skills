@@ -127,7 +127,9 @@ If every proposed edit is accepted: ~<M> tokens every session (<delta>).
 
 ## Files
 | File | Loads | Lines | ~Tokens | Notes |
+
 None found by the scan: <each kind of file it did not list: user-level, parent folder, project, nested>
+<a skipped step, such as the --json output, and why>
 
 ## Findings
 
