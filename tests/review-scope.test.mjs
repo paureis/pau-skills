@@ -253,6 +253,35 @@ describe('against a real repository', () => {
     assert.match(r.stdout, /Risky paths: core\/\*\*/);
   });
 
+  test('config prints the file read, the budget and where it came from, the log, the must-fix list and the checks', () => {
+    const { dir } = setup();
+    put(dir, '.claude/review-rules.json', JSON.stringify({
+      mustFix: ['a migration with no way back'], riskyPaths: ['core/**'], checks: ['make test', 'make lint'],
+      delegation: { log: '.claude/delegation.log' },
+    }));
+    const r = runNode(SCRIPT, { args: ['config', '--repo', dir], env: { [BUDGET_ENV]: 'tight' } });
+    assert.equal(r.code, 0, r.stderr);
+    const lines = r.stdout.trim().split('\n');
+    assert.equal(lines[0], '.claude/review-rules.json');
+    assert.match(r.stdout, /^Budget: tight \(from LEAN_SUBAGENT_BUDGET\); delegate changes of \d+\+ files, make smaller changes yourself$/m);
+    assert.ok(lines.includes('Delegation log: .claude/delegation.log'), r.stdout);
+    assert.ok(lines.indexOf('Must fix:') < lines.indexOf('  - a migration with no way back'), r.stdout);
+    assert.ok(lines.includes('Risky paths: core/**'), r.stdout);
+    assert.ok(lines.includes('Checks: make test; make lint'), r.stdout);
+  });
+
+  test('config without a config file says it uses the defaults, with no log and no checks set', () => {
+    const dir = tempDir('review-scope-');
+    g(dir, 'init', '-q', '-b', 'main');
+    const r = run(dir, 'config');
+    assert.equal(r.code, 0, r.stderr);
+    const lines = r.stdout.trim().split('\n');
+    assert.equal(lines[0], 'No .claude/review-rules.json; defaults');
+    assert.match(r.stdout, /^Budget: normal \(from default\); delegate any change in behaviour or tests/m);
+    assert.ok(lines.includes('Delegation log: off'), r.stdout);
+    assert.match(r.stdout, /^Checks: none set; /m);
+  });
+
   test('an invalid config file stops every command with exit 2', () => {
     const { dir } = setup();
     put(dir, '.claude/review-rules.json', '{"riskyPath": []}');
