@@ -202,6 +202,14 @@ describe('Markdown details', () => {
     assert.equal(parseFrontmatter(SKILL.replace('---\n', '---  \n').replace('\n---\n', '\n--- \n')).name, 'verify-shelf');
     assert.equal(parseFrontmatter(SKILL.replace(/\n/g, '\r\n')).name, 'verify-shelf');
   });
+
+  test('a file saved with a byte order mark, as some Windows editors do, is read like one without', () => {
+    assert.deepEqual(checkFeature(`﻿${FEATURE}`), []);
+    assert.deepEqual(checkSkill(`﻿${SKILL}`, 'verify-shelf'), []);
+    assert.deepEqual(headings('﻿# T\n\n## A\n').map((h) => [h.level, h.text]), [[1, 'T'], [2, 'A']]);
+    // The frontmatter after the mark is still frontmatter, not text over a Setext underline.
+    assert.deepEqual(headings('﻿---\nname: x\n---\n# T\n').map((h) => [h.level, h.text]), [[1, 'T']]);
+  });
 });
 
 describe('index links, more forms', () => {
