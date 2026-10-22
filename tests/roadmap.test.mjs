@@ -38,7 +38,8 @@ test('tables() finds every table with the header and stops at the first non-tabl
   assert.equal(t.length, 2);
   assert.deepEqual(t[0].rows.map((r) => r[0]), ['1', '2', '2b']);
   // A prose line or an empty line right after the rows ends the table; a row-shaped line after it is not a row.
-  for (const stop of ['Not a table line.', '']) {
+  // A row starts with a pipe, so a prose line with a pipe inside it ends the table too.
+  for (const stop of ['Not a table line.', '', 'A prose line with a | pipe in it.']) {
     const text = ['| # | Item | Status |', '|---|---|---|', '| 1 | a | done |', stop, '| 9 | stray | pending |'].join('\n');
     assert.deepEqual(tables(text, 'Item').map((x) => x.rows.map((r) => r[0])), [['1']], `stop line: ${JSON.stringify(stop)}`);
   }
