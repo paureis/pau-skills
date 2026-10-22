@@ -3,7 +3,7 @@
 // tree, a file edited by hand), the append-only guarantee, measure against small node commands, and summary.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync } from 'node:fs';
+import { writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { runNode, tempDir } from './helpers.mjs';
 import {
@@ -146,6 +146,23 @@ describe('measure', () => {
     assert.equal(w.code, 1);
     assert.match(w.stderr, /number/);
   });
+
+  test('--value stdout fails the measurement when a later run prints another unit', () => {
+    const dir = tempDir('hillclimb-measure-');
+    const counter = join(dir, 'n.txt');
+    const prog = join(dir, 'size.mjs');
+    // Prints 10KB on the first run and 10MB on the second.
+    writeFileSync(prog, [
+      `import { readFileSync, writeFileSync, existsSync } from 'node:fs';`,
+      `const n = existsSync(${JSON.stringify(counter)}) ? Number(readFileSync(${JSON.stringify(counter)}, 'utf8')) + 1 : 0;`,
+      `writeFileSync(${JSON.stringify(counter)}, String(n));`,
+      `console.log('10' + ['KB', 'MB'][n]);`,
+    ].join('\n'));
+    const r = runNode(SCRIPT, { args: ['measure', '--runs', '2', '--warmup', '0', '--value', 'stdout', '--', process.execPath, prog] });
+    assert.equal(r.code, 1, r.stdout);
+    assert.match(r.stderr, /unit/);
+    assert.equal(r.stdout.trim(), '', 'no measurement is printed');
+  });
 });
 
 describe('usage', () => {
@@ -158,6 +175,16 @@ describe('usage', () => {
     assert.equal(run(['measure', '--runs', '0', '--', 'x']).code, 2);
     assert.equal(run(['measure', '--runs', '3']).code, 2);
     assert.throws(() => parseArgs(['measure', '--value', 'rss', '--', 'x']), /value/);
+  });
+
+  test('an append option given twice exits 2, names the option and writes no log', () => {
+    const log = newLog();
+    // Valid if either value were kept, so only the repeat itself can fail it.
+    const r = run(['append', log, '--decision', 'baseline', '--tests', 'fail', '--tests', 'pass', '--better', 'lower',
+      '--measurement', BASE, '--hypothesis', 'baseline', '--change', 'none']);
+    assert.equal(r.code, 2, r.out);
+    assert.match(r.err, /--tests given twice/);
+    assert.equal(existsSync(log), false);
   });
 
   test('the command line works end to end', () => {
