@@ -146,7 +146,7 @@ you", and nothing has been changed on disk.
 4. List what was left unapplied, so it is not lost.
 
 Done when: only approved edits are on disk, the re-scan output is shown, and nothing was committed unless the user
-asked for a commit.
+asked for a commit. When nobody could answer: nothing was applied, and the final report marks every finding pending.
 
 ## Final report format
 
