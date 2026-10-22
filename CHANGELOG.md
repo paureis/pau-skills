@@ -3,6 +3,22 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-22: the seventh batch, Q10 what the Q1 audit and the Q4 reviews left
+
+- `instructions-audit` runs to the end with nobody to answer. Phase 1 says where `scan.json` goes (a folder made
+  with `mktemp -d` on its own, its path written literally), what the scan already read and how to read the paths it
+  prints, its search and import limits, and what to say when a read is refused or the `--json` step cannot run.
+  Phase 2 judges "rules that keep being broken" from history when nobody can answer, and Phase 4 then applies
+  nothing. The report template gains "Checked, nothing found", "None found by the scan" and tokens by every load kind.
+- `secret-guard`: a dead line in `findSecret` is gone (a value of letters and separators has no digit, so the next
+  check already skipped it). No behaviour changed.
+- 20 new tests for behaviour no test checked, each proven by a mutation that survived before it and is caught
+  after: the backtick, destructive, roadmap and file-size guards (all 39 lockfile names), measure-minutes,
+  launch-readiness, verify-app, hillclimb, skill-eval, agent-friendly-audit, geppetto, review-scope and the
+  instructions-audit scan. Two gaps were dropped as equivalent mutants. `tests/instructions-audit.test.mjs` is split
+  into three parts. The hanging flaky-test-hunt fixture now ends on its own after 45 s. 1,269 tests.
+- Versions: session-discipline 0.11.3, guards 0.8.2, pau-skills-hooks 0.3.1, pau-skills 0.15.2.
+
 ## 2026-10-22: nesting in cloud sessions
 
 - `.claude/settings.json` sets `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` to 3 for sessions in this repository. The cloud
