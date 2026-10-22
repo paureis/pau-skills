@@ -5,7 +5,11 @@
 Things that bit the seventh batch (Q1, the first batch run with the roster):
 - `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` set to 3 in the cloud environment arrived as 1: the cloud runtime overrides
   it. `eng-lead` planned and wrote the briefs, and the main session started every builder and reviewer itself. That
-  worked; plan for it.
+  worked; plan for it. Fixed on 2026-10-22: the runner puts the 1 into the process environment, and a project
+  `.claude/settings.json` with `"env": { "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "3" }` wins over it. Proven on
+  2.1.307 with two headless runs: without the file the variable read 1 and a subagent had no Agent tool; with it the
+  variable read 3 and a second-level agent ran. The file takes effect when a session starts, so only sessions started
+  after it reached main have nesting.
 - The plan checks were worth more than ever: the ones in phase B built the whole slice in a clone before any builder
   started, and found an edit that could not catch its own mutation, a wrong path walk and a race that would have
   sent a builder to "fix" a good test. Every reviewer still found something the builder missed.
