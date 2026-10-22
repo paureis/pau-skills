@@ -34,6 +34,13 @@ const cases = [
   ['PASS', 'printf PROSE that merely MENTIONS node -e and contains backticks',
     'printf "retrospective: mechanize the node -e rule, bash executed ' + BT + 'ORACLE-ALL' + BT + ' as a command\\n" > /tmp/m.txt && git commit -F /tmp/m.txt'],
   ['PASS', 'SINGLE-quoted inline payload: bash does no substitution', "node -e 'console.log(" + BT + 'safe' + BT + ")'"],
+  // Only a backtick AFTER the flag counts. These two hold one before the inline call, whose payload has none.
+  ['PASS', 'a backtick earlier on the same line, before an inline call with none',
+    'echo the date is ' + BT + 'date' + BT + ' && node -e "console.log(1)"'],
+  ['PASS', 'a backtick on an earlier line, before an inline call with none', 'x=' + BT + 'date' + BT + '\nnode -e "console.log(1)"'],
+  // A double quote is not a command position: "node -e" at the start of a quoted argument runs nothing.
+  ['PASS', 'a double-quoted argument that starts with node -e and holds a backtick',
+    'echo "node -e ' + BT + 'x' + BT + ' is the form to avoid"'],
   // Single quotes NESTED in a double-quoted payload protect nothing.
   ['BLOCK', 'JS string literal in single quotes inside node -e "..."', 'cd ./x && node -e "\nconst s=\'(see the memory ' + BT + 'accounts-note' + BT + ').\';\nconsole.log(s);\n"'],
   ['PASS', 'control: single-quoted payload whose INNER double quotes hold the backtick', "node -e 'const s=\"" + BT + 'safe' + BT + "\"; console.log(s)'"],
