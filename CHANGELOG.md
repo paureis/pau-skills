@@ -3,6 +3,12 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-22: nesting in cloud sessions
+
+- `.claude/settings.json` sets `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` to 3 for sessions in this repository. The cloud
+  runner sets it to 1, and the project setting wins, so `eng-lead` can start builders and reviewers itself. The batch
+  docs and the Q10 kickoff say so, and Q10 records a first look against the code. No plugin changed.
+
 ## 2026-10-20: after Q4, the owner's decisions (decision 11)
 
 - `rule-to-hook`: `allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)`, so reading its reference files and templates does

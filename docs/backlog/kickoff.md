@@ -4,8 +4,9 @@
 
 Batch 7 is nearly done: Q1 merged as pull request 31 and Q4 as pull request 33, with the owner's decisions after it
 in pull request 35. The next session runs Q10, the last item of the batch. Read "Things that bit the seventh batch"
-(`docs/backlog/things-that-bit/batch-7.md`) first: nesting is off in the cloud, so plan for the main session to start
-every agent. The owner starts it with this message:
+(`docs/backlog/things-that-bit/batch-7.md`) first. Nesting was off in the cloud until `.claude/settings.json` set the
+spawn depth to 3 (2026-10-22), so this is the first batch where `eng-lead` can start the builders and reviewers itself.
+The owner starts it with this message:
 
 ```text
 You are the orchestrator for the last item of the seventh batch in this repository: Q10, what the Q1 audit and
@@ -24,8 +25,9 @@ Before anything else, read these in full:
    cold run (headless, empty HOME) for the instructions-audit SKILL.md change.
 
 First, before any brief:
-- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it was 1 in the cloud in batch 7). At 1, eng-lead returns briefs and you
-  start each builder and reviewer yourself.
+- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH. .claude/settings.json sets it to 3, so eng-lead should start the
+  builders and reviewers itself after my yes; if it reads 1, eng-lead returns briefs and you start each builder and
+  reviewer yourself, and tell me.
 - Review Q10 against the code and tell me anything you would change; record it in the item. Group its parts into
   slices with disjoint files: the instructions-audit SKILL.md fixes, the tests with no behaviour check (one slice per
   area: hooks, verification scripts, agent-orchestration and planning scripts), the secret-guard dead code, and the

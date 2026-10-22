@@ -84,9 +84,10 @@ opens the pull request and does steps 8 to 10. The agents take the rest:
   `builder` per slice in a worktree and one fresh `reviewer` per slice, then returns each builder's agent ID, the
   verdicts and a ready fix-round message. The main session sends the fix rounds (an agent resumed with SendMessage
   runs in the background, where `eng-lead` cannot wait for it), gives each fix its second look, and merges.
-- **Nesting.** `eng-lead` needs `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` of 2 or more (`echo` it first; the cloud
-  environment had 1). At 1 it says so and returns the briefs, and the main session starts each `builder` itself, with
-  `isolation: "worktree"` on the call, then each `reviewer`.
+- **Nesting.** `eng-lead` needs `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` of 2 or more (`echo` it first). The cloud
+  runner sets it to 1 whatever the environment page says, so this repository sets it to 3 in `.claude/settings.json`,
+  which wins over the runner from the next session on. If it still reads 1, `eng-lead` says so and returns the briefs,
+  and the main session starts each `builder` itself, with `isolation: "worktree"` on the call, then each `reviewer`.
 - **Base commit.** A worktree agent branches from the remote's default branch, so every brief names the base commit
   and the builder starts from it; push the working branch before dispatch.
 - **Worktrees.** Do not make a worktree by hand for a `builder`: its `isolation: worktree` puts it in its own
