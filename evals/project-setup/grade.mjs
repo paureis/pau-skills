@@ -175,6 +175,21 @@ export function introProblems(tools, transcript) {
   return bad;
 }
 
+/**
+ * The rule names in the "## Production rules" section of a CLAUDE.md: one per bullet or numbered item, from its bold
+ * lead ("- **Money.** When ..."), or "(unnamed)" for an item without one. Empty when the section is missing.
+ */
+export function productionRules(md) {
+  const lines = String(md || '').split(/\r?\n/);
+  const start = lines.findIndex((l) => /^## Production rules\s*$/.test(l));
+  if (start === -1) return [];
+  const rest = lines.slice(start + 1);
+  const end = rest.findIndex((l) => /^#{1,2} /.test(l));
+  return rest.slice(0, end === -1 ? rest.length : end)
+    .filter((l) => /^(?:[-*+]|\d+[.)]) /.test(l))
+    .map((l) => (/^(?:[-*+]|\d+[.)]) \*\*([^*]+?)[.:]?\*\*/.exec(l)?.[1] || '(unnamed)').trim());
+}
+
 /** Run every mechanical check for one run. Returns [{ id, pass, detail }]; pass is null for a skipped check. */
 export function grade(run) {
   const { scenario, transcript, tools, files } = run;
@@ -207,6 +222,13 @@ export function grade(run) {
     add(`project CLAUDE.md is plain (mean ${limits.doc} words or fewer, no dashes)`, m.meanWords <= limits.doc && m.dashes === 0, JSON.stringify(m));
     if (expect.filesLanguage) add(`project CLAUDE.md is written in ${expect.filesLanguage}`, detectLanguage(claudeMd) === expect.filesLanguage, `detected ${detectLanguage(claudeMd)}`);
     if (expect.agentsImport) add('imports @AGENTS.md', /^@AGENTS\.md\s*$/m.test(claudeMd));
+  }
+  if (expect.productionRules) {
+    // Rule names are matched in English, as PRODUCTION-RULES.md gives them, in any order and case.
+    const key = (list) => list.map((n) => n.toLowerCase()).sort().join(', ');
+    const found = productionRules(claudeMd);
+    add('project CLAUDE.md holds exactly the expected production rules', key(found) === key(expect.productionRules),
+      `found: ${found.join(', ') || 'none'}; expected: ${expect.productionRules.join(', ') || 'none'}`);
   }
 
   const bad = unapprovedWrites(tools, transcript);
