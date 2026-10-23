@@ -32,8 +32,9 @@ clear.
 
 ## Production rules
 
-- <One bullet per chosen rule from PRODUCTION-RULES.md (in this skill's folder), in the project files' language:
-  its condition and every instruction in it, as short sentences. Leave out the rules not chosen.>
+- **<Rule name>.** <One bullet per chosen rule from PRODUCTION-RULES.md (in this skill's folder), in the project
+  files' language: its name in bold with a period, then its condition and every instruction in it, as short
+  sentences. Leave out the rules not chosen.>
 
 ## How we work
 
@@ -66,6 +67,9 @@ Notes:
   file. Those go in the personal CLAUDE.md.
 - Write a production rule only when a signal the scan found, or the user's goal, shows it applies, and the user chose
   it. On the quick path, a yes to the summary that lists the rules as defaults counts as choosing them.
+- Start each rule's bullet with the rule's name in bold, followed by a period, as PRODUCTION-RULES.md names it, for
+  example `- **Money.** When the code stores ...`. Translate the name with the rest when the project files are in
+  another language.
 - Write each chosen rule as one bullet of short sentences, 25 words or fewer each. Keep its condition ("When the code
   builds a database query, ..."), so the rule asks for nothing when the condition does not hold. Keep every
   instruction in the rule: shorten the words, never drop an instruction. For example, the signed-in user rule keeps
