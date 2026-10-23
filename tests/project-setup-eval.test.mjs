@@ -207,6 +207,8 @@ test('introProblems allows only the skill files and a start question in the firs
   assert.deepEqual(introProblems([style], ask), []);
   assert.deepEqual(introProblems([{ turn: 0, name: 'Read', path: '/r/skills/session-discipline/project-setup/STYLE.md' }], ask), []);
   assert.deepEqual(introProblems([{ turn: 0, name: 'Skill', skill: 'project-setup' }, style], ask), [], 'a turn-0 Skill call passes');
+  const bundled = ['STYLE.md', 'QUESTIONS.md', 'PRODUCTION-RULES.md'].map((f) => ({ turn: 0, name: 'Read', path: `/h/.claude/skills/project-setup/${f}` }));
+  assert.deepEqual(introProblems(bundled, ask), [], 'turn 0 may read STYLE.md, QUESTIONS.md and PRODUCTION-RULES.md');
   assert.deepEqual(introProblems([style, { turn: 0, name: 'Read', path: '/p/README.md' }], ask), ['Read /p/README.md in turn 0']);
   assert.deepEqual(introProblems([{ turn: 0, name: 'Bash', command: 'git status' }], ask), ['Bash git status in turn 0']);
   assert.deepEqual(introProblems([{ turn: 0, name: 'Read', path: '/h/.claude/skills/project-setup-old/STYLE.md' }], ask), ['Read /h/.claude/skills/project-setup-old/STYLE.md in turn 0']);
