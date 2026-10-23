@@ -59,14 +59,19 @@ the project and write a CLAUDE.md. The judge scores are 1 to 5.
 | `nervous-beginner` | 11/11 (1 skipped) | 9/11 | 4 / 1 | 4 |
 | `hobbyist-empty-folder` | 11/11 | 9/10 | 4 / 1 | 3 |
 | `experienced-dev` | 15/15 | 11/14 | 3 / 2 | 3 |
-| `spanish-beginner` | 18/18 | not run | 5 / not run | 4 |
+| `spanish-beginner` | 19/19 | not run | 5 / not run | 4 |
+| `shop-owner` | 15/15 | not run | 4 / not run | 3 |
+| `python-cli-dev` | 13/13 | not run | 3 / not run | 3 |
 
 Without the skill, every run wrote CLAUDE.md before it showed any draft, and neither persona who wanted personal
 preferences saved got them saved. (The beginner baseline still passes the approval check, because its opening message
 asks for a CLAUDE.md by name, which the grader counts as a request.) The skipped check is the write to
 `~/.claude/CLAUDE.md`: Claude Code asks a person before that edit even when an allow rule matches, and `-p` mode
-cannot answer, so it is tested by hand. The `spanish-beginner` row is from October 11, after the language changes: every reply and the project
-CLAUDE.md were in Spanish, and the saved preferences named Spanish as the preferred language.
+cannot answer, so it is tested by hand. The last three rows are from October 23, after Q11 (the introduction stop and
+the two Q8 scenarios), with `claude-opus-5-5`. In `spanish-beginner` every reply and the project CLAUDE.md were in
+Spanish, and the saved preferences named Spanish as the preferred language; it reached the 30-turn limit. Both new
+scenarios wrote exactly the expected production rules: Money, Input, The signed-in user and Secrets for the web app,
+Secrets only for the CLI. The first three rows predate the introduction stop, which adds one turn to every run.
 
 ## Scenarios
 
