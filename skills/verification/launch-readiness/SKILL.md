@@ -21,6 +21,7 @@ Bundled files, read when you reach their step:
 - `${CLAUDE_SKILL_DIR}/QUESTIONNAIRE.md`: what code cannot show, with how long each answer holds
 - `${CLAUDE_SKILL_DIR}/ledger.mjs` (with `table.mjs` and `rules.mjs`) and `${CLAUDE_SKILL_DIR}/READINESS-TEMPLATE.md`:
   the ledger and its shape
+- `${CLAUDE_SKILL_DIR}/PRODUCTION-RULES.md`: five rules for a project's CLAUDE.md, with the check ids each prevents
 
 ## Do not
 
@@ -227,7 +228,9 @@ probe or test first, then the fix, then the probe passing, then `apply` the row 
 backups, a schema change) becomes a brief with the failing probe or check as its done condition. If the `eng-lead`
 or `builder` agent is installed, offer to start it with the brief and wait for a yes: the profile's yes did not
 cover agent runs. Otherwise offer to run `to-issues` if it is installed to file it; otherwise give it as a plain
-list. CI gaps: offer to run `ci-cost-and-cadence` if it is installed.
+list. CI gaps: offer to run `ci-cost-and-cadence` if it is installed. When a closed gap's id is in the Prevents
+column of `PRODUCTION-RULES.md`, offer to add that rule to the project's CLAUDE.md so the gap does not come back:
+show the lines, and write them on a yes.
 
 ## Later runs
 
