@@ -66,6 +66,32 @@ export function readCovenant(file = join(HERE, 'COVENANT.md')) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// The production rules: an optional block, checked like the covenant when an agent carries it.
+
+const RULES_START = /<!--\s*production rules start\s*-->/;
+const RULES_END = /<!--\s*production rules end\s*-->/;
+
+/** The production rules in a body: { block (its words, spacing ignored), error }; block is null when absent. */
+export function rulesOf(text) {
+  const start = RULES_START.exec(text);
+  if (!start) return { block: null };
+  const after = text.slice(start.index + start[0].length);
+  const end = RULES_END.exec(after);
+  if (!end) return { block: null, error: 'the production rules start marker has no end marker after it' };
+  return { block: words(after.slice(0, end.index)) };
+}
+
+/** PRODUCTION-RULES.md: { block, text }, where text is the block to paste, from start marker to end marker. */
+export function readRules(file = join(HERE, 'PRODUCTION-RULES.md')) {
+  const raw = readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+  const start = RULES_START.exec(raw);
+  const end = start && RULES_END.exec(raw.slice(start.index));
+  if (!start || !end) throw new Error(`${file} has no production rules block`);
+  const text = raw.slice(start.index, start.index + end.index + end[0].length);
+  return { block: rulesOf(text).block, text };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Reading the scopes.
 
 function mdFiles(dir) {
@@ -220,6 +246,12 @@ function checkAgent(a, ctx) {
     const older = cov.version < ctx.covenant.version;
     add('warning', 'covenant', `the covenant is from roster ${cov.version}, the bundle is roster ${ctx.covenant.version}${older ? ': run Update' : ': this copy is newer than the bundle, update the skill'}`);
   } else if (cov.block !== ctx.covenant.block) add('error', 'covenant', 'the covenant block differs from COVENANT.md: the laws are not to be tuned');
+
+  // The production rules are never required. When an agent carries them, at the bundle's roster version they must be
+  // word for word the bundle's; at another version the covenant warning above already says to run Update.
+  const rules = rulesOf(a.body);
+  if (rules.error) add('error', 'rules', rules.error);
+  else if (rules.block !== null && cov.version === ctx.covenant.version && rules.block !== ctx.rules.block) add('error', 'rules', 'the production rules block differs from PRODUCTION-RULES.md: paste it again from marker line to marker line');
   return out;
 }
 

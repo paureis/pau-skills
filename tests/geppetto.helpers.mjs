@@ -4,12 +4,14 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { repo, tempDir } from './helpers.mjs';
-import { readCovenant, audit } from '../skills/agent-orchestration/geppetto/check-agents.mjs';
+import { readCovenant, readRules, audit } from '../skills/agent-orchestration/geppetto/check-agents.mjs';
 
 const SKILL = repo('skills', 'agent-orchestration', 'geppetto');
 const SCRIPT = join(SKILL, 'check-agents.mjs');
 const ROSTER = join(SKILL, 'roster');
 const COVENANT = readCovenant(join(SKILL, 'COVENANT.md'));
+const RULES = readRules(join(SKILL, 'PRODUCTION-RULES.md'));
+const TEMPLATES = join(SKILL, 'templates');
 
 const put = (root, rel, text) => { const p = join(root, rel); mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, text); return p; };
 
@@ -34,4 +36,4 @@ const errors = (result) => result.findings.filter((f) => f.level === 'error');
 
 const git = (cwd, ...args) => execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8' });
 
-export { SCRIPT, ROSTER, COVENANT, put, agent, check, found, errors, git };
+export { SKILL, SCRIPT, ROSTER, COVENANT, RULES, TEMPLATES, put, agent, check, found, errors, git };
