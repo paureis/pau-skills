@@ -157,8 +157,8 @@ export function sensitiveBlocks(entries) {
 }
 
 const SKILL_FILE = /\/skills\/(session-discipline\/)?project-setup\/[^/]+$/;
-// "Shall I start?" or "Shall I begin?", and the Spanish forms of empezar and comenzar.
-const START_QUESTION = /(?<!\p{L})(start|begin|empie\p{L}*|empez\p{L}*|comien\p{L}*|comenz\p{L}*)/iu;
+// "Shall I start?" or "Shall I begin?", and the Spanish forms, as whole words: "restart" or "started" do not count.
+const START_QUESTION = /(?<![\p{L}])(start|begin|get started|empiezo|empezamos|comienzo|comenzamos|iniciamos|arrancamos)(?![\p{L}])/iu;
 // A question mark at the end, before any closing quote, bracket or emphasis mark.
 const isQuestion = (s) => /\?["')*_]*$/.test(s);
 
@@ -171,7 +171,9 @@ export function introProblems(tools, transcript) {
     .filter((t) => t.turn === 0 && !(t.name === 'Skill' || (t.name === 'Read' && SKILL_FILE.test(t.path || ''))))
     .map((t) => `${t.name} ${t.path || t.command || ''} in turn 0`);
   const first = transcript.find((m) => m.role === 'assistant')?.text || '';
-  if (!sentences(first).some((s) => isQuestion(s) && START_QUESTION.test(s))) bad.push('the first message does not ask whether to start');
+  // The closing question decides: the last sentence of the first message that is a question.
+  const closing = sentences(first).filter(isQuestion).pop() || '';
+  if (!START_QUESTION.test(closing)) bad.push('the first message does not ask whether to start');
   return bad;
 }
 

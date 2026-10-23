@@ -219,6 +219,11 @@ test('introProblems allows only the skill files and a start question in the firs
   assert.deepEqual(first('I will ask you some questions. *Shall I begin?*'), []);
   assert.deepEqual(first('Le hago unas preguntas. ' + INV + 'Empiezo?'), []);
   assert.deepEqual(first('Le hago unas preguntas. ' + INV + 'Comenzamos?'), []);
+  for (const w of ['Empiezo', 'Empezamos', 'Comienzo', 'Comenzamos', 'Iniciamos', 'Arrancamos']) assert.deepEqual(first('Nada cambia. ' + INV + w + '?'), [], w);
+  for (const q of ['Are you a beginner with Claude Code?', 'Have you started a project before?', 'Shall we restart?']) assert.deepEqual(first('I will ask some questions. ' + q), no, q);
+  assert.deepEqual(first('Shall I start? Or do you have a question first?'), no, 'the closing question decides');
+  assert.deepEqual(first('Nothing changes until you say yes. Shall I start? Take your time.'), []);
+  assert.deepEqual(first('Nothing changes until you say yes. Shall we get started?'), []);
 });
 
 test('productionRules reads the bold rule names of the Production rules section only', () => {
