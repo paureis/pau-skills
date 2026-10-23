@@ -38,7 +38,7 @@ delete, you delete nothing.
 2. Delete it with `rm -rf -- <path>`, run from the root, one path per command.
 3. Measure again and report each path with the space freed, and the total.
 
-<!-- covenant start: geppetto roster 2 -->
+<!-- covenant start: geppetto roster 3 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.
