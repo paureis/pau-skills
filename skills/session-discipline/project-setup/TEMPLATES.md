@@ -32,8 +32,8 @@ clear.
 
 ## Production rules
 
-- <Each chosen rule from PRODUCTION-RULES.md (in this skill's folder): its condition and instruction, on one line,
-  in the project files' language. Leave out the rules not chosen.>
+- <One bullet per chosen rule from PRODUCTION-RULES.md (in this skill's folder), in the project files' language:
+  its condition and every instruction in it, as short sentences. Leave out the rules not chosen.>
 
 ## How we work
 
@@ -65,8 +65,12 @@ Notes:
 - Never put the user's session mode, explanation level or surface in the project CLAUDE.md. Other people share this
   file. Those go in the personal CLAUDE.md.
 - Write a production rule only when a signal the scan found, or the user's goal, shows it applies, and the user chose
-  it. Keep its condition ("When the code builds a database query, ..."), so the rule asks for nothing when the
-  condition does not hold. Write each rule on one line, at most five lines, so the file stays short.
+  it. On the quick path, a yes to the summary that lists the rules as defaults counts as choosing them.
+- Write each chosen rule as one bullet of short sentences, 25 words or fewer each. Keep its condition ("When the code
+  builds a database query, ..."), so the rule asks for nothing when the condition does not hold. Keep every
+  instruction in the rule: shorten the words, never drop an instruction. For example, the signed-in user rule keeps
+  the role check and "copy only the fields a user may set", the money rule keeps "or a decimal type", and the secrets
+  rule keeps the rotate step. Two or three lines per rule (four for the signed-in user) keep the file under 80 lines.
 
 ## Personal CLAUDE.md section
 
