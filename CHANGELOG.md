@@ -23,6 +23,8 @@ the plugin they installed is bumped.
   `skills:` line Install added. A fixture design system is in `tests/fixtures/geppetto-designer/`. 1,285 tests.
 - Versions: session-discipline 0.12.0, verification 0.12.0, agent-orchestration 0.11.0, guards 0.9.0, pau-skills
   0.16.0. No hook changed.
+- Q3, Q8 and batch 8 are marked done in the backlog, with what bit them; Q11 holds what batch 8 left, and its
+  kickoff is in `docs/backlog/kickoff.md`.
 
 ## 2026-10-22: after Q10, the owner's decisions (decision 12)
 
