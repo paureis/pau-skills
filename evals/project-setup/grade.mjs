@@ -45,7 +45,8 @@ export function words(sentence) {
 // Common short words that tell Spanish prose from English prose. Code and paths are removed first (see prose()).
 const ES_WORDS = new Set(['que', 'los', 'las', 'del', 'para', 'una', 'pero', 'como', 'porque', 'tiene', 'puede', 'usted',
   'proyecto', 'archivo', 'archivos', 'cuando', 'donde', 'esto', 'eso', 'muy', 'sus', 'hay', 'se', 'lo', 'al', 'con',
-  'por', 'sin', 'sobre', 'todo', 'ahora', 'primero', 'pregunta', 'respuesta', 'quiere', 'si', 'cada', 'paso']);
+  'por', 'sin', 'sobre', 'todo', 'ahora', 'primero', 'pregunta', 'respuesta', 'quiere', 'si', 'cada', 'paso', 'le', 'su',
+  'unas', 'unos', 'nada', 'hasta', 'luego', 'preguntas']);
 const EN_WORDS = new Set(['the', 'and', 'is', 'are', 'you', 'your', 'this', 'that', 'with', 'for', 'what', 'will', 'can',
   'file', 'files', 'project', 'question', 'want', 'if', 'each', 'step', 'it', 'of', 'to']);
 
@@ -155,6 +156,25 @@ export function sensitiveBlocks(entries) {
   return out;
 }
 
+const SKILL_FILE = /\/skills\/(session-discipline\/)?project-setup\/[^/]+$/;
+// "Shall I start?" or "Shall I begin?", and the Spanish forms of empezar and comenzar.
+const START_QUESTION = /(?<!\p{L})(start|begin|empie\p{L}*|empez\p{L}*|comien\p{L}*|comenz\p{L}*)/iu;
+// A question mark at the end, before any closing quote, bracket or emphasis mark.
+const isQuestion = (s) => /\?["')*_]*$/.test(s);
+
+/**
+ * The introduction rule: the first agent turn may only load the skill and read the skill's own files, and its first
+ * message must ask whether to start. Returns a list of problems, empty when the rule holds.
+ */
+export function introProblems(tools, transcript) {
+  const bad = tools
+    .filter((t) => t.turn === 0 && !(t.name === 'Skill' || (t.name === 'Read' && SKILL_FILE.test(t.path || ''))))
+    .map((t) => `${t.name} ${t.path || t.command || ''} in turn 0`);
+  const first = transcript.find((m) => m.role === 'assistant')?.text || '';
+  if (!sentences(first).some((s) => isQuestion(s) && START_QUESTION.test(s))) bad.push('the first message does not ask whether to start');
+  return bad;
+}
+
 /** Run every mechanical check for one run. Returns [{ id, pass, detail }]; pass is null for a skipped check. */
 export function grade(run) {
   const { scenario, transcript, tools, files } = run;
@@ -173,6 +193,10 @@ export function grade(run) {
 
   // Without this, a run where the skill failed to load grades plain Claude and can still pass.
   if (!run.baseline) add('the skill loaded and read its bundled files', tools.some((t) => t.name === 'Read' && /project-setup\/STYLE\.md$/.test(t.path || '')));
+  if (!run.baseline) {
+    const intro = introProblems(tools, transcript);
+    add('the introduction comes first, alone, and asks whether to start', intro.length === 0, intro.join('; '));
+  }
 
   add('project CLAUDE.md written', claudeMd, claudeMd ? `${claudeMd.split('\n').length} lines` : 'missing');
   if (claudeMd) {
