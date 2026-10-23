@@ -50,8 +50,10 @@ limit is on. Probe: 20 bad logins in a row; the later ones get 429 or a lockout.
 
 **SEC-06 Server-side validation of every input** (1, must-fix). Applies: any server that takes input. Check: each
 handler parses its body against a schema (zod, pydantic, a Rails strong-params list, Bean Validation) or checks
-types, lengths and ranges; client-side checks do not count. Pass: `file:line` of the schema for each write route.
-Fix: small per route.
+types, lengths and ranges; client-side checks do not count. Each lookup by a key that comes from input in a set the code
+defines (a product code, a plan name, a handler name) uses a fixed list or a map type and rejects a key that is not
+there (in JavaScript a plain object also answers keys such as `constructor`; a `Map` or `Object.hasOwn` does not). Pass:
+`file:line` of the schema for each write route, and of the key check for each such lookup. Fix: small per route.
 
 **SEC-07 Parameterized queries only** (1, must-fix, probe). Applies: SQL or NoSQL queries built in the app. Check:
 grep for queries built with string concatenation or interpolation (`"... WHERE id = " +`, f-strings or template
