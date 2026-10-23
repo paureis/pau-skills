@@ -64,6 +64,29 @@ for (const path of [WEB, CLI]) {
   });
 }
 
+const EVALS = join(ROOT, 'evals', 'project-setup');
+const scenarios = JSON.parse(readFileSync(join(EVALS, 'scenarios.json'), 'utf8'));
+
+test('scenarios: unique names, existing personas and fixture folders, and real production rule names', () => {
+  const names = scenarios.map((s) => s.name);
+  assert.deepEqual([...new Set(names)], names, 'scenario names are unique');
+  const rules = readFileSync(join(ROOT, 'skills', 'session-discipline', 'project-setup', 'PRODUCTION-RULES.md'), 'utf8');
+  const ruleNames = [...rules.matchAll(/^(\d)\. \*\*([^*]+)\.\*\* When /gm)].map((m) => m[2]);
+  assert.equal(ruleNames.length, 5);
+  for (const s of scenarios) {
+    assert.ok(existsSync(join(EVALS, s.persona)), `${s.name}: no persona file ${s.persona}`);
+    const dir = fixtureDir(s, ROOT);
+    if (dir) assert.ok(existsSync(dir) && statSync(dir).isDirectory(), `${s.name}: no fixture folder ${dir}`);
+    for (const r of s.expect?.productionRules || []) assert.ok(ruleNames.includes(r), `${s.name}: "${r}" is not a rule name in PRODUCTION-RULES.md`);
+  }
+  for (const n of ['shop-owner', 'python-cli-dev']) assert.ok(names.includes(n), `no scenario ${n}`);
+});
+
+test('the shop owner persona does not hand over what the fixture code does', () => {
+  const persona = readFileSync(join(EVALS, 'personas', 'shop-owner.md'), 'utf8');
+  assert.doesNotMatch(persona, /price|payment|login|cross-origin|cors|idor|seeded|vulnerab|insecure|fake|gap|database/i);
+});
+
 test('copyFixture makes an empty folder and no repository for a scenario without a fixture', () => {
   const dest = join(tempDir(), 'project');
   copyFixture({ name: 'a', fixture: null }, dest);

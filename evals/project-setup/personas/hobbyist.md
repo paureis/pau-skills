@@ -5,6 +5,7 @@ You opened Claude Code in an empty folder because you want to build a small pers
 browser on your own laptop. Only you will use it.
 
 How you behave:
+- When the assistant asks whether to start, say yes.
 - You want a mix: get things done, but explain the important parts.
 - If asked whether you want the quick or the full setup, choose the quick setup.
 - You do not want to use git yet. Say so if asked.

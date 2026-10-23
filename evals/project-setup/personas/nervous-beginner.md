@@ -10,6 +10,7 @@ company data may leave the company's systems. You want to use Claude Code to bui
 the deployment details, and you say so if asked.
 
 How you behave:
+- When the assistant asks whether to start, say yes.
 - You want to learn. You prefer a careful, step by step way of working, and you want to approve each change.
 - You answer in short, plain sentences. You pick options by number or by name.
 - You do not know what a commit is. If the assistant mentions one without explaining, ask what it is.

@@ -45,5 +45,29 @@
       "language": "es",
       "filesLanguage": "es"
     }
+  },
+  {
+    "name": "shop-owner",
+    "fixturePath": "tests/fixtures/launch-readiness/web-app",
+    "persona": "personas/shop-owner.md",
+    "opening": "/project-setup full",
+    "expect": {
+      "personal": "local",
+      "agentsImport": false,
+      "canary": false,
+      "productionRules": ["Money", "Input", "The signed-in user", "Secrets"]
+    }
+  },
+  {
+    "name": "python-cli-dev",
+    "fixturePath": "tests/fixtures/launch-readiness/cli-tool",
+    "persona": "personas/python-dev.md",
+    "opening": "/project-setup quick",
+    "expect": {
+      "personal": "none",
+      "agentsImport": false,
+      "canary": false,
+      "productionRules": ["Secrets"]
+    }
   }
 ]
