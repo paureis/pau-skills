@@ -227,7 +227,12 @@ function runScenario(scenario, opts) {
   return result;
 }
 
-if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+/** True when this file is the entry point, also through a symlink; false when argv[1] is missing or not a file. */
+function isMain() {
+  try { return !!process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url); } catch { return false; }
+}
+
+if (isMain()) {
   const opts = args(process.argv.slice(2));
   const scenarios = JSON.parse(readFileSync(join(HERE, 'scenarios.json'), 'utf8')).filter((s) => !opts.scenario || s.name === opts.scenario);
   if (!scenarios.length) throw new Error(`no scenario named ${opts.scenario}`);

@@ -64,6 +64,13 @@ for (const path of [WEB, CLI]) {
   });
 }
 
+test('run.mjs imports without running when argv[1] is not a file', () => {
+  const code = "await import('./evals/project-setup/run.mjs'); console.log('imported')";
+  const r = spawnSync(process.execPath, ['--input-type=module', '-e', code, 'nosuchfile'], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, PATH: tempDir() } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stdout.trim(), 'imported');
+});
+
 const EVALS = join(ROOT, 'evals', 'project-setup');
 const scenarios = JSON.parse(readFileSync(join(EVALS, 'scenarios.json'), 'utf8'));
 
