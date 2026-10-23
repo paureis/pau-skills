@@ -233,6 +233,9 @@ test('productionRules reads the bold rule names of the Production rules section 
   assert.deepEqual(productionRules(md.replace(/\n/g, '\r\n')), ['Money', 'The signed-in user', 'Input', 'Queries', '(unnamed)']);
   assert.deepEqual(productionRules('# Shop\n\n## Commands\n\n- **Money.** no section\n'), []);
   assert.deepEqual(productionRules(undefined), []);
+  assert.deepEqual(productionRules('# Shop\n\n## Production Rules\n\n- **Money.** When ...\n'), ['Money'], 'the heading case does not matter');
+  const h3 = '# Shop\n\n## Rules\n\n### Production rules\n\n- **Secrets.** When ...\n\n### Hard limits\n\n- **Never.** Not a rule.\n';
+  assert.deepEqual(productionRules(h3), ['Secrets'], 'a level 3 heading works and ends at the next level 3 heading');
 });
 
 test('the production rules check passes only on exactly the expected rules', () => {

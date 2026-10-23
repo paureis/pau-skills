@@ -183,10 +183,12 @@ export function introProblems(tools, transcript) {
  */
 export function productionRules(md) {
   const lines = String(md || '').split(/\r?\n/);
-  const start = lines.findIndex((l) => /^## Production rules\s*$/.test(l));
+  // "## Production rules" or "### Production rules", in any case; the section ends at a heading of its level or above.
+  const start = lines.findIndex((l) => /^#{2,3} production rules\s*$/i.test(l));
   if (start === -1) return [];
+  const level = lines[start].indexOf(' ');
   const rest = lines.slice(start + 1);
-  const end = rest.findIndex((l) => /^#{1,2} /.test(l));
+  const end = rest.findIndex((l) => /^#+ /.test(l) && l.indexOf(' ') <= level);
   return rest.slice(0, end === -1 ? rest.length : end)
     .filter((l) => /^(?:[-*+]|\d+[.)]) /.test(l))
     .map((l) => (/^(?:[-*+]|\d+[.)]) \*\*([^*]+?)[.:]?\*\*/.exec(l)?.[1] || '(unnamed)').trim());
