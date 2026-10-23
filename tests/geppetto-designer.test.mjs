@@ -52,14 +52,33 @@ test('the designer follows the design: tools, no memory, no production rules blo
   assert.doesNotMatch(text, /CLAUDE_SKILL_DIR/);
 });
 
+// The CSS named colours, without transparent and currentColor, which carry no value of their own.
+const COLOUR_WORDS = ('aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown '
+  + 'burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod '
+  + 'darkgray darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon '
+  + 'darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink deepskyblue dimgray dimgrey '
+  + 'dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold goldenrod gray green greenyellow grey '
+  + 'honeydew hotpink indianred indigo ivory khaki lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral '
+  + 'lightcyan lightgoldenrodyellow lightgray lightgreen lightgrey lightpink lightsalmon lightseagreen lightskyblue '
+  + 'lightslategray lightslategrey lightsteelblue lightyellow lime limegreen linen magenta maroon mediumaquamarine '
+  + 'mediumblue mediumorchid mediumpurple mediumseagreen mediumslateblue mediumspringgreen mediumturquoise '
+  + 'mediumvioletred midnightblue mintcream mistyrose moccasin navajowhite navy oldlace olive olivedrab orange orangered '
+  + 'orchid palegoldenrod palegreen paleturquoise palevioletred papayawhip peachpuff peru pink plum powderblue purple '
+  + 'rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue slateblue '
+  + 'slategray slategrey snow springgreen steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke yellow '
+  + 'yellowgreen').split(' ');
+// A word as a CSS value: after a property's colon in the same declaration, not part of a class or token name.
+const inValue = (props, words) => new RegExp(`(?<![\\w-])${props}\\s*:[^;{}<>]*?(?<![\\w-])(?:${words.join('|')})(?![\\w-])`, 'i');
+
 test('the fixture keyframe and components use only tokens: no colour, size, duration or font literal outside the tokens file', () => {
   const literals = [
     /#[0-9a-fA-F]{3,8}\b/,
-    /\b(?:rgb|rgba|hsl|hsla)\(/,
-    /(?<![\w-])\d*\.?\d+(?:(?:px|rem|em|ms|s|vh|vw)\b|%)/,
-    /font-family\s*:(?!\s*var\()/,
-    /font-weight\s*:(?!\s*var\()/,
-    /line-height\s*:(?!\s*var\()/,
+    /\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/i,
+    /(?<![\w-])\d*\.?\d+(?:[a-z]+\b|%)/i,
+    /(?<![\w-])(?:font-family|font-weight|line-height|opacity|z-index|flex|flex-grow|flex-shrink)\s*:(?!\s*var\()/,
+    /\b(?:width|height|size)\s*=\s*["']?\d/,
+    inValue('[a-z-]+', COLOUR_WORDS),
+    inValue('(?:border|outline)(?:-[a-z]+)*', ['thin', 'medium', 'thick']),
   ];
   const scanned = filesUnder(SYSTEM).filter((f) => !f.endsWith('.md') && !f.endsWith('tokens.css'));
   const names = scanned.map((f) => relative(SYSTEM, f).split('\\').join('/'));
