@@ -32,6 +32,8 @@
 //   value               a bad effort, memory, isolation, permissionMode, color, boolean or number
 //   covenant            the covenant block from COVENANT.md is missing (in the project, or on a file with a roster
 //                       marker), unclosed, or reworded at the bundle's roster version
+//   rules               the production rules block from PRODUCTION-RULES.md, on an agent that carries one, is
+//                       unclosed, or reworded at the bundle's roster version (no agent is required to carry it)
 //   memory-read-only    memory on an agent with no Write or Edit: memory gives the agent Read, Write and Edit
 //   worktree-ignore     an agent uses isolation: worktree and .claude/worktrees/ is not git-ignored
 // Warnings:
@@ -57,8 +59,8 @@ import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { readCovenant, overlapScore, OVERLAP_THRESHOLD, loadScope, checkAgent } from './check-agents-checks.mjs';
-export { DESCRIPTION_MAX, NAME_MAX, OVERLAP_THRESHOLD, FIELDS, ENUMS, TOOLS, covenantOf, readCovenant, overlapScore, validateHint } from './check-agents-checks.mjs';
+import { readCovenant, readRules, overlapScore, OVERLAP_THRESHOLD, loadScope, checkAgent } from './check-agents-checks.mjs';
+export { DESCRIPTION_MAX, NAME_MAX, OVERLAP_THRESHOLD, FIELDS, ENUMS, TOOLS, covenantOf, readCovenant, rulesOf, readRules, overlapScore, validateHint } from './check-agents-checks.mjs';
 export { parseFrontmatter, parseTools } from './check-agents-yaml.mjs';
 
 function gitIgnored(root, path) {
@@ -68,7 +70,7 @@ function gitIgnored(root, path) {
 }
 
 /** Audit the agents. Returns { agents, docs, findings }. */
-export function audit({ project = process.cwd(), user = join(homedir(), '.claude'), dir, covenant } = {}) {
+export function audit({ project = process.cwd(), user = join(homedir(), '.claude'), dir, covenant, rules } = {}) {
   const cov = covenant || readCovenant();
   const scopes = dir ? [['dir', dir]] : [['project', join(project, '.claude', 'agents')], ['user', join(user, 'agents')]];
   const agents = [];
@@ -78,7 +80,7 @@ export function audit({ project = process.cwd(), user = join(homedir(), '.claude
     agents.push(...s.agents);
     docs.push(...s.docs);
   }
-  const ctx = { covenant: cov, skillDirs: [join(project, '.claude', 'skills'), join(user, 'skills')], userDir: user };
+  const ctx = { covenant: cov, rules: rules || readRules(), skillDirs: [join(project, '.claude', 'skills'), join(user, 'skills')], userDir: user };
   const findings = agents.flatMap((a) => checkAgent(a, ctx));
   const named = agents.filter((a) => !a.unclosed && a.data.name !== undefined && a.data.name !== null && a.data.name !== '');
 

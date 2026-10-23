@@ -1,0 +1,40 @@
+/* Field: a label, an input and an optional error line. Add .field--invalid to show the error state. */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field__label {
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--leading-tight);
+}
+
+.field__input {
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: var(--leading-body);
+  transition: border-color var(--duration-fast) ease-in-out;
+}
+
+.field__input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.field__error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
+.field--invalid .field__input {
+  border-color: var(--color-danger);
+}
