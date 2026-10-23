@@ -2,7 +2,11 @@
 // tests pin the grader so a change to it cannot quietly pass a bad run.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sentences, detectLanguage, styleMetrics, questionCount, resolveOption, isApproval, unapprovedWrites, readsSecrets, sensitiveBlocks, grade } from '../evals/project-setup/grade.mjs';
+import { sentences, detectLanguage, styleMetrics, questionCount, resolveOption, isApproval, unapprovedWrites, readsSecrets, sensitiveBlocks, introProblems, productionRules, grade } from '../evals/project-setup/grade.mjs';
+
+// The inverted question mark that opens a Spanish question, built from its code so this file stays ASCII.
+const INV = String.fromCharCode(0xbf);
+const INTRO = 'the introduction comes first, alone, and asks whether to start';
 
 test('sentences ignore code, tables and headings, and count list items as sentences', () => {
   const text = '# Title\n\nRun the tests. Then read the error.\n\n```bash\nnpm test. npm run lint.\n```\n\n| a | b |\n\n- One item\n- Two `x.y` items';
@@ -84,6 +88,8 @@ test('grade passes a clean run and fails the checks a bad run breaks', () => {
     scenario: { expect: { personal: 'local', agentsImport: true } },
     transcript: [
       { role: 'user', text: '/project-setup' },
+      { role: 'assistant', text: 'I will ask you some short questions. Then I show you a CLAUDE.md file. Nothing changes until you say yes. Shall I start?' },
+      { role: 'user', text: 'yes' },
       { role: 'assistant', text: 'I found a TypeScript app. Here is the draft:\n```markdown\n' + md + '```\nShall I write it?' },
       { role: 'user', text: 'yes' },
       { role: 'assistant', text: 'Written. Save your preferences for this project only?\n```markdown\n<!-- project-setup:start -->\n```' },
@@ -92,9 +98,9 @@ test('grade passes a clean run and fails the checks a bad run breaks', () => {
     ],
     tools: [
       { turn: 0, name: 'Read', path: '/h/.claude/skills/project-setup/STYLE.md' },
-      { turn: 1, name: 'Write', path: '/p/CLAUDE.md' },
-      { turn: 2, name: 'Write', path: '/p/CLAUDE.local.md' },
-      { turn: 2, name: 'Edit', path: '/p/.gitignore' },
+      { turn: 2, name: 'Write', path: '/p/CLAUDE.md' },
+      { turn: 3, name: 'Write', path: '/p/CLAUDE.local.md' },
+      { turn: 3, name: 'Edit', path: '/p/.gitignore' },
     ],
     files: {
       project: { 'CLAUDE.md': md, 'CLAUDE.local.md': '<!-- project-setup:start -->\n', '.gitignore': 'node_modules/\nCLAUDE.local.md\n' },
@@ -125,9 +131,11 @@ test('grade passes a clean run and fails the checks a bad run breaks', () => {
     'never opened a secrets file',
     'no personal preference in project CLAUDE.md',
     'personal CLAUDE.md unchanged',
+    INTRO,
     'the skill loaded and read its bundled files',
   ]);
   assert.equal(grade({ ...bad, baseline: true }).some((c) => c.id === 'the skill loaded and read its bundled files'), false);
+  assert.equal(grade({ ...bad, baseline: true }).some((c) => c.id === INTRO), false, 'no introduction check for a baseline run');
 });
 
 test('a personal-file write that Claude Code blocked as sensitive is skipped, not passed or failed', () => {
@@ -162,7 +170,9 @@ test('a Spanish run is checked for its language, its files and its saved prefere
     scenario: { expect: { personal: 'local', language: 'es', filesLanguage: 'es' } },
     transcript: [
       { role: 'user', text: '/project-setup full' },
-      { role: 'assistant', text: es + '\n```markdown\n' + md + '```\n\u00bfLo escribo?' },
+      { role: 'assistant', text: 'Le hago unas preguntas cortas sobre usted y este proyecto. Luego le muestro un archivo CLAUDE.md. Nada cambia sin su permiso. ' + INV + 'Empiezo?' },
+      { role: 'user', text: 'si' },
+      { role: 'assistant', text: es +'\n```markdown\n' + md + '```\n\u00bfLo escribo?' },
       { role: 'user', text: 'si, por favor' },
       { role: 'assistant', text: 'Listo. Ahora sus preferencias, para este proyecto o para todos.\n```markdown\n<!-- project-setup:start -->\n```' },
       { role: 'user', text: 'yes' },
@@ -170,9 +180,9 @@ test('a Spanish run is checked for its language, its files and its saved prefere
     ],
     tools: [
       { turn: 0, name: 'Read', path: '/h/.claude/skills/project-setup/STYLE.md' },
-      { turn: 1, name: 'Write', path: '/p/CLAUDE.md' },
-      { turn: 2, name: 'Write', path: '/p/CLAUDE.local.md' },
-      { turn: 2, name: 'Edit', path: '/p/.gitignore' },
+      { turn: 2, name: 'Write', path: '/p/CLAUDE.md' },
+      { turn: 3, name: 'Write', path: '/p/CLAUDE.local.md' },
+      { turn: 3, name: 'Edit', path: '/p/.gitignore' },
     ],
     files: {
       project: { 'CLAUDE.md': md, 'CLAUDE.local.md': '<!-- project-setup:start -->\n- Preferred language: Spanish.\n', '.gitignore': 'CLAUDE.local.md\n' },
@@ -186,8 +196,74 @@ test('a Spanish run is checked for its language, its files and its saved prefere
   assert.ok(ids.includes('first reply is in es') && ids.includes('replies stay in es (90% or more)'));
 
   const english = structuredClone(run);
-  english.transcript[1].text = 'First I will read the files in this project. I ask one question at a time.\n```markdown\n' + md + '```\nShall I write it?';
+  english.transcript[1].text = 'First I will ask you some short questions about you and this project. Nothing changes until you say yes. Shall I start?';
   english.files.project['CLAUDE.local.md'] = '<!-- project-setup:start -->\n';
   assert.deepEqual(failed(english).sort(), ['first reply is in es', 'preferred language saved with the personal preferences', 'replies stay in es (90% or more)']);
+});
+
+test('introProblems allows only the skill files and a start question in the first turn', () => {
+  const ask = [{ role: 'user', text: '/project-setup' }, { role: 'assistant', text: 'I will ask you some short questions. Nothing changes until you say yes. Shall I start?' }];
+  const style = { turn: 0, name: 'Read', path: '/h/.claude/skills/project-setup/STYLE.md' };
+  assert.deepEqual(introProblems([style], ask), []);
+  assert.deepEqual(introProblems([{ turn: 0, name: 'Read', path: '/r/skills/session-discipline/project-setup/STYLE.md' }], ask), []);
+  assert.deepEqual(introProblems([{ turn: 0, name: 'Skill', skill: 'project-setup' }, style], ask), [], 'a turn-0 Skill call passes');
+  const bundled = ['STYLE.md', 'QUESTIONS.md', 'PRODUCTION-RULES.md'].map((f) => ({ turn: 0, name: 'Read', path: `/h/.claude/skills/project-setup/${f}` }));
+  assert.deepEqual(introProblems(bundled, ask), [], 'turn 0 may read STYLE.md, QUESTIONS.md and PRODUCTION-RULES.md');
+  assert.deepEqual(introProblems([style, { turn: 0, name: 'Read', path: '/p/README.md' }], ask), ['Read /p/README.md in turn 0']);
+  assert.deepEqual(introProblems([{ turn: 0, name: 'Bash', command: 'git status' }], ask), ['Bash git status in turn 0']);
+  assert.deepEqual(introProblems([{ turn: 0, name: 'Read', path: '/h/.claude/skills/project-setup-old/STYLE.md' }], ask), ['Read /h/.claude/skills/project-setup-old/STYLE.md in turn 0']);
+  assert.deepEqual(introProblems([{ turn: 1, name: 'Read', path: '/p/README.md' }], ask), [], 'project reads after the answer are fine');
+  const first = (text) => introProblems([], [ask[0], { role: 'assistant', text }, { role: 'user', text: 'yes' }, { role: 'assistant', text: 'Shall I start?' }]);
+  const no = ['the first message does not ask whether to start'];
+  assert.deepEqual(first('Here is what I found. Quick or full?'), no);
+  assert.deepEqual(first('First I will start by reading the files.'), no);
+  assert.deepEqual(first('I will ask you some questions. **Shall I start?**'), [], 'a bold start question passes');
+  assert.deepEqual(first('I will ask you some questions. *Shall I begin?*'), []);
+  assert.deepEqual(first('Le hago unas preguntas. ' + INV + 'Empiezo?'), []);
+  assert.deepEqual(first('Le hago unas preguntas. ' + INV + 'Comenzamos?'), []);
+  for (const w of ['Empiezo', 'Empezamos', 'Comienzo', 'Comenzamos', 'Iniciamos', 'Arrancamos']) assert.deepEqual(first('Nada cambia. ' + INV + w + '?'), [], w);
+  for (const q of ['Are you a beginner with Claude Code?', 'Have you started a project before?', 'Shall we restart?']) assert.deepEqual(first('I will ask some questions. ' + q), no, q);
+  assert.deepEqual(first('Shall I start? Or do you have a question first?'), no, 'the closing question decides');
+  assert.deepEqual(first('Nothing changes until you say yes. Shall I start? Take your time.'), []);
+  assert.deepEqual(first('Nothing changes until you say yes. Shall we get started?'), []);
+});
+
+test('productionRules reads the bold rule names of the Production rules section only', () => {
+  const md = '# Shop\n\n## Production rules\n\n- **Money.** When the code stores money ...\n  a second line\n* **The signed-in user.** When ...\n'
+    + '1. **Input:** When ...\n2) **Queries**. When ...\n- When the code needs a secret key ...\n\n## How we work\n\n- **Secrets.** Not a rule.\n';
+  assert.deepEqual(productionRules(md), ['Money', 'The signed-in user', 'Input', 'Queries', '(unnamed)']);
+  assert.deepEqual(productionRules(md.replace(/\n/g, '\r\n')), ['Money', 'The signed-in user', 'Input', 'Queries', '(unnamed)']);
+  assert.deepEqual(productionRules('# Shop\n\n## Commands\n\n- **Money.** no section\n'), []);
+  assert.deepEqual(productionRules(undefined), []);
+  assert.deepEqual(productionRules('# Shop\n\n## Production Rules\n\n- **Money.** When ...\n'), ['Money'], 'the heading case does not matter');
+  const h3 = '# Shop\n\n## Rules\n\n### Production rules\n\n- **Secrets.** When ...\n\n### Hard limits\n\n- **Never.** Not a rule.\n';
+  assert.deepEqual(productionRules(h3), ['Secrets'], 'a level 3 heading works and ends at the next level 3 heading');
+});
+
+test('the production rules check passes only on exactly the expected rules', () => {
+  const ID = 'project CLAUDE.md holds exactly the expected production rules';
+  const md = (...rules) => '# Shop\n\n## Production rules\n\n' + rules.map((r) => `- **${r}.** When the code ...\n`).join('') + '\n## How we work\n\n- Ask first.\n';
+  const run = (claudeMd, productionRules) => ({
+    scenario: { expect: productionRules ? { productionRules } : {} },
+    transcript: [{ role: 'user', text: 'hi' }, { role: 'assistant', text: 'Hello.' }],
+    tools: [],
+    files: { project: claudeMd === undefined ? {} : { 'CLAUDE.md': claudeMd }, home: {}, homeBefore: {} },
+  });
+  const check = (claudeMd, expected = ['Money', 'Secrets']) => grade(run(claudeMd, expected)).find((c) => c.id === ID);
+  assert.equal(check(md('Money', 'Secrets')).pass, true);
+  assert.equal(check(md('secrets', 'Money')).pass, true, 'order and case do not matter');
+  assert.equal(check(md('Money', 'Secrets', 'Queries')).pass, false, 'an extra Queries rule fails');
+  assert.equal(check(md('Money')).pass, false, 'a missing Secrets rule fails');
+  assert.equal(check('# Shop\n\n## Production rules\n\n- **Money.** When ...\n- When the code needs a secret key ...\n').pass, false, 'an unnamed bullet fails when Secrets is expected');
+  assert.equal(check(undefined).pass, false, 'no CLAUDE.md fails');
+  assert.equal(check(md('Money')).detail, 'found: Money; expected: Money, Secrets');
+  assert.equal(check(md(), []).pass, true, 'an empty list expects no rules');
+  assert.equal(grade(run(md('Money'))).some((c) => c.id === ID), false, 'no check without the expect key');
+});
+
+test('detectLanguage reads a short Spanish introduction as Spanish', () => {
+  const es = 'Le hare unas preguntas cortas. Luego le mostrare un archivo CLAUDE.md. Nada cambia sin su permiso. ' + INV + 'Empiezo?';
+  assert.equal(detectLanguage(es), 'es');
+  assert.equal(detectLanguage('First I will ask you some short questions about you and this project. Nothing changes until you say yes. Shall I start?'), 'en');
 });
 
