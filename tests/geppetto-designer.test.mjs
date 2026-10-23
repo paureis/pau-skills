@@ -45,7 +45,11 @@ test('the designer follows the design: tools, no memory, no production rules blo
   assert.doesNotMatch(text, /production rules start/);
   assert.match(body, /^## The design system$/m);
   assert.match(body, /^## Report$/m);
-  assert.match(body.slice(body.search(/^## Report$/m)), /Invented values/);
+  const report = body.slice(body.search(/^## Report$/m));
+  assert.match(report, /Invented values/);
+  assert.match(report, /^Literal search: \[/m, 'the report shows the patterns searched and every hit');
+  const search = body.slice(body.search(/^## Before you report: find every literal$/m), body.search(/^## Report$/m));
+  for (const word of ['oklch', 'color(', 'currentColor', 'opacity', 'z-index', 'width="20"', 'Color(0x']) assert.ok(search.includes(word), `the literal search names ${word}`);
   const c = covenantOf(text);
   assert.equal(c.version, COVENANT.version);
   assert.equal(c.block, COVENANT.block);

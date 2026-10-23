@@ -50,17 +50,25 @@ Create fills these lines with paths and names, never values: the values live in 
 
 ## Before you report: find every literal
 
-Search every file you wrote or changed, with Grep, for:
-- colours: a `#` followed by three to eight hex digits, `rgb(`, `rgba(`, `hsl(`, `hsla(`, and named colours such as
-  `white`;
-- numbers with a unit: px, rem, em, ms, s or %;
-- font names, and `font-weight` and `line-height` values that are not tokens: unitless numbers such as 600 or 1.4, and
-  keywords such as `bold`, `normal` or `lighter`;
-- border keywords such as `thin`, `medium` or `thick`.
+Search every file you wrote or changed, with Grep, for each of these. The list is a floor: a value that is not a
+token is a literal even when no pattern here names it.
+- Colours: a `#` followed by three to eight hex digits; every colour function, `rgb(`, `rgba(`, `hsl(`, `hsla(`,
+  `hwb(`, `lab(`, `lch(`, `oklab(`, `oklch(` and `color(`; and every CSS colour keyword, all 148 named colours (not
+  only `white`, `black`, `red` or `green`: also words such as `navy`, `tan` or `linen`) and system colours such as
+  `Canvas`. Only `transparent` and `currentColor` are not literals. To find the keywords, list every word that
+  stands alone as a property value and check each one against the named colours.
+- Numbers with any unit: px, rem, em, ch, ex, vh, vw, fr, deg, ms, s, %, and every other.
+- Unitless numbers in style properties: `opacity`, `z-index`, `flex`, `font-weight` and `line-height` (such as
+  `opacity: 0.95` or `font-weight: 600`), and size attributes in markup such as `width="20"` or `height="20"`.
+- Keywords where a token exists: weights such as `bold`, `normal` or `lighter`, and border widths `thin`, `medium` and
+  `thick`.
+- Font names in any font property.
+- In other stacks: numbers in style objects and props (`padding: 12`, `fontSize: 14`) and colour constructors such as
+  `Color(0xFF1E8E3E)` or `UIColor(red:`.
 
 Compare each hit with the tokens file. A literal that matches a token's value is a mistake: replace it with the token.
 Every other literal is an invented value: list it. A `#` followed only by digits in visible text, such as an order
-number, is not a colour. A bare `0` needs no token.
+number, is not a colour; the same `#` in a style value is. A bare `0` needs no token.
 
 ## Report
 
@@ -68,6 +76,7 @@ number, is not a colour. A bare `0` needs no token.
 Screens: [each file you wrote or changed, with one line on what it shows]
 Components used: [each component and the screens that use it; any component you changed, and how]
 Invented values: [file:line, the literal, what it is for, the nearest token and why it did not fit; or "none"]
+Literal search: [each pattern you searched for, and every hit with file:line]
 Not checked: [what you could not check, such as how each screen looks in a browser, and the checks the caller should run; or "none"]
 Unsure about: [every doubt, guess or shortcut, or "none"]
 ```
