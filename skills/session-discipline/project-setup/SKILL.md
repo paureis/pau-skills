@@ -70,9 +70,9 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
 **Send the introduction first, alone.** Your first reply is this introduction and nothing else. Before it, read only
 this skill's own STYLE.md, QUESTIONS.md and PRODUCTION-RULES.md: do not read a project file or any other file, run a
 command, or write a line about what you are going to read or do. Read those three now, because a resumed session can
-lose this skill's permission to read its own files. A run that opens with findings, such as "Here is what I found", has broken
-this rule. Say in two or three sentences what will happen, in the user's language (see the rules above). End with
-"Shall I start?" in that language, ask nothing else, and end your turn. The English version:
+lose this skill's permission to read its own files. A run that opens with findings, such as "Here is what I found",
+has broken this rule. Say in a few short sentences what will happen, in the user's language (see the rules above).
+End with "Shall I start?" in that language, ask nothing else, and end your turn. The English version:
 
 > I will ask you some short questions about you and this project: about five for a quick setup, or about ten.
 > Then I will show you a CLAUDE.md file, which Claude Code reads at the start of every session. Nothing changes until
