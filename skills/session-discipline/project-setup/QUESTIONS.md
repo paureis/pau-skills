@@ -12,8 +12,11 @@ user can change them. On the quick path, every matching production rule goes int
 the summary as a default.
 On the quick path, infer Q1 from Q2 and from how the user writes, and take Q3 from the environment hint.
 
-Number the questions as "Question 3 of 10" (or "of 5" on the quick path). Do not count the quick or full choice as a
-question. If follow-ups change the total, say so.
+Number the questions as "Question 3 of N". N is the number of questions you will ask on this path after the skips
+you already know: Q8 is skipped when no rule matches, Q12's language question is asked only when the conversation is
+not in English, and Q13 is asked after the file is written and is not counted. On the quick path N is 5. Work N out
+before the first question. Do not count the quick or full choice as a question. If follow-ups change the total, say
+so.
 
 Options are written for a multiple-choice tool. When no such tool is available, show them as a numbered list and
 accept a number or free text. Every question also accepts "I am not sure". When the user picks it, use the
@@ -118,6 +121,8 @@ manifest lists a database driver" or "Secrets: the goal names a payment service,
 1. Add all of them
 2. Pick some (I will name them)
 3. None
+
+With one matching rule, the options are "1. Add it" and "2. None".
 
 Recommend 1: a rule asks for something only when its condition holds. Goes into: a "Production rules" section in
 the project CLAUDE.md, with each chosen rule's condition and instruction, in the language of the project files.
