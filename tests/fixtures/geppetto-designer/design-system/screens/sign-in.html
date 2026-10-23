@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../components/button.css">
+  <link rel="stylesheet" href="../components/card.css">
+  <link rel="stylesheet" href="../components/field.css">
+  <style>
+    body {
+      margin: 0;
+      padding: var(--space-6) var(--space-4);
+      background: var(--color-surface);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-weight: var(--font-weight-regular);
+      line-height: var(--leading-body);
+    }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-5);
+    }
+
+    .page__title {
+      margin: 0;
+      font-family: var(--font-heading);
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-bold);
+      line-height: var(--leading-tight);
+    }
+
+    .page__form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1 class="page__title">Sign in</h1>
+    <section class="card">
+      <h2 class="card__title">Welcome back</h2>
+      <p class="card__meta">Sign in to see your orders.</p>
+      <form class="page__form" action="/session" method="post">
+        <div class="field">
+          <label class="field__label" for="email">Email</label>
+          <input class="field__input" id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com">
+        </div>
+        <div class="field field--invalid">
+          <label class="field__label" for="password">Password</label>
+          <input class="field__input" id="password" name="password" type="password" autocomplete="current-password">
+          <p class="field__error">The email or password is wrong.</p>
+        </div>
+        <button class="button" type="submit">Sign in</button>
+        <a class="button button--secondary" href="/sign-up">Create an account</a>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

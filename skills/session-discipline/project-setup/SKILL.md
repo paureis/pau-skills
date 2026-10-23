@@ -25,9 +25,13 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
 - `${CLAUDE_SKILL_DIR}/GUIDE.md`: checked facts about Claude Code (permission modes, output styles, commands, the
   desktop app). Use it for every explanation about Claude Code. Do not explain a feature from memory when this file
   covers it.
+- `${CLAUDE_SKILL_DIR}/PRODUCTION-RULES.md`: production rules and the signals that make each one apply. Read it
+  during Phase 1, after the introduction.
 
 ## Rules for the whole run
 
+- **The introduction comes first.** Send the introduction in Phase 1 before you look at the project. The only tool
+  call allowed before it is reading STYLE.md.
 - **Change nothing until the user says yes to the exact text.** Show the full file or the diff first. "Looks good"
   about a summary is not a yes to a file. Ask again for each file.
 - **Ask one question per message.** A question with options is one question. Do not add a second question to the
@@ -62,9 +66,10 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
 
 ## Phase 1: Look at the project
 
-Your first visible text is this introduction. Do not write a line before it about what you are going to read or
-do. Before the first question, say in two or three sentences what will happen, in the user's language (see the
-rules above). The English version:
+**Send the introduction first.** Your first visible text is this introduction. Write it before any tool call except
+reading this skill's own STYLE.md: do not read a project file, run a command, or write a line about what you are
+going to read or do before it. A run that opens with findings, such as "Here is what I found", has broken this rule.
+Say in two or three sentences what will happen, in the user's language (see the rules above). The English version:
 
 > I will ask you some short questions about you and this project: about five for a quick setup, or about ten.
 > Then I will show you a CLAUDE.md file, which Claude Code reads at the start of every session. Nothing changes until
@@ -85,6 +90,8 @@ chained, so it matches. Any other command can show a permission prompt, which wo
 - **What instructions exist**: `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`, `.claude/` folder, `AGENTS.md`,
   `.cursorrules`, `.github/copilot-instructions.md`, and `~/.claude/CLAUDE.md`. Look for the `project-setup` markers
   from an earlier run.
+- **What the code handles**: money, sign-in and per-user data, a database, a server that takes input. The signals
+  for each are in PRODUCTION-RULES.md.
 - **Git**: is this a repository, the current branch, uncommitted changes, and whether a remote exists.
 
 Keep the scan short. In a large project, read the top level and the main manifest, not every file. If the folder is
@@ -108,8 +115,8 @@ it. Ask follow-ups only as the bank describes.
 
 During a Learn session, teach while you ask:
 
-- After Q8, explain permission modes in two or three sentences, for the user's surface, from GUIDE.md.
-- After Q9, explain what a commit is if the user has not used git.
+- After Q9, explain permission modes in two or three sentences, for the user's surface, from GUIDE.md.
+- After Q10, explain what a commit is if the user has not used git.
 - Teach at most one new idea per question. Use an example from this project.
 - For a first-time user, keep every message to one idea: no more than five list items, and no side topics the user
   did not ask about. This also applies during the first task.
@@ -138,12 +145,15 @@ Read `${CLAUDE_SKILL_DIR}/TEMPLATES.md`. Draft the project CLAUDE.md from the de
   "Instruction files").
 
 Before you ask, check the draft yourself: every command was found or confirmed, no secret or key is in it, no
-personal preference is in it, no open question was already answered in the interview, and every sentence follows
-STYLE.md. If the commit answer means you will commit the file after writing it, say so in the same message. Then ask: "Do you want me to write this file?"
-with the options yes, change something, and no. Write it only after a yes.
+personal preference is in it, no open question was already answered in the interview, a production rule is in it
+only when a signal the scan found, or the user's goal, shows it applies, and the user chose it (on the quick path, a
+yes to the summary that lists it as a default counts as choosing it), every production rule keeps its condition and
+all its instructions, and every sentence follows STYLE.md. If the commit answer means you will commit the file after writing it, say so in the same message.
+Then ask: "Do you want me to write this file?" with the options yes, change something, and no. Write it only after a
+yes.
 
 After you write it, say in one sentence that the file is shared with everyone who uses the project. Then follow the
-commit answer from Q9: commit it, offer to commit it, or leave it to the user.
+commit answer from Q10: commit it, offer to commit it, or leave it to the user.
 
 ## Phase 5: Save personal preferences
 

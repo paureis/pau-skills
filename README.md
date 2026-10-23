@@ -72,7 +72,8 @@ green by skipping the failing test.
 - `verify-app` writes the project's own recipe for starting the real app and proving a change in it, with evidence.
 - `launch-readiness` says whether an app built mostly by agents is ready for the stage it is entering, from private
   beta to paying customers, enterprise buyers or regulated data, with evidence for every row, probe tests for the
-  security suspects, and a ledger that rechecks only what changed on later runs.
+  security suspects, and a ledger that rechecks only what changed on later runs. When it closes a gap, it offers
+  the production rule that keeps the gap from coming back.
 - `bug-fix` finds the actual cause of a bug from runtime evidence and ships only the change that evidence justifies,
   when the cause is not obvious or a first fix did not hold.
 - `hillclimb` makes a number better (run time, size, memory, a score) one measured change at a time, on a harness
@@ -83,7 +84,8 @@ green by skipping the failing test.
 `CLAUDE.md` grows by restating itself, and the rules that matter most are the ones broken under pressure.
 
 - `rule-to-hook` turns a rule that keeps being broken into a tested check at the highest layer that holds it, often a
-  hook, step by step, with a ratchet when the pattern is already common.
+  hook, step by step, with a ratchet when the pattern is already common. For the five production rules it starts
+  from the checker each ecosystem already has.
 - `retrospective` turns a session's corrections into rule, memory or skill edits, gated by a script so nothing gets
   written twice.
 - `instructions-audit` finds the size, duplicates, contradictions, stale references and vague rules in your instruction
@@ -150,8 +152,10 @@ context was compacted.
   it did: it starts only after trust checks, stops on a check a script runs, logs every decision, and has a fresh
   reviewer audit the log against the transcript before you read the summary.
 - `geppetto` designs, installs and audits a project's agent files, with a starter roster (`eng-lead` plans and
-  dispatches without writing code, `builder`, `reviewer`, `writer`, `sweeper`) and a check for the mistakes that make
-  Claude Code skip an agent or quietly change its tools.
+  dispatches without writing code, `builder`, `reviewer`, `writer`, `sweeper`; `builder` and `reviewer` follow five
+  production rules), a `designer` that Create makes from your design system in code (it extends one finished screen
+  with only your tokens and lists every value it had to invent), and a check for the mistakes that make Claude Code
+  skip an agent or quietly change its tools.
 - `no-idle` (hook) stops subagents from ending their turn waiting for something that will never wake them.
 
 ### 7. A review that never ends
@@ -181,7 +185,10 @@ will change, or how to make it remember how they like to work.
 
 - `project-setup` reads the project, asks about ten short questions one at a time (Learn, Build or Mix; how much
   freedom Claude gets; what "done" means), shows the CLAUDE.md it wants to write, and writes nothing without a yes.
-  It ends with a cheat sheet for the desktop app, terminal or editor, and a first small task. It works on its own,
+  When the project handles money, sign-in, a database, server input or secrets, it offers short production rules
+  for those (money as integers, validation on the server, parameterized queries, the user from the session, secrets
+  out of the code), only the ones that apply. It ends with a cheat sheet for the desktop app, terminal or editor,
+  and a first small task. It works on its own,
   without the rest of this marketplace.
 
 ## What loads on its own

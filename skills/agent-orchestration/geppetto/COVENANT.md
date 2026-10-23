@@ -11,7 +11,11 @@ The number on the start marker is the roster version. Every file under `roster/`
 can tell which bundle an installed copy came from. When the laws or any bundled agent change, raise the number here
 and in every roster file in the same change.
 
-<!-- covenant start: geppetto roster 2 -->
+Agents that change or review code also carry the production rules block from `PRODUCTION-RULES.md`, pasted the same
+way, from marker line to marker line, just before the covenant. The audit checks that block only when it is there. A
+change to it changes builder and reviewer, so it raises the roster number too.
+
+<!-- covenant start: geppetto roster 3 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.

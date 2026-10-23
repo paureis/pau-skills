@@ -1,0 +1,33 @@
+/* Card: a surface that groups related content, with an optional title and a line of muted text. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text);
+}
+
+.card__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--leading-tight);
+}
+
+.card__body {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--leading-body);
+}
+
+.card__meta {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}

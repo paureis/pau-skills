@@ -1,7 +1,8 @@
 # Templates
 
 Fill these from the interview and the project scan. Delete every section that has nothing true to say. A short file
-that is all true is better than a full file with guesses. Keep the project CLAUDE.md under about 60 lines.
+that is all true is better than a full file with guesses. Keep the project CLAUDE.md under about 60 lines, not
+counting the production rules.
 
 Write every sentence in the style of STYLE.md. Use the user's own words for the goal and the limits when they are
 clear.
@@ -29,11 +30,16 @@ clear.
 
 - <One rule per line, in the imperative. Example: "Do not add a dependency without asking first.">
 
+## Production rules
+
+- <One bullet per chosen rule from PRODUCTION-RULES.md (in this skill's folder), in the project files' language:
+  its condition and every instruction in it, as short sentences. Leave out the rules not chosen.>
+
 ## How we work
 
-- <The answer to Q8, as a rule. Example: "Explain the plan before you change anything. Wait for a yes.">
-- <The answer to Q9. Example: "Tell me when a step is ready to commit. Do not commit without a yes.">
-- <The answer to Q10. Example: "A change is done when `pytest` passes and I have tried it in the app.">
+- <The answer to Q9, as a rule. Example: "Explain the plan before you change anything. Wait for a yes.">
+- <The answer to Q10. Example: "Tell me when a step is ready to commit. Do not commit without a yes.">
+- <The answer to Q11. Example: "A change is done when `pytest` passes and I have tried it in the app.">
 
 ## Writing documents
 
@@ -58,6 +64,13 @@ Notes:
   the `MODEL_API_KEY` environment variable."
 - Never put the user's session mode, explanation level or surface in the project CLAUDE.md. Other people share this
   file. Those go in the personal CLAUDE.md.
+- Write a production rule only when a signal the scan found, or the user's goal, shows it applies, and the user chose
+  it. On the quick path, a yes to the summary that lists the rules as defaults counts as choosing them.
+- Write each chosen rule as one bullet of short sentences, 25 words or fewer each. Keep its condition ("When the code
+  builds a database query, ..."), so the rule asks for nothing when the condition does not hold. Keep every
+  instruction in the rule: shorten the words, never drop an instruction. For example, the signed-in user rule keeps
+  the role check and "copy only the fields a user may set", the money rule keeps "or a decimal type", and the secrets
+  rule keeps the rotate step. Two or three lines per rule (four for the signed-in user) keep the file under 80 lines.
 
 ## Personal CLAUDE.md section
 

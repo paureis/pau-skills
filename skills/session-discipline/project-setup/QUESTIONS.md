@@ -6,12 +6,17 @@ The core questions, in order. Ask one at a time. For each question:
 - **Recommend an answer** and give the reason in one sentence. The user can always pick another answer.
 - **Record the answer** in your notes for the drafts. The "Goes into" line says where it ends up.
 
-The quick path asks only the five questions marked **(quick)**: Q2, Q4, Q5, Q7 and Q8. For the rest it uses the
-recommended answer, or what the scan shows, and lists those defaults in the summary, so the user can change them.
+The quick path asks only the five questions marked **(quick)**: Q2, Q4, Q5, Q7 and Q9.
+For the rest it uses the recommended answer, or what the scan shows, and lists those defaults in the summary, so the
+user can change them. On the quick path, every matching production rule goes into the draft (Q8) and is listed in
+the summary as a default.
 On the quick path, infer Q1 from Q2 and from how the user writes, and take Q3 from the environment hint.
 
-Number the questions as "Question 3 of 10" (or "of 5" on the quick path). Do not count the quick or full choice as a
-question. If follow-ups change the total, say so.
+Number the questions as "Question 3 of N". N is the number of questions you will ask on this path after the skips
+you already know: Q8 is skipped when no rule matches, Q12's language question is asked only when the conversation is
+not in English, and Q13 is asked after the file is written and is not counted. On the quick path N is 5. Work N out
+before the first question. Do not count the quick or full choice as a question. If follow-ups change the total, say
+so.
 
 Options are written for a multiple-choice tool. When no such tool is available, show them as a numbered list and
 accept a number or free text. Every question also accepts "I am not sure". When the user picks it, use the
@@ -102,7 +107,27 @@ Then, only if the scan did not show it: "Where will it run?" (free text, for exa
 Multiple answers are allowed. For 3, 4 and 5, ask which files, systems or rules in one follow-up each. Recommend 2
 and 4 for any project used by other people. Goes into: "Hard limits", each limit as one short rule.
 
-## Q8. How much freedom Claude has (quick)
+## Q8. Production rules
+
+Detect first: match the signal of each rule in `PRODUCTION-RULES.md` (in this skill's folder) against the scan and
+the goal from Q5. If no rule matches, for example in an empty folder whose goal names no outside service, API or
+key, skip this question and say nothing about the rules. Never show a rule whose signal is absent.
+
+Otherwise, show each matching rule on one line, with its name and why it applies here, for example "Queries: the
+manifest lists a database driver" or "Secrets: the goal names a payment service, which needs a key". Then ask:
+
+"These rules prevent common gaps in code that real users or real money reach. Which ones should go into CLAUDE.md?"
+
+1. Add all of them
+2. Pick some (I will name them)
+3. None
+
+With one matching rule, the options are "1. Add it" and "2. None".
+
+Recommend 1: a rule asks for something only when its condition holds. Goes into: a "Production rules" section in
+the project CLAUDE.md, with each chosen rule's condition and instruction, in the language of the project files.
+
+## Q9. How much freedom Claude has (quick)
 
 "When Claude works on a task, how do you want it to work?"
 
@@ -114,7 +139,7 @@ Recommend 1 for Learn, 2 for Mix and 3 for Build. After the answer, explain perm
 sentences (see GUIDE.md), and say that this answer is a working agreement in CLAUDE.md, not a setting. Do not change
 any settings file. Goes into: "How we work".
 
-## Q9. Saving work with git
+## Q10. Saving work with git
 
 Detect first: is the folder a git repository, and does it have a remote? Then ask:
 
@@ -129,7 +154,7 @@ Detect first: is the folder a git repository, and does it have a remote? Then as
 Recommend 2 for Learn and Mix, and 1 for Build. If the user picks 4, set up git only after the setup files are
 approved, and explain each command before you run it. Goes into: "How we work".
 
-## Q10. What "done" means
+## Q11. What "done" means
 
 Detect first: test commands, lint or type check commands, and CI files. List the commands you found. Then ask:
 
@@ -144,7 +169,7 @@ Detect first: test commands, lint or type check commands, and CI files. List the
 Recommend 3 when tests exist and 4 when they do not, unless the project is a one-off script. Do not claim a command
 works unless you ran it or the user confirmed it. Goes into: "Commands" and "How we work".
 
-## Q11. Style for documents
+## Q12. Style for documents
 
 "When Claude writes documents for this project (CLAUDE.md, README, notes), should it use plain, short sentences? This
 does not affect code."
@@ -170,7 +195,7 @@ people will read them. Goes into: the language the project CLAUDE.md is written 
 documents" section ("Write documents in <language>."). Claude follows a CLAUDE.md in any language equally well; say
 so if the user asks.
 
-## Q12. Save personal preferences
+## Q13. Save personal preferences
 
 Ask only after the project CLAUDE.md is written. Phase 5 of SKILL.md has the wording and the three choices: all
 projects, only this project, or do not save.

@@ -50,3 +50,6 @@ default, and a rule that already had hundreds of live instances could not be enf
 review and a cold run on a Python fixture found that `ratchet.mjs` run from a subfolder would ask for the real baseline
 to be lowered to the subfolder's count, that a glob matching nothing gave a check that could never fail, and that a
 permanently allowed file could not be left out; all three are fixed and tested.
+
+**Batch 8 (2026-10-23).** Q8 production rules: for one of the five rules in its copy of `PRODUCTION-RULES.md`, it
+starts from the checker the table names for the project's ecosystem, and says what that checker misses.

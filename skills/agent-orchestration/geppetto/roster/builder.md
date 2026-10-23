@@ -75,7 +75,34 @@ Outside my scope, not done: [file: what and why, or "none"]
 Unsure about: [every doubt, guess or shortcut, or "none"]
 ```
 
-<!-- covenant start: geppetto roster 2 -->
+<!-- production rules start -->
+## Production rules
+
+Each rule applies only when its condition holds. Follow these rules in every change you make. When you check a
+change, report a break of one as a defect, with `file:line`.
+
+1. **Money.** When the code stores, adds up or charges money, keep amounts as whole numbers in the smallest unit of
+   the currency or in a decimal type, never as a fractional amount in a binary float, and store the currency next to
+   the amount. Round once, at one defined step, by one stated rule.
+2. **Input.** When the server takes input (a request body, a query string, a header, a form, an upload, a queue
+   message), validate it on the server with a schema or explicit checks of type, length and range, and cap its size.
+   Checks in the client do not count.
+3. **Queries.** When the code builds a database query, pass every value as a bound parameter or through the query
+   builder, never by concatenation, interpolation or string formatting, and never pass a request object straight in
+   as a filter. Pick a table or column name that comes from input from a fixed list.
+4. **The signed-in user.** When a route or action works for a signed-in user, take the user's id and role from the
+   server-side session or a verified token, never from a value the client sets, such as a `userId` field or an
+   `X-User-Id` header. When it reads, changes or deletes a record that belongs to a user or an organization, check
+   that it belongs to the caller or their organization, or scope the query to them. Check the role on the server for
+   every privileged action. Copy from the request only the fields a user may set, never the fields the server
+   decides, such as the owner, the organization or the role.
+5. **Secrets.** When the code needs a secret key, token or password, read it from the environment the code runs in or
+   from a secret store. Never write one into the code, a committed config file, or anything sent to a browser or a
+   mobile app. A key meant to be public, such as a Stripe `pk_` key, is not a secret. If a secret was ever committed,
+   rotate it at the provider, then remove it.
+<!-- production rules end -->
+
+<!-- covenant start: geppetto roster 3 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.

@@ -22,7 +22,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[instructions-audit](../skills/session-discipline/instructions-audit/SKILL.md)**: Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
   references and secrets, and proposes edits for approval.
 - **[project-setup](../skills/session-discipline/project-setup/SKILL.md)**: Interviews you about how you want to work, then writes the project CLAUDE.md and,
-  with a separate yes, your personal preferences, in your language. Written for people new to Claude Code.
+  with a separate yes, your personal preferences, in your language. Written for people new to Claude Code. When the
+  project handles money, sign-in, a database, server input or secrets, it offers the matching production rules from
+  its `PRODUCTION-RULES.md` for the project CLAUDE.md.
 - Hooks: [`roadmap`](../hooks/session-discipline/roadmap.mjs), [`branch-context`](../hooks/session-discipline/branch-context.mjs), [`compact-snapshot`](../hooks/session-discipline/compact-snapshot.mjs).
 
 ## verification
@@ -66,6 +68,7 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   entering (private beta, paying customers, enterprise, regulated data). The profile is confirmed first, every row has
   `file:line` or command evidence, security suspects are confirmed by probe tests, what code cannot show goes through
   a questionnaire with expiry, and `READINESS.md` rechecks only rows whose evidence changed; `ledger.mjs` keeps it.
+  When a gap closes, it offers the production rule that keeps it closed.
 - Hooks: [`test-tamper-guard`](../hooks/verification/test-tamper-guard.mjs), [`suppression-reason`](../hooks/verification/suppression-reason.mjs), [`verify-before-done`](../hooks/verification/verify-before-done.mjs).
 
 ## agent-orchestration
@@ -90,8 +93,10 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   resume note, and a morning audit by a fresh reviewer; the summary ends with an Attention section.
 - **[geppetto](../skills/agent-orchestration/geppetto/SKILL.md)**: Designs, installs, audits and updates a project's
   Claude Code agent files, with a starter roster (eng-lead, builder, reviewer, writer, sweeper) that all carry one
-  covenant, and `check-agents.mjs`, which finds what makes Claude Code skip an agent or quietly change its tools.
-  Asks before every write.
+  covenant (builder and reviewer also carry the production rules from `PRODUCTION-RULES.md`), a designer template
+  that Create fills with the paths of the project's design system (it extends a keyframe into further screens with
+  only the system's tokens and lists every value it invents), and `check-agents.mjs`, which finds what makes Claude
+  Code skip an agent or quietly change its tools. Asks before every write.
 - Hook: [`no-idle`](../hooks/agent-orchestration/no-idle.mjs).
 
 ## guards
@@ -99,7 +104,8 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[rule-to-hook](../skills/guards/rule-to-hook/SKILL.md)** (adapted): Turns a rule that keeps being broken into a check at the
   highest layer that holds it (architecture, types, lint or CI with a ratchet, a test, or a hook for what the agent
   does), tested, proven on a past mistake and recorded in a rule table, with hook templates in JavaScript and Python
-  and `ratchet.mjs` for patterns already common.
+  and `ratchet.mjs` for patterns already common. For one of the five production rules, it uses the checker that
+  `PRODUCTION-RULES.md` names for the project's ecosystem, one rule per run.
 - **[safe-merge](../skills/guards/safe-merge/SKILL.md)**: Merges a PR pinned to its head commit and deletes the branch only if no open PR is based on it;
   before merging on an older review or evaluator verdict, compares patch ids to see whether the verdict still holds.
 - **[dependency-upgrade](../skills/guards/dependency-upgrade/SKILL.md)**: Plans and applies dependency and toolchain upgrades in any ecosystem, step by step.
