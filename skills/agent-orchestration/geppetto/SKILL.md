@@ -30,8 +30,8 @@ Bundled files, open each when its mode needs it:
 
 - **Show before you write, and write on a yes.** Show each file in full before creating it, and the exact diff before
   changing one: agent files, the `.gitignore` line, Audit fixes and Update merges alike. The covenant block and the
-  production rules block are the one exception: each is the same in every file that carries it, so show it once in
-  full and name it where it goes in each file. One yes may cover a set you showed together; a partial yes ("only
+  production rules block are the exceptions: each is the same in every file that carries it, so show it once in full
+  and name it where it goes in each file. One yes may cover a set you showed together; a partial yes ("only
   builder and reviewer") covers only what it names. Approval of a plan or a report is not approval of a write.
 - **Never overwrite an existing agent file.** Show the diff and merge on a yes instead.
 - **Project scope by default.** Write to the project's `.claude/agents/`, to be committed so the agents work in cloud
@@ -72,7 +72,10 @@ skill changed is **Update**. If you cannot tell, ask which one, in one line.
 
 ## Create
 
-1. Ask a few questions, one at a time, each with your suggested answer from what you can read in the project:
+1. Before the first question, read `${CLAUDE_SKILL_DIR}/COVENANT.md`, `${CLAUDE_SKILL_DIR}/PRODUCTION-RULES.md` and,
+   for a designer, `${CLAUDE_SKILL_DIR}/templates/designer.md`: the skill's read grant may be gone in a later turn
+   (it was after a `--resume` in a headless run). Then ask a few questions, one at a time, each with your suggested
+   answer from what you can read in the project:
    - What one job does it do, and what does it hand back?
    - What must it never do (its anti-jobs)?
    - Does it change files, run commands, or only read?
@@ -181,10 +184,12 @@ Then check the draft and show it as in Create, steps 4 and 5.
 Each roster file carries its version on the covenant's start marker line: `<!-- covenant start: geppetto roster N -->`.
 The audit warns when an installed copy carries an older number than the bundle.
 
-1. For each bundled agent, find the installed copy by its `name` (any file in the scope, any file name) and read its
-   version. Same version and same text: nothing to do. No copy: offer to install it as in Install. For an agent
-   Create made (no bundled file has its name), replace only its covenant block and its production rules block, if it
-   has one, with the new ones, and show that as a diff.
+1. For each agent under `roster/`, find the installed copy by its `name` (any file in the scope, any file name) and
+   read its version. Same version and same text: nothing to do. No copy: offer to install it as in Install. An
+   installed agent that no file under `roster/` names was made by Create, a designer included. Replace only its
+   covenant block and its production rules block, if it has one, with the new ones, and show that as a diff.
+   `templates/designer.md` is never a merge base: a merge against it puts the bracket placeholders back over the
+   project's design system.
 2. For a copy from an older bundle, separate the bundle's change from the user's tuning. If git history holds the
    copy as it was first installed (`git log --diff-filter=A --format=%H -- <file>`, then
    `git show <commit>:<file>`), use that as the base for a three-way merge:
@@ -192,8 +197,9 @@ The audit warns when an installed copy carries an older number than the bundle.
    Without that history, show the diff between the installed copy and the new bundle, section by section, and say
    which parts look tuned.
 3. Show the merged file and the diff from the installed copy. The covenant block and the production rules block
-   always become the new ones; every other tuned line stays unless the user says otherwise. Conflicts are shown,
-   never resolved silently.
+   always become the new ones; every other tuned line stays unless the user says otherwise. A `skills:` line in the
+   installed copy stays too: Install added it, and the bundled file has none, so the three-way merge drops it without
+   a conflict; put it back before you show the merge. Conflicts are shown, never resolved silently.
 4. On a yes, write the merged file. Then run the audit's script.
 
 ## Next steps
