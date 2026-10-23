@@ -31,6 +31,7 @@ Bundled files, open them when you reach their step:
 - `${CLAUDE_SKILL_DIR}/MESSAGES-AND-RATCHETS.md`: step 2's error messages, ratchets and exceptions on the line
 - `${CLAUDE_SKILL_DIR}/MUTATION.md`: step 4's mutation for each layer and the run on a real past mistake
 - `${CLAUDE_SKILL_DIR}/REPORT.md`: the report template
+- `${CLAUDE_SKILL_DIR}/PRODUCTION-RULES.md`: five production rules, with the checker for each per ecosystem
 
 The templates above are enough to build a guard. For worked examples, read the guards in `hooks/guards/` of the
 pau-skills repository (no-verify, merge, destructive, secret and inline-backtick guards), with their tests in its
@@ -64,7 +65,9 @@ a script could check, and collect evidence.
       a repeat: enforce it in this change.
 
 Done when you have the precise rule, at least three violations and at least three near-misses, all concrete, and
-the count of live instances.
+the count of live instances. For a production rule with no past violation in the project, take the violations and
+near-misses from the rule's own text in `PRODUCTION-RULES.md` and the checker's documented cases, and write "none"
+for the past-mistake run in step 4.
 
 ## 2. Decide whether and how to mechanize it
 
@@ -81,6 +84,13 @@ each layer above the chosen one did not work; the report asks for it.
    ratchet. Both are described in `${CLAUDE_SKILL_DIR}/MESSAGES-AND-RATCHETS.md`.
 4. **A test of the behaviour.** The rule is really a requirement.
 5. **Prose, last, and only for judgment calls.** Nothing fails when an agent skips it.
+
+If the rule is one of the five in `PRODUCTION-RULES.md`, or the user asks to enforce the "Production rules" section
+of the project CLAUDE.md, read that file first. Use the layer and the checker its tables name for the project's
+ecosystem before writing one (for rule 1, a money type first, which is layer 2). Rule 4 needs a test (layer 4), not
+a hook. Rules 1, 2 and 5 are partly mechanical: say what the checker misses (for rule 5, rotating a key and a key
+exposed through the bundler's public variables). Enforce one rule per run, and offer the next mechanical one in the
+report.
 
 Where a Claude Code hook fits: it is the right layer for a rule about what the agent does, such as the commands it
 runs, the files it writes, when it may stop, or the context it keeps forgetting. It is the wrong layer for a rule
