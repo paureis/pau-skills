@@ -12,7 +12,7 @@
 // Each run writes transcript.json, tools.json, files.json, grade.json and judge.json under <out>/<scenario>[-baseline]/.
 // This costs real model usage: about 30 to 60 model calls per scenario. Node 20+, no dependencies.
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, renameSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, renameSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
@@ -210,16 +210,18 @@ function runScenario(scenario, opts) {
   return result;
 }
 
-const opts = args(process.argv.slice(2));
-const scenarios = JSON.parse(readFileSync(join(HERE, 'scenarios.json'), 'utf8')).filter((s) => !opts.scenario || s.name === opts.scenario);
-if (!scenarios.length) throw new Error(`no scenario named ${opts.scenario}`);
-const results = [];
-for (const s of scenarios) {
-  const r = runScenario(s, opts);
-  results.push(r);
-  const scored = r.checks.filter((c) => c.pass !== null);
-  console.log(`\n${r.name}: ${scored.filter((c) => c.pass).length}/${scored.length} checks, ${r.turns} turns, $${r.costUsd}`);
-  for (const c of r.checks) console.log(`  ${c.pass === null ? 'SKIP' : c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.pass === true || !c.detail ? '' : `  (${c.detail})`}`);
-  if (r.judge) console.log(`  judge: ${JSON.stringify(r.judge.scores || r.judge)}`);
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const opts = args(process.argv.slice(2));
+  const scenarios = JSON.parse(readFileSync(join(HERE, 'scenarios.json'), 'utf8')).filter((s) => !opts.scenario || s.name === opts.scenario);
+  if (!scenarios.length) throw new Error(`no scenario named ${opts.scenario}`);
+  const results = [];
+  for (const s of scenarios) {
+    const r = runScenario(s, opts);
+    results.push(r);
+    const scored = r.checks.filter((c) => c.pass !== null);
+    console.log(`\n${r.name}: ${scored.filter((c) => c.pass).length}/${scored.length} checks, ${r.turns} turns, $${r.costUsd}`);
+    for (const c of r.checks) console.log(`  ${c.pass === null ? 'SKIP' : c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.pass === true || !c.detail ? '' : `  (${c.detail})`}`);
+    if (r.judge) console.log(`  judge: ${JSON.stringify(r.judge.scores || r.judge)}`);
+  }
+  writeFileSync(join(opts.out, `summary${opts.baseline ? '-baseline' : ''}.json`), JSON.stringify(results, null, 2));
 }
-writeFileSync(join(opts.out, `summary${opts.baseline ? '-baseline' : ''}.json`), JSON.stringify(results, null, 2));
