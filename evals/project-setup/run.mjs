@@ -169,7 +169,8 @@ function judge(run, opts) {
   try { return JSON.parse(m[0]); } catch { return { error: 'judge did not return JSON', raw: text }; }
 }
 
-function runScenario(scenario, opts) {
+/** The folders of one run: the fixture copy, a sandboxed HOME (with the skill unless baseline), and a side folder. */
+export function prepareRun(scenario, opts) {
   const name = scenario.name + (opts.baseline ? '-baseline' : '');
   const dir = join(opts.out, name);
   rmSync(dir, { recursive: true, force: true });
@@ -182,6 +183,11 @@ function runScenario(scenario, opts) {
   mkdirSync(join(home, '.claude'), { recursive: true });
   if (scenario.homeClaudeMd) writeFileSync(join(home, '.claude', 'CLAUDE.md'), scenario.homeClaudeMd);
   if (!opts.baseline) cpSync(SKILL, join(home, '.claude', 'skills', 'project-setup'), { recursive: true });
+  return { name, dir, project, home, side };
+}
+
+function runScenario(scenario, opts) {
+  const { name, dir, project, home, side } = prepareRun(scenario, opts);
   const homeBefore = homeFiles(home);
   const persona = readFileSync(join(HERE, scenario.persona), 'utf8');
 

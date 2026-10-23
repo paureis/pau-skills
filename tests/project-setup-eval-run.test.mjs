@@ -10,7 +10,7 @@ import { ROOT, tempDir } from './helpers.mjs';
 
 const saved = process.env.PATH;
 process.env.PATH = tempDir();
-const { fixtureDir, copyFixture } = await import('../evals/project-setup/run.mjs');
+const { fixtureDir, copyFixture, prepareRun } = await import('../evals/project-setup/run.mjs');
 process.env.PATH = saved;
 
 const WEB = 'tests/fixtures/launch-readiness/web-app';
@@ -87,6 +87,22 @@ test('scenarios: unique names, existing personas and fixture folders, and real p
     for (const r of s.expect?.productionRules || []) assert.ok(ruleNames.includes(r), `${s.name}: "${r}" is not a rule name in PRODUCTION-RULES.md`);
   }
   for (const n of ['shop-owner', 'python-cli-dev']) assert.ok(names.includes(n), `no scenario ${n}`);
+});
+
+test('prepareRun copies the scenario fixture and installs the skill in a sandboxed HOME', () => {
+  const out = tempDir();
+  const shop = scenarios.find((s) => s.name === 'shop-owner');
+  const r = prepareRun(shop, { out });
+  assert.equal(r.name, 'shop-owner');
+  assert.deepEqual(files(r.project), files(join(ROOT, shop.fixturePath)), 'the project is a copy of the scenario fixture');
+  assert.ok(existsSync(join(r.home, '.claude', 'skills', 'project-setup', 'SKILL.md')));
+  assert.ok(statSync(r.side).isDirectory());
+  const dev = scenarios.find((s) => s.name === 'experienced-dev');
+  const b = prepareRun(dev, { out, baseline: true });
+  assert.equal(b.name, 'experienced-dev-baseline');
+  assert.ok(existsSync(join(b.project, 'AGENTS.md')) && existsSync(join(b.project, '.gitignore')), 'a named fixture, renamed in the copy');
+  assert.equal(readFileSync(join(b.home, '.claude', 'CLAUDE.md'), 'utf8'), dev.homeClaudeMd);
+  assert.equal(existsSync(join(b.home, '.claude', 'skills')), false, 'no skill for a baseline run');
 });
 
 test('the shop owner persona does not hand over what the fixture code does', () => {
