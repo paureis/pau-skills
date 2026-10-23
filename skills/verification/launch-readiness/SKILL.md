@@ -40,8 +40,9 @@ Bundled files. Step 1 reads the ones this run needs, before the profile; the scr
 - Do not start agents (see step 9) on the profile's yes alone.
 - Never grade an area from memory. When a read of a bundled file is refused (an area a corrected profile added),
   name the file's full path, ask the user to allow the read, carry on with the other areas, and grade that area only
-  once the read works. Until then it has one row, `<prefix>-NA`: stage 1, must-fix, status `unknown`, evidence
-  'areas/<file> not read: allow the read and run again', so it blocks GO.
+  once the read works. Until then it has one row, `<prefix>-NA`: stage 1, must-fix, status `unknown`, source `code`,
+  evidence 'areas/<file> not read: allow the read and run again', so it blocks GO. Once the area is graded, apply
+  its `<prefix>-NA` row again as `n/a` with evidence such as 'area graded: see its rows'.
 - When a ledger command is refused, show it and ask the user to allow it; never write the ledger's profile block or
   rows by hand.
 
@@ -58,10 +59,11 @@ and cite paths from that folder. Say in the profile which app it covers.
 
 In the same turn, before the profile, read the bundled files the later steps need: the file in
 `${CLAUDE_SKILL_DIR}/areas/` of every area the draft profile will check (step 3) and of every area it leaves out on a
-guess, `areas/compliance.md` while the stage is not known and the app holds personal data, then
-`${CLAUDE_SKILL_DIR}/PROBES.md`, `${CLAUDE_SKILL_DIR}/QUESTIONNAIRE.md` and `${CLAUDE_SKILL_DIR}/PRODUCTION-RULES.md`.
-A headless session resumed with `--resume` loses the skill's `allowed-tools` read grant, so a read in a later turn
-can be refused. A file read earlier in this session counts as read: do not read it again.
+guess, `areas/compliance.md` whenever the stage is not known, then `${CLAUDE_SKILL_DIR}/PROBES.md`,
+`${CLAUDE_SKILL_DIR}/QUESTIONNAIRE.md` and `${CLAUDE_SKILL_DIR}/PRODUCTION-RULES.md`. A headless session resumed
+with `--resume` loses the skill's `allowed-tools` read grant, so a read in a later turn can be refused. A file read
+earlier in this session counts as read: do not read it again. If its text is no longer in the conversation (after a
+compaction), read it again; a refusal then falls under the refused-read rule in "Do not".
 
 Then send the profile and stop. It is the first thing that waits for the user:
 
@@ -118,7 +120,8 @@ corrected profile added is read now, under the refused-read rule in "Do not":
 | code health and ownership | `areas/code-health.md` | CODE | always |
 
 Each area left out gets its own row, `<prefix>-NA` (such as `BIL-NA`): stage 1, must-fix, status `n/a`, with the
-profile reason. It is must-fix so that an area which comes back blocks GO until it is graded. Inside a loaded area,
+profile reason. It is must-fix so that an area which comes back blocks GO until it is graded; once it is graded,
+apply its `<prefix>-NA` row again as `n/a` with evidence such as 'area graded: see its rows'. Inside a loaded area,
 a check whose "Applies" condition is false gets an `n/a` row with the reason. When the manifests change, the n/a
 rows go back to recheck, so a new payments package brings billing back.
 
