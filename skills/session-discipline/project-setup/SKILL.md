@@ -25,6 +25,8 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
 - `${CLAUDE_SKILL_DIR}/GUIDE.md`: checked facts about Claude Code (permission modes, output styles, commands, the
   desktop app). Use it for every explanation about Claude Code. Do not explain a feature from memory when this file
   covers it.
+- `${CLAUDE_SKILL_DIR}/PRODUCTION-RULES.md`: production rules and the signals that make each one apply. Read it
+  during Phase 1, after the introduction.
 
 ## Rules for the whole run
 
@@ -85,6 +87,8 @@ chained, so it matches. Any other command can show a permission prompt, which wo
 - **What instructions exist**: `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`, `.claude/` folder, `AGENTS.md`,
   `.cursorrules`, `.github/copilot-instructions.md`, and `~/.claude/CLAUDE.md`. Look for the `project-setup` markers
   from an earlier run.
+- **What the code handles**: money, sign-in and per-user data, a database, a server that takes input. The signals
+  for each are in PRODUCTION-RULES.md.
 - **Git**: is this a repository, the current branch, uncommitted changes, and whether a remote exists.
 
 Keep the scan short. In a large project, read the top level and the main manifest, not every file. If the folder is
@@ -108,8 +112,8 @@ it. Ask follow-ups only as the bank describes.
 
 During a Learn session, teach while you ask:
 
-- After Q8, explain permission modes in two or three sentences, for the user's surface, from GUIDE.md.
-- After Q9, explain what a commit is if the user has not used git.
+- After Q9, explain permission modes in two or three sentences, for the user's surface, from GUIDE.md.
+- After Q10, explain what a commit is if the user has not used git.
 - Teach at most one new idea per question. Use an example from this project.
 - For a first-time user, keep every message to one idea: no more than five list items, and no side topics the user
   did not ask about. This also applies during the first task.
@@ -138,12 +142,14 @@ Read `${CLAUDE_SKILL_DIR}/TEMPLATES.md`. Draft the project CLAUDE.md from the de
   "Instruction files").
 
 Before you ask, check the draft yourself: every command was found or confirmed, no secret or key is in it, no
-personal preference is in it, no open question was already answered in the interview, and every sentence follows
-STYLE.md. If the commit answer means you will commit the file after writing it, say so in the same message. Then ask: "Do you want me to write this file?"
-with the options yes, change something, and no. Write it only after a yes.
+personal preference is in it, no open question was already answered in the interview, a production rule is in it
+only when a signal the scan found, or the user's goal, shows it applies, and the user chose it, and every sentence
+follows STYLE.md. If the commit answer means you will commit the file after writing it, say so in the same message.
+Then ask: "Do you want me to write this file?" with the options yes, change something, and no. Write it only after a
+yes.
 
 After you write it, say in one sentence that the file is shared with everyone who uses the project. Then follow the
-commit answer from Q9: commit it, offer to commit it, or leave it to the user.
+commit answer from Q10: commit it, offer to commit it, or leave it to the user.
 
 ## Phase 5: Save personal preferences
 
