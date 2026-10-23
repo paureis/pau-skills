@@ -3,21 +3,20 @@
 [Back to the backlog index](../BACKLOG.md)
 
 Batch 8 is done: Q3 and Q8 merged as pull request 41. Every item from the pstack review and section Q is done. What
-is left is Q11, what batch 8 left, and its scope depends on the owner's answers on the batch 8 decisions page
-(project-setup's introduction, a lookup clause for rule 2, check ids in the rules block, and the headless gaps).
-Record the answers as decision 13 in `docs/backlog/decisions.md` before any brief. Read "Things that bit the eighth
-batch" (`docs/backlog/things-that-bit/batch-8.md`) first. The owner starts it with this message, after pasting the
-page's response under it:
+is left is Q11, what batch 8 left. The owner answered the batch 8 decisions page with every recommendation
+(decision 13): project-setup sends its introduction alone and ends its turn, rule 2 gains a lookup clause, the check
+ids stay in the table, and the headless gaps become part of Q11. Read "Things that bit the eighth batch"
+(`docs/backlog/things-that-bit/batch-8.md`) first. The owner starts it with this message:
 
 ```text
 You are the orchestrator for Q11 in this repository: what batch 8 left. Do not build it yourself; run the roster in
 .claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My answers from the batch 8 decisions page are
-below this message; record them as decision 13 first, and build only the parts they choose.
+decision 13 in docs/backlog/decisions.md; build the parts it chooses.
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules, including step 2 and step 8's bump-listing command).
 2. docs/BACKLOG.md (the note at the top, "How to work an item", the Contents and "Order"), docs/backlog/q11.md,
-   docs/backlog/q3.md and docs/backlog/q8.md (what batch 8 built and changed), decisions 7 to 12 in
+   docs/backlog/q3.md and docs/backlog/q8.md (what batch 8 built and changed), decisions 7 to 13 in
    docs/backlog/decisions.md, "Policy since P0.5" in docs/backlog/context-budget.md,
    docs/backlog/how-to-run-a-batch.md (all 10 steps and "With the roster"), and every file in
    docs/backlog/things-that-bit/, batch-8.md first.

@@ -81,3 +81,16 @@
      cannot load it, as for every skill with `allowed-tools`.
    - Its SKILL.md says that a path with a slash and no file extension is reported only when its first folder exists,
      so the agent checks the others by hand.
+
+## Decisions taken (2026-10-23)
+
+13. **Settled after batch 8 (pull request 41)**, each as recommended, on an html-plan page:
+   - `project-setup` sends its introduction alone, asks "Shall I start?" and ends its turn; it reads the project only
+     after the user answers. Stronger wording alone did not put the introduction first (0 of 3 one-turn runs); this
+     did (3 of 3), at the cost of one more reply.
+   - Rule 2 of `PRODUCTION-RULES.md` gains "look up a key that comes from input only in a fixed list or a Map", after
+     the batch 8 cold run kept a NaN total from `CATALOG[sku]` with `sku` set to `constructor`. The four copies
+     change together, and the roster number goes up, since the block in `builder` and `reviewer` changes.
+   - The check ids stay only in the table after the block, as built.
+   - One follow-up item, Q11, holds these and the headless gaps (launch-readiness's area reads after `--resume`,
+     geppetto Create's scratch folder, eval scenarios for project-setup's Q8).

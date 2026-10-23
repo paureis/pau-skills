@@ -25,6 +25,8 @@ the plugin they installed is bumped.
   0.16.0. No hook changed.
 - Q3, Q8 and batch 8 are marked done in the backlog, with what bit them; Q11 holds what batch 8 left, and its
   kickoff is in `docs/backlog/kickoff.md`.
+- Decision 13: the owner kept every batch 8 recommendation, so Q11 builds project-setup's introduction stop, the
+  rule 2 lookup clause and the headless gaps; the check ids stay in the table.
 
 ## 2026-10-22: after Q10, the owner's decisions (decision 12)
 
