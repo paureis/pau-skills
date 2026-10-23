@@ -30,6 +30,8 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
 
 ## Rules for the whole run
 
+- **The introduction comes first.** Send the introduction in Phase 1 before you look at the project. The only tool
+  call allowed before it is reading STYLE.md.
 - **Change nothing until the user says yes to the exact text.** Show the full file or the diff first. "Looks good"
   about a summary is not a yes to a file. Ask again for each file.
 - **Ask one question per message.** A question with options is one question. Do not add a second question to the
@@ -64,9 +66,10 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
 
 ## Phase 1: Look at the project
 
-Your first visible text is this introduction. Do not write a line before it about what you are going to read or
-do. Before the first question, say in two or three sentences what will happen, in the user's language (see the
-rules above). The English version:
+**Send the introduction first.** Your first visible text is this introduction. Write it before any tool call except
+reading this skill's own STYLE.md: do not read a project file, run a command, or write a line about what you are
+going to read or do before it. A run that opens with findings, such as "Here is what I found", has broken this rule.
+Say in two or three sentences what will happen, in the user's language (see the rules above). The English version:
 
 > I will ask you some short questions about you and this project: about five for a quick setup, or about ten.
 > Then I will show you a CLAUDE.md file, which Claude Code reads at the start of every session. Nothing changes until
@@ -143,8 +146,9 @@ Read `${CLAUDE_SKILL_DIR}/TEMPLATES.md`. Draft the project CLAUDE.md from the de
 
 Before you ask, check the draft yourself: every command was found or confirmed, no secret or key is in it, no
 personal preference is in it, no open question was already answered in the interview, a production rule is in it
-only when a signal the scan found, or the user's goal, shows it applies, and the user chose it, and every sentence
-follows STYLE.md. If the commit answer means you will commit the file after writing it, say so in the same message.
+only when a signal the scan found, or the user's goal, shows it applies, and the user chose it (on the quick path, a
+yes to the summary that lists it as a default counts as choosing it), every production rule keeps its condition and
+all its instructions, and every sentence follows STYLE.md. If the commit answer means you will commit the file after writing it, say so in the same message.
 Then ask: "Do you want me to write this file?" with the options yes, change something, and no. Write it only after a
 yes.
 
