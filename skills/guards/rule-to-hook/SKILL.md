@@ -66,8 +66,8 @@ a script could check, and collect evidence.
 
 Done when you have the precise rule, at least three violations and at least three near-misses, all concrete, and
 the count of live instances. For a production rule with no past violation in the project, take the violations and
-near-misses from the checker's own documented cases or from the readiness check that `PRODUCTION-RULES.md` names,
-and write "none" for the past-mistake run in step 4.
+near-misses from the rule's own text in `PRODUCTION-RULES.md` and the checker's documented cases, and write "none"
+for the past-mistake run in step 4.
 
 ## 2. Decide whether and how to mechanize it
 
