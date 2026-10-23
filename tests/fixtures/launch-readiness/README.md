@@ -7,14 +7,15 @@ them and lists it.
 ## web-app
 
 A Node 20 web app (standard library only): sign-in with a session cookie, private records, orders. Its own suite runs
-with `node --test` inside the folder and passes. Five gaps are seeded, each in its own file, so editing one file
-stales one ledger row:
+with `node --test` inside the folder and passes. Six gaps are seeded in five files (two in `src/orders.mjs`), so editing
+one file stales only the rows for that file:
 
 | File | Gap | Check it should fail |
 | --- | --- | --- |
 | `src/routes/records.mjs` | `GET /api/records/:id` returns any record to any signed-in user: no ownership check | object-level access (ACC-01) |
 | `src/cors.mjs` | `Access-Control-Allow-Origin: *` on every API route | CORS locked to known origins (SEC-08) |
 | `src/orders.mjs` | prices and totals are floats in dollars (`4.99 * 2`) | money as integer minor units (COR-01) |
+| `src/orders.mjs` | `CATALOG[sku]` with `sku` set to `constructor` (or `toString`, `__proto__`) finds a value, so the order total is NaN | server-side validation of every input (SEC-06) |
 | `src/routes/login.mjs` | no rate limit or lockout on `POST /api/login` | rate limits on auth (SEC-05) |
 | `public/config.js` | `const PAYMENTS_KEY = "demo-payments-key"`, loaded by the page and sent by `public/app.js` | no secrets in client code (SEC-01) |
 

@@ -33,7 +33,7 @@ should run on your work.
 The files you changed with one line each on what changed, the rules you followed and where they come from, the checks
 the caller should run (the project's doc or style checks), and anything you were unsure of.
 
-<!-- covenant start: geppetto roster 3 -->
+<!-- covenant start: geppetto roster 4 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.

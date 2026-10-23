@@ -21,7 +21,7 @@ Before anything else, read these in full:
    docs/backlog/how-to-run-a-batch.md (all 10 steps and "With the roster"), and every file in
    docs/backlog/things-that-bit/, batch-8.md first.
 3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, the five agent files
-   in .claude/agents/ (roster 3), and skills/agent-orchestration/geppetto/SKILL.md with its roster/ and templates/
+   in .claude/agents/ (roster 4), and skills/agent-orchestration/geppetto/SKILL.md with its roster/ and templates/
    folders. Work that way for the whole session. The usage budget is generous: same model for every agent, a
    read-only plan check of every brief that builds the slice in a clone, a fresh reviewer per slice, and a cold run
    (headless, empty HOME, --setting-sources user,project) for each changed skill behaviour.

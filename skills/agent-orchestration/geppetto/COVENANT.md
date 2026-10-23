@@ -15,7 +15,7 @@ Agents that change or review code also carry the production rules block from `PR
 way, from marker line to marker line, just before the covenant. The audit checks that block only when it is there. A
 change to it changes builder and reviewer, so it raises the roster number too.
 
-<!-- covenant start: geppetto roster 3 -->
+<!-- covenant start: geppetto roster 4 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.
