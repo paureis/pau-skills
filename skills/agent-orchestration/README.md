@@ -5,8 +5,8 @@ Skills: `methodology` (the method document, two adoption prompts and templates),
 `parallel-worktrees` (with `worktrees.mjs`), `lean-subagent-dev` (with a brief template, `TRIAGE.md`,
 `review-scope.mjs` and `review-scope-rules.mjs`, identical copies of the ones in `review-triage`), `arena` (with `arena.mjs` and the candidate
 and judge briefs), `overnight-run` (with `log.mjs`, `LOOP.md`, `AUDIT.md`,
-`PROTECTION.md`, `CONTRACT.md` and `WAKE.md`), `geppetto` (with `COVENANT.md`, `check-agents.mjs` and its modules
-`check-agents-yaml.mjs` and `check-agents-checks.mjs`, and the five agents under `roster/`). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
+`PROTECTION.md`, `CONTRACT.md` and `WAKE.md`), `geppetto` (with `COVENANT.md`, `PRODUCTION-RULES.md`, `check-agents.mjs` and its modules
+`check-agents-yaml.mjs` and `check-agents-checks.mjs`, the five agents under `roster/`, and `templates/designer.md`). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
 [hooks/README.md](../../hooks/README.md)).
 
 ## lean-subagent-dev configuration
@@ -64,4 +64,6 @@ sessions and on every computer, and adds `.claude/worktrees/` to `.gitignore`. `
 starts the builders and reviewers; it then returns one fix-round message per builder, and the main session sends
 them and merges. Audit with `node check-agents.mjs --project <root> [--user <dir>] [--dir <folder>] [--json]`; it
 exits 1 on errors. A missing covenant is an error in the project and a warning for personal agents in the user
-scope. The overlap warning fires at a word-set score of 0.5.
+scope. The overlap warning fires at a word-set score of 0.5. `builder` and `reviewer` carry the production rules
+block from `PRODUCTION-RULES.md` (a copy of the one in `launch-readiness`); the audit checks it only where an agent
+has one. A designer is made with Create from `templates/designer.md`, never installed with the roster.

@@ -23,6 +23,9 @@ const COPIES = [
   ['skills/verification/review-triage/review-scope.mjs', 'skills/agent-orchestration/lean-subagent-dev/review-scope.mjs'],
   ['skills/verification/review-triage/review-scope-rules.mjs', 'skills/agent-orchestration/lean-subagent-dev/review-scope-rules.mjs'],
   ['skills/verification/review-triage/TRIAGE.md', 'skills/agent-orchestration/lean-subagent-dev/TRIAGE.md'],
+  ['skills/verification/launch-readiness/PRODUCTION-RULES.md', 'skills/session-discipline/project-setup/PRODUCTION-RULES.md'],
+  ['skills/verification/launch-readiness/PRODUCTION-RULES.md', 'skills/guards/rule-to-hook/PRODUCTION-RULES.md'],
+  ['skills/verification/launch-readiness/PRODUCTION-RULES.md', 'skills/agent-orchestration/geppetto/PRODUCTION-RULES.md'],
 ];
 
 function skills() {

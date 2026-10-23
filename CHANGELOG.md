@@ -3,6 +3,27 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-23: the eighth batch, Q3 designer agent and Q8 production rules from day one
+
+- Q8: `PRODUCTION-RULES.md` holds five production rules (money, server input, queries, the signed-in user, secrets),
+  each a condition and an instruction, with the signals that make each apply, the `launch-readiness` checks each
+  prevents and the checkers per ecosystem. `launch-readiness` keeps the source; `project-setup`, `rule-to-hook`
+  and `geppetto` carry identical copies (in `COPIES`), and `tests/production-rules.test.mjs` fails when a cited
+  check id leaves the area files.
+- `project-setup` asks a new Q8 on the full path that offers only the rules whose signal the project shows (one
+  bullet of short sentences per rule, every instruction kept), adds them as listed defaults on the quick path, and
+  renumbers the old Q8 to Q12 as Q9 to Q13. It works out the question count before the first question, and its
+  introduction rule is stated more strongly (a cold run showed it still opens with findings; see the pull request).
+- `rule-to-hook` starts a production rule from the checker its table names (one rule per run); `launch-readiness`
+  offers the matching rule when it closes a gap.
+- `geppetto`: `builder` and `reviewer` carry the production rules block, and `reviewer` reports a break of one as
+  a defect; `check-agents.mjs` checks the block when an agent has one; the roster goes to version 3 (installed here).
+  Create can make a `designer` from `templates/designer.md`: it extends a design system in code from one keyframe
+  with only its tokens and lists every value it invents. Update never merges against the template and keeps the
+  `skills:` line Install added. A fixture design system is in `tests/fixtures/geppetto-designer/`. 1,285 tests.
+- Versions: session-discipline 0.12.0, verification 0.12.0, agent-orchestration 0.11.0, guards 0.9.0, pau-skills
+  0.16.0. No hook changed.
+
 ## 2026-10-22: after Q10, the owner's decisions (decision 12)
 
 - `instructions-audit`: `allowed-tools: Read(~/.claude/CLAUDE.md), Read(~/.claude/rules/**)`, so the user-level

@@ -37,3 +37,10 @@ SendMessage runs in the background where `eng-lead` cannot wait for it; `builder
 and runs one git command per call; `reviewer` restores a mutated file from its own copy, so uncommitted work under
 review is never lost. After the batch the owner dropped SendMessage from `eng-lead` (decision 10), since the main
 session sends the fix rounds, and the roster went to version 2.
+
+**Batch 8 (2026-10-23).** Two additions. The designer comes from Peng Zheng's design bot in the same episode, which
+takes a design system and one keyframe ("I will do the first 5%") and extends them into every screen of a flow (Q3).
+Here it works on a design system in code, because the Figma connector failed in three sessions; it fills its design
+system section with paths only and lists every value it had to invent. The production rules block (Q8) comes from
+`launch-readiness`'s `PRODUCTION-RULES.md`; `builder` follows it and `reviewer` checks against it. The roster went
+to version 3.

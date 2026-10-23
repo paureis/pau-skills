@@ -18,3 +18,7 @@ short sentences, active voice and fixed terms, without the controlled vocabulary
 writes each file only after the person approves the exact text. The claims about Claude Code in `GUIDE.md` were
 checked against the documentation in October 2026. `evals/project-setup/` runs it against three simulated users and
 grades the transcripts.
+
+**Batch 8 (2026-10-23).** Q8 production rules: a new question offers the rules from `PRODUCTION-RULES.md` (a copy of
+the one in `launch-readiness`) whose signal the project shows, so the gaps agents leave most often are written down
+before the first line of code. It still stands alone: the file is in its own folder.

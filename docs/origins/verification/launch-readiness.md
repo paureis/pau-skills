@@ -24,3 +24,7 @@ bigger ones as briefs.
 changes. The sixth batch's review found five ways the first ledger gave a false GO, all fixed with a test each; the
 cold run on a fixture web app with five seeded gaps found all five and confirmed the ownership gap with a failing
 probe.
+
+**Batch 8 (2026-10-23).** `PRODUCTION-RULES.md` is the source of the five production rules that `project-setup`,
+`rule-to-hook` and `geppetto` copy, so what is prevented and what is checked cannot drift; a test ties every check
+id it cites to an area file. When a gap closes, the skill offers the matching rule for the project's CLAUDE.md.
