@@ -25,8 +25,15 @@ This README sits outside the copied folder on purpose: the designer must not rea
   file:line, the literal, what it is for, and the nearest token (primary or danger) and why it did not fit.
 - Nothing else invented: no literal size, space, radius, shadow, duration, font, weight, line height or border width.
 
-To check the screen, scan it with the patterns the test uses on the fixture: hex colours, `rgb(` and `hsl(`, numbers
-with a unit, and `font-family`, `font-weight` and `line-height` values that are not `var(--...)`. Ignore a `#`
-followed only by digits, which is text such as an order number, not a colour. Every hit other than the success colour
-is a miss, and so is a keyword the scan does not catch, such as `font-weight: bold` or `border: thin`, when the report
-does not list it.
+To check the screen, scan it with the patterns D4 in the test uses on the fixture:
+- hex colours, and every colour function (`rgb(`, `hsl(`, `hwb(`, `lab(`, `lch(`, `oklab(`, `oklch(`, `color(`);
+- any CSS colour keyword in a property value, except `transparent` and `currentColor`;
+- a number with any unit;
+- `font-family`, `font-weight`, `line-height`, `opacity`, `z-index` and `flex` values that are not `var(--...)`, and
+  size attributes such as `width="20"`;
+- `thin`, `medium` or `thick` in a border or outline value.
+
+Ignore a `#` followed only by digits in visible text, such as an order number. The same `#` in a style value, such as
+`color: #008000`, is a colour. Every hit other than the success colour is a miss. So is a keyword the scan does not
+catch, such as `font-weight: bold`, when the report does not list it. Check too that the report's "Literal search"
+field lists the patterns and every hit.
