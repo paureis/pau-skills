@@ -13,7 +13,7 @@
 // This costs real model usage: about 30 to 60 model calls per scenario. Node 20+, no dependencies.
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, renameSync } from 'node:fs';
-import { join, dirname, relative } from 'node:path';
+import { join, dirname, relative, resolve, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { grade, sensitiveBlocks } from './grade.mjs';
@@ -53,10 +53,27 @@ function claude(argv, { cwd, home, input }) {
   return JSON.parse(r.stdout);
 }
 
-function copyFixture(name, dest) {
+/**
+ * The folder a scenario's project is copied from: `fixture` names a folder in fixtures/, `fixturePath` is a folder
+ * anywhere in the repository (such as the launch-readiness fixtures, used where they are). Null for an empty project.
+ */
+export function fixtureDir(scenario, root = ROOT) {
+  if (scenario.fixture && scenario.fixturePath) throw new Error(`${scenario.name}: give fixture or fixturePath, not both`);
+  if (scenario.fixturePath) {
+    const dir = resolve(root, scenario.fixturePath);
+    const rel = relative(root, dir);
+    if (!rel || rel.startsWith('..') || isAbsolute(rel)) throw new Error(`${scenario.name}: fixturePath ${scenario.fixturePath} is not a folder inside the repository`);
+    return dir;
+  }
+  return scenario.fixture ? join(root, 'evals', 'project-setup', 'fixtures', scenario.fixture) : null;
+}
+
+/** Copy the scenario's fixture into dest and make it a git repository with one commit. RENAMES apply to the copy only. */
+export function copyFixture(scenario, dest) {
   mkdirSync(dest, { recursive: true });
-  if (!name) return;
-  cpSync(join(HERE, 'fixtures', name), dest, { recursive: true });
+  const src = fixtureDir(scenario);
+  if (!src) return;
+  cpSync(src, dest, { recursive: true });
   for (const [from, to] of Object.entries(RENAMES)) {
     if (!existsSync(join(dest, from))) continue;
     mkdirSync(dirname(join(dest, to)), { recursive: true });
@@ -161,7 +178,7 @@ function runScenario(scenario, opts) {
   // The persona and the judge run in an empty folder with an empty HOME, so no CLAUDE.md or skill reaches them.
   const side = join(dir, 'side');
   mkdirSync(side, { recursive: true });
-  copyFixture(scenario.fixture, project);
+  copyFixture(scenario, project);
   mkdirSync(join(home, '.claude'), { recursive: true });
   if (scenario.homeClaudeMd) writeFileSync(join(home, '.claude', 'CLAUDE.md'), scenario.homeClaudeMd);
   if (!opts.baseline) cpSync(SKILL, join(home, '.claude', 'skills', 'project-setup'), { recursive: true });
