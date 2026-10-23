@@ -126,3 +126,27 @@
   - Did not: `eng-lead` started the builders in the background and handed back before they reported, so the main
     session started the reviewers and sent the fix rounds; a backslash-u escape typed into a tool call reached the
     brief as the raw character, and the builder copied it into a test.
+- 2026-10-23: the eighth batch, Q3 designer agent and Q8 production rules from day one, merged as
+  [pull request 41](https://github.com/paureis/pau-skills/pull/41). The Figma connector failed again, so Q3 works on a
+  design system in code. `eng-lead` planned two slices (`production-rules`: the source rules file in
+  `launch-readiness` with copies and changes in `project-setup` and `rule-to-hook`; `geppetto`: the rules block,
+  roster 3 and the designer template) and fixed the shared rules text in the plan, so both builders copied one file.
+  A read-only plan check built each slice in a clone first; a fresh reviewer per slice; three cold runs (Create and
+  the designer on a fixture design system; project-setup on the two Q6 fixtures through the eval harness; a feature
+  built with and without the rules, graded by `launch-readiness`); one fix round per slice and a second look. 1,269 to
+  1,285 tests, green on Linux and macOS. Five changed skills (`geppetto`, `launch-readiness`, `project-setup`,
+  `rule-to-hook`, `which-skill`) went to the owner as one bundle. The profile README counts (38 skills, 13 hooks, over
+  1,100 tests) still hold. The owner's four decisions are on an html-plan page, and what they decide is Q11. With the
+  roster:
+  - Worked: `eng-lead` gave exact line numbers, the rules text, a mutation table with the expected `# tests` count of
+    each run, and the one red roster test with the merge recipe that clears it. Both plan checks found something
+    that would have shipped wrong advice or blocked a builder: a Stripe `pk_` key treated as a secret, a query checker
+    that cannot see concatenation, a regex that failed a correct fixture, two tests that could not fail. Each
+    reviewer found something the builder missed, one of them a must-fix (Update would have merged the designer
+    template's placeholders over a project's design system). The cold runs found what no reviewer could: rules
+    written on one line dropped clauses, and project-setup never showed its introduction first, at the base too.
+    With the rules, the feature kept money in integer cents; without them, refunds were float dollars.
+  - Did not: the builders ran in the background again (planned for, so it cost nothing); a prose fix for the
+    introduction passed review and failed its control run, so it went to the owner instead of a third round; one
+    builder added model trailers to its commits and the other did not, because the standing order and the harness
+    disagreed; the orchestrator's first cold-run file hid the personal skill with `--setting-sources project`.
