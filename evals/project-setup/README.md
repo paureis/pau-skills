@@ -11,11 +11,12 @@ node evals/project-setup/run.mjs --baseline               # the same scenarios w
 node evals/project-setup/run.mjs --scenario nervous-beginner --max-turns 20
 ```
 
-Options: `--out <dir>` (default `evals/project-setup/results/`, which git ignores), `--model` for the assistant,
-`--persona-model` for the simulated user and the judge, and `--no-judge` to skip the model-graded rubric.
+Options: `--max-turns <n>` (default 40), `--out <dir>` (default `evals/project-setup/results/`, which git ignores),
+`--model` for the assistant, `--persona-model` for the simulated user and the judge, and `--no-judge` to skip the
+model-graded rubric.
 
-Each scenario is about 15 to 25 turns and costs real usage (about 10 US dollars per scenario
-with the default model in October 2026). Each run needs the `claude` CLI, logged in.
+Most scenarios take 15 to 30 turns and cost real usage: a run at the 30-turn limit cost about 28 US dollars with
+`claude-opus-5-5` in October 2026. Each run needs the `claude` CLI, logged in.
 
 ## How it works
 
@@ -47,7 +48,8 @@ with the default model in October 2026). Each run needs the `claude` CLI, logged
   matched in English, as `PRODUCTION-RULES.md` names them.
 
 `tests/project-setup-eval.test.mjs` tests the grader itself, without a model. `tests/project-setup-eval-run.test.mjs`
-tests the fixture copy and the scenario list.
+tests the fixture copy, the scenario list, the entry-point guards of `run.mjs` and `grade.mjs` (also through a
+symlink), and the default turn limit.
 
 ## Results, October 2026
 
@@ -69,9 +71,10 @@ asks for a CLAUDE.md by name, which the grader counts as a request.) The skipped
 `~/.claude/CLAUDE.md`: Claude Code asks a person before that edit even when an allow rule matches, and `-p` mode
 cannot answer, so it is tested by hand. The last three rows are from October 23, after Q11 (the introduction stop and
 the two Q8 scenarios), with `claude-opus-5-5`. In `spanish-beginner` every reply and the project CLAUDE.md were in
-Spanish, and the saved preferences named Spanish as the preferred language; it reached the 30-turn limit. Both new
-scenarios wrote exactly the expected production rules: Money, Input, The signed-in user and Secrets for the web app,
-Secrets only for the CLI. The first three rows predate the introduction stop, which adds one turn to every run.
+Spanish, and the saved preferences named Spanish as the preferred language; it reached the 30-turn limit (the default
+is now 40). Both new scenarios wrote exactly the expected production rules: Money, Input, The signed-in user and
+Secrets for the web app, Secrets only for the CLI. The first three rows predate the introduction stop, which adds one
+turn to every run.
 
 ## Scenarios
 

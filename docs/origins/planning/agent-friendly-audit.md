@@ -22,8 +22,10 @@ more sentence in an instruction file that nothing enforces.
 - Confidence levels are new: two or more sources make a class high confidence (upstream `automate-me`'s "2+ slices"
   means time slices of transcripts). Live copies count toward a class but not toward confidence. Rules for empty or
   bot-only slices, for too little evidence (propose nothing), and for classes already enforced.
-- Each proposed check is proven in a scratch folder against `git show <sha>^`; a pattern with live copies becomes a
-  ratchet; a check that allows exceptions must fail on an expired one. Open questions are answered with a prototype.
+- Each proposed check is proven against `git show <sha>^` in a git-ignored scratch folder inside the project
+  (`.agent-audit-scratch/`, each copy its own repository, removed before any run on the current code from the project
+  root); a pattern with live copies becomes a ratchet; a check that allows exceptions must fail on an expired one.
+  Open questions are answered with a prototype.
   The prompt is confirmed first, with `/sharpen` as an optional extra.
 - Privacy rules are new: pointers instead of raw excerpts, synthetic inputs for proofs, approvals recorded by role or
   handle, never a person's name.

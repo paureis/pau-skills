@@ -106,6 +106,9 @@ section holds:
   saved to `$RUN/env`, which every later command loads with `set -a` so the app sees them too. Each Bash tool call
   starts a fresh shell, so nothing else carries over. You fill in "Where the app writes": every location from step 1,
   and how each is pointed into `$RUN` (a variable, a flag, `env HOME=...`, or running the app from `$RUN/work`).
+  `$RUN` stays outside the repository: inside it, an app that searches upward for a repository or a config file
+  would find the project's own, and the drive would test another setup. When a write there is refused, the skill
+  names the folder and asks the user to allow it, and must never move the run into the project.
 - **Launch.** For a server or a UI: the exact commands that build once and start the app, and how to tell it is
   ready. Ready means usable, not only that a process answers: a port can be open while migrations or a data load
   still run, so wait for the condition that proves a user could act now (a ready line in the log, a health check
