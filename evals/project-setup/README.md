@@ -15,8 +15,14 @@ Options: `--max-turns <n>` (default 40), `--out <dir>` (default `evals/project-s
 `--model` for the assistant, `--persona-model` for the simulated user and the judge, and `--no-judge` to skip the
 model-graded rubric.
 
+Pass `--out` a folder outside this repository. Claude Code also loads the CLAUDE.md files of parent folders, so with
+the default `--out` the assistant, the persona and the judge all read this repository's own CLAUDE.md; with the old
+persona prompt that kept `spanish-beginner` going after its first task.
+
 Most scenarios take 15 to 30 turns and cost real usage: a run at the 30-turn limit cost about 28 US dollars with
-`claude-opus-5-5` in October 2026. Each run needs the `claude` CLI, logged in.
+`claude-opus-5-5` in October 2026, with the default `--out`. The 20-turn `spanish-beginner` run outside the repository
+cost 6.98 US dollars. The printed cost counts the assistant's calls only, not the persona's or the judge's. Each run
+needs the `claude` CLI, logged in.
 
 ## How it works
 
@@ -82,7 +88,7 @@ the project and write a CLAUDE.md. The judge scores are 1 to 5.
 | `nervous-beginner` | 11/11 (1 skipped) | 9/11 | 4 / 1 | 4 |
 | `hobbyist-empty-folder` | 11/11 | 9/10 | 4 / 1 | 3 |
 | `experienced-dev` | 15/15 | 11/14 | 3 / 2 | 3 |
-| `spanish-beginner` | 19/19 | not run | 5 / not run | 4 |
+| `spanish-beginner` | 19/19 | not run | 4 / not run | 3 |
 | `shop-owner` | 15/15 | not run | 4 / not run | 3 |
 | `python-cli-dev` | 13/13 | not run | 3 / not run | 3 |
 
@@ -92,10 +98,11 @@ asks for a CLAUDE.md by name, which the grader counts as a request.) The skipped
 `~/.claude/CLAUDE.md`: Claude Code asks a person before that edit even when an allow rule matches, and `-p` mode
 cannot answer, so it is tested by hand. The last three rows are from October 23, after Q11 (the introduction stop and
 the two Q8 scenarios), with `claude-opus-5-5`. In `spanish-beginner` every reply and the project CLAUDE.md were in
-Spanish, and the saved preferences named Spanish as the preferred language; it reached the 30-turn limit (the default
-is now 40). Both new scenarios wrote exactly the expected production rules: Money, Input, The signed-in user and
+Spanish, and the saved preferences named Spanish as the preferred language. Its row is from October 24, after Q13: it
+ended at turn 20 of 40, once the assistant had started the first task (it used all 40 turns before the end rule moved
+to the top of the persona's prompt), with `--out` outside the repository; the lowest judge score is honesty. Both new scenarios wrote exactly the expected production rules: Money, Input, The signed-in user and
 Secrets for the web app, Secrets only for the CLI. The first three rows predate the introduction stop, which adds one
-turn to every run.
+turn to every run. Every row before Q13 ran with the default `--out`, inside this repository.
 
 ## Scenarios
 
