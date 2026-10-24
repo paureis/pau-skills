@@ -27,7 +27,10 @@ Most scenarios take 15 to 30 turns and cost real usage: a run at the 30-turn lim
 3. It sends the opening message to `claude -p`, then resumes the same session one turn at a time.
    `AskUserQuestion` is turned off, because nobody can answer it in `-p` mode, so the skill must use its plain
    numbered-options fallback.
-4. A second `claude -p` plays the persona (`personas/*.md`) and writes each user reply. It stops with `[END]`.
+4. A second `claude -p` plays the persona (`personas/*.md`) and writes each user reply. Its prompt starts with an end
+   rule that wins over the persona: once the assistant recommended a first task, the persona said which task to do,
+   and after that an assistant message works on that task, the persona replies `[END]`. The persona does not take
+   part in the task. The run ends on a reply that holds `[END]` anywhere.
 5. `grade.mjs` runs the mechanical checks. `JUDGE.md` is the rubric for a model-graded score from 1 to 5 per item.
 
 ## What the mechanical checks cover
@@ -49,7 +52,24 @@ Most scenarios take 15 to 30 turns and cost real usage: a run at the 30-turn lim
 
 `tests/project-setup-eval.test.mjs` tests the grader itself, without a model. `tests/project-setup-eval-run.test.mjs`
 tests the fixture copy, the scenario list, the entry-point guards of `run.mjs` and `grade.mjs` (also through a
-symlink), and the default turn limit.
+symlink), and the default turn limit. `tests/project-setup-eval-persona.test.mjs` tests when a persona reply ends the
+run, the turn loop, the end rule in the persona's prompt and the persona call's arguments.
+`tests/project-setup-eval-replay.test.mjs` tests `replay.mjs` with a fake persona call.
+
+## Replay a run
+
+```bash
+node evals/project-setup/replay.mjs <run dir> --turns <n> --prompt base|new [--times 4] [--persona-model <model>]
+```
+
+`replay.mjs` takes a run folder that `run.mjs` wrote, cuts the conversation after a chosen turn, and asks the persona
+for its next message `--times` times. `--prompt base` is the persona prompt from before Q13, kept as the control;
+`--prompt new` is the current one. `--turns n` keeps the conversation up to the assistant's n-th message. The progress
+lines of `run.mjs` count from 0, so its "turn 20" is `--turns 21`.
+
+It prints the cut and the start of the last assistant message, then one line per reply (`ENDS` or `goes on`), then how
+many replies end the conversation and the cost. It writes `replay-<prompt>-<turns>.json` in the run folder, so runs at
+different cuts do not overwrite each other. Each time is one real persona call, so it costs real usage.
 
 ## Results, October 2026
 
