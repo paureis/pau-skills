@@ -39,11 +39,11 @@ Anything learned later (the URL, a token, an app variable) is appended to `$RUN/
 `$RUN/started.txt` records everything the run starts, one line each: `pid <pid> <start time>`, `tmux <socket>`,
 `path <path>`, `container <id>`. Cleanup stops and removes only what it lists.
 
-`$RUN` is outside the repository on purpose. An app run from `$RUN/work`, or with its HOME in `$RUN/home`, would
-inside the repository find the repository's own files when it searches upward for a repository or a config file, so
-the drive would test another setup and could change the repository. When a write to `$RUN` is refused (for example
-in a session allowed to write only inside the project), stop, name the folder and ask the user to allow writes there,
-and never move the run into the project.
+`$RUN` is outside the repository on purpose. If `$RUN` were inside the repository, an app run from `$RUN/work`, or
+with its HOME in `$RUN/home`, would find the repository's own files when it searches upward for a repository or a
+config file, so the drive would test another setup and could change the repository. When a write to `$RUN` is
+refused (for example in a session allowed to write only inside the project), stop, name the folder and ask the user
+to allow writes there, and never move the run into the project.
 
 Where the app writes: TODO(verify-app) every place the app writes (the current folder, HOME, XDG folders, the temp folder, a configured path) and how each is pointed into `$RUN`, appended to `$RUN/env` where it is a variable.
 

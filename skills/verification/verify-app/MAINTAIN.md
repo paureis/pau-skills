@@ -82,7 +82,8 @@ behaviour the map describes that the app no longer has is either doc drift (fix 
 
    When a write to the skill's run folder (`$RUN`) is refused, the outcome is blocked: name the folder, ask the user
    to allow writes there and run the pass again, and never move the run into the project. This holds even when the
-   skill's Run folders section does not say it. Remove the notes folder as at any other end.
+   skill's Run folders section does not say it.
+   End the pass there, and remove the notes folder with `rm -r .verify-app-notes` as at any other end.
 
 5. **Sort the findings.**
    - Doc drift: the map describes the user's view wrongly or not at all. Fix it.
@@ -95,11 +96,11 @@ behaviour the map describes that the app no longer has is either doc drift (fix 
    (plus the `.gitignore` change, if the user said yes to it). For clean or blocked: no commit; report the outcome
    and the coverage as they are.
 
-Keep short run notes (features covered, unreachable prerequisites, drift found, outcome), and any other scratch file
-the pass makes for itself (such as a helper script), in `.verify-app-notes/` at the project root. The skill's own run
-files still go in its run folder. The notes folder is inside the project, where acceptEdits writes without asking (a
-path outside the project is refused); it is not under `.claude/`, where every write asks, and it is not the evidence
-folder, which is kept. Start it once step 0 has found the target:
+Keep short run notes (features covered, unreachable prerequisites, drift found, outcome) in `.verify-app-notes/` at
+the project root. What the skill's own commands write goes in its run folder; anything the pass writes for itself
+(these notes, a helper script) goes in `.verify-app-notes/`. The notes folder is inside the project, where acceptEdits
+writes without asking (a path outside the project is refused); it is not under `.claude/`, where every write asks,
+and it is not the evidence folder, which is kept. Start it once step 0 has found the target:
 
 - If `.verify-app-notes/` is already there, an earlier pass stopped before its end. List its files and ask whether
   to remove it. On a yes, run `rm -r .verify-app-notes` from the project root. On a no, stop: this pass would mix
@@ -108,7 +109,9 @@ folder, which is kept. Start it once step 0 has found the target:
   the skill's Cleanup check still finds the repository unchanged. Then write the notes in the same folder.
 
 Never commit the notes. At the end of the pass, in every outcome (clean, changed or blocked), draft the report from
-the notes, then run `rm -r .verify-app-notes` from the project root, then send the final message.
+the notes, then run `rm -r .verify-app-notes` from the project root, then send the final message. Remove only the
+folder this pass made: a pass that stopped at the leftover question, or before it made the folder (such as at step 0
+with no target), removes nothing.
 
 ## Report
 
