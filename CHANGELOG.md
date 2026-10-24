@@ -3,6 +3,12 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-24: after Q11, the owner's decisions (decision 14)
+
+- The owner kept every recommendation: build Q12 (two skills' scratch folders outside the project, two eval gaps),
+  and leave project-setup's two refused calls and launch-readiness's up-front area reads as they are. The four Q11
+  zips are uploaded and synced. The Q12 kickoff in `docs/backlog/kickoff.md` needs no pasted answers.
+
 ## 2026-10-23: Q11, what batch 8 left
 
 - `project-setup` reads its own STYLE, QUESTIONS and PRODUCTION-RULES files, sends its introduction alone, ends it
