@@ -5,8 +5,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
-import { isAbsolute, join, relative } from 'node:path';
+import { existsSync, readdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, isAbsolute, join, relative } from 'node:path';
 import { ROOT, tempDir } from './helpers.mjs';
 
 process.env.PATH = tempDir();
@@ -88,7 +89,7 @@ test('replayArgs reads the run folder, --turns, --prompt, --times and --persona-
   for (const argv of bad) assert.throws(() => replayArgs(argv), Error, argv.join(' '));
 });
 
-test('replay asks the new prompt n times with the cut transcript in an empty side folder, counts the replies that end, and writes replay-new.json', () => {
+test('replay asks the new prompt n times with the cut transcript in an empty side folder, counts the replies that end, and writes replay-new-2.json', () => {
   const runDir = runFolder();
   const fake = fakeAsk(['[END]', 'Yes, go on.', ' Thanks. [END] ', 'ok']);
   const r = replay({ runDir, turns: 2, prompt: 'new', times: 4, personaModel: 'm' }, fake.fn);
@@ -101,8 +102,10 @@ test('replay asks the new prompt n times with the cut transcript in an empty sid
     assert.equal(c.opts.personaModel, 'm');
   }
   const side = fake.calls[0].opts.cwd;
-  const rel = relative(ROOT, side);
-  assert.ok(rel.startsWith('..') || isAbsolute(rel), `the side folder ${side} is outside the repository`);
+  // In real use the run folder is inside the repository, where the persona could read its CLAUDE.md.
+  assert.equal(realpathSync(dirname(side)), realpathSync(tmpdir()), `the side folder ${side} is in the system temp folder`);
+  const inRun = relative(runDir, side);
+  assert.ok(inRun.startsWith('..') || isAbsolute(inRun), `the side folder ${side} is not inside the run folder`);
   assert.equal(fake.calls[0].empty, true, 'the side folder is empty at the first call');
   assert.equal(existsSync(side), false, 'the side folder is gone after replay');
   const replies = ['[END]', 'Yes, go on.', 'Thanks. [END]', 'ok'];
