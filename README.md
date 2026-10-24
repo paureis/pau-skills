@@ -183,8 +183,9 @@ by itself. Half the findings are preferences, and the fix for a minor one lands 
 Someone who knows Claude from the browser opens Claude Code in their project and does not know what to ask, what it
 will change, or how to make it remember how they like to work.
 
-- `project-setup` reads the project, asks about ten short questions one at a time (Learn, Build or Mix; how much
-  freedom Claude gets; what "done" means), shows the CLAUDE.md it wants to write, and writes nothing without a yes.
+- `project-setup` introduces itself and asks whether to start, then reads the project and asks about ten short
+  questions one at a time (Learn, Build or Mix; how much freedom Claude gets; what "done" means), shows the
+  CLAUDE.md it wants to write, and writes nothing without a yes.
   When the project handles money, sign-in, a database, server input or secrets, it offers short production rules
   for those (money as integers, validation on the server, parameterized queries, the user from the session, secrets
   out of the code), only the ones that apply. It ends with a cheat sheet for the desktop app, terminal or editor,

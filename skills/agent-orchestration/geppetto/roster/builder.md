@@ -86,7 +86,9 @@ change, report a break of one as a defect, with `file:line`.
    the amount. Round once, at one defined step, by one stated rule.
 2. **Input.** When the server takes input (a request body, a query string, a header, a form, an upload, a queue
    message), validate it on the server with a schema or explicit checks of type, length and range, and cap its size.
-   Checks in the client do not count.
+   Checks in the client do not count. When a key that comes from input picks from a set the code defines (prices, plans,
+   handlers by name), look it up only in a fixed list or a map type, and reject a key that is not there. In JavaScript a
+   plain object also answers keys such as `constructor`: use a `Map` or `Object.hasOwn`.
 3. **Queries.** When the code builds a database query, pass every value as a bound parameter or through the query
    builder, never by concatenation, interpolation or string formatting, and never pass a request object straight in
    as a filter. Pick a table or column name that comes from input from a fixed list.
@@ -102,7 +104,7 @@ change, report a break of one as a defect, with `file:line`.
    rotate it at the provider, then remove it.
 <!-- production rules end -->
 
-<!-- covenant start: geppetto roster 3 -->
+<!-- covenant start: geppetto roster 4 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.

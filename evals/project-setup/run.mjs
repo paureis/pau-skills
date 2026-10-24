@@ -12,8 +12,8 @@
 // Each run writes transcript.json, tools.json, files.json, grade.json and judge.json under <out>/<scenario>[-baseline]/.
 // This costs real model usage: about 30 to 60 model calls per scenario. Node 20+, no dependencies.
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, renameSync } from 'node:fs';
-import { join, dirname, relative } from 'node:path';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, renameSync } from 'node:fs';
+import { join, dirname, relative, resolve, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { grade, sensitiveBlocks } from './grade.mjs';
@@ -53,10 +53,27 @@ function claude(argv, { cwd, home, input }) {
   return JSON.parse(r.stdout);
 }
 
-function copyFixture(name, dest) {
+/**
+ * The folder a scenario's project is copied from: `fixture` names a folder in fixtures/, `fixturePath` is a folder
+ * anywhere in the repository (such as the launch-readiness fixtures, used where they are). Null for an empty project.
+ */
+export function fixtureDir(scenario, root = ROOT) {
+  if (scenario.fixture && scenario.fixturePath) throw new Error(`${scenario.name}: give fixture or fixturePath, not both`);
+  if (scenario.fixturePath) {
+    const dir = resolve(root, scenario.fixturePath);
+    const rel = relative(root, dir);
+    if (!rel || rel.startsWith('..') || isAbsolute(rel)) throw new Error(`${scenario.name}: fixturePath ${scenario.fixturePath} is not a folder inside the repository`);
+    return dir;
+  }
+  return scenario.fixture ? join(root, 'evals', 'project-setup', 'fixtures', scenario.fixture) : null;
+}
+
+/** Copy the scenario's fixture into dest and make it a git repository with one commit. RENAMES apply to the copy only. */
+export function copyFixture(scenario, dest) {
   mkdirSync(dest, { recursive: true });
-  if (!name) return;
-  cpSync(join(HERE, 'fixtures', name), dest, { recursive: true });
+  const src = fixtureDir(scenario);
+  if (!src) return;
+  cpSync(src, dest, { recursive: true });
   for (const [from, to] of Object.entries(RENAMES)) {
     if (!existsSync(join(dest, from))) continue;
     mkdirSync(dirname(join(dest, to)), { recursive: true });
@@ -152,7 +169,8 @@ function judge(run, opts) {
   try { return JSON.parse(m[0]); } catch { return { error: 'judge did not return JSON', raw: text }; }
 }
 
-function runScenario(scenario, opts) {
+/** The folders of one run: the fixture copy, a sandboxed HOME (with the skill unless baseline), and a side folder. */
+export function prepareRun(scenario, opts) {
   const name = scenario.name + (opts.baseline ? '-baseline' : '');
   const dir = join(opts.out, name);
   rmSync(dir, { recursive: true, force: true });
@@ -161,10 +179,15 @@ function runScenario(scenario, opts) {
   // The persona and the judge run in an empty folder with an empty HOME, so no CLAUDE.md or skill reaches them.
   const side = join(dir, 'side');
   mkdirSync(side, { recursive: true });
-  copyFixture(scenario.fixture, project);
+  copyFixture(scenario, project);
   mkdirSync(join(home, '.claude'), { recursive: true });
   if (scenario.homeClaudeMd) writeFileSync(join(home, '.claude', 'CLAUDE.md'), scenario.homeClaudeMd);
   if (!opts.baseline) cpSync(SKILL, join(home, '.claude', 'skills', 'project-setup'), { recursive: true });
+  return { name, dir, project, home, side };
+}
+
+function runScenario(scenario, opts) {
+  const { name, dir, project, home, side } = prepareRun(scenario, opts);
   const homeBefore = homeFiles(home);
   const persona = readFileSync(join(HERE, scenario.persona), 'utf8');
 
@@ -210,16 +233,23 @@ function runScenario(scenario, opts) {
   return result;
 }
 
-const opts = args(process.argv.slice(2));
-const scenarios = JSON.parse(readFileSync(join(HERE, 'scenarios.json'), 'utf8')).filter((s) => !opts.scenario || s.name === opts.scenario);
-if (!scenarios.length) throw new Error(`no scenario named ${opts.scenario}`);
-const results = [];
-for (const s of scenarios) {
-  const r = runScenario(s, opts);
-  results.push(r);
-  const scored = r.checks.filter((c) => c.pass !== null);
-  console.log(`\n${r.name}: ${scored.filter((c) => c.pass).length}/${scored.length} checks, ${r.turns} turns, $${r.costUsd}`);
-  for (const c of r.checks) console.log(`  ${c.pass === null ? 'SKIP' : c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.pass === true || !c.detail ? '' : `  (${c.detail})`}`);
-  if (r.judge) console.log(`  judge: ${JSON.stringify(r.judge.scores || r.judge)}`);
+/** True when this file is the entry point, also through a symlink; false when argv[1] is missing or not a file. */
+function isMain() {
+  try { return !!process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url); } catch { return false; }
 }
-writeFileSync(join(opts.out, `summary${opts.baseline ? '-baseline' : ''}.json`), JSON.stringify(results, null, 2));
+
+if (isMain()) {
+  const opts = args(process.argv.slice(2));
+  const scenarios = JSON.parse(readFileSync(join(HERE, 'scenarios.json'), 'utf8')).filter((s) => !opts.scenario || s.name === opts.scenario);
+  if (!scenarios.length) throw new Error(`no scenario named ${opts.scenario}`);
+  const results = [];
+  for (const s of scenarios) {
+    const r = runScenario(s, opts);
+    results.push(r);
+    const scored = r.checks.filter((c) => c.pass !== null);
+    console.log(`\n${r.name}: ${scored.filter((c) => c.pass).length}/${scored.length} checks, ${r.turns} turns, $${r.costUsd}`);
+    for (const c of r.checks) console.log(`  ${c.pass === null ? 'SKIP' : c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.pass === true || !c.detail ? '' : `  (${c.detail})`}`);
+    if (r.judge) console.log(`  judge: ${JSON.stringify(r.judge.scores || r.judge)}`);
+  }
+  writeFileSync(join(opts.out, `summary${opts.baseline ? '-baseline' : ''}.json`), JSON.stringify(results, null, 2));
+}

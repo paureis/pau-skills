@@ -91,7 +91,7 @@ project facts the builders verified (for the main session to record), the harnes
 delete after the merge), and the findings outside every slice. End with: "Nothing is merged or pushed. The main
 session sends the fix-round messages, waits for each builder's reply, then merges and pushes."
 
-<!-- covenant start: geppetto roster 3 -->
+<!-- covenant start: geppetto roster 4 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.

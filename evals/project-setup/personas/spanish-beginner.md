@@ -14,6 +14,7 @@ may leave the company's systems. You want to build the agent logic with Claude C
 details, and you say so if asked.
 
 How you behave:
+- When the assistant asks whether to start, say yes.
 - You want to learn, step by step, and you want to approve each change.
 - You pick options by number or by name.
 - If the assistant writes to you in English, ask it in Spanish to speak Spanish.

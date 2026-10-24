@@ -14,13 +14,13 @@ only at rows whose evidence changed.
 
 Arguments: $ARGUMENTS
 
-Bundled files, read when you reach their step:
+Bundled files. Step 1 reads the ones this run needs, before the profile; the scripts are run, not read:
 - `${CLAUDE_SKILL_DIR}/areas/`: one file per area, with each check's id, first stage, severity, the stack it
   applies to, and the evidence that passes it
 - `${CLAUDE_SKILL_DIR}/PROBES.md`: how to confirm a security suspect with a test in the project's own framework
 - `${CLAUDE_SKILL_DIR}/QUESTIONNAIRE.md`: what code cannot show, with how long each answer holds
-- `${CLAUDE_SKILL_DIR}/ledger.mjs` (with `table.mjs` and `rules.mjs`) and `${CLAUDE_SKILL_DIR}/READINESS-TEMPLATE.md`:
-  the ledger and its shape
+- `${CLAUDE_SKILL_DIR}/ledger.mjs` (with `table.mjs` and `rules.mjs`) and `${CLAUDE_SKILL_DIR}/READINESS-TEMPLATE.md`,
+  which `ledger.mjs` reads itself: the ledger and its shape
 - `${CLAUDE_SKILL_DIR}/PRODUCTION-RULES.md`: five rules for a project's CLAUDE.md, with the check ids each prevents
 
 ## Do not
@@ -38,6 +38,13 @@ Bundled files, read when you reach their step:
 - Put any scratch file in a git-ignored folder inside the project, or in a `mktemp -d` folder you remove at the end;
   never anywhere else.
 - Do not start agents (see step 9) on the profile's yes alone.
+- Never grade an area from memory. When a read of a bundled file is refused (an area a corrected profile added),
+  name the file's full path, ask the user to allow the read, carry on with the other areas, and grade that area only
+  once the read works. Until then it has one row, `<prefix>-NA`: stage 1, must-fix, status `unknown`, source `code`,
+  evidence 'areas/<file> not read: allow the read and run again', so it blocks GO. Once the area is graded, apply
+  its `<prefix>-NA` row again as `n/a` with evidence such as 'area graded: see its rows'.
+- When a ledger command is refused, show it and ask the user to allow it; never write the ledger's profile block or
+  rows by hand.
 
 ## 1. Profile, confirmed first
 
@@ -49,6 +56,14 @@ config, the schema or migrations, the routes, `.env.example`, CI files, the READ
 
 A repository with several apps gets one READINESS.md per app: pass `--root <app folder>` to every ledger command,
 and cite paths from that folder. Say in the profile which app it covers.
+
+In the same turn, before the profile, read the bundled files the later steps need: the file in
+`${CLAUDE_SKILL_DIR}/areas/` of every area the draft profile will check (step 3) and of every area it leaves out on a
+guess, `areas/compliance.md` whenever the stage is not known, then `${CLAUDE_SKILL_DIR}/PROBES.md`,
+`${CLAUDE_SKILL_DIR}/QUESTIONNAIRE.md` and `${CLAUDE_SKILL_DIR}/PRODUCTION-RULES.md`. A headless session resumed
+with `--resume` loses the skill's `allowed-tools` read grant, so a read in a later turn can be refused. A file read
+earlier in this session counts as read: do not read it again. If its text is no longer in the conversation (after a
+compaction), read it again; a refusal then falls under the refused-read rule in "Do not".
 
 Then send the profile and stop. It is the first thing that waits for the user:
 
@@ -83,7 +98,8 @@ must-fix)", gets the strictest tag that applies to the stage being entered. Stag
 
 ## 3. Areas, loaded only when they apply
 
-Read an area file only when the profile says it applies:
+Grade an area only when the confirmed profile says it applies, from its file as step 1 read it. An area the
+corrected profile added is read now, under the refused-read rule in "Do not":
 
 | Area | File | Prefix | Load when |
 | --- | --- | --- | --- |
@@ -104,14 +120,15 @@ Read an area file only when the profile says it applies:
 | code health and ownership | `areas/code-health.md` | CODE | always |
 
 Each area left out gets its own row, `<prefix>-NA` (such as `BIL-NA`): stage 1, must-fix, status `n/a`, with the
-profile reason. It is must-fix so that an area which comes back blocks GO until it is graded. Inside a loaded area,
+profile reason. It is must-fix so that an area which comes back blocks GO until it is graded; once it is graded,
+apply its `<prefix>-NA` row again as `n/a` with evidence such as 'area graded: see its rows'. Inside a loaded area,
 a check whose "Applies" condition is false gets an `n/a` row with the reason. When the manifests change, the n/a
 rows go back to recheck, so a new payments package brings billing back.
 
 ## 4. Evidence or silence
 
-Run the project's test suite once (see `areas/testing.md` for how to find the runner). Then go through each loaded
-check and grade it:
+Run the project's test suite once (`areas/testing.md`, read in step 1, says how to find the runner). Then go
+through each loaded check and grade it:
 
 - `pass`: with `file:line` for code, or the command and its output. Nothing else passes a row. A row tagged probe
   in its area file passes only on a probe run (source `probe`).
@@ -133,10 +150,10 @@ does not replace this step.
 ## 5. Probes for security
 
 Every security or access-control row that names a probe needs one to pass or fail; without a probe it is at most
-`likely`. Follow `PROBES.md`: if the project has a skill under `.claude/skills/verify-*/`, use it directly to start
-and drive the app; otherwise use the project's own test harness. If neither can start the app, offer to run
-`verify-app` if it is installed (it writes a project verification skill and asks before it does); otherwise probe
-with `curl` against the app started locally.
+`likely`. Follow `PROBES.md` as step 1 read it: if the project has a skill under `.claude/skills/verify-*/`, use it
+directly to start and drive the app; otherwise use the project's own test harness. If neither can start the app,
+offer to run `verify-app` if it is installed (it writes a project verification skill and asks before it does);
+otherwise probe with `curl` against the app started locally.
 
 Write each probe as a test in the project's own framework that states the safe behavior, so it fails while the gap
 is open. Before writing them, ask how a probe whose gap is open should run, with two answers:
@@ -155,9 +172,10 @@ once with its final grade.
 
 ## 6. Questionnaire
 
-Ask the items in `QUESTIONNAIRE.md` whose rows apply to the profile and the stage, in the same message as the
-probes. Store each answer as an `answer` row with the date and an expiry from the table (a tested restore holds 12
-months, an access review a quarter). Skipped or "don't know" is `unknown`. Never answer for the user.
+Ask the items in `QUESTIONNAIRE.md`, read in step 1, whose rows apply to the profile and the stage, in the same
+message as the probes. Store each answer as an `answer` row with the date and an expiry from the table (a tested
+restore holds 12 months, an access review a quarter). Skipped or "don't know" is `unknown`. Never answer for the
+user.
 
 ## 7. Ledger
 
@@ -185,7 +203,8 @@ Access-Control-Allow-Origin: *", "files": ["src/cors.js"]}]`.
 
 - `profile` stores the confirmed profile with a hash of each file it came from (the manifests). If those files
   changed it first sends the n/a rows to recheck. If the stage rose or regulated data was added, it sends the n/a
-  and can-wait rows to recheck: load the areas the new stage needs and write rows for its checks.
+  and can-wait rows to recheck: grade the new stage's checks from the area files read in step 1, and write their
+  rows.
 - `apply` adds or replaces rows by id and hashes each cited file. `source` is `code`, `command` (a test or an
   audit), `probe` (a probe run) or `answer`; `command` and `probe` list their input files, and all three carry an
   `expires`. It refuses a row that breaks the evidence rules and writes nothing.
@@ -229,8 +248,8 @@ backups, a schema change) becomes a brief with the failing probe or check as its
 or `builder` agent is installed, offer to start it with the brief and wait for a yes: the profile's yes did not
 cover agent runs. Otherwise offer to run `to-issues` if it is installed to file it; otherwise give it as a plain
 list. CI gaps: offer to run `ci-cost-and-cadence` if it is installed. When a closed gap's id is in the Prevents
-column of `PRODUCTION-RULES.md`, offer to add that rule to the project's CLAUDE.md so the gap does not come back:
-show the lines, and write them on a yes.
+column of `PRODUCTION-RULES.md`, read in step 1, offer to add that rule to the project's CLAUDE.md so the gap does
+not come back: show the lines, and write them on a yes.
 
 ## Later runs
 

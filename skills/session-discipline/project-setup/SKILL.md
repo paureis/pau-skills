@@ -19,19 +19,20 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
 - `${CLAUDE_SKILL_DIR}/STYLE.md`: the writing rules. Read it before your first message and follow it for everything
   you say and every document you write.
 - `${CLAUDE_SKILL_DIR}/QUESTIONS.md`: the core questions, their options, when to skip them, and the rules for
-  follow-ups. Read it before Phase 2.
+  follow-ups. Read it in the first turn, before the introduction.
 - `${CLAUDE_SKILL_DIR}/TEMPLATES.md`: the project CLAUDE.md, the personal section, and the cheat sheet. Read it before
   Phase 4.
 - `${CLAUDE_SKILL_DIR}/GUIDE.md`: checked facts about Claude Code (permission modes, output styles, commands, the
   desktop app). Use it for every explanation about Claude Code. Do not explain a feature from memory when this file
   covers it.
 - `${CLAUDE_SKILL_DIR}/PRODUCTION-RULES.md`: production rules and the signals that make each one apply. Read it
-  during Phase 1, after the introduction.
+  in the first turn, before the introduction.
 
 ## Rules for the whole run
 
-- **The introduction comes first.** Send the introduction in Phase 1 before you look at the project. The only tool
-  call allowed before it is reading STYLE.md.
+- **The introduction comes first, alone.** Your first reply is the introduction in Phase 1 and nothing else. The
+  only tool calls allowed before it are reading this skill's STYLE.md, QUESTIONS.md and PRODUCTION-RULES.md. End it
+  with "Shall I start?" and end your turn. Look at the project only after the user answers.
 - **Change nothing until the user says yes to the exact text.** Show the full file or the diff first. "Looks good"
   about a summary is not a yes to a file. Ask again for each file.
 - **Ask one question per message.** A question with options is one question. Do not add a second question to the
@@ -66,19 +67,26 @@ Bundled files, all in `${CLAUDE_SKILL_DIR}`:
 
 ## Phase 1: Look at the project
 
-**Send the introduction first.** Your first visible text is this introduction. Write it before any tool call except
-reading this skill's own STYLE.md: do not read a project file, run a command, or write a line about what you are
-going to read or do before it. A run that opens with findings, such as "Here is what I found", has broken this rule.
-Say in two or three sentences what will happen, in the user's language (see the rules above). The English version:
+**Send the introduction first, alone.** Your first reply is this introduction and nothing else. Before it, read only
+this skill's own STYLE.md, QUESTIONS.md and PRODUCTION-RULES.md: do not read a project file or any other file, run a
+command, or write a line about what you are going to read or do. Read those three now, because a resumed session can
+lose this skill's permission to read its own files. A run that opens with findings, such as "Here is what I found",
+has broken this rule. Say in a few short sentences what will happen, in the user's language (see the rules above).
+End with "Shall I start?" in that language, ask nothing else, and end your turn. The English version:
 
 > I will ask you some short questions about you and this project: about five for a quick setup, or about ten.
 > Then I will show you a CLAUDE.md file, which Claude Code reads at the start of every session. Nothing changes until
-> you say yes. First I will look at the project files. I will only read them.
+> you say yes. First I will look at the project files. I will only read them. Shall I start?
 
-Then read, and do not change anything. Use the file tools (Read, Glob, Grep) to look. The only shell commands you
-need are `git status`, `git log --oneline -5`, `git remote -v`, `git branch --show-current` and
-`printenv CLAUDE_CODE_ENTRYPOINT`. This skill allows those without a permission prompt. Run each one on its own, not
-chained, so it matches. Any other command can show a permission prompt, which worries a new user.
+If the user says no, stop. Say in one sentence that they can start the setup later by asking for it again the same
+way. Do not name a command, since it depends on how the skill was installed. If the user asks a question instead,
+answer it and ask "Shall I start?" again.
+
+After a yes, read the project, and do not change anything. Use the file tools (Read, Glob,
+Grep) to look. The only shell commands you need are `git status`, `git log --oneline -5`, `git remote -v`,
+`git branch --show-current` and `printenv CLAUDE_CODE_ENTRYPOINT`. This skill allows those without a permission
+prompt. Run each one on its own, not chained, so it matches. Any other command can show a permission prompt, which
+worries a new user.
 
 - **What the project is**: the README, and the manifest and build files of any ecosystem (for example
   `package.json`, `pyproject.toml`, `requirements.txt`, `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle`, `*.csproj`,
@@ -102,9 +110,10 @@ change some answers, start again, or stop?" To change some answers, ask only tho
 
 ## Phase 2: Interview
 
-Read `${CLAUDE_SKILL_DIR}/QUESTIONS.md`. Start with what you found, in at most five lines, using the three levels from
-STYLE.md (known, likely, unknown). Say how you looked (for example "I read the files and ran `git status`"). Do not
-say a project command works unless you ran it. Then ask the first question:
+You read `${CLAUDE_SKILL_DIR}/QUESTIONS.md` in the first turn. Read it again only if its text is no longer in the
+conversation. Start with what you found, in at most five lines, using the three levels from STYLE.md (known, likely,
+unknown). Say how you looked (for example "I read the files and ran `git status`"). Do not say a project command
+works unless you ran it. Then ask the first question:
 
 - If the arguments say `quick` or `full`, use that path.
 - Otherwise, ask: "Do you want the quick setup (about five questions) or the full setup (about ten, with follow-ups
