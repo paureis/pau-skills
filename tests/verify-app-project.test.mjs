@@ -302,6 +302,8 @@ describe('the bundled template and example', () => {
     assert.doesNotMatch(maintain, /scratch folder outside the repository/);
     assert.match(maintain, /`\.verify-app-notes\/\.gitignore`/);
     assert.match(maintain, /`rm -r \.verify-app-notes`/);
+    assert.match(maintain, /every outcome[^.]*`rm -r \.verify-app-notes`/, 'the end of every pass removes the notes folder');
+    assert.match(maintain, /\(`\$RUN`\) is refused, the outcome is blocked:.{0,400}?End the pass there, and remove the notes folder with `rm -r \.verify-app-notes`/, 'a refused $RUN write ends the pass and removes the notes folder');
     for (const p of [['SKILL.md'], ['templates', 'verify-skill.md'], ['MAINTAIN.md']]) assert.match(flat(...p), /never move the run into the project/, p.join('/'));
   });
 });
