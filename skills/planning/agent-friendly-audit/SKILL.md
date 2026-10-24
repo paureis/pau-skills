@@ -21,8 +21,9 @@ without judgment (lint, CI, tests), then on prose (instruction files, skills, co
 agent reads it and agrees. Human review is not a layer: a reviewer who must catch the same mistake on every pull
 request is the problem this skill fixes.
 
-The output is a plan backed by counts. **Nothing in the project is written until the user says yes.** Prototypes and
-proofs run in a scratch folder outside the working tree.
+The output is a plan backed by counts. **Nothing in the project is written until the user says yes**, with one
+exception: prototypes and proofs run in the scratch folder of step 6, which git ignores and which is removed before
+the plan.
 
 If you started this skill on your own, without the user typing its name or asking for what it does, first say in one
 or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only matches its
@@ -70,7 +71,8 @@ question is answered later with a prototype (step 6).
 
 **No one to answer** (a headless `claude -p` run, a scheduled job): do not assume a yes. If the prompt that started
 the run already says what to audit and to go ahead, write the restatement as the assumption you work under and
-continue; steps 2 to 7 change nothing in the project. Otherwise stop here and report the restatement and the
+continue; steps 2 to 7 change nothing in the project but the git-ignored scratch folder of step 6, removed before
+step 7. Otherwise stop here and report the restatement and the
 question.
 
 ## 2. Find the sources
@@ -177,15 +179,46 @@ check that allows exceptions reads the expiry and fails once the date has passed
 
 ## 6. Prove each check, and prototype the open questions
 
-For every proposed check (layers 2 to 4), prove it in a scratch folder outside the working tree:
-1. Get a real past instance: the file as it was before the fix commit (`git show <sha>^:<path>`), or a checkout of
-   that commit in a temporary folder (`git archive <sha>^ | tar -x -C <tmp>`).
+Prove every proposed check (layers 2 to 4) in the scratch folder `.agent-audit-scratch/` at the project root: inside
+the project, where acceptEdits writes without asking (a headless run refuses a path outside it), and not under
+`.claude/`, where every write asks first.
+- **A leftover.** If the folder exists before the first proof, an earlier run left it: list its files and ask
+  whether to remove it. On a yes, run `rm -r .agent-audit-scratch` from the project root. If the user wants it kept,
+  or no one can answer, do not use it: mark each proof "unproven: a scratch folder from an earlier run is in the
+  way" and go on to step 7.
+- **Make it.** First write `.agent-audit-scratch/.gitignore` holding the one line `*`, so git never shows or stages
+  the folder. Each copy, a single file included, goes in its own subfolder `.agent-audit-scratch/<name>/`, never at
+  the top level, where the folder's `*` hides it and a saved `.gitignore` would replace the folder's own.
+- **Refused.** If a write or a command in the folder is refused, name it, mark the proof "unproven: <command> was
+  refused", and never move the work outside the project.
+- **Each copy is its own repository.** The folder is ignored, so a check that lists files through git, or skips
+  ignored files, sees nothing in it and passes for the wrong reason. Inside the copy's subfolder, never in the
+  scratch folder itself, run `git init -q` and `git add -A`; run `git add -A` again after adding a file, and never
+  commit there (the project could stage a committed copy as a gitlink). Run the check from inside the copy, since
+  from the project root git lists nothing in the folder, or use the check's option to read ignored files. Confirm
+  from the output that it read the copy: a file count, or the expected error. A tool that searches parent folders
+  for its configuration still finds the project's own; take a whole checkout when the check needs that commit's.
+
+For each check:
+1. Get a real past instance: the file before the fix commit, from `git show <sha>^:<path>` saved as
+   `.agent-audit-scratch/<name>/<path>`, or a whole checkout: make `.agent-audit-scratch/<name>`, then run
+   `git archive <sha>^ | tar -x -C .agent-audit-scratch/<name>`.
 2. Run the check on it and see it fail, with the error naming what to use instead.
-3. Run it on the current code and see it pass. A class with live copies fails on the current code too: propose it
-   as a ratchet (step 5, layer 3) set to the current count, and show it passes at that count and fails with one
-   more copy added.
-4. If the check allows exceptions, add one with an expiry date in the past to the scratch copy and see the check
-   fail on it.
+3. Run it on the current code and see it pass. The check's own files (a rule or its configuration, a ratchet and its
+   count, a test, a prototype) cannot enter the project before the user's yes, so remove the old copies
+   (`rm -r .agent-audit-scratch/<name>`), make `.agent-audit-scratch/now` from `git archive HEAD`, add the check's
+   files at their project paths, make it a repository, and run the check inside it the way CI and local runs will.
+   A class with live copies fails on the current code too: propose it as a ratchet (step 5, layer 3) set to the
+   current count, and show it passes at that count and fails with one more copy added to `now`.
+4. If the check allows exceptions, add one with an expiry date in the past to `now` and see the check fail on it.
+
+Never edit a tracked file for a proof. A check that is one command with nothing to add (a grep, a lint rule given
+whole on the command line) may run from the project root once the folder is removed.
+
+Remove the folder before any run on the current code from the project root (the project's own tests, lint or build,
+or a command over the whole project), and before step 7: run `rm -r .agent-audit-scratch` from the project root,
+so no tool that reads ignored files sees an old copy. If a later class needs the folder, make it again, `.gitignore`
+first.
 
 Record the command and the results. A check with no past instance to fail on is marked "unproven", with the
 reason. For an architecture or type fix, the proof is a small prototype in the scratch folder (the new type, the
@@ -209,7 +242,9 @@ are the result.
 ## 8. On the user's yes
 
 For each chosen class, in count order, one commit each:
-- make the fix at the chosen layer, re-run the proof inside the project, and run the project's tests and lint;
+- make the fix at the chosen layer and re-run the proof inside the project, in the scratch folder as in step 6
+  (`.gitignore` first, each copy its own repository); then run `rm -r .agent-audit-scratch` from the project root,
+  and only then run the check on the current code and the project's tests and lint;
 - add or update the row in the instruction file's rule table. A rule that was already written and that nothing
   enforced is a repeat: fix it at the highest layer in the same commit. Drop a rule once its mistake cannot happen.
 
