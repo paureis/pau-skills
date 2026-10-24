@@ -72,8 +72,7 @@ question is answered later with a prototype (step 6).
 **No one to answer** (a headless `claude -p` run, a scheduled job): do not assume a yes. If the prompt that started
 the run already says what to audit and to go ahead, write the restatement as the assumption you work under and
 continue; steps 2 to 7 change nothing in the project but the git-ignored scratch folder of step 6, removed before
-step 7. Otherwise stop here and report the restatement and the
-question.
+step 7. Otherwise stop here and report the restatement and the question.
 
 ## 2. Find the sources
 
