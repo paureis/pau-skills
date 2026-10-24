@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Run the project-setup skill end to end against a simulated user, then grade the result.
 //
-//   node evals/project-setup/run.mjs [--scenario <name>] [--baseline] [--out <dir>] [--max-turns 30]
+//   node evals/project-setup/run.mjs [--scenario <name>] [--baseline] [--out <dir>] [--max-turns 40]
 //                                    [--model <model>] [--persona-model <model>] [--no-judge]
 //
 // For each scenario in scenarios.json: copy the fixture into a fresh folder, install the skill as a standalone
@@ -10,7 +10,7 @@
 // [END] or the turn limit is reached. --baseline runs the same persona without the skill, to compare.
 //
 // Each run writes transcript.json, tools.json, files.json, grade.json and judge.json under <out>/<scenario>[-baseline]/.
-// This costs real model usage: about 30 to 60 model calls per scenario. Node 20+, no dependencies.
+// This costs real model usage: up to 81 model calls per scenario at the default 40 turns. Node 20+, no dependencies.
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, renameSync } from 'node:fs';
 import { join, dirname, relative, resolve, isAbsolute } from 'node:path';
@@ -23,9 +23,10 @@ const ROOT = join(HERE, '..', '..');
 const SKILL = join(ROOT, 'skills', 'session-discipline', 'project-setup');
 const RENAMES = { gitignore: '.gitignore', 'env.example': '.env.example', 'env.canary': '.env', 'github-workflows': '.github/workflows' };
 const BASELINE_OPENING = 'Hi. I am new to Claude Code. Please help me set up Claude Code for this project and write a CLAUDE.md for it.';
+export const DEFAULT_MAX_TURNS = 40;
 
-function args(argv) {
-  const o = { maxTurns: 30, out: join(HERE, 'results'), judge: true };
+export function args(argv) {
+  const o = { maxTurns: DEFAULT_MAX_TURNS, out: join(HERE, 'results'), judge: true };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--scenario') o.scenario = argv[++i];

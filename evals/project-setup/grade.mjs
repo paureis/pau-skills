@@ -3,9 +3,9 @@
 //   node evals/project-setup/grade.mjs <run dir>     prints the checks for one run and writes grade.json next to it
 //
 // A run dir is what run.mjs writes: transcript.json, tools.json, files.json and scenario.json.
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 const FILLER = /\b(simply|just|basically|easily|obviously|of course)\b/gi;
 const MARKETING = /\b(seamless(ly)?|robust|powerful|leverage|cutting[- ]edge|game[- ]chang\w*|supercharge\w*)\b/gi;
@@ -283,7 +283,12 @@ export function grade(run) {
   return checks;
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
+/** True when this file is the entry point, also through a symlink; false when argv[1] is missing or not a file. */
+function isMain() {
+  try { return !!process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url); } catch { return false; }
+}
+
+if (isMain()) {
   const dir = process.argv[2];
   if (!dir || !existsSync(join(dir, 'transcript.json'))) {
     console.error('usage: node grade.mjs <run dir>');
