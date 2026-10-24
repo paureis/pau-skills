@@ -4,13 +4,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync, symlinkSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { ROOT, tempDir } from './helpers.mjs';
 
 const saved = process.env.PATH;
 process.env.PATH = tempDir();
-const { fixtureDir, copyFixture, prepareRun } = await import('../evals/project-setup/run.mjs');
+const { fixtureDir, copyFixture, prepareRun, args, DEFAULT_MAX_TURNS } = await import('../evals/project-setup/run.mjs');
 process.env.PATH = saved;
 
 const WEB = 'tests/fixtures/launch-readiness/web-app';
@@ -115,4 +115,31 @@ test('copyFixture makes an empty folder and no repository for a scenario without
   copyFixture({ name: 'a', fixture: null }, dest);
   assert.ok(statSync(dest).isDirectory());
   assert.deepEqual(readdirSync(dest), []);
+});
+
+const GRADE = join(ROOT, 'evals', 'project-setup', 'grade.mjs');
+
+test('grade.mjs is the entry point also through a symlink: with no run folder it prints the usage line and exits 2', () => {
+  const link = join(tempDir('grade-link-'), 'grade.mjs');
+  symlinkSync(GRADE, link);
+  for (const script of [GRADE, link]) {
+    const r = spawnSync(process.execPath, [script], { cwd: tempDir(), encoding: 'utf8' });
+    assert.equal(r.status, 2, `${script}: exit ${r.status}, ${r.stdout}${r.stderr}`);
+    assert.match(r.stderr, /^usage: node grade\.mjs <run dir>$/m);
+  }
+});
+
+test('grade.mjs imports without running when argv[1] is not a file', () => {
+  const code = "await import('./evals/project-setup/grade.mjs'); console.log('imported')";
+  const r = spawnSync(process.execPath, ['--input-type=module', '-e', code, 'nosuchfile'], { cwd: ROOT, encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stdout.trim(), 'imported');
+});
+
+test('the default turn limit is 40, and the usage comment and the README say so', () => {
+  assert.equal(DEFAULT_MAX_TURNS, 40);
+  assert.equal(args([]).maxTurns, 40);
+  assert.equal(args(['--max-turns', '12']).maxTurns, 12);
+  assert.match(readFileSync(join(ROOT, 'evals', 'project-setup', 'run.mjs'), 'utf8'), /\[--max-turns 40\]/);
+  assert.match(readFileSync(join(ROOT, 'evals', 'project-setup', 'README.md'), 'utf8'), /`--max-turns <n>` \(default 40\)/);
 });
