@@ -94,3 +94,16 @@
    - The check ids stay only in the table after the block, as built.
    - One follow-up item, Q11, holds these and the headless gaps (launch-readiness's area reads after `--resume`,
      geppetto Create's scratch folder, eval scenarios for project-setup's Q8).
+
+## Decisions taken (2026-10-24)
+
+14. **Settled after Q11 (pull request 44)**, each as recommended, on an html-plan page:
+   - project-setup leaves `printenv` and the read of `~/.claude/CLAUDE.md` as they are: after `--resume` in a
+     headless run both are refused, and the setup goes on without them.
+   - launch-readiness keeps reading, in step 1, the areas it leaves out on a guess (about 48 KB for a web app): that
+     is what let a later correction work without a refused read.
+   - `verify-app` and `agent-friendly-audit`, which keep scratch files outside the project, go into a follow-up item,
+     Q12.
+   - The two eval gaps (`grade.mjs`'s own main guard through a symlinked path, and the 30-turn limit that
+     spanish-beginner reached) go into Q12 too.
+   - The owner uploaded the four Q11 zips (geppetto, launch-readiness, project-setup, rule-to-hook), and they synced.

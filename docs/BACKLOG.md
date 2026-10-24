@@ -67,8 +67,7 @@ under "Work items" below.
 - [How to run a batch](backlog/how-to-run-a-batch.md): the 10 steps and "With the roster".
 - [Kickoff for the next session](backlog/kickoff.md): the next session's kickoff, and the fifth batch's kickoff as a
   template.
-- [Decisions](backlog/decisions.md): decisions 1 to 13, taken from 2026-10-17 to 2026-10-23 (decision 14 waits on
-  the owner).
+- [Decisions](backlog/decisions.md): decisions 1 to 14, taken from 2026-10-17 to 2026-10-24.
 - [Context budget](backlog/context-budget.md): the facts and the policy since P0.5.
 - [Things that bit the first batch](backlog/things-that-bit/batch-1.md)
 - [Things that bit the second batch](backlog/things-that-bit/batch-2.md)
@@ -133,7 +132,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
    the Q1 audit and the Q4 reviews left (pull request 38).
 10. Done: the eighth batch, Q3 designer agent and Q8 production rules from day one (pull request 41).
 11. Done: the ninth batch, Q11 what batch 8 left (pull request 44).
-12. **Next:** Q12 what Q11 left, once the owner answers the Q11 decisions page (decision 14). The kickoff is in
+12. **Next:** Q12 what Q11 left; its scope is decision 14. The kickoff is in
     [backlog/kickoff.md](backlog/kickoff.md).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
