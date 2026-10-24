@@ -107,3 +107,11 @@
    - The two eval gaps (`grade.mjs`'s own main guard through a symlinked path, and the 30-turn limit that
      spanish-beginner reached) go into Q12 too.
    - The owner uploaded the four Q11 zips (geppetto, launch-readiness, project-setup, rule-to-hook), and they synced.
+
+15. **Settled after Q12 (pull request 47)**, each as recommended, on an html-plan page:
+   - The project-setup eval persona gets a stricter end rule, in a follow-up item, Q13: `spanish-beginner` used all 40
+     turns because the persona went on with its first task instead of sending `[END]`.
+   - The other skills that keep files outside the project on purpose (`hillclimb`, `overnight-run`, `arena`,
+     `bug-fix`, `brainstorm`, `architect`, `evaluator`, `skill-eval`, `retrospective`) stay as they are.
+   - agent-friendly-audit's SKILL.md (19,729 bytes) is split when an edit needs it, as decision 11 says.
+   - A headless verify-app maintain pass that cannot reach its live pass stays as it is: an interactive session asks.

@@ -2,18 +2,15 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The tenth batch is done: Q12 merged as pull request 47. What is left is Q13, what Q12 left: the eval persona that
-never ends, and three findings the orchestrator recommends leaving as they are. The owner answers the Q12 decisions
-page first; a short session records the answers as decision 15 in `docs/backlog/decisions.md` (as decision 14 was
-recorded before Q12). If the owner keeps every recommendation, Q13 is one small part, the persona's end rule, and the
-backlog is empty after it. Read "Things that bit the tenth batch" (`docs/backlog/things-that-bit/batch-10.md`) first.
+The tenth batch is done: Q12 merged as pull request 47. What is left is Q13, what Q12 left: one small part, the
+project-setup eval persona's end rule. The owner answered the Q12 decisions page with every recommendation (decision
+15): build the end rule, and leave the three other findings as they are. The backlog is empty after Q13. Read "Things that bit the tenth batch" (`docs/backlog/things-that-bit/batch-10.md`) first.
 The owner starts it with this message:
 
 ```text
 You are the orchestrator for Q13 in this repository: what Q12 left. Do not build it yourself; run the roster in
 .claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My answers from the Q12 decisions page are
-decision 15 in docs/backlog/decisions.md; build the parts it chooses. If decision 15 is not there, ask me for the
-page's response first and record it, as decision 14 was recorded.
+decision 15 in docs/backlog/decisions.md; build the parts it chooses.
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules, including step 2 and step 8's bump-listing command).
