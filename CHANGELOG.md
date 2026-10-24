@@ -3,6 +3,12 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-24: after Q12, the owner's decisions (decision 15)
+
+- The owner kept every recommendation: build Q13 (a stricter end rule for the project-setup eval persona), and leave
+  the other skills that keep files outside the project, agent-friendly-audit's file size and the headless verify-app
+  live pass as they are. The Q13 kickoff in `docs/backlog/kickoff.md` needs no pasted answers.
+
 ## 2026-10-24: Q12 and batch 10 done; Q13 and its kickoff
 
 - Q12 and the tenth batch are marked done in the backlog, with what bit them in
