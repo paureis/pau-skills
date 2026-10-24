@@ -150,3 +150,19 @@
     introduction passed review and failed its control run, so it went to the owner instead of a third round; one
     builder added model trailers to its commits and the other did not, because the standing order and the harness
     disagreed; the orchestrator's first cold-run file hid the personal skill with `--setting-sources project`.
+- 2026-10-24: the ninth batch, Q11 what batch 8 left, merged as
+  [pull request 44](https://github.com/paureis/pau-skills/pull/44). `eng-lead` planned four slices on disjoint files
+  (project-setup with the eval, rule 2 with roster 4, launch-readiness, geppetto); a read-only plan check built each
+  slice in a clone, then one builder, one fresh reviewer and one fix round per slice, and a cold run with a base
+  control for every changed behaviour. The four changed skills were zipped with `pack-skills --since 532aaa3` and
+  sent to the owner; the skill count did not change. What was left went to Q12, waiting on the owner's answers.
+  - Worked: handing back at once with the builders' IDs, a reviewer contract file and briefs as files with a
+    corrections section. Every plan check found a real problem (a missed caller that ran every eval scenario in an
+    empty folder, a clause that let `sku in CATALOG` pass `constructor`, a re-read refused after `--resume`). Every
+    reviewer still found something, and the cold runs found the one thing nobody could read off the text: moving
+    project-setup's scan after the answer lost its bundled reads in a resumed turn. Base controls made each result
+    readable (16 refused reads before, 0 after; 14 to 16 tool calls before the introduction, then 3).
+  - Did not: the auto-mode check refused `eng-lead`'s call for one builder, so the orchestrator asked the owner and
+    started it; the rule 2 cold run needed four builds per side before the control meant anything; the three eval
+    scenarios cost 55 US dollars against an estimate of 30; two claims in the orchestrator's own review note were
+    wrong and were corrected by the plan checks.

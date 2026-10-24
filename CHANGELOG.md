@@ -15,6 +15,8 @@ the plugin they installed is bumped.
 - `geppetto` Create and Update check drafts in `.geppetto-draft/` inside the project.
 - Versions: session-discipline 0.12.1, verification 0.12.1, agent-orchestration 0.11.1, guards 0.9.1, pau-skills
   0.16.1. No hook changed. 1,298 tests.
+- Q11 and batch 9 are marked done in the backlog, with what bit them; Q12 holds what Q11 left, waiting on the
+  owner's answers (decision 14), and its kickoff is in `docs/backlog/kickoff.md`.
 
 ## 2026-10-23: the eighth batch, Q3 designer agent and Q8 production rules from day one
 
