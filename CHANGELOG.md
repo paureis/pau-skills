@@ -3,6 +3,22 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-24: Q12, what Q11 left
+
+- `verify-app`: maintain mode keeps its run notes and any helper script it writes for itself in a git-ignored
+  `.verify-app-notes/` folder at the project root, removed at the end of the pass that made it, instead of a scratch
+  folder outside the repository, which a headless acceptEdits run refuses. The template and SKILL.md say why the run
+  folder `$RUN` stays outside the project, and that a refused write there ends the pass as blocked: ask the user,
+  never move the run.
+- `agent-friendly-audit`: proofs and prototypes run in a git-ignored `.agent-audit-scratch/` folder inside the
+  project, each copy its own repository with the check's files added, and the folder is removed before any run on
+  the current code from the project root. Step 8 re-runs the proof on the uncommitted fix.
+- `evals/project-setup`: `grade.mjs` runs its main block through a symlinked path (the realpath guard `run.mjs` has),
+  and the default `--max-turns` is 40. The tests run both scripts directly and through a symlink.
+- The changelog entries from 2026-10-19 to 2026-10-22 moved to `docs/changelog/2026-W43.md` before the week ended,
+  to keep this file under 20,000 bytes.
+- Versions: verification 0.12.2, planning 0.8.3, pau-skills 0.16.2. No hook changed. 1,304 tests.
+
 ## 2026-10-24: after Q11, the owner's decisions (decision 14)
 
 - The owner kept every recommendation: build Q12 (two skills' scratch folders outside the project, two eval gaps),

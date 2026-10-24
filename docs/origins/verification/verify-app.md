@@ -22,6 +22,10 @@ to start it, drive it and keep proof.
   repository; one record of what the run started, with a start-time check before any process is stopped; tmux on a
   private socket; scratch files named with the run ID and deleted only by recorded path; the run folder removed only
   after the stop is confirmed.
+- The run folder stays outside the repository on purpose, so an app that searches upward does not find the
+  repository's own files; a refused write there ends the pass as blocked, never with the run moved inside. Maintain
+  mode keeps its notes and helper scripts in a git-ignored `.verify-app-notes/` folder inside the project, removed at
+  the end of the pass that made it.
 - Templates with every spot to fill marked, server and CLI variants of Launch and Doctor, numbered evidence per step,
   and an explained "not yet proven on the real target" section.
 - New `DRIVING.md`: the project's own harness first, with signals per ecosystem, then fallbacks for web, CLI, TUI,
