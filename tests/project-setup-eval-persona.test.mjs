@@ -88,7 +88,7 @@ test('each end rule anchor sits whole on one line, once, before the persona, for
   const anchors = [
     'wins over everything below, including the persona',
     'once all three of these have happened, in this order',
-    'The assistant recommended a first task',
+    'said it wrote the project CLAUDE.md, and after that recommended a first task',
     '2. You (YOU in the conversation) said which task to do',
     '3. After that, an assistant message works on that task',
     'reads, explains or changes something for it',

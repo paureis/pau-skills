@@ -28,9 +28,10 @@ Most scenarios take 15 to 30 turns and cost real usage: a run at the 30-turn lim
    `AskUserQuestion` is turned off, because nobody can answer it in `-p` mode, so the skill must use its plain
    numbered-options fallback.
 4. A second `claude -p` plays the persona (`personas/*.md`) and writes each user reply. Its prompt starts with an end
-   rule that wins over the persona: once the assistant recommended a first task, the persona said which task to do,
-   and after that an assistant message works on that task, the persona replies `[END]`. The persona does not take
-   part in the task. The run ends on a reply that holds `[END]` anywhere.
+   rule that wins over the persona: once the assistant said it wrote the project CLAUDE.md and after that recommended
+   a first task, the persona said which task to do, and after that an assistant message works on that task, the
+   persona replies `[END]`. The persona does not take part in the task. The run ends on a reply that holds `[END]`
+   anywhere.
 5. `grade.mjs` runs the mechanical checks. `JUDGE.md` is the rubric for a model-graded score from 1 to 5 per item.
 
 ## What the mechanical checks cover

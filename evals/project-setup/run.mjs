@@ -144,7 +144,7 @@ function turnContent(entries, turn) {
 const END_RULE = [
   'The end rule. It comes first and wins over everything below, including the persona and its habits.',
   'End the conversation once all three of these have happened, in this order:',
-  '1. The assistant recommended a first task.',
+  '1. The assistant said it wrote the project CLAUDE.md, and after that recommended a first task.',
   '2. You (YOU in the conversation) said which task to do.',
   '3. After that, an assistant message works on that task: it reads, explains or changes something for it.',
   'Then reply with exactly [END], even when that message asks you a question or asks you to approve a change.',
