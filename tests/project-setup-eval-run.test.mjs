@@ -1,6 +1,7 @@
-// The parts of the project-setup eval runner that need no model: where a scenario's fixture comes from, and how it is
-// copied into a fresh git repository. run.mjs starts real `claude -p` runs only when it is the entry point; the import
-// below empties PATH so that, if that guard ever breaks, no `claude` can start.
+// The parts of the project-setup eval runner that need no model: where a scenario's fixture comes from, how it is
+// copied into a fresh git repository, the entry-point guards of run.mjs and grade.mjs (also through a symlink), and
+// the default turn limit. run.mjs starts real `claude -p` runs only when it is the entry point; the import below
+// empties PATH so that, if that guard ever breaks, no `claude` can start.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -126,6 +127,18 @@ test('grade.mjs is the entry point also through a symlink: with no run folder it
     const r = spawnSync(process.execPath, [script], { cwd: tempDir(), encoding: 'utf8' });
     assert.equal(r.status, 2, `${script}: exit ${r.status}, ${r.stdout}${r.stderr}`);
     assert.match(r.stderr, /^usage: node grade\.mjs <run dir>$/m);
+  }
+});
+
+const RUN = join(ROOT, 'evals', 'project-setup', 'run.mjs');
+
+test('run.mjs is the entry point also through a symlink: an unknown scenario fails before any claude call', () => {
+  const link = join(tempDir('run-link-'), 'run.mjs');
+  symlinkSync(RUN, link);
+  for (const script of [RUN, link]) {
+    const r = spawnSync(process.execPath, [script, '--scenario', 'no-such-scenario'], { cwd: tempDir(), encoding: 'utf8', env: { ...process.env, PATH: tempDir() } });
+    assert.notEqual(r.status, 0, `${script}: exit ${r.status}, ${r.stdout}${r.stderr}`);
+    assert.match(r.stderr, /no scenario named no-such-scenario/, `${script}: ${r.stderr}`);
   }
 });
 
