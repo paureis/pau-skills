@@ -6,8 +6,9 @@
 //
 // For each scenario in scenarios.json: copy the fixture into a fresh folder, install the skill as a standalone
 // personal skill in a sandboxed HOME (so the real ~/.claude is never touched), and talk to `claude -p` one turn at a
-// time. A second `claude -p` plays the persona and writes each user reply. The run stops when the persona replies
-// [END] or the turn limit is reached. --baseline runs the same persona without the skill, to compare.
+// time. A second `claude -p` plays the persona and writes each user reply. The run stops after a persona reply that
+// holds [END] (the end rule comes first in the persona's prompt and wins over the persona) or at the turn limit.
+// --baseline runs the same persona without the skill, to compare.
 //
 // Each run writes transcript.json, tools.json, files.json, grade.json and judge.json under <out>/<scenario>[-baseline]/.
 // This costs real model usage: up to 81 model calls per scenario at the default 40 turns. Node 20+, no dependencies.
@@ -138,21 +139,66 @@ function turnContent(entries, turn) {
   return { text: texts.join('\n\n'), tools };
 }
 
-function personaReply(persona, transcript, opts) {
-  const system = [
-    'You are role-playing a person who is using Claude Code, as part of a test of a setup assistant. Stay in character.',
-    '',
-    persona,
-    '',
-    'You will see the conversation so far. Write only the next message this person would type. No narration, no labels, no quotes around it. Keep it short.',
-    'If the assistant asks a multiple-choice question, answer as this person would, by number or by name.',
-    'If the setup is over and the assistant has started a first real task that you picked, reply with exactly [END].',
-    'If the assistant asks nothing and nothing is left to answer, reply with exactly [END].',
-  ].join('\n');
+// The persona's system prompt. The end rule comes first and wins over the persona: placed after the persona, it lost
+// to "stay in character", and the persona went on with its first task until the turn limit.
+const END_RULE = [
+  'The end rule. It comes first and wins over everything below, including the persona and its habits.',
+  'End the conversation once all three of these have happened, in this order:',
+  '1. The assistant said it wrote the project CLAUDE.md, and after that recommended a first task.',
+  '2. You (YOU in the conversation) said which task to do.',
+  '3. After that, an assistant message works on that task: it reads, explains or changes something for it.',
+  'Then reply with exactly [END], even when that message asks you a question or asks you to approve a change.',
+  'You do not take part in the task: do not answer its questions, approve its changes or ask for more.',
+  'Also reply with exactly [END] when the assistant asks nothing and nothing is left to answer.',
+  'When you end, write [END] alone, with nothing before or after it.',
+];
+const ROLE_PLAY = 'You are role-playing a person who is using Claude Code, as part of a test of a setup assistant. Stay in character, except where the end rule says otherwise.';
+const REPLY_RULES = [
+  'You will see the conversation so far. Write only the next message this person would type. No narration, no labels, no quotes around it. Keep it short.',
+  'If the assistant asks a multiple-choice question, answer as this person would, by number or by name.',
+  'Before every reply, check the end rule at the top.',
+];
+export function personaSystemPrompt(persona) {
+  return [...END_RULE, '', ROLE_PLAY, '', persona, '', ...REPLY_RULES].join('\n');
+}
+
+/** True when a persona reply ends the run: it holds [END] anywhere. */
+export function isEnd(reply) {
+  return /\[END\]/.test(reply);
+}
+
+/** The claude arguments and the input of one persona call. */
+export function personaCall(system, transcript, opts = {}) {
   const convo = transcript.map((m) => `${m.role === 'user' ? 'YOU' : 'ASSISTANT'}:\n${m.text}`).join('\n\n---\n\n');
   const argv = ['-p', '--output-format', 'json', '--no-session-persistence', '--tools', '', '--system-prompt', system];
   if (opts.personaModel) argv.push('--model', opts.personaModel);
-  return claude(argv, { cwd: opts.cwd, home: opts.home, input: `Conversation so far:\n\n${convo}\n\nWrite your next message.` }).result.trim();
+  return { argv, input: `Conversation so far:\n\n${convo}\n\nWrite your next message.` };
+}
+
+/** One real persona call. Returns claude's parsed JSON output, which has result and total_cost_usd. */
+export function askPersona(system, transcript, opts) {
+  const { argv, input } = personaCall(system, transcript, opts);
+  return claude(argv, { cwd: opts.cwd, home: opts.home, input });
+}
+
+function personaReply(persona, transcript, opts) {
+  return askPersona(personaSystemPrompt(persona), transcript, opts).result.trim();
+}
+
+/**
+ * The turn loop: send the message, record the assistant's answer, ask the persona for the next message. It ends after
+ * the first persona reply that holds [END] (that reply is not sent) or after maxTurns turns.
+ */
+export function converse({ opening, maxTurns, assistant, persona }) {
+  const transcript = [];
+  let message = opening;
+  for (let turn = 0; turn < maxTurns; turn++) {
+    transcript.push({ role: 'user', text: message });
+    transcript.push({ role: 'assistant', text: assistant(message, turn) });
+    message = persona(transcript);
+    if (isEnd(message)) break;
+  }
+  return transcript;
 }
 
 function judge(run, opts) {
@@ -193,13 +239,10 @@ function runScenario(scenario, opts) {
   const persona = readFileSync(join(HERE, scenario.persona), 'utf8');
 
   const id = randomUUID();
-  const transcript = [];
   const tools = [];
   let seen = 0;
-  let message = opts.baseline ? BASELINE_OPENING : scenario.opening;
   let cost = 0;
-  for (let turn = 0; turn < opts.maxTurns; turn++) {
-    transcript.push({ role: 'user', text: message });
+  const assistant = (message, turn) => {
     const argv = ['-p', message, '--output-format', 'json', turn === 0 ? '--session-id' : '--resume', id,
       '--permission-mode', 'acceptEdits', '--add-dir', home,
       // No person can answer a multiple-choice prompt in -p mode, so the skill must use its plain-text fallback.
@@ -214,12 +257,16 @@ function runScenario(scenario, opts) {
     const entries = readLog(findSessionLog(home, id));
     const { text, tools: t } = turnContent(entries.slice(seen), turn);
     seen = entries.length;
-    transcript.push({ role: 'assistant', text: text || out.result || '' });
     tools.push(...t);
     process.stderr.write(`  ${name} turn ${turn}: ${t.length} tool calls\n`);
-    message = personaReply(persona, transcript, { ...opts, cwd: side, home: side });
-    if (/^\[END\]$/.test(message)) break;
-  }
+    return text || out.result || '';
+  };
+  const transcript = converse({
+    opening: opts.baseline ? BASELINE_OPENING : scenario.opening,
+    maxTurns: opts.maxTurns,
+    assistant,
+    persona: (t) => personaReply(persona, t, { ...opts, cwd: side, home: side }),
+  });
 
   const files = { project: snapshot(project), home: homeFiles(home), homeBefore };
   const logFile = findSessionLog(home, id);
