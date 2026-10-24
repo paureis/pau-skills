@@ -79,6 +79,7 @@ under "Work items" below.
 - [Things that bit the seventh batch](backlog/things-that-bit/batch-7.md)
 - [Things that bit the eighth batch](backlog/things-that-bit/batch-8.md)
 - [Things that bit the ninth batch](backlog/things-that-bit/batch-9.md)
+- [Things that bit the tenth batch](backlog/things-that-bit/batch-10.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not.
 
 ## Work items
@@ -111,6 +112,7 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q10 what the Q1 audit left](backlog/q10.md)
 - [Q11 what batch 8 left](backlog/q11.md)
 - [Q12 what Q11 left](backlog/q12.md)
+- [Q13 what Q12 left](backlog/q13.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -132,7 +134,8 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
    the Q1 audit and the Q4 reviews left (pull request 38).
 10. Done: the eighth batch, Q3 designer agent and Q8 production rules from day one (pull request 41).
 11. Done: the ninth batch, Q11 what batch 8 left (pull request 44).
-12. **Next:** Q12 what Q11 left; its scope is decision 14. The kickoff is in
+12. Done: the tenth batch, Q12 what Q11 left (pull request 47).
+13. **Next:** Q13 what Q12 left, waiting on the owner's answers (decision 15). The kickoff is in
     [backlog/kickoff.md](backlog/kickoff.md).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

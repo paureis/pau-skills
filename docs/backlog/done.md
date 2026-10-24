@@ -166,3 +166,18 @@
     started it; the rule 2 cold run needed four builds per side before the control meant anything; the three eval
     scenarios cost 55 US dollars against an estimate of 30; two claims in the orchestrator's own review note were
     wrong and were corrected by the plan checks.
+- 2026-10-24: the tenth batch, Q12 what Q11 left, merged as
+  [pull request 47](https://github.com/paureis/pau-skills/pull/47). `eng-lead` planned three slices on disjoint files
+  (verify-app, agent-friendly-audit, the eval); a read-only plan check built each slice in a clone, then one builder,
+  one fresh reviewer and one fix round per slice, and two cold runs per side with a base control for each changed
+  skill. The two changed skills were zipped with `pack-skills --since 30fe24d` and sent to the owner; the counts did
+  not change. Four findings went to the owner on an html-plan page; Q13 holds them.
+  - Worked: handing back at once with the builders' IDs, briefs and a reviewer contract as files, and base controls
+    started while the plan checks ran, which showed the plan where the scratch files really went (a helper script
+    written to `/tmp`). Both prose plan checks found a must-fix (a test the brief's own wording would fail, a removal
+    that deleted the check's files), every reviewer found something real, and the cold runs gave clean numbers: 2 to
+    1 and 2 or 1 to 0 refused writes outside the project.
+  - Did not: the orchestrator's `cd` into a worktree moved the session's folder until it moved back; the
+    agent-friendly-audit cold run needed a "go ahead" prompt to pass step 1 (with the plain prompt it stops there by
+    design); the eval run at 40 turns showed the turn limit was not the problem (the persona never ends); a headless
+    verify-app pass still cannot reach its live pass.
