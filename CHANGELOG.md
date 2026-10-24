@@ -3,6 +3,16 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-24: Q13, what Q12 left
+
+- `evals/project-setup`: the persona's end rule comes first in its prompt and wins over the persona: once the
+  assistant said it wrote the project CLAUDE.md and recommended a first task, the persona picked one, and an assistant
+  message works on it, the persona replies `[END]` and takes no part in the task. The runner ends on a reply that holds
+  `[END]` anywhere. The new `replay.mjs` sends a saved run, cut after a chosen turn, to the old or the new persona
+  prompt n times and counts the replies that end. `spanish-beginner` passed 19/19 and ended at turn 20 of 40. The
+  README says to pass `--out` outside the repository: inside it, every run also loads this repository's CLAUDE.md.
+  No skill or hook changed, so nothing is bumped.
+
 ## 2026-10-24: after Q12, the owner's decisions (decision 15)
 
 - The owner kept every recommendation: build Q13 (a stricter end rule for the project-setup eval persona), and leave

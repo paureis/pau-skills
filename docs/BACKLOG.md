@@ -80,6 +80,7 @@ under "Work items" below.
 - [Things that bit the eighth batch](backlog/things-that-bit/batch-8.md)
 - [Things that bit the ninth batch](backlog/things-that-bit/batch-9.md)
 - [Things that bit the tenth batch](backlog/things-that-bit/batch-10.md)
+- [Things that bit the eleventh batch](backlog/things-that-bit/batch-11.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not.
 
 ## Work items
