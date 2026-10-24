@@ -2,79 +2,9 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-- 2026-10-17: P0.1 this backlog.
-- 2026-10-17: P0.2 context budget, P0.3 NOTICE, P0.4 style word list, N1 verify-app, N2 arena, N3 architect, N4
-  bug-fix. Each was built by a subagent in its own worktree, checked by the orchestrator, reviewed by a fresh
-  subagent, and fixed in one round (`verify-app` also had a cold run by a fresh agent). Not done from N1: the
-  `project-setup` offer to generate a verification skill, because `project-setup` promises not to send beginners to
-  other skills; decide whether to make an exception. The auto tier is now full (12 skills, about 50 characters left),
-  so a new auto skill needs a description trimmed elsewhere.
-- 2026-10-17: N5 hillclimb, N6 agent-friendly-audit, N7 skill-eval, N10 sharpen, N11 brainstorm and P1.1
-  pack-skills, merged as [pull request 13](https://github.com/paureis/pau-skills/pull/13). Five builders in parallel,
-  each brief checked by a read-only subagent first; every item had a fresh reviewer, a cold run and one fix round, and
-  reviewers found must-fix bugs in four of the five. Three bugs the batch found in existing code were fixed in their
-  own pull requests and merged after it: nested code fences in `arena` and `instructions-audit`
-  ([11](https://github.com/paureis/pau-skills/pull/11)), test suites that left their temporary folders behind
-  ([12](https://github.com/paureis/pau-skills/pull/12)), and config files with a byte order mark that were silently
-  ignored ([14](https://github.com/paureis/pau-skills/pull/14)). The 12 new and changed skills were zipped with
-  `pack-skills`, uploaded to claude.ai and confirmed synced; the profile README now says 34 skills. The audit's findings
-  for this repository became P1.2 to P1.4.
-- 2026-10-17: M1 tdd, M2 rule-to-hook, M3 mutation-test, M4 review-triage, M6 lean-subagent-dev and M7
-  codebase-oracle, merged as [pull request 16](https://github.com/paureis/pau-skills/pull/16). Four builders in
-  parallel, each brief checked by a read-only subagent first; every item had a fresh reviewer and one fix round, and
-  three had a cold run (the oracle's in two headless sessions with real explorers). Reviewers found a must-fix in
-  three of the four. The seven changed skills (the six plus `which-skill`) were zipped with `pack-skills`, uploaded to
-  claude.ai and confirmed synced; the skill count stays at 34, so the profile README did not change.
-  The owner's open questions from this pull request (whether `lean-subagent-dev` is "adapted", the effort split per
-  role, the `metadata.upstream-pstack` key in `tdd`, the ratchet) were settled on 2026-10-19 in decision 8.
-- 2026-10-18: P0.5 every skill loads on its own, merged as [pull request 19](https://github.com/paureis/pau-skills/pull/19).
-  Four builders by plugin group, each brief checked by a read-only subagent first; a fresh reviewer, a cold run of 20
-  headless sessions (10 plain requests, half with stubs of the owner's other plugins), one fix round and a second look
-  of six more runs. The owner chose the confirm wording and trimmed the confirm list to 13. Descriptions went from
-  18,298 to 11,559 characters. All 34 skills were zipped with `pack-skills --all`, uploaded and confirmed synced.
-  Part B, measured locally on the owner's 1M window:
-  - before: Skills 9.9k tokens (1.0%, at the cap), 125 skills listed with no description; the upload alone did not
-    move the number, because the listing was still full;
-  - after turning off 18 synced plugins (sales, legal, finance, human-resources, marketing, common-room, apollo,
-    brand-voice, customer-support, slack-by-salesforce, enterprise-search, engineering, operations, product-management,
-    data, design, productivity, cowork-plugin-management) and four marketplace plugins (superpowers,
-    claude-md-management, code-review, context7), plus Vercel's 33 skills, and moving 13 stale local copies of uploaded
-    skills out of `~/.claude/skills/`: 10k (still at the cap), 75 with no description;
-  - after `SLASH_COMMAND_TOOL_CHAR_BUDGET=80000`: Skills 16.8k (1.7%), none with no description, locally and in a new
-    cloud session (the variable set in the default cloud environment).
-  A synced plugin disabled only with `claude plugin disable <name>@synced` still listed its skills; turning it off on
-  claude.ai (Customize, Plugins) removed them. The skill count stays at 34, so the profile README did not change.
-- 2026-10-18: M5 retrospective, M8 safe-merge and evaluator, M9 improve-codebase-architecture, M10 which-skill, M11
-  small additions with the new `suppression-reason` hook, P1.2 validate in CI and P1.3 (a checklist line, by the
-  owner's choice), merged as [pull request 21](https://github.com/paureis/pau-skills/pull/21). Five builders in
-  parallel, each brief checked by a read-only subagent first; every item had a fresh reviewer, one fix round and a
-  second look, and M5, M8, M9 and M11 had cold runs as headless sessions. Reviewers found a must-fix or serious finding
-  in every item. The 10 changed skills were zipped with `pack-skills --since 7e06226` and sent to the owner; all
-  replace an existing skill, and the owner uploaded them to claude.ai. `pau-skills-hooks` went to 0.2.0 for the hook,
-  and the owner updated it on their computers. The skill count stays at 34, so the
-  profile README did not change. Follow-ups: P1.6 to P1.8.
-- 2026-10-19: N8 overnight-run, N9 engineering-principles, P1.6 retrospective audit, P1.7 mutate.sh and Python
-  bytecode, P1.8 evaluator evidence line, and two follow-ups the owner added mid-batch (the hillclimb log formula
-  guard and the mutate.sh restore by content), merged as [pull request 24](https://github.com/paureis/pau-skills/pull/24).
-  The owner raised the description total to 13,000 first. Five builders, each in its own worktree with a read-only
-  plan check of its brief first; every item had a fresh reviewer, one fix round and a second look, and N8, N9 and P1
-  had cold runs as headless sessions. Reviewers or cold runs found a must-fix in N8 (a turn could rewrite its own
-  predicate; the morning audit did not work end to end) and in the mutate.sh restore (it could erase a hidden edit).
-  CI caught one macOS-only test failure, fixed before the merge. The 8 changed skills were zipped with
-  `pack-skills --since 8f44afa` and sent to the owner as one bundle (2 new, 6 replacing); the owner uploaded them
-  and all 8 were confirmed synced, identical to main. In a new session `/context` showed Skills at 14.5k tokens
-  (1.5% of the 1M window, 92 skills listed) and none without a description. No hook changed. The profile README now
-  says 36 skills.
-- 2026-10-19: Q2 `geppetto` and the agent roster, Q5 html-plan links with Q9 a lighter `brainstorm`, Q6
-  `launch-readiness` and Q7 UI states in `verify-app`, merged as [pull request 28](https://github.com/paureis/pau-skills/pull/28).
-  The owner raised the description total to 14,000 and settled decision 9 first. Four builders, each in its own
-  worktree with a read-only plan check of its brief first; every item had a fresh reviewer, a headless cold run with
-  an empty HOME, one fix round and a second look. Reviewers found a must-fix in Q2, Q6 and Q7; the Q2 cold run ran
-  the whole roster flow (install, `eng-lead` planning two slices, two builders in worktrees, two reviewers, branches
-  ready to merge) for about $5. CI caught one macOS-only failure, fixed before the merge. The 8 changed skills were
-  zipped with `pack-skills --since 7fd0230` and sent to the owner as one bundle with html-plan (3 new, 6 replacing),
-  and this repository's `.claude/agents/` now holds the roster. No hook changed. The profile README now says 38
-  skills.
+Work from 2026-10-17 to 2026-10-19 (the first six batches) is in
+[done-2026-10-17-to-19.md](done-2026-10-17-to-19.md).
+
 - 2026-10-20: Q1 test-value audit, merged as [pull request 31](https://github.com/paureis/pau-skills/pull/31), the
   first batch run with the roster. Phase A: `eng-lead` planned three audit slices, a read-only plan check fixed every
   brief, three builders ran 447 mutations over all 39 test files, and three fresh reviewers reran 219 of them. Phase B,
@@ -181,3 +111,17 @@
     agent-friendly-audit cold run needed a "go ahead" prompt to pass step 1 (with the plain prompt it stops there by
     design); the eval run at 40 turns showed the turn limit was not the problem (the persona never ends); a headless
     verify-app pass still cannot reach its live pass.
+- 2026-10-24: the eleventh batch, Q13 what Q12 left, merged as
+  [pull request 50](https://github.com/paureis/pau-skills/pull/50). `eng-lead` planned one slice (the persona's end
+  rule, with a replay script for the control); a read-only plan check built it in a clone, then one builder, one fresh
+  reviewer, one fix round and a second look, then one `spanish-beginner` run and a replay control. No skill changed,
+  so `pack-skills --since 4895891` had nothing to pack; the counts did not change. Two findings went to the owner on
+  an html-plan page; Q14 holds them.
+  - Worked: handing back at once with the builder's ID, briefs and the reviewer contract as files with a corrections
+    section. The plan check ran every planned mutation and then its own, and found four unguarded lines of the rule;
+    the reviewer found a trigger that could fire mid-interview. The replay control cost cents and showed the real
+    cause: the old prompt failed only when the persona could read this repository's CLAUDE.md (1 of 4 inside, 4 of 4
+    outside), and the new one held in both places (4 of 4), with 0 of 4 early ends.
+  - Did not: the first replay, outside the repository, could not tell the two prompts apart, so the control needed a
+    second probe in the original folder; the run cost 6.98 US dollars against an estimate of 20, because Q12's runs
+    carried this repository's CLAUDE.md; the worker process restarted once (the agents were continued by ID).
