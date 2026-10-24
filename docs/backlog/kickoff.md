@@ -2,43 +2,45 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The ninth batch is done: Q11 merged as pull request 44. What is left is Q12, what Q11 left: two other skills that
-keep scratch files outside the project, and two small gaps in the project-setup eval. The owner answered the Q11
-decisions page with every recommendation (decision 14): build both parts of Q12, and leave the other two findings
-as they are. Read "Things that bit the ninth batch" (`docs/backlog/things-that-bit/batch-9.md`) first. The owner
-starts it with this message:
+The tenth batch is done: Q12 merged as pull request 47. What is left is Q13, what Q12 left: the eval persona that
+never ends, and three findings the orchestrator recommends leaving as they are. The owner answers the Q12 decisions
+page first; a short session records the answers as decision 15 in `docs/backlog/decisions.md` (as decision 14 was
+recorded before Q12). If the owner keeps every recommendation, Q13 is one small part, the persona's end rule, and the
+backlog is empty after it. Read "Things that bit the tenth batch" (`docs/backlog/things-that-bit/batch-10.md`) first.
+The owner starts it with this message:
 
 ```text
-You are the orchestrator for Q12 in this repository: what Q11 left. Do not build it yourself; run the roster in
-.claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My answers from the Q11 decisions page are
-decision 14 in docs/backlog/decisions.md; build the parts it chooses.
+You are the orchestrator for Q13 in this repository: what Q12 left. Do not build it yourself; run the roster in
+.claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My answers from the Q12 decisions page are
+decision 15 in docs/backlog/decisions.md; build the parts it chooses. If decision 15 is not there, ask me for the
+page's response first and record it, as decision 14 was recorded.
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules, including step 2 and step 8's bump-listing command).
-2. docs/BACKLOG.md (the note at the top, "How to work an item", the Contents and "Order"), docs/backlog/q12.md,
-   docs/backlog/q11.md (what batch 9 built and changed), decisions 7 to 14 in docs/backlog/decisions.md, "Policy
+2. docs/BACKLOG.md (the note at the top, "How to work an item", the Contents and "Order"), docs/backlog/q13.md,
+   docs/backlog/q12.md (what batch 10 built and changed), decisions 7 to 15 in docs/backlog/decisions.md, "Policy
    since P0.5" in docs/backlog/context-budget.md, docs/backlog/how-to-run-a-batch.md (all 10 steps and "With the
-   roster"), and every file in docs/backlog/things-that-bit/, batch-9.md first.
-3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, the five agent files
-   in .claude/agents/ (roster 4), and skills/agent-orchestration/geppetto/SKILL.md (its Create step 4 is the pattern
-   for a draft folder inside the project). Work that way for the whole session. The usage budget is generous: same
-   model for every agent, a read-only plan check of every brief that builds the slice in a clone, a fresh reviewer
-   per slice, and a cold run (headless, empty HOME, --setting-sources user,project) with a base control for each
-   changed skill behaviour.
+   roster"), and every file in docs/backlog/things-that-bit/, batch-10.md first.
+3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, and the five agent
+   files in .claude/agents/ (roster 4). Work that way for the whole session. The usage budget is generous: same model
+   for every agent, a read-only plan check of every brief that builds the slice in a clone, a fresh reviewer per
+   slice, and a cold run (headless, empty HOME, --setting-sources user,project) with a base control for each changed
+   behaviour. An eval run costs about 30 to 36 US dollars; say the cost before you start one.
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
   builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds, with the
   reviewer contract as a file. If the permission check refuses eng-lead's call for a builder, ask me before you
   start it yourself.
-- Review Q12 against the code and tell me anything you would change; record it in the item.
+- Review Q13 against the code and tell me anything you would change; record it in the item.
 - Commits carry the harness's two attribution trailers; say so once in the standing orders.
 
 Rules that matter most:
 - Every skill works on its own; no em or en dashes; plain English; Node standard library only.
 - Descriptions stay at most 400 characters each and 14,000 in total, with no angle-bracket tag.
-- No tracked file may pass 20,000 bytes (CHANGELOG.md is near it: when the ISO week has ended, move its entries to
-  docs/changelog/ first). The four PRODUCTION-RULES.md copies stay identical (COPIES).
+- No tracked file may pass 20,000 bytes (when the ISO week of the CHANGELOG entries has ended, move them to
+  docs/changelog/ first; 2026-W43 is partly moved already). The four PRODUCTION-RULES.md copies stay identical
+  (COPIES).
 - Every new test must fail when the behaviour it covers breaks: prove each with mutate.sh after committing, and have
   every run report its "# tests" line.
 - Builders commit and never push. You push the working branch and open the PR. When CI is green on Linux, macOS and
@@ -51,9 +53,9 @@ Rules that matter most:
 When the PR is open, tell me in plain words what changed, what the reviews and cold runs found, and anything I need
 to decide; if html-plan is installed, give me the decisions as an html-plan page published as a private artifact.
 After the merge, run `node scripts/pack-skills.mjs --since <main before the batch>` on main and send me the changed
-skills' zips in one bundle zip with HOW-TO-UPLOAD.txt, mark Q12 done in docs/backlog/ with what worked and what did
-not with the roster, write the kickoff for whatever is left in the backlog (or say it is empty) into
-docs/backlog/kickoff.md, and update my profile README in paureis/paureis if a count changed.
+skills' zips in one bundle zip with HOW-TO-UPLOAD.txt (if no skill changed, say so), mark Q13 done in docs/backlog/
+with what worked and what did not with the roster, write the kickoff for whatever is left in the backlog (or say it
+is empty) into docs/backlog/kickoff.md, and update my profile README in paureis/paureis if a count changed.
 ```
 
 ## The fifth batch's kickoff, as a template

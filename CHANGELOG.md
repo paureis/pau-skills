@@ -3,6 +3,12 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-24: Q12 and batch 10 done; Q13 and its kickoff
+
+- Q12 and the tenth batch are marked done in the backlog, with what bit them in
+  `docs/backlog/things-that-bit/batch-10.md`. Q13 holds the four findings on the owner's decisions page, waiting on
+  the answers (decision 15), and its kickoff is in `docs/backlog/kickoff.md`. No skill or hook changed.
+
 ## 2026-10-24: Q12, what Q11 left
 
 - `verify-app`: maintain mode keeps its run notes and any helper script it writes for itself in a git-ignored
