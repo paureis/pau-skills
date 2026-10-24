@@ -3,6 +3,14 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-24: Q13 and batch 11 done; Q14 and its kickoff
+
+- Q13 and the eleventh batch are marked done in the backlog. Q14 holds the two findings on the owner's decisions page
+  (the eval's default output folder inside the repository, and a printed cost without the persona and the judge),
+  waiting on the answers (decision 16), and its kickoff is in `docs/backlog/kickoff.md`. The entries from 2026-10-17
+  to 2026-10-19 moved from `docs/backlog/done.md` to `docs/backlog/done-2026-10-17-to-19.md`, so the file stays under
+  20,000 bytes. No skill or hook changed.
+
 ## 2026-10-24: Q13, what Q12 left
 
 - `evals/project-setup`: the persona's end rule comes first in its prompt and wins over the persona: once the
