@@ -32,10 +32,10 @@ Bundled files, open each when its mode needs it:
   changing one: agent files, the `.gitignore` line, Audit fixes and Update merges alike. The covenant block and the
   production rules block are the exceptions: each is the same in every file that carries it, so show it once in full
   and name it where it goes in each file. One yes may cover a set you showed together; a partial yes ("only
-  builder and reviewer") covers only what it names. Approval of a plan or a report is not approval of a write. The
-  two files in `.geppetto-draft/` (Create, step 4), the draft and its `.gitignore`, are the only ones written before
-  the yes, only for the check, and they are never committed. Update, step 2 keeps its merge copies there under the
-  same rule.
+  builder and reviewer") covers only what it names. Approval of a plan or a report is not approval of a write.
+  Before the yes, the skill writes only in `.geppetto-draft/`: the draft and its `.gitignore` (Create, step 4), or
+  the merge copies and the same `.gitignore` (Update, step 2). They are only for the check or the merge, and they are
+  never committed.
 - **Never overwrite an existing agent file.** Show the diff and merge on a yes instead.
 - **Project scope by default.** Write to the project's `.claude/agents/`, to be committed so the agents work in cloud
   sessions and on every computer. Write to `~/.claude/agents/` only when the user asks for it; cloud sessions start
@@ -75,13 +75,12 @@ skill changed is **Update**. If you cannot tell, ask which one, in one line.
 
 ## Create
 
-First look for `.geppetto-draft/` at the project root. If it is there, an earlier Create or Update left it: list its
-files and ask to remove it. On a no, stop: the check reads every file in the folder, and step 5 removes it.
-
-1. Before the first question, read `${CLAUDE_SKILL_DIR}/COVENANT.md`, `${CLAUDE_SKILL_DIR}/PRODUCTION-RULES.md` and,
-   for a designer, `${CLAUDE_SKILL_DIR}/templates/designer.md`: the skill's read grant may be gone in a later turn
-   (it was after a `--resume` in a headless run). Then ask a few questions, one at a time, each with your suggested
-   answer from what you can read in the project:
+1. Do these in order. Read `${CLAUDE_SKILL_DIR}/COVENANT.md`, `${CLAUDE_SKILL_DIR}/PRODUCTION-RULES.md` and, for a
+   designer, `${CLAUDE_SKILL_DIR}/templates/designer.md`: the skill's read grant may be gone in a later turn (it was
+   after a `--resume` in a headless run). Next look for `.geppetto-draft/` at the project root. If it is there, an
+   earlier Create or Update left it: list its files and ask whether to remove it. If the user wants to keep it, stop:
+   the check reads every file in the folder. On a yes, run `rm -r .geppetto-draft` from the project root. Then ask a
+   few questions, one at a time, each with your suggested answer from what you can read in the project:
    - What one job does it do, and what does it hand back?
    - What must it never do (its anti-jobs)?
    - Does it change files, run commands, or only read?
@@ -112,15 +111,17 @@ files and ask to remove it. On a no, stop: the check reads every file in the fol
    it is not a root `agents/` folder, which a plugin rooted at the project would load. First write
    `.geppetto-draft/.gitignore` holding the one line `*`, so git never stages the folder, then the draft as
    `.geppetto-draft/<name>.md`. Run `node "${CLAUDE_SKILL_DIR}/check-agents.mjs" --dir .geppetto-draft` from the
-   project root. Its first line must count 1 agent file; 0 means it ran in another folder. Fix every error. Then the
-   two checks the draft folder cannot do:
-   - If an agent in `.claude/agents/` already has that `name`, stop and offer a merge (never overwrite).
+   project root. Its first line must count exactly 1 agent file. 0 agents means it ran in another folder or the draft
+   has no frontmatter; 2 or more means a stale draft is in the folder: remove that file, then run the check again.
+   Fix every error. Then the two checks the draft folder cannot do:
+   - If an agent in `.claude/agents/` already has that `name`, run `rm -r .geppetto-draft` from the project root,
+     stop, and offer a merge (never overwrite).
    - If the draft has `isolation: worktree` and `git check-ignore -q .claude/worktrees/x` fails, offer the
      `.claude/worktrees/` line for `.gitignore` as in Install, step 4.
-5. Show the file and the check's output, ask, and write it on a yes. After the final write, or after a no, run
-   `rm -r .geppetto-draft` from the project root. If the write under `.claude/agents/` is refused, keep the folder,
-   say so, and say how to allow the write; never move the draft there with a shell command. After a write, run the
-   Audit's script on the project.
+5. Show the file and the check's output, ask, and write it on a yes. After the final write, or after a no to the
+   write, run `rm -r .geppetto-draft` from the project root. If the write under `.claude/agents/` is refused, keep the
+   folder, say so, and say how to allow the write; never copy or move the draft there with a shell command. After a
+   write, run the Audit's script on the project.
 
 ### A designer
 
@@ -211,7 +212,8 @@ The audit warns when an installed copy carries an older number than the bundle.
    copy as it was first installed (`git log --diff-filter=A --format=%H -- <file>`, then
    `git show <commit>:<file>`), use that as the base for a three-way merge:
    `git merge-file -p <installed copy> <old bundled copy> <new bundled copy>`, run on copies in `.geppetto-draft/`
-   (with the same `.gitignore`), removed as in Create, step 5.
+   (with the same `.gitignore`), removed as in Create, step 5. Before the first write there, look for a leftover
+   `.geppetto-draft/` and ask about it as in Create, step 1; if the user wants to keep it, stop.
    Without that history, show the diff between the installed copy and the new bundle, section by section, and say
    which parts look tuned.
 3. Show the merged file and the diff from the installed copy. The covenant block and the production rules block
