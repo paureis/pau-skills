@@ -3,6 +3,19 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-23: Q11, what batch 8 left
+
+- `project-setup` reads its own STYLE, QUESTIONS and PRODUCTION-RULES files, sends its introduction alone, ends it
+  with "Shall I start?" and reads the project only after the answer. Each production rule in CLAUDE.md starts with
+  its bold name. The eval grader checks both, and two scenarios run on the launch-readiness fixtures.
+- Rule 2 of the production rules (four copies): look up a key from input in a set the code defines only in a fixed
+  list or a map type, and reject a missing key. SEC-06 checks it. The geppetto roster goes to version 4.
+- `launch-readiness` reads its area files before the profile stop, so a grade after `--resume` completes; a refused
+  read leaves a blocking `<prefix>-NA` row.
+- `geppetto` Create and Update check drafts in `.geppetto-draft/` inside the project.
+- Versions: session-discipline 0.12.1, verification 0.12.1, agent-orchestration 0.11.1, guards 0.9.1, pau-skills
+  0.16.1. No hook changed. 1,298 tests.
+
 ## 2026-10-23: the eighth batch, Q3 designer agent and Q8 production rules from day one
 
 - Q8: `PRODUCTION-RULES.md` holds five production rules (money, server input, queries, the signed-in user, secrets),
