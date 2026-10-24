@@ -17,7 +17,9 @@ End with exactly one, and say which:
 
 Only the verify skill's own folder: its `SKILL.md`, `features/`, and the helper scripts it owns. Never product code,
 and a skeleton is product code: a skeleton that does not match the loaded screen is a product gap, reported with its
-numbers and never resized here.
+numbers and never resized here. Besides the skill's folder, the pass writes only what the skill's own commands write
+during the live pass (its run folder, its evidence folder, its scratch files) and its run notes and helper files in
+`.verify-app-notes/`, which are never committed and are removed at the end.
 One exception, and only on the user's yes: when the evidence folder is not ignored by git, or has tracked files in
 it, the fix is outside that folder (a line in `.gitignore`, or `git rm --cached` on the tracked files). Show the exact
 change and ask; with a yes it goes in the same commit, without one it is a finding in the report. A
@@ -27,7 +29,8 @@ behaviour the map describes that the app no longer has is either doc drift (fix 
 ## The pass
 
 0. **Find the target.** The `.claude/skills/verify-*/` folder, or another project skill with launch and drive
-   sections and a feature map. Several: ask which. None: stop and offer create mode instead of inventing one.
+   sections and a feature map. Several: ask which. None: stop and offer create mode instead of inventing one. Then
+   start the run notes (see the end of this section).
 
 1. **Index hygiene.** Run `node "${CLAUDE_SKILL_DIR}/check-map.mjs" <skill folder>`. Fix every problem it prints:
    missing, extra, duplicate or dead index entries, missing headings, leftover markers. An evidence folder git does
@@ -77,6 +80,10 @@ behaviour the map describes that the app no longer has is either doc drift (fix 
    and the route you tried; if the map does not mention that prerequisite, that is drift too. Drive every harness fix
    live again before keeping it. The final cleanup comes after the last drive of the pass, including those re-drives.
 
+   When a write to the skill's run folder (`$RUN`) is refused, the outcome is blocked: name the folder, ask the user
+   to allow writes there and run the pass again, and never move the run into the project. This holds even when the
+   skill's Run folders section does not say it. Remove the notes folder as at any other end.
+
 5. **Sort the findings.**
    - Doc drift: the map describes the user's view wrongly or not at all. Fix it.
    - Harness gap: the app works but the skill cannot drive it. Fix the harness, with the helper rule from create mode
@@ -88,8 +95,20 @@ behaviour the map describes that the app no longer has is either doc drift (fix 
    (plus the `.gitignore` change, if the user said yes to it). For clean or blocked: no commit; report the outcome
    and the coverage as they are.
 
-Keep short run notes (features covered, unreachable prerequisites, drift found, outcome) in a scratch folder outside
-the repository. Do not commit them.
+Keep short run notes (features covered, unreachable prerequisites, drift found, outcome), and any other scratch file
+the pass makes for itself (such as a helper script), in `.verify-app-notes/` at the project root. The skill's own run
+files still go in its run folder. The notes folder is inside the project, where acceptEdits writes without asking (a
+path outside the project is refused); it is not under `.claude/`, where every write asks, and it is not the evidence
+folder, which is kept. Start it once step 0 has found the target:
+
+- If `.verify-app-notes/` is already there, an earlier pass stopped before its end. List its files and ask whether
+  to remove it. On a yes, run `rm -r .verify-app-notes` from the project root. On a no, stop: this pass would mix
+  its notes with the earlier pass's.
+- Before any note, write `.verify-app-notes/.gitignore` holding the one line `*`, so git never shows the folder and
+  the skill's Cleanup check still finds the repository unchanged. Then write the notes in the same folder.
+
+Never commit the notes. At the end of the pass, in every outcome (clean, changed or blocked), draft the report from
+the notes, then run `rm -r .verify-app-notes` from the project root, then send the final message.
 
 ## Report
 
