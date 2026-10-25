@@ -78,6 +78,8 @@ test('A3 a doc-code src excerpt is numbered from its first line with text', () =
     'text-first.txt': 'one\ntwo\n\nfour\n',
     'starts-blank.txt': '\nsecond\nthird\n',
     'starts-text.txt': 'first\n\nthird\n',
+    'crlf.txt': 'one\r\n\r\nthree\r\nfour\r\n',
+    'tab.txt': 'one\n\t\nthree\nfour\n',
   };
   for (const [name, body] of Object.entries(files)) writeFileSync(join(dir, name), body);
   const extra = (script, ...args) => {
@@ -88,6 +90,8 @@ test('A3 a doc-code src excerpt is numbered from its first line with text', () =
   const patched = (...args) => extra(join(dir, 'pack.mjs'), ...args);
   assert.equal(patched('one-blank.txt', 'lines=2-4'), 'file="one-blank.txt" start="3"', 'line 2 is blank');
   assert.equal(patched('two-blank.txt', 'lines=2-5'), 'file="two-blank.txt" start="4"', 'lines 2 and 3 are blank, 3 holds spaces');
+  assert.equal(patched('crlf.txt', 'lines=2-4'), 'file="crlf.txt" start="3"', 'CRLF: line 2 holds only \\r');
+  assert.equal(patched('tab.txt', 'lines=2-4'), 'file="tab.txt" start="3"', 'line 2 holds only a tab');
   assert.equal(patched('text-first.txt', 'lines=2-4'), 'file="text-first.txt" start="2"', 'the first line has text');
   assert.equal(patched('starts-blank.txt'), 'file="starts-blank.txt" start="2"', 'a whole file that starts blank');
   assert.equal(patched('starts-text.txt'), 'file="starts-text.txt"', 'a whole file that starts with text: no start, as upstream');

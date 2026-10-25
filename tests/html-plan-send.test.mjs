@@ -154,6 +154,20 @@ test('S2 offers the button only when canSendToClaude answers available, asked ag
   await settle();
   assert.equal(second.button(), null, 'gone when the answer changes');
   assert.equal(s.calls.filter(([k]) => k === 'canSendToClaude').length, 2);
+
+  // A sheet closed before the check answers gets no button; the next opening does.
+  let answerNow;
+  const slow = stubComments({ canSendToClaude: () => (answerNow ? Promise.resolve('available') : new Promise((r) => { answerNow = r; })) });
+  const page = load({ claude: slow.claude });
+  const closed = openSheet(page.doc);
+  await settle();
+  closed.bg.remove();
+  answerNow('available');
+  await settle();
+  assert.equal(closed.button(), null, 'no button added to a closed sheet');
+  const reopened = openSheet(page.doc);
+  await settle();
+  assert.ok(reopened.button(), 'the next opening offers it');
 });
 
 test('S3 the comment limit is 4096 bytes of UTF-8, not 4096 characters', async () => {
@@ -204,6 +218,10 @@ test('S4 sends the exact text at the anchor of the h1, or of main when there is 
   const bad = stubComments({ anchorFor: async () => { throw { code: 'invalid', message: 'no' }; } });
   assert.deepEqual(plain(await api.send(bad.comments, null, 'hi')), { ok: false, code: 'invalid' });
   assert.equal(bad.calls.filter(([k]) => k === 'sendToClaude').length, 0, 'no send without an anchor');
+  for (const thrown of [{ code: 'something_new' }, new Error('no code')]) {
+    const odd = stubComments({ sendToClaude: async () => { throw thrown; } });
+    assert.deepEqual(plain(await api.send(odd.comments, { tagName: 'H1' }, 'hi')), { ok: false, code: 'upstream_error' }, `${thrown.code || 'an Error'} is upstream_error`);
+  }
 });
 
 test('S5 every outcome of a press, with one send per press and no second button after a lasting refusal', async () => {
@@ -251,6 +269,23 @@ test('S5 every outcome of a press, with one send per press and no second button 
   sheet = openSheet(page.doc);
   await settle();
   assert.equal(sheet.button(), null, 'not offered again until the page reloads');
+
+  // not_found counts as a transient failure, like an unknown code.
+  const lost = stubComments({ sendToClaude: async () => { throw { code: 'not_found' }; } });
+  const gone = load({ claude: lost.claude });
+  sheet = openSheet(gone.doc);
+  await settle();
+  sheet.button().click();
+  await settle();
+  assert.equal(sheet.button().disabled, false, 'not_found: enabled after the first failure');
+  sheet.button().click();
+  await settle();
+  assert.equal(sheet.button().disabled, true, 'not_found: disabled after the second failure');
+  assert.equal(lost.calls.filter(([k]) => k === 'sendToClaude').length, 2);
+  sheet.bg.remove();
+  sheet = openSheet(gone.doc);
+  await settle();
+  assert.equal(sheet.button(), null, 'not_found twice: not offered again until the page reloads');
 
   // Two presses before the first send settles make one send.
   let release;
