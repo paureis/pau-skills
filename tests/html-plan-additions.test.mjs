@@ -3,8 +3,11 @@
 // shows the full count.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { repo } from './helpers.mjs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { repo, runNode } from './helpers.mjs';
+import { tmp } from './pack-skills.helpers.mjs';
+import { FIXTURE, build, entry } from './pack-html-plan.helpers.mjs';
 
 const mist = () => readFileSync(repo('scripts', 'html-plan', 'mist.css'), 'utf8');
 
@@ -62,4 +65,33 @@ test('A2 Mist paints the body, marks the rail, sets the title in the sans face a
   assert.doesNotMatch(css, /[–—]/, 'no em or en dash');
   assert.match(lines[0], /^\/\* .*pau-skills/, 'a header comment that names pau-skills');
   assert.match(css.split('*/')[0], /Q15/);
+});
+
+test('A3 a doc-code src excerpt is numbered from its first line with text', () => {
+  const r = build(FIXTURE);
+  assert.equal(r.code, 0, r.stderr);
+  const dir = tmp('html-plan-numbering-');
+  writeFileSync(join(dir, 'pack.mjs'), entry(r, 'runtime/pack.mjs'));
+  const files = {
+    'one-blank.txt': 'one\n\nthree\nfour\nfive\n',
+    'two-blank.txt': 'one\n\n   \nfour\nfive\n',
+    'text-first.txt': 'one\ntwo\n\nfour\n',
+    'starts-blank.txt': '\nsecond\nthird\n',
+    'starts-text.txt': 'first\n\nthird\n',
+  };
+  for (const [name, body] of Object.entries(files)) writeFileSync(join(dir, name), body);
+  const extra = (script, ...args) => {
+    const run = runNode(script, { args, cwd: dir });
+    assert.equal(run.code, 0, run.stderr);
+    return run.stdout.trim();
+  };
+  const patched = (...args) => extra(join(dir, 'pack.mjs'), ...args);
+  assert.equal(patched('one-blank.txt', 'lines=2-4'), 'file="one-blank.txt" start="3"', 'line 2 is blank');
+  assert.equal(patched('two-blank.txt', 'lines=2-5'), 'file="two-blank.txt" start="4"', 'lines 2 and 3 are blank, 3 holds spaces');
+  assert.equal(patched('text-first.txt', 'lines=2-4'), 'file="text-first.txt" start="2"', 'the first line has text');
+  assert.equal(patched('starts-blank.txt'), 'file="starts-blank.txt" start="2"', 'a whole file that starts blank');
+  assert.equal(patched('starts-text.txt'), 'file="starts-text.txt"', 'a whole file that starts with text: no start, as upstream');
+  assert.equal(patched('one-blank.txt', 'lines=2-4', 'start=9'), 'file="one-blank.txt"', 'an explicit start= stays the author\'s');
+  const unpatched = extra(join(FIXTURE, 'runtime', 'pack.mjs'), 'one-blank.txt', 'lines=2-4');
+  assert.equal(unpatched, 'file="one-blank.txt" start="2"', 'control: upstream numbers from the blank line');
 });
