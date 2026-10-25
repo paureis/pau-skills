@@ -18,7 +18,8 @@ before any model call: Claude Code loads the CLAUDE.md files of parent folders, 
 judge would read this repository's own CLAUDE.md.
 
 The default folder is outside the repository, and a folder inside it (also through a link, or a `TMPDIR` inside it) is
-refused. With the old default `--out`, inside this repository, the old persona prompt kept `spanish-beginner` going
+refused. So is a folder with a `CLAUDE.md`, `CLAUDE.local.md` or `.claude/CLAUDE.md` in it or in any parent, such as
+a worktree that sits inside another checkout. With the old default `--out`, inside this repository, the old persona prompt kept `spanish-beginner` going
 after its first task. `run.mjs` never deletes its output folder, and the system may clear its temp folder, so pass
 `--out` to keep a run.
 

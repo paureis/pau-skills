@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, realpathSync, statSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, realpathSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -19,7 +19,7 @@ process.env.PATH = EMPTY_PATH;
 const TMP = tempDir();
 process.env.TMPDIR = TMP;
 const { args } = await import('../evals/project-setup/run.mjs');
-const { insideRepo, checkOut, makeOut } = await import('../evals/project-setup/out-folder.mjs');
+const { insideRepo, checkOut, makeOut, parentClaudeMd } = await import('../evals/project-setup/out-folder.mjs');
 
 const RUN = join(ROOT, 'evals', 'project-setup', 'run.mjs');
 const RESULTS = join('evals', 'project-setup', 'results');
@@ -120,13 +120,62 @@ test('A4: checkOut refuses an --out or a temp folder inside the repository, and 
   assert.doesNotThrow(() => checkOut({}, ROOT));
   const saved = process.env.TMPDIR;
   try {
-    process.env.TMPDIR = join(ROOT, RESULTS, `missing-${randomUUID()}`);
-    assert.throws(() => checkOut({}, ROOT), (e) => /inside the repository/.test(e.message) && /CLAUDE\.md/.test(e.message) && /TMPDIR/.test(e.message));
+    const inside = join(ROOT, RESULTS, `missing-${randomUUID()}`);
+    process.env.TMPDIR = inside;
+    assert.throws(() => checkOut({}, ROOT), (e) => /inside the repository/.test(e.message) && /CLAUDE\.md/.test(e.message) && /TMPDIR/.test(e.message) && e.message.includes(inside));
+    assert.doesNotThrow(() => checkOut({ out: join(saved, 'given') }, ROOT), 'an --out outside is accepted while TMPDIR is inside');
   } finally {
     process.env.TMPDIR = saved;
   }
   assert.equal(tmpdir(), TMP, 'TMPDIR is restored');
 });
+
+/**
+ * Folders outside the repository for the CLAUDE.md walk: a fake root with no CLAUDE.md, a folder P holding `file`
+ * (with a subfolder and a link inside it that points to a clean folder), and a clean sibling of P.
+ */
+function parentFolders(file) {
+  const base = tempDir();
+  const root = join(base, 'root');
+  const p = join(base, 'p');
+  const clean = join(base, 'clean');
+  for (const d of [root, join(p, 'sub'), dirname(join(p, file)), clean]) mkdirSync(d, { recursive: true });
+  writeFileSync(join(p, file), 'memory\n');
+  symlinkSync(clean, join(p, 'out'));
+  const toP = join(base, 'to-p');
+  symlinkSync(p, toP);
+  const toSub = join(base, 'to-sub');
+  symlinkSync(join(p, 'sub'), toSub);
+  return { base, root, p, found: join(p, file), clean, toP, toSub };
+}
+
+for (const file of ['CLAUDE.md', 'CLAUDE.local.md', join('.claude', 'CLAUDE.md')]) {
+  test(`checkOut refuses an --out with ${file} in a parent folder, also through links, and names the file`, () => {
+    const f = parentFolders(file);
+    const cases = [
+      ['a missing folder two levels under P', join(f.p, 'new', 'deeper')],
+      ['the same through a link that points at P', join(f.toP, 'new', 'deeper')],
+      ['through a link outside P that points into it', join(f.toSub, 'new', 'deeper')],
+      ['through a link inside P that points outside it', join(f.p, 'out', 'new')],
+    ];
+    for (const [what, out] of cases) {
+      const found = parentClaudeMd(out);
+      assert.ok(found, `${what}: a file is found`);
+      assert.equal(realpathSync(found), realpathSync(f.found), `${what}: ${found}`);
+      assert.throws(() => checkOut({ out }, f.root), (e) => e.message.includes(found) && /CLAUDE\.md/.test(e.message), what);
+    }
+    const sibling = join(f.clean, 'new', 'deeper');
+    assert.equal(parentClaudeMd(sibling), null);
+    assert.doesNotThrow(() => checkOut({ out: sibling }, f.root), 'a sibling of P with no CLAUDE.md above it');
+    const saved = process.env.TMPDIR;
+    try {
+      process.env.TMPDIR = join(f.p, 'sub');
+      assert.throws(() => checkOut({}, f.root), (e) => e.message.includes(parentClaudeMd(join(f.p, 'sub'))) && /CLAUDE\.md/.test(e.message) && /TMPDIR/.test(e.message));
+    } finally {
+      process.env.TMPDIR = saved;
+    }
+  });
+}
 
 test('A5: the entry point refuses an --out inside the repository before any model call, also through a link', () => {
   const link = join(tempDir(), 'repo');
