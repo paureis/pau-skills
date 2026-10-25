@@ -1,0 +1,15 @@
+/* A tiny stand-in for upstream html-plan runtime/htmlplan.css, for tests/pack-html-plan.test.mjs. It has no final
+   newline on purpose, so the build must add one before the appended theme. */
+:root {
+  --paper: #faf9f5; --ink: #141413;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #262624; --ink: #faf9f5;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #262624; --ink: #faf9f5;
+}
+html { background: var(--paper); color: var(--ink); }
+.nw-toc a:hover { color: var(--ink); }

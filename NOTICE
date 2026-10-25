@@ -121,3 +121,14 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+html-plan
+---------
+
+scripts/pack-html-plan.mjs builds a zip of html-plan by Thariq Shihipar
+(https://github.com/anthropics/claude-plugins-community, html-plan/skills/html-plan,
+commit 06ec7b6a0a82bdc4bec44bd82d4368c42f20d7c1) with additions from this repository
+(scripts/html-plan/). No upstream file is kept in this repository; the test fixture
+tests/fixtures/html-plan-upstream/ copies a single line of upstream runtime/pack.mjs,
+which the build looks for. html-plan's plugin.json declares the MIT License; the root
+LICENSE of that repository is the Apache License 2.0. The zip carries its own NOTICE.

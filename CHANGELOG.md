@@ -3,6 +3,17 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-25: Q15, html-plan pages that are easy on the eyes
+
+- `scripts/pack-html-plan.mjs` builds `html-plan.zip` for upload to claude.ai from upstream html-plan at the pinned
+  commit plus three additions in `scripts/html-plan/`: the Mist theme (a grey-blue page in light mode, light teal on
+  dark in dark mode, and the page background painted in dark mode, where the artifact host had left it white), a fix
+  for code excerpts that start on a blank line (numbered one line low before), and a Send to Claude button in the
+  Respond sheet that posts the response as a comment through the artifact `comments` capability. The build refuses
+  when an upstream anchor is missing or doubled, and no upstream file is kept here. The README lists html-plan under
+  "Built from upstream, with additions"; NOTICE names the build; step 8 of the batch steps opens decisions pages at
+  the decisions and declares the comments capability. No plugin changed, so nothing is bumped.
+
 ## 2026-10-25: after Q13, the owner's decisions (decision 16)
 
 - The owner kept both recommendations: Q14 moves the eval's default output folder outside the repository and counts
