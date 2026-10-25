@@ -11,6 +11,9 @@
 // --baseline runs the same persona without the skill, to compare.
 //
 // Each run writes transcript.json, tools.json, files.json, grade.json and judge.json under <out>/<scenario>[-baseline]/.
+// Without --out, <out> is a fresh folder under the system temp folder, made when the run starts; its path is the first
+// line printed. An <out> inside this repository is refused before any model call: Claude Code loads the CLAUDE.md of
+// every parent folder, so the assistant, the persona and the judge would read this repository's CLAUDE.md.
 // This costs real model usage: up to 81 model calls per scenario at the default 40 turns. Node 20+, no dependencies.
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, renameSync } from 'node:fs';
@@ -18,6 +21,7 @@ import { join, dirname, relative, resolve, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { grade, sensitiveBlocks } from './grade.mjs';
+import { checkOut, makeOut } from './out-folder.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..');
@@ -26,16 +30,22 @@ const RENAMES = { gitignore: '.gitignore', 'env.example': '.env.example', 'env.c
 const BASELINE_OPENING = 'Hi. I am new to Claude Code. Please help me set up Claude Code for this project and write a CLAUDE.md for it.';
 export const DEFAULT_MAX_TURNS = 40;
 
+/** The options. No default --out: main() makes the output folder when the run starts, so parsing makes nothing. */
 export function args(argv) {
-  const o = { maxTurns: DEFAULT_MAX_TURNS, out: join(HERE, 'results'), judge: true };
+  const o = { maxTurns: DEFAULT_MAX_TURNS, judge: true };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--scenario') o.scenario = argv[++i];
+    const value = () => {
+      const v = argv[++i];
+      if (v === undefined || v.startsWith('--')) throw new Error(`${a} needs a value`);
+      return v;
+    };
+    if (a === '--scenario') o.scenario = value();
     else if (a === '--baseline') o.baseline = true;
-    else if (a === '--out') o.out = argv[++i];
-    else if (a === '--max-turns') o.maxTurns = Number(argv[++i]);
-    else if (a === '--model') o.model = argv[++i];
-    else if (a === '--persona-model') o.personaModel = argv[++i];
+    else if (a === '--out') o.out = value();
+    else if (a === '--max-turns') o.maxTurns = Number(value());
+    else if (a === '--model') o.model = value();
+    else if (a === '--persona-model') o.personaModel = value();
     else if (a === '--no-judge') o.judge = false;
     else throw new Error(`unknown option ${a}`);
   }
@@ -286,18 +296,28 @@ function isMain() {
   try { return !!process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url); } catch { return false; }
 }
 
-if (isMain()) {
-  const opts = args(process.argv.slice(2));
+/**
+ * One run of run.mjs. The output folder is checked before anything else and made only after the scenarios are known,
+ * so a refused run makes no folder; its path is the first line logged. Every model call goes through `call`.
+ */
+export function main(argv, { call = claude, log = console.log } = {}) {
+  const opts = args(argv);
+  checkOut(opts, ROOT);
   const scenarios = JSON.parse(readFileSync(join(HERE, 'scenarios.json'), 'utf8')).filter((s) => !opts.scenario || s.name === opts.scenario);
   if (!scenarios.length) throw new Error(`no scenario named ${opts.scenario}`);
+  opts.out = makeOut(opts);
+  log(opts.out);
   const results = [];
   for (const s of scenarios) {
-    const r = runScenario(s, opts);
+    const r = runScenario(s, opts, call);
     results.push(r);
     const scored = r.checks.filter((c) => c.pass !== null);
-    console.log(`\n${r.name}: ${scored.filter((c) => c.pass).length}/${scored.length} checks, ${r.turns} turns, $${r.costUsd}`);
-    for (const c of r.checks) console.log(`  ${c.pass === null ? 'SKIP' : c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.pass === true || !c.detail ? '' : `  (${c.detail})`}`);
-    if (r.judge) console.log(`  judge: ${JSON.stringify(r.judge.scores || r.judge)}`);
+    log(`\n${r.name}: ${scored.filter((c) => c.pass).length}/${scored.length} checks, ${r.turns} turns, $${r.costUsd}`);
+    for (const c of r.checks) log(`  ${c.pass === null ? 'SKIP' : c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.pass === true || !c.detail ? '' : `  (${c.detail})`}`);
+    if (r.judge) log(`  judge: ${JSON.stringify(r.judge.scores || r.judge)}`);
   }
   writeFileSync(join(opts.out, `summary${opts.baseline ? '-baseline' : ''}.json`), JSON.stringify(results, null, 2));
+  return { out: opts.out, results };
 }
+
+if (isMain()) main(process.argv.slice(2));
