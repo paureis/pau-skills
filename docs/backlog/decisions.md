@@ -124,3 +124,10 @@
    - The eval's printed cost adds the persona's and the judge's calls, in Q14.
    - The owner asked for a new item, Q15: rework the look of html-plan pages, which are hard on the eyes. In dark mode
      the page showed light text on a white background, and the contents rail went white on white on hover.
+
+17. **Settled after Q14 (pull request 55)**, each as recommended, on an html-plan page:
+   - The project-setup eval keeps stopping, before any model call, a run whose output folder is inside the repository;
+     it does not only warn.
+   - It keeps refusing an output folder with a `CLAUDE.md`, `CLAUDE.local.md` or `.claude/CLAUDE.md` in it or in any
+     parent folder, which the Q14 review added for a worktree inside another checkout.
+   - Nothing comes next for now: no paid eval round and no new item. The backlog stays empty until the owner adds one.

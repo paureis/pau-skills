@@ -2,11 +2,10 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twelfth batch is done: Q14 merged as pull request 55. **The backlog is empty**: no item is `todo`. The Q14
-decisions page went to the owner (whether to keep the refusal of an output folder inside the repository, whether to
-keep the check for a CLAUDE.md in a parent folder, and what comes next). When the owner answers, record the answers as
-decision 17, and open a new item for anything they ask for, with its own file under `docs/backlog/` and a line under
-"Work items" and "Order" in `docs/BACKLOG.md`.
+The twelfth batch is done: Q14 merged as pull request 55. **The backlog is empty**: no item is `todo`. The owner
+kept every recommendation on the Q14 decisions page (decision 17), including "nothing comes next for now". When the
+owner asks for new work, open an item for it, with its own file under `docs/backlog/` and a line under "Work items"
+and "Order" in `docs/BACKLOG.md`.
 
 To start the next batch, take the twelfth batch's message below and change four things: the item names and files
 (`q14.md` becomes the new item's file, `q13.md` the last done item's), the decision that settled its scope, the
