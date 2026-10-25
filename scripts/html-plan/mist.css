@@ -1,0 +1,37 @@
+/* Mist: the pau-skills theme for html-plan (Q15). scripts/pack-html-plan.mjs appends it to runtime/htmlplan.css, so it
+   redefines upstream's colour tokens and keeps upstream's font stacks: a cool grey-blue page, a teal accent, and the
+   title in the sans face. It also paints body (an artifact host paints its own body white) and marks the rail. */
+:root {
+  --paper: #e8ecf0; --card: #f5f7f9; --sunk: #dde3e9;
+  --ink: #1b2530; --ink-2: #3a4757; --ink-3: #5d6b7b; --line: rgba(27,37,48,.16); --line-2: rgba(27,37,48,.08);
+  --accent: #1d6b74; --accent-soft: #d3e6e8;
+  --green: #2d7543; --green-soft: #d9ebdf; --amber: #8a5d0f; --amber-soft: #efe4cc;
+  --red: #a8322a; --red-soft: #f2dcd9; --blue: #2c63a8; --blue-soft: #dbe5f2; --purple: #6a4fae; --purple-soft: #e4ddf2;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #151a20; --card: #1d242c; --sunk: #11151a;
+    --ink: #dfe6ed; --ink-2: #b3bfcb; --ink-3: #8a97a5; --line: rgba(223,230,237,.14); --line-2: rgba(223,230,237,.07);
+    --accent: #5fb2ba; --accent-soft: #1f3a3e;
+    --green: #74b98a; --green-soft: #1f3327; --amber: #d6a64a; --amber-soft: #382f1d;
+    --red: #e07b72; --red-soft: #3d2423; --blue: #7ea8de; --blue-soft: #1f2d3d; --purple: #a993dc; --purple-soft: #2c2640;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #151a20; --card: #1d242c; --sunk: #11151a;
+  --ink: #dfe6ed; --ink-2: #b3bfcb; --ink-3: #8a97a5; --line: rgba(223,230,237,.14); --line-2: rgba(223,230,237,.07);
+  --accent: #5fb2ba; --accent-soft: #1f3a3e;
+  --green: #74b98a; --green-soft: #1f3327; --amber: #d6a64a; --amber-soft: #382f1d;
+  --red: #e07b72; --red-soft: #3d2423; --blue: #7ea8de; --blue-soft: #1f2d3d; --purple: #a993dc; --purple-soft: #2c2640;
+  color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); }
+.nw-toc a { border-radius: 0 6px 6px 0; }
+.nw-toc a:hover { background: var(--card); color: var(--ink); }
+.nw-sheet .nw-toc a:hover { background: var(--sunk); }
+.nw-toc a.on { background: var(--sunk); }
+h1 { font-family: var(--sans); font-weight: 600; letter-spacing: -.01em; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.nw-bar .nw-next, .nw-bar .nw-respond .n, .nw-asks .ttl b.todo, .nw-askrow.todo .s, .has-comment > .nw-cbtn, .nw-cbtn.on, .nw-pin-dot, .nw-pop.note .k) { color: var(--paper); } }
+:root[data-theme="dark"] :is(.nw-bar .nw-next, .nw-bar .nw-respond .n, .nw-asks .ttl b.todo, .nw-askrow.todo .s, .has-comment > .nw-cbtn, .nw-cbtn.on, .nw-pin-dot, .nw-pop.note .k) { color: var(--paper); }
