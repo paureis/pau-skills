@@ -19,9 +19,9 @@ judge would read this repository's own CLAUDE.md.
 
 The default folder is outside the repository, and a folder inside it (also through a link, or a `TMPDIR` inside it) is
 refused. So is a folder with a `CLAUDE.md`, `CLAUDE.local.md` or `.claude/CLAUDE.md` in it or in any parent, such as
-a worktree that sits inside another checkout. With the old default `--out`, inside this repository, the old persona prompt kept `spanish-beginner` going
-after its first task. `run.mjs` never deletes its output folder, and the system may clear its temp folder, so pass
-`--out` to keep a run.
+a worktree that sits inside another checkout. With the old default `--out`, inside this repository, the old persona
+prompt kept `spanish-beginner` going after its first task. `run.mjs` never deletes its output folder, and the system
+may clear its temp folder, so pass `--out` to keep a run.
 
 Most scenarios take 15 to 30 turns and cost real usage: a run at the 30-turn limit cost about 28 US dollars with
 `claude-opus-5-5` in October 2026, with the old default `--out`, inside this repository. The 20-turn `spanish-beginner`
