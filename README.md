@@ -229,10 +229,15 @@ republish them. Use the originals:
 
 - [grill-with-docs](https://github.com/mattpocock/skills/tree/main/skills/engineering/grill-with-docs) by Matt Pocock
 - [prototype](https://github.com/mattpocock/skills/tree/main/skills/engineering/prototype) by Matt Pocock
+
+### Built from upstream, with additions
+
 - [html-plan](https://github.com/anthropics/claude-plugins-community/tree/06ec7b6a0a82bdc4bec44bd82d4368c42f20d7c1/html-plan)
   by Thariq Shihipar: writes a plan as one interactive HTML page with the decisions placed on the claims they change.
   `architect`, `to-prd` and `grill-me` offer it when it is installed. Its `plugin.json` says MIT; the repository's root
-  LICENSE is Apache 2.0. I upload it unchanged, built from that commit; nothing of it ships from here.
+  LICENSE is Apache 2.0. No upstream file is kept here: `scripts/pack-html-plan.mjs` builds the zip I upload from that
+  commit plus three additions (the Mist theme, a fix for code line numbers, and a Send to Claude button in the Respond
+  sheet). See [scripts/html-plan/README.md](scripts/html-plan/README.md).
 
 ## How the pieces fit into a session
 
