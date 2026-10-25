@@ -17,3 +17,14 @@ Things that bit the eleventh batch (Q13, what Q12 left):
   scratchpad survived, and eng-lead and the builder were continued by agent ID.
 - `review-scope.mjs fix` run from the main checkout before the merge read the slice as deleted and flagged NO_TEST.
   Run it after the merge, or from where the slice is checked out.
+
+Things that bit Q15, the second part of the eleventh batch:
+- An html-plan page published as an artifact showed light text on a white page in dark mode: its stylesheet paints
+  `html`, and the artifact host paints `body`. Look at every page you publish inside a host-like skeleton, in both
+  modes, before the owner does.
+- `doc-code src` with an excerpt that starts on a blank line was numbered one line low; the plan check's browser run
+  found that the first draft of the fix would also number diff blocks, through an attribute the reader uses as a flag.
+- A Bash push that the session counts as destructive (`--force-with-lease`) is refused even on the session's own
+  branch. After a squash merge, GitHub deletes the head branch, so a plain push of the reset branch works.
+- A reviewer that may use the network can prove a documented fetch step for real; the builder may not, so put such a
+  claim in the reviewer's contract.

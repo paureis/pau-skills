@@ -3,6 +3,12 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-25: Q15 done; Q14 next
+
+- Q15 is marked done in the backlog, with what worked and what did not in `docs/backlog/done.md` and
+  `docs/backlog/things-that-bit/batch-11.md`. The owner received `html-plan.zip` to upload. Q14 stays next, and its
+  kickoff in `docs/backlog/kickoff.md` notes that Q15 is done. No skill or hook changed.
+
 ## 2026-10-25: Q15, html-plan pages that are easy on the eyes
 
 - `scripts/pack-html-plan.mjs` builds `html-plan.zip` for upload to claude.ai from upstream html-plan at the pinned
