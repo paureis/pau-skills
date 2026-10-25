@@ -2,13 +2,16 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The eleventh batch is done: Q13 merged as pull request 50. What is left is Q14, what Q13 left: two small parts in the
-project-setup eval, the default output folder and the printed cost. The owner answered the Q13 decisions page
-with both recommendations (decision 16). Q15 (html-plan pages that are easy on the eyes) was done first, in pull
-request 53; the decisions page of this batch opens at the decisions and declares the comments capability (step 8). The
-backlog is empty after Q14. Read
-"Things that bit the eleventh batch" (`docs/backlog/things-that-bit/batch-11.md`) first. The owner starts it with this
-message:
+The twelfth batch is done: Q14 merged as pull request 55. **The backlog is empty**: no item is `todo`. The Q14
+decisions page went to the owner (whether to keep the refusal of an output folder inside the repository, whether to
+keep the check for a CLAUDE.md in a parent folder, and what comes next). When the owner answers, record the answers as
+decision 17, and open a new item for anything they ask for, with its own file under `docs/backlog/` and a line under
+"Work items" and "Order" in `docs/BACKLOG.md`.
+
+To start the next batch, take the twelfth batch's message below and change four things: the item names and files
+(`q14.md` becomes the new item's file, `q13.md` the last done item's), the decision that settled its scope, the
+things-that-bit file to read first (`batch-12.md`), and the line about a paid eval run if the item needs one. Read "Things that bit the twelfth batch" (`docs/backlog/things-that-bit/batch-12.md`) first. The
+twelfth batch was started with this message:
 
 ```text
 You are the orchestrator for Q14 in this repository: what Q13 left. Do not build it yourself; run the roster in
