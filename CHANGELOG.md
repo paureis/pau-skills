@@ -3,6 +3,11 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-25: after Q14, the owner's decisions (decision 17)
+
+- The owner kept every recommendation: the project-setup eval keeps stopping a run whose output folder is inside the
+  repository or under any CLAUDE.md, and nothing comes next for now, so the backlog stays empty.
+
 ## 2026-10-25: Q14 done; the backlog is empty
 
 - Q14 is marked done in the backlog, with what worked and what did not in `docs/backlog/done.md` and the new
