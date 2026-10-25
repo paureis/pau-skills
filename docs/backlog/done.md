@@ -139,3 +139,17 @@ Work from 2026-10-17 to 2026-10-19 (the first six batches) is in
   - Did not: the first decisions page reached the owner half dark, because nobody had looked at an html-plan page
     inside the artifact host in dark mode; the real Send to Claude press could not be tried from the session, so the
     owner tries it on the republished Q13 page.
+- 2026-10-25: the twelfth batch, Q14 what Q13 left, merged as
+  [pull request 55](https://github.com/paureis/pau-skills/pull/55). `eng-lead` planned one slice (the eval's output
+  folder and its full cost) with a 25-row mutation table; a read-only plan check built it in a clone; one builder, one
+  fresh reviewer, one fix round and a second look. The eval writes into a fresh temp folder, refuses a folder inside
+  the repository or under any CLAUDE.md, and counts the persona's and the judge's calls in whole micro-dollars. 63
+  eval tests (43 before), 1,357 in all, 50 mutations caught, no paid run. No skill changed, so
+  `pack-skills --since 7c1042e` had nothing to pack; the counts did not change. The decisions went to the owner on an
+  html-plan page.
+  - Worked: handing back at once with the builder's ID; the brief, the reviewer contract and the fix round as files;
+    the plan check's own mutations (eleven findings after all 25 planned rows were caught); the reviewer's own
+    mutations and a by-hand run of the real program, which found the worktree case.
+  - Did not: `eng-lead`'s brief had to be pulled out of its handback with a script; the first fake costs could not
+    catch one wrong sum; the plan check's own runs left three folders in `/tmp` before the test pointed TMPDIR at a
+    test folder.

@@ -3,6 +3,12 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-25: Q14 done; the backlog is empty
+
+- Q14 is marked done in the backlog, with what worked and what did not in `docs/backlog/done.md` and the new
+  `docs/backlog/things-that-bit/batch-12.md`. No skill or hook changed, so there were no zips, and the profile counts
+  did not change. `docs/backlog/kickoff.md` says the backlog is empty and how to start the next batch.
+
 ## 2026-10-25: Q14, what Q13 left
 
 - project-setup eval: `run.mjs` writes into a fresh folder under the system temp folder when `--out` is left out, and

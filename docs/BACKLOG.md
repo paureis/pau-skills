@@ -81,6 +81,7 @@ under "Work items" below.
 - [Things that bit the ninth batch](backlog/things-that-bit/batch-9.md)
 - [Things that bit the tenth batch](backlog/things-that-bit/batch-10.md)
 - [Things that bit the eleventh batch](backlog/things-that-bit/batch-11.md)
+- [Things that bit the twelfth batch](backlog/things-that-bit/batch-12.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not; the first six batches are in
   [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md).
 
@@ -141,6 +142,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 12. Done: the tenth batch, Q12 what Q11 left (pull request 47).
 13. Done: the eleventh batch, Q13 what Q12 left (pull request 50).
 14. Done: Q15 html-plan pages that are easy on the eyes (pull request 53), ahead of Q14 at the owner's choice.
-15. **Next:** Q14 what Q13 left; its scope is decision 16. The kickoff is in [backlog/kickoff.md](backlog/kickoff.md).
+15. Done: the twelfth batch, Q14 what Q13 left (pull request 55); its scope was decision 16.
+16. **Next:** nothing; the backlog is empty. The kickoff in [backlog/kickoff.md](backlog/kickoff.md) says how to start the next batch.
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
