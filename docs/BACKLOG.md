@@ -67,7 +67,7 @@ under "Work items" below.
 - [How to run a batch](backlog/how-to-run-a-batch.md): the 10 steps and "With the roster".
 - [Kickoff for the next session](backlog/kickoff.md): the next session's kickoff, and the fifth batch's kickoff as a
   template.
-- [Decisions](backlog/decisions.md): decisions 1 to 15, taken from 2026-10-17 to 2026-10-24.
+- [Decisions](backlog/decisions.md): decisions 1 to 16, taken from 2026-10-17 to 2026-10-25.
 - [Context budget](backlog/context-budget.md): the facts and the policy since P0.5.
 - [Things that bit the first batch](backlog/things-that-bit/batch-1.md)
 - [Things that bit the second batch](backlog/things-that-bit/batch-2.md)
@@ -116,6 +116,7 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q12 what Q11 left](backlog/q12.md)
 - [Q13 what Q12 left](backlog/q13.md)
 - [Q14 what Q13 left](backlog/q14.md)
+- [Q15 html-plan pages that are easy on the eyes](backlog/q15.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -139,7 +140,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 11. Done: the ninth batch, Q11 what batch 8 left (pull request 44).
 12. Done: the tenth batch, Q12 what Q11 left (pull request 47).
 13. Done: the eleventh batch, Q13 what Q12 left (pull request 50).
-14. **Next:** Q14 what Q13 left, once the owner has answered the Q13 decisions page (decision 16). The kickoff is in
-    [backlog/kickoff.md](backlog/kickoff.md).
+14. **Next:** Q14 what Q13 left; its scope is decision 16. The kickoff is in [backlog/kickoff.md](backlog/kickoff.md).
+15. Then: Q15 html-plan pages that are easy on the eyes, with the owner looking at each variant.
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
