@@ -3,6 +3,12 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-25: after Q13, the owner's decisions (decision 16)
+
+- The owner kept both recommendations: Q14 moves the eval's default output folder outside the repository and counts
+  the persona's and the judge's costs. A new item, Q15, reworks the look of html-plan pages: in dark mode they showed
+  light text on a white page, because the stylesheet paints `html` and the artifact host paints `body` white.
+
 ## 2026-10-24: Q13 and batch 11 done; Q14 and its kickoff
 
 - Q13 and the eleventh batch are marked done in the backlog. Q14 holds the two findings on the owner's decisions page

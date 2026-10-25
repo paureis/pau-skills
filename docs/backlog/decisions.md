@@ -115,3 +115,12 @@
      `bug-fix`, `brainstorm`, `architect`, `evaluator`, `skill-eval`, `retrospective`) stay as they are.
    - agent-friendly-audit's SKILL.md (19,729 bytes) is split when an edit needs it, as decision 11 says.
    - A headless verify-app maintain pass that cannot reach its live pass stays as it is: an interactive session asks.
+
+## Decisions taken (2026-10-25)
+
+16. **Settled after Q13 (pull request 50)**, each as recommended, on an html-plan page:
+   - The project-setup eval's default `--out` moves to a folder under the system temp folder, in Q14: inside the
+     repository, every run's assistant, persona and judge read this repository's CLAUDE.md.
+   - The eval's printed cost adds the persona's and the judge's calls, in Q14.
+   - The owner asked for a new item, Q15: rework the look of html-plan pages, which are hard on the eyes. In dark mode
+     the page showed light text on a white background, and the contents rail went white on white on hover.
