@@ -11,13 +11,19 @@
 // --baseline runs the same persona without the skill, to compare.
 //
 // Each run writes transcript.json, tools.json, files.json, grade.json and judge.json under <out>/<scenario>[-baseline]/.
-// This costs real model usage: up to 81 model calls per scenario at the default 40 turns. Node 20+, no dependencies.
+// Without --out, <out> is a fresh folder under the system temp folder, made when the run starts; its path is the first
+// line printed. An <out> inside this repository is refused before any model call: Claude Code loads the CLAUDE.md of
+// every parent folder, so the assistant, the persona and the judge would read this repository's CLAUDE.md.
+// This costs real model usage: up to 81 model calls per scenario at the default 40 turns. The printed cost and
+// summary.json count all of them: costUsd is the total, costPartsUsd the assistant's, persona's and judge's parts.
+// Node 20+, no dependencies.
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, renameSync } from 'node:fs';
 import { join, dirname, relative, resolve, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { grade, sensitiveBlocks } from './grade.mjs';
+import { checkOut, makeOut } from './out-folder.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..');
@@ -26,21 +32,32 @@ const RENAMES = { gitignore: '.gitignore', 'env.example': '.env.example', 'env.c
 const BASELINE_OPENING = 'Hi. I am new to Claude Code. Please help me set up Claude Code for this project and write a CLAUDE.md for it.';
 export const DEFAULT_MAX_TURNS = 40;
 
+/** The options. No default --out: main() makes the output folder when the run starts, so parsing makes nothing. */
 export function args(argv) {
-  const o = { maxTurns: DEFAULT_MAX_TURNS, out: join(HERE, 'results'), judge: true };
+  const o = { maxTurns: DEFAULT_MAX_TURNS, judge: true };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--scenario') o.scenario = argv[++i];
+    const value = () => {
+      const v = argv[++i];
+      if (v === undefined || v.startsWith('--')) throw new Error(`${a} needs a value`);
+      return v;
+    };
+    if (a === '--scenario') o.scenario = value();
     else if (a === '--baseline') o.baseline = true;
-    else if (a === '--out') o.out = argv[++i];
-    else if (a === '--max-turns') o.maxTurns = Number(argv[++i]);
-    else if (a === '--model') o.model = argv[++i];
-    else if (a === '--persona-model') o.personaModel = argv[++i];
+    else if (a === '--out') o.out = value();
+    else if (a === '--max-turns') o.maxTurns = Number(value());
+    else if (a === '--model') o.model = value();
+    else if (a === '--persona-model') o.personaModel = value();
     else if (a === '--no-judge') o.judge = false;
     else throw new Error(`unknown option ${a}`);
   }
   return o;
 }
+
+// Amounts are US dollars, kept as whole micro-dollars, rounded once to cents, half up, for the report only.
+// micros converts one call's total_cost_usd at the boundary; cents is used only on the final sums.
+const micros = (usd) => Math.round((usd || 0) * 1e6);
+const cents = (m) => Math.round(m / 1e4) / 100;
 
 function childEnv(home) {
   const env = { ...process.env, HOME: home };
@@ -175,14 +192,10 @@ export function personaCall(system, transcript, opts = {}) {
   return { argv, input: `Conversation so far:\n\n${convo}\n\nWrite your next message.` };
 }
 
-/** One real persona call. Returns claude's parsed JSON output, which has result and total_cost_usd. */
-export function askPersona(system, transcript, opts) {
+/** One persona call, real by default. Returns claude's parsed JSON output, which has result and total_cost_usd. */
+export function askPersona(system, transcript, opts, call = claude) {
   const { argv, input } = personaCall(system, transcript, opts);
-  return claude(argv, { cwd: opts.cwd, home: opts.home, input });
-}
-
-function personaReply(persona, transcript, opts) {
-  return askPersona(personaSystemPrompt(persona), transcript, opts).result.trim();
+  return call(argv, { cwd: opts.cwd, home: opts.home, input });
 }
 
 /**
@@ -201,7 +214,7 @@ export function converse({ opening, maxTurns, assistant, persona }) {
   return transcript;
 }
 
-function judge(run, opts) {
+function judge(run, opts, call) {
   const rubric = readFileSync(join(HERE, 'JUDGE.md'), 'utf8');
   const persona = readFileSync(join(HERE, run.scenario.persona), 'utf8');
   const convo = run.transcript.map((m) => `${m.role.toUpperCase()}:\n${m.text}`).join('\n\n---\n\n');
@@ -211,7 +224,7 @@ function judge(run, opts) {
   const input = `${rubric}\n\n# Persona\n\n${persona}\n\n# Conversation\n\n${convo}\n\n# Files after the run\n\n${written}\n`;
   const argv = ['-p', '--output-format', 'json', '--no-session-persistence', '--tools', ''];
   if (opts.personaModel) argv.push('--model', opts.personaModel);
-  const text = claude(argv, { cwd: opts.cwd, home: opts.home, input }).result;
+  const text = call(argv, { cwd: opts.cwd, home: opts.home, input }).result;
   const m = /\{[\s\S]*\}/.exec(text);
   try { return JSON.parse(m[0]); } catch { return { error: 'judge did not return JSON', raw: text }; }
 }
@@ -233,7 +246,7 @@ export function prepareRun(scenario, opts) {
   return { name, dir, project, home, side };
 }
 
-function runScenario(scenario, opts) {
+export function runScenario(scenario, opts, call = claude) {
   const { name, dir, project, home, side } = prepareRun(scenario, opts);
   const homeBefore = homeFiles(home);
   const persona = readFileSync(join(HERE, scenario.persona), 'utf8');
@@ -241,7 +254,13 @@ function runScenario(scenario, opts) {
   const id = randomUUID();
   const tools = [];
   let seen = 0;
-  let cost = 0;
+  // The cost of each part in whole micro-dollars: every model call goes through counted(part).
+  const spent = { assistant: 0, persona: 0, judge: 0 };
+  const counted = (part) => (argv, o) => {
+    const out = call(argv, o);
+    spent[part] += micros(out.total_cost_usd);
+    return out;
+  };
   const assistant = (message, turn) => {
     const argv = ['-p', message, '--output-format', 'json', turn === 0 ? '--session-id' : '--resume', id,
       '--permission-mode', 'acceptEdits', '--add-dir', home,
@@ -252,8 +271,7 @@ function runScenario(scenario, opts) {
       // Claude Code always asks before it edits ~/.claude/CLAUDE.md (here the sandboxed one); a person would allow it.
       '--allowedTools', 'Skill(project-setup)', 'Edit(~/.claude/CLAUDE.md)', 'Write(~/.claude/CLAUDE.md)', 'Bash(git *)', 'Bash(ls *)', 'Bash(cat *)', 'Bash(echo *)', 'Bash(printenv *)', 'Bash(find *)', 'Bash(claude --version)'];
     if (opts.model) argv.push('--model', opts.model);
-    const out = claude(argv, { cwd: project, home, input: '' });
-    cost += out.total_cost_usd || 0;
+    const out = counted('assistant')(argv, { cwd: project, home, input: '' });
     const entries = readLog(findSessionLog(home, id));
     const { text, tools: t } = turnContent(entries.slice(seen), turn);
     seen = entries.length;
@@ -265,7 +283,7 @@ function runScenario(scenario, opts) {
     opening: opts.baseline ? BASELINE_OPENING : scenario.opening,
     maxTurns: opts.maxTurns,
     assistant,
-    persona: (t) => personaReply(persona, t, { ...opts, cwd: side, home: side }),
+    persona: (t) => askPersona(personaSystemPrompt(persona), t, { ...opts, cwd: side, home: side }, counted('persona')).result.trim(),
   });
 
   const files = { project: snapshot(project), home: homeFiles(home), homeBefore };
@@ -273,8 +291,12 @@ function runScenario(scenario, opts) {
   if (logFile) cpSync(logFile, join(dir, 'session.jsonl'));
   const run = { scenario, transcript, tools, files, baseline: !!opts.baseline, blocked: sensitiveBlocks(readLog(logFile)) };
   const checks = grade(run);
-  const result = { name, turns: transcript.length / 2, costUsd: +cost.toFixed(2), checks };
-  if (opts.judge) result.judge = judge(run, { ...opts, cwd: side, home: side });
+  let verdict;
+  if (opts.judge) verdict = judge(run, { ...opts, cwd: side, home: side }, counted('judge'));
+  const total = spent.assistant + spent.persona + spent.judge;
+  const costPartsUsd = { assistant: cents(spent.assistant), persona: cents(spent.persona), judge: cents(spent.judge) };
+  const result = { name, turns: transcript.length / 2, costUsd: cents(total), costPartsUsd, checks };
+  if (verdict) result.judge = verdict;
   for (const [f, v] of Object.entries({ 'scenario.json': scenario, 'transcript.json': transcript, 'tools.json': tools, 'files.json': files, 'grade.json': checks, 'judge.json': result.judge || null })) {
     writeFileSync(join(dir, f), JSON.stringify(v, null, 2));
   }
@@ -286,18 +308,29 @@ function isMain() {
   try { return !!process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url); } catch { return false; }
 }
 
-if (isMain()) {
-  const opts = args(process.argv.slice(2));
+/**
+ * One run of run.mjs. The output folder is checked before anything else and made only after the scenarios are known,
+ * so a refused run makes no folder; its path is the first line logged. Every model call goes through `call`.
+ */
+export function main(argv, { call = claude, log = console.log } = {}) {
+  const opts = args(argv);
+  checkOut(opts, ROOT);
   const scenarios = JSON.parse(readFileSync(join(HERE, 'scenarios.json'), 'utf8')).filter((s) => !opts.scenario || s.name === opts.scenario);
   if (!scenarios.length) throw new Error(`no scenario named ${opts.scenario}`);
+  opts.out = makeOut(opts);
+  log(opts.out);
   const results = [];
   for (const s of scenarios) {
-    const r = runScenario(s, opts);
+    const r = runScenario(s, opts, call);
     results.push(r);
     const scored = r.checks.filter((c) => c.pass !== null);
-    console.log(`\n${r.name}: ${scored.filter((c) => c.pass).length}/${scored.length} checks, ${r.turns} turns, $${r.costUsd}`);
-    for (const c of r.checks) console.log(`  ${c.pass === null ? 'SKIP' : c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.pass === true || !c.detail ? '' : `  (${c.detail})`}`);
-    if (r.judge) console.log(`  judge: ${JSON.stringify(r.judge.scores || r.judge)}`);
+    const p = r.costPartsUsd;
+    log(`\n${r.name}: ${scored.filter((c) => c.pass).length}/${scored.length} checks, ${r.turns} turns, $${r.costUsd.toFixed(2)} (assistant $${p.assistant.toFixed(2)}, persona $${p.persona.toFixed(2)}, judge $${p.judge.toFixed(2)})`);
+    for (const c of r.checks) log(`  ${c.pass === null ? 'SKIP' : c.pass ? 'PASS' : 'FAIL'}  ${c.id}${c.pass === true || !c.detail ? '' : `  (${c.detail})`}`);
+    if (r.judge) log(`  judge: ${JSON.stringify(r.judge.scores || r.judge)}`);
   }
   writeFileSync(join(opts.out, `summary${opts.baseline ? '-baseline' : ''}.json`), JSON.stringify(results, null, 2));
+  return { out: opts.out, results };
 }
+
+if (isMain()) main(process.argv.slice(2));

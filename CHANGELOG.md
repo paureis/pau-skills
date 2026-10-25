@@ -3,6 +3,16 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-25: Q14, what Q13 left
+
+- project-setup eval: `run.mjs` writes into a fresh folder under the system temp folder when `--out` is left out, and
+  prints its path first. It refuses an output folder inside the repository, or one with a `CLAUDE.md`,
+  `CLAUDE.local.md` or `.claude/CLAUDE.md` in it or in any parent folder, because Claude Code loads the CLAUDE.md of
+  every parent folder. The printed cost and `summary.json` now count the assistant's, the persona's and the judge's
+  calls: `costUsd` is the total and `costPartsUsd` keeps the three parts, each rounded once to cents from whole
+  micro-dollars. `args()` refuses an option with no value. The helpers are in the new `out-folder.mjs`, and two new
+  test files cover them without a model. No plugin changed (`evals/` is in no plugin), so nothing is bumped.
+
 ## 2026-10-25: Q15 done; Q14 next
 
 - Q15 is marked done in the backlog, with what worked and what did not in `docs/backlog/done.md` and

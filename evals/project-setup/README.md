@@ -11,18 +11,23 @@ node evals/project-setup/run.mjs --baseline               # the same scenarios w
 node evals/project-setup/run.mjs --scenario nervous-beginner --max-turns 20
 ```
 
-Options: `--max-turns <n>` (default 40), `--out <dir>` (default `evals/project-setup/results/`, which git ignores),
-`--model` for the assistant, `--persona-model` for the simulated user and the judge, and `--no-judge` to skip the
-model-graded rubric.
+Options: `--max-turns <n>` (default 40), `--out <dir>` (default: a fresh folder under the system temp folder for each
+run; its path is the first line the run prints), `--model` for the assistant, `--persona-model` for the simulated
+user and the judge, and `--no-judge` to skip the model-graded rubric. An `--out` inside this repository is refused
+before any model call: Claude Code loads the CLAUDE.md files of parent folders, so the assistant, the persona and the
+judge would read this repository's own CLAUDE.md.
 
-Pass `--out` a folder outside this repository. Claude Code also loads the CLAUDE.md files of parent folders, so with
-the default `--out` the assistant, the persona and the judge all read this repository's own CLAUDE.md; with the old
-persona prompt that kept `spanish-beginner` going after its first task.
+The default folder is outside the repository, and a folder inside it (also through a link, or a `TMPDIR` inside it) is
+refused. So is a folder with a `CLAUDE.md`, `CLAUDE.local.md` or `.claude/CLAUDE.md` in it or in any parent, such as
+a worktree that sits inside another checkout. With the old default `--out`, inside this repository, the old persona
+prompt kept `spanish-beginner` going after its first task. `run.mjs` never deletes its output folder, and the system
+may clear its temp folder, so pass `--out` to keep a run.
 
 Most scenarios take 15 to 30 turns and cost real usage: a run at the 30-turn limit cost about 28 US dollars with
-`claude-opus-5-5` in October 2026, with the default `--out`. The 20-turn `spanish-beginner` run outside the repository
-cost 6.98 US dollars. The printed cost counts the assistant's calls only, not the persona's or the judge's. Each run
-needs the `claude` CLI, logged in.
+`claude-opus-5-5` in October 2026, with the old default `--out`, inside this repository. The 20-turn `spanish-beginner`
+run outside the repository cost 6.98 US dollars. Both figures count the assistant's calls only. The printed cost now
+counts the assistant's, the persona's and the judge's calls, and `summary.json` holds `costUsd` (the total) and
+`costPartsUsd` (the three parts). With `--no-judge` the judge part is 0. Each run needs the `claude` CLI, logged in.
 
 ## How it works
 
@@ -62,6 +67,10 @@ tests the fixture copy, the scenario list, the entry-point guards of `run.mjs` a
 symlink), and the default turn limit. `tests/project-setup-eval-persona.test.mjs` tests when a persona reply ends the
 run, the turn loop, the end rule in the persona's prompt and the persona call's arguments.
 `tests/project-setup-eval-replay.test.mjs` tests `replay.mjs` with a fake persona call.
+`tests/project-setup-eval-out.test.mjs` tests the output folder: no folder on import or option parsing, a fresh temp
+folder per run printed first, and the refusal of a folder inside the repository (also through links and a missing
+tail) before any model call. `tests/project-setup-eval-cost.test.mjs` runs a scenario and `main` with a fake `claude`
+and checks that the cost counts the assistant, the persona and the judge, each part rounded once.
 
 ## Replay a run
 
@@ -69,7 +78,8 @@ run, the turn loop, the end rule in the persona's prompt and the persona call's 
 node evals/project-setup/replay.mjs <run dir> --turns <n> --prompt base|new [--times 4] [--persona-model <model>]
 ```
 
-`replay.mjs` takes a run folder that `run.mjs` wrote, cuts the conversation after a chosen turn, and asks the persona
+`replay.mjs` takes a run folder that `run.mjs` wrote, `<out>/<scenario>[-baseline]`; the first line `run.mjs` printed
+names `<out>`. It cuts the conversation after a chosen turn, and asks the persona
 for its next message `--times` times. `--prompt base` is the persona prompt from before Q13, kept as the control;
 `--prompt new` is the current one. `--turns n` keeps the conversation up to the assistant's n-th message. The progress
 lines of `run.mjs` count from 0, so its "turn 20" is `--turns 21`.
@@ -102,7 +112,7 @@ Spanish, and the saved preferences named Spanish as the preferred language. Its 
 ended at turn 20 of 40, once the assistant had started the first task (it used all 40 turns before the end rule moved
 to the top of the persona's prompt), with `--out` outside the repository; the lowest judge score is honesty. Both new scenarios wrote exactly the expected production rules: Money, Input, The signed-in user and
 Secrets for the web app, Secrets only for the CLI. The first three rows predate the introduction stop, which adds one
-turn to every run. Every row before Q13 ran with the default `--out`, inside this repository.
+turn to every run. Every row before Q13 ran with the old default `--out`, inside this repository.
 
 ## Scenarios
 
