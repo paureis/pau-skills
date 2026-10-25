@@ -140,7 +140,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 11. Done: the ninth batch, Q11 what batch 8 left (pull request 44).
 12. Done: the tenth batch, Q12 what Q11 left (pull request 47).
 13. Done: the eleventh batch, Q13 what Q12 left (pull request 50).
-14. **Next:** Q14 what Q13 left; its scope is decision 16. The kickoff is in [backlog/kickoff.md](backlog/kickoff.md).
-15. Then: Q15 html-plan pages that are easy on the eyes, with the owner looking at each variant.
+14. Done: Q15 html-plan pages that are easy on the eyes (pull request 53), ahead of Q14 at the owner's choice.
+15. **Next:** Q14 what Q13 left; its scope is decision 16. The kickoff is in [backlog/kickoff.md](backlog/kickoff.md).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

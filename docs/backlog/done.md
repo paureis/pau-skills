@@ -125,3 +125,17 @@ Work from 2026-10-17 to 2026-10-19 (the first six batches) is in
   - Did not: the first replay, outside the repository, could not tell the two prompts apart, so the control needed a
     second probe in the original folder; the run cost 6.98 US dollars against an estimate of 20, because Q12's runs
     carried this repository's CLAUDE.md; the worker process restarted once (the agents were continued by ID).
+- 2026-10-25: the eleventh batch's second part, Q15 html-plan pages that are easy on the eyes, merged as
+  [pull request 53](https://github.com/paureis/pau-skills/pull/53), after decision 16 and the owner's pick of the Mist
+  look from four variants on a real decisions page. `eng-lead` planned one slice; a read-only plan check built it in
+  a clone; one builder, one fresh reviewer, one fix round for four test gaps and a second look. html-plan stays
+  upstream's: `scripts/pack-html-plan.mjs` builds the zip from the pinned commit plus the theme, a numbering fix and a
+  Send to Claude button, and the owner got `html-plan.zip` with HOW-TO-UPLOAD.txt. `pack-skills --since 72206f9` had
+  nothing to pack; the counts did not change.
+  - Worked: a variants page with a switcher, built on the owner's own page, settled the look in one answer; the plan
+    check ran the whole slice and a real browser and found six gaps before any builder started (among them a double
+    press and a numbering fix that would have numbered diff blocks); the reviewer fetched upstream with the README's
+    own steps and got the same zip byte for byte.
+  - Did not: the first decisions page reached the owner half dark, because nobody had looked at an html-plan page
+    inside the artifact host in dark mode; the real Send to Claude press could not be tried from the session, so the
+    owner tries it on the republished Q13 page.
