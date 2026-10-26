@@ -2,40 +2,40 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twelfth batch is done: Q14 merged as pull request 55. **The backlog is empty**: no item is `todo`. The owner
-kept every recommendation on the Q14 decisions page (decision 17), including "nothing comes next for now". When the
-owner asks for new work, open an item for it, with its own file under `docs/backlog/` and a line under "Work items"
-and "Order" in `docs/BACKLOG.md`.
-
-To start the next batch, take the twelfth batch's message below and change four things: the item names and files
-(`q14.md` becomes the new item's file, `q13.md` the last done item's), the decision that settled its scope, the
-things-that-bit file to read first (`batch-12.md`), and the line about a paid eval run if the item needs one. Read "Things that bit the twelfth batch" (`docs/backlog/things-that-bit/batch-12.md`) first. The
-twelfth batch was started with this message:
+The twelfth batch is done: Q14 merged as pull request 55, and the owner kept every recommendation on its decisions
+page (decision 17). The next batch is Q16, trigger tests and a skill usage log, chosen in a brainstorm on 2026-10-26
+and settled in an interview (decision 18). It has three parts: a trigger mode in `skill-eval`, this repository's
+request lists with a first paid baseline, and a `skill-usage` hook with a report in `which-skill`. Read "Things that
+bit the twelfth batch" (`docs/backlog/things-that-bit/batch-12.md`) first. The owner starts it with this message:
 
 ```text
-You are the orchestrator for Q14 in this repository: what Q13 left. Do not build it yourself; run the roster in
-.claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My answers from the Q13 decisions page are
-decision 16 in docs/backlog/decisions.md; build the parts it chooses.
+You are the orchestrator for Q16 in this repository: trigger tests and a skill usage log. Do not build it yourself;
+run the roster in .claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My choices are decision 18
+in docs/backlog/decisions.md; build what it chooses.
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules, including step 2 and step 8's bump-listing command).
-2. docs/BACKLOG.md (the note at the top, "How to work an item", the Contents and "Order"), docs/backlog/q14.md,
-   docs/backlog/q13.md (what batch 11 built and changed), decisions 7 to 16 in docs/backlog/decisions.md, "Policy
+2. docs/BACKLOG.md (the note at the top, "How to work an item", the Contents and "Order"), docs/backlog/q16.md,
+   docs/backlog/q14.md (what batch 12 built and changed), decisions 7 to 18 in docs/backlog/decisions.md, "Policy
    since P0.5" in docs/backlog/context-budget.md, docs/backlog/how-to-run-a-batch.md (all 10 steps and "With the
-   roster"), and every file in docs/backlog/things-that-bit/, batch-11.md first.
-3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, and the five agent
-   files in .claude/agents/ (roster 4). Work that way for the whole session. The usage budget is generous: same model
-   for every agent, a read-only plan check of every brief that builds the slice in a clone and tries mutations of
-   its own, and a fresh reviewer per slice. Q14 needs no paid eval run: replay.mjs and the tests cover it. If you
-   still want one, say the cost first, and run it with --out outside the repository.
+   roster"), and every file in docs/backlog/things-that-bit/, batch-12.md first.
+3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, the five agent files
+   in .claude/agents/ (roster 4), and skills/verification/skill-eval/ (all of it: the trigger mode reuses its run
+   setup). Work that way for the whole session. The usage budget is generous: same model for every agent, a
+   read-only plan check of every brief that builds the slice in a clone and tries mutations of its own, and a fresh
+   reviewer per slice.
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
   builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds, with the
   reviewer contract as a file. If the permission check refuses eng-lead's call for a builder, ask me before you
-  start it yourself.
-- Review Q14 against the code and tell me anything you would change; record it in the item.
+  start it yourself. eng-lead has no Write tool: save its briefs to files yourself.
+- Review Q16 against the code and tell me anything you would change; record it in the item.
 - Commits carry the harness's two attribution trailers; say so once in the standing orders.
+
+Q16 needs one paid run: the first full trigger round (380 one-turn runs, about 30 US dollars, cap 40). Run it after
+the code is reviewed and the lists are checked, from a folder outside the repository, and tell me the estimate before
+it starts. Any other paid run needs my yes first.
 
 Rules that matter most:
 - Every skill works on its own; no em or en dashes; plain English; Node standard library only.
@@ -48,15 +48,15 @@ Rules that matter most:
   the validate job and every review is clean, merge it yourself and carry on.
 - Give long briefs to agents as files they read, with a common part and a "Corrections after the plan check"
   section. Use absolute paths and git -C from the orchestrator; never cd into an agent's worktree.
-- Commit as the session's default author. If a hook file changes, bump pau-skills-hooks too and give me the update
+- Commit as the session's default author. A hook is added, so bump pau-skills-hooks too and give me the update
   commands.
 
-When the PR is open, tell me in plain words what changed, what the reviews found, and anything I need to decide; if
-html-plan is installed, give me the decisions as an html-plan page published as a private artifact. After the merge,
-run `node scripts/pack-skills.mjs --since <main before the batch>` on main and send me the changed skills' zips in
-one bundle zip with HOW-TO-UPLOAD.txt (if no skill changed, say so), mark Q14 done in docs/backlog/ with what worked
-and what did not with the roster, write the kickoff for whatever is left in the backlog (or say it is empty) into
-docs/backlog/kickoff.md, and update my profile README in paureis/paureis if a count changed.
+When the PR is open, tell me in plain words what changed, what the reviews found, what the baseline shows, and
+anything I need to decide; if html-plan is installed, give me the decisions as an html-plan page published as a
+private artifact. After the merge, run `node scripts/pack-skills.mjs --since <main before the batch>` on main and
+send me the changed skills' zips in one bundle zip with HOW-TO-UPLOAD.txt, mark Q16 done in docs/backlog/ with what
+worked and what did not with the roster, write the kickoff for whatever is left in the backlog (or say it is empty)
+into docs/backlog/kickoff.md, and update my profile README in paureis/paureis (the hook count changes).
 ```
 
 ## The fifth batch's kickoff, as a template

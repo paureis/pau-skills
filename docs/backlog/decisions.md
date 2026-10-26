@@ -131,3 +131,18 @@
    - It keeps refusing an output folder with a `CLAUDE.md`, `CLAUDE.local.md` or `.claude/CLAUDE.md` in it or in any
      parent folder, which the Q14 review added for a worktree inside another checkout.
    - Nothing comes next for now: no paid eval round and no new item. The backlog stays empty until the owner adds one.
+
+## Decisions taken (2026-10-26)
+
+18. **The next batch, Q16**, from a brainstorm of eleven options and an interview, each as recommended:
+   - Build a trigger test suite and a skill usage log together; leave the breaking-change check skill as the
+     runner-up.
+   - The suite is a mode of `skill-eval`, so anyone can test their own skills' triggers.
+   - This repository's request lists live in `evals/triggers/`, one per skill: 3 requests that should start the skill
+     and 2 near misses. An agent that has not seen the descriptions writes them, and the orchestrator checks them.
+   - Trigger runs see only the skills under test, under an empty HOME.
+   - 2 repeats per request; the first full round has a cap of 40 US dollars, and its summary is committed as the
+     baseline.
+   - The usage log is on by default and records names, times and how a skill started, never the prompt; the report
+     is asked for through `which-skill`.
+   - The batch measures only; fixing misfiring descriptions is a follow-up item.
