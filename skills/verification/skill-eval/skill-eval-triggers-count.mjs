@@ -108,7 +108,12 @@ export function renderReport(s) {
     const wrong = p.wrongStarts.map((w) => `${w.id} (meant for ${w.meantFor})`);
     lines.push(`  ${name}: hits ${p.hits} of ${p.shouldRuns}; misses ${misses.length}${misses.length ? `: ${misses.join(', ')}` : ''}; wrong starts ${wrong.length}${wrong.length ? `: ${wrong.join(', ')}` : ''}`);
   }
-  lines.push('', `Near misses right: ${s.nearMisses.right} of ${s.nearMisses.total}`);
+  // The near misses that name a skill, over the same runs as nearMisses.total: how many started it, how many nothing.
+  const named = s.runs.filter((r) => r.kind === 'nearMiss' && r.expect !== 'none' && counts(r));
+  const startedIt = named.filter((r) => r.started === r.expect).length;
+  const startedNothing = named.filter((r) => r.started === 'none').length;
+  const split = named.length ? ` (of ${named.length} that name a skill: ${startedIt} started it, ${startedNothing} started nothing)` : '';
+  lines.push('', `Near misses right: ${s.nearMisses.right} of ${s.nearMisses.total}${split}`);
   for (const w of s.nearMisses.wrong) lines.push(`  wrong: ${w.id} started ${w.started}, expected ${w.expect}: ${quote(w.request)}`);
   lines.push('', `Unsteady requests: ${s.unsteady.length ? s.unsteady.length : 'none'}`);
   for (const u of s.unsteady) lines.push(`  ${u.list} ${u.kind} ${u.index}: ${u.started.join(' / ')}: ${quote(u.request)}`);

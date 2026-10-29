@@ -244,7 +244,7 @@ describe('a round', () => {
     assert.match(r.stdout, /Cost: \$1\.00 spent, estimate \$1\.60, cap \$5\.00; 20 of 20 runs made/);
     assert.match(r.stdout, /tidy-notes: hits 4 of 6; misses 2: none after Read, none after Read; wrong starts 3/);
     assert.match(r.stdout, /pack-boxes: hits 2 of 6; misses 4/);
-    assert.match(r.stdout, /Near misses right: 5 of 8/);
+    assert.match(r.stdout, /Near misses right: 5 of 8 \(of 4 that name a skill: 2 started it, 2 started nothing\)\n/);
     assert.match(r.stdout, /wrong: tidy-notes-n2-r1 started verify, expected none/);
     assert.match(r.stdout, /Unsteady requests: 1\n {2}pack-boxes nearMiss 2: tidy-notes \/ none: "coin toss for the notes"/);
     assert.match(r.stdout, /Should runs that started nothing: 2 answered or did nothing, 2 looked first \(Read 2\)/);
