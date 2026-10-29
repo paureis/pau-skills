@@ -1,0 +1,18 @@
+{
+  "skill": "mutation-test",
+  "should": [
+    "mutation test",
+    "Break the tenant filter on purpose and show me that the new RSpec example goes red, then restore the code",
+    "I added a test for the permission check in our Go handler, and it passed on the very first run, so I am not sure it catches anything."
+  ],
+  "nearMisses": [
+    {
+      "request": "Write the next behaviour of the cart service with a failing test before any code",
+      "expect": "tdd"
+    },
+    {
+      "request": "Have someone who did not build the feature judge it against the issue, criterion by criterion",
+      "expect": "evaluator"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "skill": "sharpen",
+  "should": [
+    "sharpen this",
+    "Before you touch anything, put this task in your own words with the reason behind it and how we will know it worked, then check with me",
+    "The ticket just says make the Rust exporter better, and I am not sure myself whether that means speed, memory, or the output format."
+  ],
+  "nearMisses": [
+    {
+      "request": "Interview me on each unresolved choice in the deployment plan until every branch is settled",
+      "expect": "grill-me"
+    },
+    {
+      "request": "Fix the typo in the README heading",
+      "expect": "none"
+    }
+  ]
+}

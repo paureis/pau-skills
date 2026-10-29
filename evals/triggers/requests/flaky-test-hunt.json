@@ -1,0 +1,18 @@
+{
+  "skill": "flaky-test-hunt",
+  "should": [
+    "this test is flaky",
+    "One pytest case fails roughly once every thirty runs on CI; count how often, find what makes it nondeterministic, and show the fix holds with numbers",
+    "The checkout spec in our Cypress suite goes red now and then on the shared runner, and rerunning the job always turns it green."
+  ],
+  "nearMisses": [
+    {
+      "request": "The date parser test fails on every single run since yesterday's commit",
+      "expect": "bug-fix"
+    },
+    {
+      "request": "Should we run the full suite on every push or only once before merging?",
+      "expect": "ci-cost-and-cadence"
+    }
+  ]
+}

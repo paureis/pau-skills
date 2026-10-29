@@ -1,0 +1,18 @@
+{
+  "skill": "which-skill",
+  "should": [
+    "which skill should I use",
+    "I have a database migration and a slow test suite this week; which of the installed plugins should I start with, and in what order?",
+    "There are dozens of slash commands in this marketplace and I cannot tell which one fits a bug that only shows up in production."
+  ],
+  "nearMisses": [
+    {
+      "request": "Get Claude Code ready in my new repo by asking me how I want to work",
+      "expect": "project-setup"
+    },
+    {
+      "request": "How do I list the plugins I have installed?",
+      "expect": "none"
+    }
+  ]
+}

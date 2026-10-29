@@ -1,0 +1,18 @@
+{
+  "skill": "skill-eval",
+  "should": [
+    "A/B this prompt",
+    "Run the old and new versions of my code review skill several times each on the same task, blind, and tell me if behaviour actually changed",
+    "I rewrote the instructions in our commit-message skill last week, and I honestly cannot tell whether the agent does anything differently now."
+  ],
+  "nearMisses": [
+    {
+      "request": "Have several subagents each try writing the parser under different constraints and pick the best one",
+      "expect": "arena"
+    },
+    {
+      "request": "Shorten the instruction files we load every session and remove duplicate rules",
+      "expect": "instructions-audit"
+    }
+  ]
+}

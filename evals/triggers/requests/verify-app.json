@@ -1,0 +1,18 @@
+{
+  "skill": "verify-app",
+  "should": [
+    "make a verification skill",
+    "Write down for future agents exactly how to launch our Django app locally, click through it like a user, and save proof of what happened",
+    "Every agent that touches our Electron app claims the change works, but none of them ever opens the app, and nothing scripted can drive it."
+  ],
+  "nearMisses": [
+    {
+      "request": "Check the finished reporting feature against its acceptance criteria with evidence you reproduced",
+      "expect": "evaluator"
+    },
+    {
+      "request": "How do I run Playwright tests in headed mode?",
+      "expect": "none"
+    }
+  ]
+}

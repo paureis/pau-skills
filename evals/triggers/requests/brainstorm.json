@@ -1,0 +1,18 @@
+{
+  "skill": "brainstorm",
+  "should": [
+    "brainstorm this",
+    "Give me a wide spread of ways we could cut onboarding time for new users in our Rails app before we settle on one",
+    "We want fewer support tickets about failed CSV imports, and the only idea anyone has had so far is a longer help page."
+  ],
+  "nearMisses": [
+    {
+      "request": "I have picked an approach for the import retry queue; question me one decision at a time until nothing is left open",
+      "expect": "grill-me"
+    },
+    {
+      "request": "Write up the spec for the export feature we just agreed on",
+      "expect": "to-prd"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "skill": "dependency-upgrade",
+  "should": [
+    "upgrade dependencies",
+    "Bring our Gradle project's libraries up to their latest versions, one major bump per commit, starting from a passing build",
+    "Our Django app is still on 3.2, several packages in requirements.txt are two majors behind, and support for that release has ended."
+  ],
+  "nearMisses": [
+    {
+      "request": "Does the new advisory for the Rust TLS crate we depend on affect us?",
+      "expect": "dependency-security-audit"
+    },
+    {
+      "request": "Look over the Alembic script that changes the orders.status column type before it reaches production",
+      "expect": "migration-review"
+    }
+  ]
+}

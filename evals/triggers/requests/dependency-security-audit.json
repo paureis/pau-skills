@@ -1,0 +1,18 @@
+{
+  "skill": "dependency-security-audit",
+  "should": [
+    "security audit",
+    "Check whether any packages in our Python lockfile and Docker image have known CVEs we are exposed to, ranked by what to do first",
+    "There is news of a compromised npm package that stole tokens on install, and I have no idea whether anything in our build pulls it in."
+  ],
+  "nearMisses": [
+    {
+      "request": "Move our Spring Boot app from version 2 to 3, one major step at a time with the build green",
+      "expect": "dependency-upgrade"
+    },
+    {
+      "request": "What does the CVSS score on a GitHub advisory actually measure?",
+      "expect": "none"
+    }
+  ]
+}

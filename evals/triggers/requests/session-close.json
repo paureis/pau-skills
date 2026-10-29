@@ -1,0 +1,18 @@
+{
+  "skill": "session-close",
+  "should": [
+    "close the session",
+    "We are done for today: wrap things up in order, lessons first, then the roadmap and log, notes for next time, and a commit",
+    "It is six o'clock, a few files are still uncommitted, the roadmap and log are stale, nothing about today's mistakes is written down, and I am about to log off."
+  ],
+  "nearMisses": [
+    {
+      "request": "Just print a summary of today's changes I can paste into a new chat",
+      "expect": "handoff"
+    },
+    {
+      "request": "Lessons only: what did I correct you on today and where should each one live?",
+      "expect": "retrospective"
+    }
+  ]
+}

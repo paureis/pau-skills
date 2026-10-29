@@ -1,0 +1,18 @@
+{
+  "skill": "grill-me",
+  "should": [
+    "grill me",
+    "Question me about every open decision in my caching plan, one by one, each with the answer you would pick, until nothing is left vague",
+    "I have a rough plan for multi-tenant support in our Postgres schema, but half the decisions are still in my head and I keep changing my mind."
+  ],
+  "nearMisses": [
+    {
+      "request": "Give me lots of options for how tenants could be isolated before I commit to one",
+      "expect": "brainstorm"
+    },
+    {
+      "request": "Repeat this ticket back to me in plain terms and confirm the goal before you start coding",
+      "expect": "sharpen"
+    }
+  ]
+}

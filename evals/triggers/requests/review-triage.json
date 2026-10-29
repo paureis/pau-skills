@@ -1,0 +1,18 @@
+{
+  "skill": "review-triage",
+  "should": [
+    "triage these review comments",
+    "Go through the 23 notes the AI reviewer left on my Kotlin PR, keep the ones that name a real failure, and stop after one round of fixes",
+    "We are on the fifth round of automated review on this Python pull request, and every fix seems to bring back three new nitpicks."
+  ],
+  "nearMisses": [
+    {
+      "request": "Have a fresh agent attack the finished feature assertion by assertion",
+      "expect": "evaluator"
+    },
+    {
+      "request": "Reply to the reviewer's question about why I used a map here",
+      "expect": "none"
+    }
+  ]
+}

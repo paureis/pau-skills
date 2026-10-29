@@ -1,0 +1,18 @@
+{
+  "skill": "architect",
+  "should": [
+    "architect this",
+    "Before writing the new rate limiter in Go, draft two different sets of types and function signatures with empty bodies and compare them",
+    "I need a new notifications module in our Kotlin backend and I can already picture three ways to structure it, none of which I have tried against real callers."
+  ],
+  "nearMisses": [
+    {
+      "request": "Find refactors in our existing Python package that would make its modules deeper and simpler to unit test",
+      "expect": "improve-codebase-architecture"
+    },
+    {
+      "request": "Explain how the current order pipeline in our Kotlin backend is wired, from the request handler down to the database",
+      "expect": "codebase-oracle"
+    }
+  ]
+}

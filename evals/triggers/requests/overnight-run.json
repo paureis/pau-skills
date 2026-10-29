@@ -1,0 +1,18 @@
+{
+  "skill": "overnight-run",
+  "should": [
+    "run this overnight",
+    "I am heading to bed, keep working on the Rust parser port until the test suite is green, and leave me a log I can check tomorrow",
+    "Keep the Kotlin test migration going while I am out tonight; last time an agent worked alone I came back to forty commits and could not tell which ones helped."
+  ],
+  "nearMisses": [
+    {
+      "request": "Shrink the JavaScript bundle size gradually and back each change with numbers from before and after it",
+      "expect": "hillclimb"
+    },
+    {
+      "request": "How do I schedule a cron job that runs a Python script every night at 2am?",
+      "expect": "none"
+    }
+  ]
+}
