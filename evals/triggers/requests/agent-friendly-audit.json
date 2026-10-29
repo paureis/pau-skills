@@ -1,0 +1,18 @@
+{
+  "skill": "agent-friendly-audit",
+  "should": [
+    "make this repo agent friendly",
+    "Mine our fix commits and old review threads for errors coding agents repeat in this TypeScript monorepo, and propose a guard for each",
+    "Every week I leave the same comment on agent pull requests in our Java service: they skip the repository layer and query the database from controllers."
+  ],
+  "nearMisses": [
+    {
+      "request": "Turn our rule about never calling print in library code into a pre-commit check with a test",
+      "expect": "rule-to-hook"
+    },
+    {
+      "request": "Look back at the corrections I made in today's session and save the ones worth keeping as memory",
+      "expect": "retrospective"
+    }
+  ]
+}

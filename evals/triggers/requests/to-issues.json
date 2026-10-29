@@ -1,0 +1,18 @@
+{
+  "skill": "to-issues",
+  "should": [
+    "break this into tasks",
+    "Split the approved spec for team invites into thin end-to-end slices I can file as GitHub issues, each marked whether it needs a human",
+    "We finally agreed on the saved-searches feature for our Laravel app, and now it sits in one long document nobody can pick up and start on."
+  ],
+  "nearMisses": [
+    {
+      "request": "Turn what we decided in this conversation about saved searches into a product spec with user stories",
+      "expect": "to-prd"
+    },
+    {
+      "request": "Work on these four tickets at the same time with separate agents and branches",
+      "expect": "parallel-worktrees"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "skill": "improve-codebase-architecture",
+  "should": [
+    "improve architecture",
+    "Point out where our Go packages are shallow pass-throughs and suggest refactors that would give them more depth and make them simpler to test",
+    "Understanding how an order gets priced in our C# app means jumping through nine tiny classes, and none of them can be tested without mocking the others."
+  ],
+  "nearMisses": [
+    {
+      "request": "Draft the types for a brand new scheduling module as two rival designs before coding",
+      "expect": "architect"
+    },
+    {
+      "request": "Rename this variable from tmp to retryCount across the file",
+      "expect": "none"
+    }
+  ]
+}
