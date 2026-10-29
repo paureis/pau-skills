@@ -282,4 +282,4 @@ async function run(o, out, err) {
   return bad ? 1 : 0;
 }
 
-export { setup, run };
+export { setup, run, runOne };

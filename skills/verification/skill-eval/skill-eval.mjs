@@ -44,6 +44,15 @@
  *       Prints which letter was which run and variant, the mean scores per variant from the verdict and from your
  *       read, every score where you and the reviewer are 2 or more apart, and the cost.
  *
+ *   node skill-eval.mjs triggers <lab-dir> --skills <dir> [--skills <dir>]... --requests <dir> --model <model>
+ *                       --max-usd <x> [--also <dir>]... [--repeats 2] [--usd-per-run 0.08] [--parallel 3] [--plan]
+ *                       [--baseline <summary.json>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5]
+ *       Runs every request of the lists in --requests (one <name>.json per skill) as a one-turn `claude -p`, each in a
+ *       fresh folder with every skill of --skills and --also in its .claude/skills/, and records the first skill it
+ *       started. Prints the plan and the estimate first (--plan stops there), keeps the round under --max-usd, writes
+ *       <lab-dir>/summary.json and prints hits, misses and wrong starts per skill; --baseline compares with an older
+ *       summary. TRIGGERS.md has the rules.
+ *
  * Scores, in my-read.md and in the verdict: a "Criterion <n>: <text>" line, then one "  <letter>: <1-5>/5  <evidence>"
  * line per output; the block ends at the first other line. SKILL_EVAL_CLAUDE names the command to run instead of
  * `claude` (a .mjs or .js file runs with this Node); the tests use it. Windows is refused for the real command.
@@ -56,13 +65,14 @@ import { extractActions, renderActions } from './skill-eval-core.mjs';
 import { parseArgs, money } from './skill-eval-files.mjs';
 import { setup, run } from './skill-eval-setup.mjs';
 import { blind, judge, unblind } from './skill-eval-blind.mjs';
+import { triggers } from './skill-eval-triggers.mjs';
 
 export {
   META_WORDS, findMetaWords, skillNameOf, ALLOWED_ENV, childEnv, platformProblem, candidateArgv, judgeArgv, targetOf,
   extractActions, finalSection, renderActions, MIN_CRITERIA, MAX_RUNS, MAX_CRITERIA, validateRubric, withoutComments,
   rubricTemplate, parseScores, disagreements, variantMeans,
 } from './skill-eval-core.mjs';
-export { parseArgs, isInside, INHERITED, inheritedConfig } from './skill-eval-files.mjs';
+export { parseArgs, isInside, INHERITED, inheritedConfig, parseUsdMicros, microsArg, microsUsd } from './skill-eval-files.mjs';
 
 function actions(o, out, err) {
   const f = resolve(o.target);
@@ -83,6 +93,7 @@ export async function main(argv, out = console.log, err = console.error) {
       case 'actions': return actions(o, out, err);
       case 'blind': return blind(o, out, err);
       case 'judge': return judge(o, out, err);
+      case 'triggers': return await triggers(o, out, err);
       default: return unblind(o, out, err);
     }
   } catch (e) {

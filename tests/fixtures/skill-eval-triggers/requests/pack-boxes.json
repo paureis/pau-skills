@@ -1,0 +1,8 @@
+{
+  "skill": "pack-boxes",
+  "should": ["pack the kitchen boxes", "say hello to the movers", "tidy up before the move"],
+  "nearMisses": [
+    { "request": "helper only, say hi", "expect": "tidy-notes" },
+    { "request": "coin toss for the notes", "expect": "none" }
+  ]
+}
