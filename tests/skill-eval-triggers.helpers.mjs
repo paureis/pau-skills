@@ -1,11 +1,14 @@
-// Shared setup for tests/skill-eval-triggers-run.test.mjs: the fixture paths, lists written into a test folder, and a
-// wrapper that starts `skill-eval.mjs triggers` with the stand-in for `claude` and a temporary folder of its own.
+// Shared setup for the tests/skill-eval-triggers-*.test.mjs files: the fixture paths, lists written into a test folder,
+// a wrapper that starts `skill-eval.mjs triggers` with the stand-in for `claude` and a temporary folder of its own, and
+// a sample summary for the summary in parts.
 import { writeFileSync, readFileSync, existsSync, readdirSync, mkdirSync, cpSync, realpathSync } from 'node:fs';
 import { join, dirname, basename, sep } from 'node:path';
 import assert from 'node:assert/strict';
 import { repo, runNode } from './helpers.mjs';
 import { SCRIPT, scratch } from './skill-eval.helpers.mjs';
 import { ALLOWED_ENV } from '../skills/verification/skill-eval/skill-eval.mjs';
+import { planRuns } from '../skills/verification/skill-eval/skill-eval-triggers.mjs';
+import { countRound } from '../skills/verification/skill-eval/skill-eval-triggers-count.mjs';
 
 const TFIX = repo('tests', 'fixtures', 'skill-eval-triggers');
 const TFAKE = join(TFIX, 'fake-claude.mjs');
@@ -124,7 +127,35 @@ function checkRunCall(c, tmp, skills) {
   assert.match(basename(dirname(c.cwd)), /^tmp\./);
 }
 
+// Three lists, one of them for a skill named constructor, two repeats. What each run started, by id: wrong near misses
+// and unsteady requests in every list, a built-in (verify) and an --also skill (water-plants) that started.
+const LISTS = [
+  { skill: 'constructor', should: ['build a frame'], nearMisses: [{ request: 'pack it', expect: 'pack-boxes' }] },
+  { skill: 'pack-boxes', should: ['pack a', 'pack b'], nearMisses: [{ request: 'check it', expect: 'none' }] },
+  { skill: 'tidy-notes', should: ['tidy a'], nearMisses: [{ request: 'water it', expect: 'water-plants' }, { request: 'verify it', expect: 'none' }] },
+];
+const STARTED = {
+  'constructor-s1-r1': 'constructor', 'constructor-n1-r1': 'tidy-notes', 'pack-boxes-s1-r1': 'pack-boxes', 'pack-boxes-s2-r1': 'none',
+  'pack-boxes-n1-r1': 'verify', 'tidy-notes-s1-r1': 'tidy-notes', 'tidy-notes-n1-r1': 'water-plants', 'tidy-notes-n2-r1': 'verify',
+  'constructor-s1-r2': 'none', 'constructor-n1-r2': 'none', 'pack-boxes-s1-r2': 'pack-boxes', 'pack-boxes-s2-r2': 'pack-boxes',
+  'pack-boxes-n1-r2': 'verify', 'tidy-notes-s1-r2': 'tidy-notes', 'tidy-notes-n1-r2': 'none', 'tidy-notes-n2-r2': 'tidy-notes',
+};
+
+/** A summary in the shape the triggers command writes, runs in plan order. */
+function sampleSummary() {
+  const runs = planRuns(LISTS, 2).map((r) => ({
+    ...r, started: STARTED[r.id], firstTool: STARTED[r.id] === 'none' ? null : 'Skill', costMicros: 50_000,
+    result: STARTED[r.id] === 'none' ? 'success' : 'error_max_turns', finished: true, spawned: true, notes: [],
+  }));
+  return {
+    format: 1, model: 'some-model', repeats: 2, at: '2026-10-29T10:00:00.000Z', skills: ['constructor', 'pack-boxes', 'tidy-notes'],
+    also: ['water-plants'], currency: 'USD', capMicros: 5_000_000, usdPerRunMicros: 80_000, estimateMicros: 1_280_000,
+    costMicros: 800_000, runsPlanned: 16, runsMade: 16, parallel: 3, realHome: false, runs, ...countRound(runs),
+  };
+}
+
 export {
+  LISTS, sampleSummary,
   TFIX, TFAKE, SKILLS, ALSO, PASS, PLAN_LISTS, ROUND_LISTS, BAD_LISTS, BAD_SKILLS, RUN_ARGV, writeLists, writeSkill, readLog, base,
   trig, flag, ids, copyInputs, checkRunCall,
 };
