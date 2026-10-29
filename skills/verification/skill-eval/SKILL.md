@@ -1,6 +1,6 @@
 ---
 name: skill-eval
-description: "Check blind whether a change to a skill or prompt changes what an agent does: several headless runs per variant, scored by a reviewer who does not know which is which. Use when the user says 'A/B this prompt', or asks whether a change to a skill or prompt helped or changed the agent's behaviour. Costs one agent run per variant per repeat."
+description: "Check blind whether a change to a skill or prompt changes what an agent does: headless runs per variant, scored by a reviewer who does not know which is which; or test which skill starts for which request. Use when the user says 'A/B this prompt', asks whether a change to a skill or prompt helped, or asks whether the right skills start. Costs one agent run per variant or request per repeat."
 argument-hint: "[the skill or prompt change to check] [--n <runs per variant, default 3>]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)

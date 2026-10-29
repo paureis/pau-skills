@@ -98,7 +98,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | "Apply build the lever", "which principle applies here", a design choice such as a second flag, a new type or one edit across many files | `engineering-principles` (planning) | `architect` for new code, `improve-codebase-architecture` for existing code |
 | "Run this overnight", "keep going while I sleep", work to leave running while the user is away | `overnight-run` (agent-orchestration): trust checks first, a finish condition a script checks, a decision log and a morning audit | `hillclimb` when the goal is one number; the built-in `/loop` and `/schedule` only wake a session |
 | "Create an agent", "install the agent roster", "audit my agents", "make a designer agent", agents that overlap or carry leftover tools, a starter team to plan, build and review, a design system in code to extend into more screens | `geppetto` (agent-orchestration): Create (a designer from its template), Install (eng-lead, builder, reviewer, writer, sweeper), Audit, Update; asks before every write | `lean-subagent-dev` for one subagent at a time |
-| "Did this skill or prompt change help?", "A/B this prompt", does a new version of a skill behave differently | `skill-eval` (verification) | `arena` to pick between attempts at one task |
+| "Did this skill or prompt change help?", "A/B this prompt", does a new version of a skill behave differently, do the right skills start for the right requests | `skill-eval` (verification), its trigger mode for the last | `arena` to pick between attempts at one task |
 
 ## Fix a run that went wrong
 

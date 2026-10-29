@@ -39,3 +39,11 @@ the skill, measures the wrong thing.
 reviewer about "variants", and the session id leaked through an environment variable. The review round found that run
 ids in variant order let the orchestrator's own read see the variants, and that a rerun started from the previous
 run's edits.
+
+**The trigger mode (Q16, original).** `skill-eval-triggers.mjs`, `skill-eval-triggers-count.mjs` and `TRIGGERS.md`
+have no upstream. The owner asked for proof that the skills start for the right requests and stay quiet for the wrong
+ones. The mode reuses the run setup above (the empty HOME, the allowlisted environment, `--setting-sources project`),
+installs every skill under test in a fresh folder per run, runs each request for one turn and records the first skill
+the agent starts. The money rules come from production rule 1: whole micro-dollars, one rounding, and a cap that
+reserves each running run's hard stop, after the review showed a cap that reserved only the price could end at 1.76
+US dollars of a 1.00 cap.

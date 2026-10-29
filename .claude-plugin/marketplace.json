@@ -9,7 +9,7 @@
     {
       "name": "pau-skills",
       "description": "Everything in this marketplace as one plugin: every skill and every hook from session-discipline, verification, agent-orchestration, guards and planning. Install this or the individual plugins, not both.",
-      "version": "0.16.2",
+      "version": "0.17.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -192,8 +192,8 @@
     },
     {
       "name": "pau-skills-hooks",
-      "description": "Every hook in this marketplace and no skills: the guards against destructive commands, written secrets, skipped git hooks and weakened tests, the check that work was verified before it is called done, and the session-start and compaction hooks. Install it when your skills come from somewhere else, such as your claude.ai account. Do not install it next to pau-skills or the individual plugins, which carry the same hooks.",
-      "version": "0.3.1",
+      "description": "Every hook in this marketplace and no skills: the guards against destructive commands, written secrets, skipped git hooks and weakened tests, the check that work was verified before it is called done, the session-start and compaction hooks, and a log of which skills start. Install it when your skills come from somewhere else, such as your claude.ai account. Do not install it next to pau-skills or the individual plugins, which carry the same hooks.",
+      "version": "0.4.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -367,8 +367,8 @@
     },
     {
       "name": "session-discipline",
-      "description": "Start every session from the written roadmap and the git state, keep the facts a compaction loses, and close in a fixed order: retrospective, roadmap and log, handoff, commit. Plus an instruction-file audit, a guided project setup for new users, and a router over every skill.",
-      "version": "0.12.1",
+      "description": "Start every session from the written roadmap and the git state, keep the facts a compaction loses, and close in a fixed order: retrospective, roadmap and log, handoff, commit. Plus an instruction-file audit, a guided project setup for new users, a router over every skill, and a log and report of which skills you actually use.",
+      "version": "0.13.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -455,8 +455,8 @@
     },
     {
       "name": "verification",
-      "description": "Prove work is correct: a mutation harness that also checks a pure refactor keeps a test green, a hostile evaluator, test-driven development, flaky-test diagnosis, database migration review, a CI cost method, review triage that decides which findings are worth fixing, bug fixing from runtime evidence, a generated skill that proves changes in the running app, metric hill climbing on a harness proven sensitive, blind checks of whether a skill change changes behaviour, and hooks that stop tests being weakened and \"done\" being claimed without a check.",
-      "version": "0.12.2",
+      "description": "Prove work is correct: a mutation harness that also checks a pure refactor keeps a test green, a hostile evaluator, test-driven development, flaky-test diagnosis, database migration review, a CI cost method, review triage that decides which findings are worth fixing, bug fixing from runtime evidence, a generated skill that proves changes in the running app, metric hill climbing on a harness proven sensitive, blind checks of whether a skill change changes behaviour and of which skill starts for which request, and hooks that stop tests being weakened and \"done\" being claimed without a check.",
+      "version": "0.13.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"

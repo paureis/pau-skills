@@ -6,7 +6,8 @@ Skills: `tdd`, `mutation-test` (with `mutate.sh`), `evaluator`, `flaky-test-hunt
 `check-map-rules.mjs`, `DRIVING.md`, `MAINTAIN.md` and templates, `templates/measure-boxes.js` among them), `hillclimb`
 (with `decisions.mjs`, `decisions-core.mjs`, `decisions-log.mjs`, `HARNESS.md` and `BENCHMARK-CHECKLIST.md`),
 `skill-eval` (with `skill-eval.mjs` and its modules `skill-eval-core.mjs`, `skill-eval-files.mjs`, `skill-eval-setup.mjs`
-and `skill-eval-blind.mjs`, `ISOLATION.md` and `JUDGE-BRIEF.md`), `launch-readiness` (with `ledger.mjs`, `table.mjs`, `rules.mjs`, `areas/`, `PROBES.md`,
+and `skill-eval-blind.mjs`, `ISOLATION.md` and `JUDGE-BRIEF.md`, and the trigger mode in `skill-eval-triggers.mjs`,
+`skill-eval-triggers-count.mjs` and `TRIGGERS.md`), `launch-readiness` (with `ledger.mjs`, `table.mjs`, `rules.mjs`, `areas/`, `PROBES.md`,
 `QUESTIONNAIRE.md`, `READINESS-TEMPLATE.md` and `PRODUCTION-RULES.md`, whose copies `project-setup`, `rule-to-hook` and `geppetto` carry). Hooks: `test-tamper-guard`, `suppression-reason` and `verify-before-done`.
 
 All three hooks are on when the plugin is installed. To turn one off or change how it behaves (for example, make

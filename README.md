@@ -95,7 +95,8 @@ green by skipping the failing test.
   test, then prose), proven on a past instance.
 - `file-size-guard` (hook) blocks a change that grows a file past 5,000 tokens, the file an agent keeps appending to,
   and says how to split it.
-- `skill-eval` checks whether a change to a skill or prompt changes what the agent actually does, with blind runs.
+- `skill-eval` checks whether a change to a skill or prompt changes what the agent actually does, with blind runs,
+  and its trigger mode checks which skill starts for which request.
 
 ### 3. One command that cannot be undone
 
