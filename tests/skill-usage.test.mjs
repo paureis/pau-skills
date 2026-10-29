@@ -77,6 +77,8 @@ test('a typed home skill, a synced skill and this repository\'s own plugin skill
 test('a typed skill of a synced plugin is recorded only under its own prefix', () => {
   const ctx = setup();
   skill(join(ctx.home, '.claude', 'plugins', 'synced', 'acct-2', 'design', 'skills'), 'ux-copy');
+  skill(join(ctx.home, '.claude', 'plugins', 'synced', 'skills'), 'escaped'); // what acct-2/../skills would reach
+  run(ctx, typed(ctx, '/..:escaped'));
   run(ctx, typed(ctx, '/other:ux-copy'));
   run(ctx, typed(ctx, '/design:ux-copy the signup page'));
   assert.deepEqual(names(ctx), ['design:ux-copy\ttyped']);
