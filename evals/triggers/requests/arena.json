@@ -1,0 +1,18 @@
+{
+  "skill": "arena",
+  "should": [
+    "arena this",
+    "Spin up a few competing attempts at this Rust trait design, each pushed a different way, and have someone neutral rank them before we choose",
+    "The Go config parser could be written several very different ways, a wrong pick is costly to undo, and I would rather see a few finished versions next to each other than trust my first idea."
+  ],
+  "nearMisses": [
+    {
+      "request": "Sketch two possible type layouts for the new invoice module in Kotlin before we write any bodies",
+      "expect": "architect"
+    },
+    {
+      "request": "Give me eight or ten different ideas for how users could share playlists, I only have one so far",
+      "expect": "brainstorm"
+    }
+  ]
+}

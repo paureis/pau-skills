@@ -25,7 +25,7 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   with a separate yes, your personal preferences, in your language. Written for people new to Claude Code. When the
   project handles money, sign-in, a database, server input or secrets, it offers the matching production rules from
   its `PRODUCTION-RULES.md` for the project CLAUDE.md.
-- Hooks: [`roadmap`](../hooks/session-discipline/roadmap.mjs), [`branch-context`](../hooks/session-discipline/branch-context.mjs), [`compact-snapshot`](../hooks/session-discipline/compact-snapshot.mjs).
+- Hooks: [`roadmap`](../hooks/session-discipline/roadmap.mjs), [`branch-context`](../hooks/session-discipline/branch-context.mjs), [`compact-snapshot`](../hooks/session-discipline/compact-snapshot.mjs), [`skill-usage`](../hooks/session-discipline/skill-usage.mjs).
 
 ## verification
 
@@ -63,7 +63,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[skill-eval](../skills/verification/skill-eval/SKILL.md)** (adapted): Checks whether a change to a skill or prompt
   changes what an agent does: each variant runs several times as a headless `claude -p` session in a neutral folder
   that holds only that variant, runs are graded on what they did, and a reviewer with no tools scores them blind next
-  to your own blind read; `skill-eval.mjs` sets up the folders, refuses leaks and makes the blind copy.
+  to your own blind read; `skill-eval.mjs` sets up the folders, refuses leaks and makes the blind copy. Its `triggers`
+  mode runs every request of a folder of request lists as a one-turn run with all the skills under test installed, and
+  reports which skill started for each request (hits, misses, wrong starts, near misses), within a cost cap.
 - **[launch-readiness](../skills/verification/launch-readiness/SKILL.md)**: An honest go or no-go for the stage an app is
   entering (private beta, paying customers, enterprise, regulated data). The profile is confirmed first, every row has
   `file:line` or command evidence, security suspects are confirmed by probe tests, what code cannot show goes through

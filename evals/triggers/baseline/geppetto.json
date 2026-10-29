@@ -1,0 +1,216 @@
+{
+  "format": 1,
+  "part": "geppetto",
+  "runs": [
+    {
+      "id": "geppetto-s1-r1",
+      "list": "geppetto",
+      "kind": "should",
+      "index": 1,
+      "request": "create an agent",
+      "expect": "geppetto",
+      "repeat": 1,
+      "started": "geppetto",
+      "firstTool": "Skill",
+      "costMicros": 84760,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "geppetto-s2-r1",
+      "list": "geppetto",
+      "kind": "should",
+      "index": 2,
+      "request": "Write me a new subagent file under .claude/agents for reviewing pull requests in our Python monorepo, and show it before saving",
+      "expect": "geppetto",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 91328,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "geppetto-s3-r1",
+      "list": "geppetto",
+      "kind": "should",
+      "index": 3,
+      "request": "Two of the subagents in our repo do almost the same job, one still lists tools it never uses, and Claude Code seems to skip one of them entirely.",
+      "expect": "geppetto",
+      "repeat": 1,
+      "started": "geppetto",
+      "firstTool": "Skill",
+      "costMicros": 86900,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "geppetto-n1-r1",
+      "list": "geppetto",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "For the rest of today on the Spring Boot service, pass each task to a single helper with its own written instructions, and verify what comes back yourself",
+      "expect": "lean-subagent-dev",
+      "repeat": 1,
+      "started": "lean-subagent-dev",
+      "firstTool": "Skill",
+      "costMicros": 89712,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "geppetto-n2-r1",
+      "list": "geppetto",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Split the Swift app work into three independent pieces, each agent on its own branch and folder, then bring them back one by one",
+      "expect": "parallel-worktrees",
+      "repeat": 1,
+      "started": "parallel-worktrees",
+      "firstTool": "Skill",
+      "costMicros": 86936,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "geppetto-s1-r2",
+      "list": "geppetto",
+      "kind": "should",
+      "index": 1,
+      "request": "create an agent",
+      "expect": "geppetto",
+      "repeat": 2,
+      "started": "geppetto",
+      "firstTool": "Skill",
+      "costMicros": 84784,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "geppetto-s2-r2",
+      "list": "geppetto",
+      "kind": "should",
+      "index": 2,
+      "request": "Write me a new subagent file under .claude/agents for reviewing pull requests in our Python monorepo, and show it before saving",
+      "expect": "geppetto",
+      "repeat": 2,
+      "started": "geppetto",
+      "firstTool": "Skill",
+      "costMicros": 88188,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "geppetto-s3-r2",
+      "list": "geppetto",
+      "kind": "should",
+      "index": 3,
+      "request": "Two of the subagents in our repo do almost the same job, one still lists tools it never uses, and Claude Code seems to skip one of them entirely.",
+      "expect": "geppetto",
+      "repeat": 2,
+      "started": "geppetto",
+      "firstTool": "Skill",
+      "costMicros": 86804,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "geppetto-n1-r2",
+      "list": "geppetto",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "For the rest of today on the Spring Boot service, pass each task to a single helper with its own written instructions, and verify what comes back yourself",
+      "expect": "lean-subagent-dev",
+      "repeat": 2,
+      "started": "lean-subagent-dev",
+      "firstTool": "Skill",
+      "costMicros": 86292,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "geppetto-n2-r2",
+      "list": "geppetto",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Split the Swift app work into three independent pieces, each agent on its own branch and folder, then bring them back one by one",
+      "expect": "parallel-worktrees",
+      "repeat": 2,
+      "started": "parallel-worktrees",
+      "firstTool": "Skill",
+      "costMicros": 86676,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "geppetto": {
+      "hits": 5,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "geppetto-s2-r1",
+          "request": "Write me a new subagent file under .claude/agents for reviewing pull requests in our Python monorepo, and show it before saving",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "geppetto",
+      "kind": "should",
+      "index": 2,
+      "request": "Write me a new subagent file under .claude/agents for reviewing pull requests in our Python monorepo, and show it before saving",
+      "started": [
+        "none",
+        "geppetto"
+      ]
+    }
+  ]
+}

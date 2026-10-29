@@ -1,0 +1,5 @@
+{
+  "skill": "pack-boxes",
+  "should": ["pack the kitchen boxes", "we move on Friday, where do I start"],
+  "nearMisses": [{ "request": "tidy the notes I took about the move", "expect": "tidy-notes" }]
+}

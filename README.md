@@ -2,7 +2,7 @@
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Skills: 38](https://img.shields.io/badge/skills-38-informational)
-![Hooks: 13](https://img.shields.io/badge/hooks-13-informational)
+![Hooks: 14](https://img.shields.io/badge/hooks-14-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
 The Claude Code skills, hooks and scripts I use every day, packaged as a plugin marketplace. I am Alvaro "Pau" Reis,
@@ -95,7 +95,8 @@ green by skipping the failing test.
   test, then prose), proven on a past instance.
 - `file-size-guard` (hook) blocks a change that grows a file past 5,000 tokens, the file an agent keeps appending to,
   and says how to split it.
-- `skill-eval` checks whether a change to a skill or prompt changes what the agent actually does, with blind runs.
+- `skill-eval` checks whether a change to a skill or prompt changes what the agent actually does, with blind runs,
+  and its trigger mode checks which skill starts for which request.
 
 ### 3. One command that cannot be undone
 
@@ -120,6 +121,8 @@ context was compacted.
   back after.
 - `session-close` ends a session in a fixed order: retrospective, roadmap and log, handoff, commit.
 - `handoff` writes a handoff the next session can resume from.
+- `skill-usage` (hook) logs each skill start, and `which-skill` reports which skills you actually use and which never
+  start.
 
 ### 5. Building before the plan is decided
 

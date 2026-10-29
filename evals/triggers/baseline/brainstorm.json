@@ -1,0 +1,198 @@
+{
+  "format": 1,
+  "part": "brainstorm",
+  "runs": [
+    {
+      "id": "brainstorm-s1-r1",
+      "list": "brainstorm",
+      "kind": "should",
+      "index": 1,
+      "request": "brainstorm this",
+      "expect": "brainstorm",
+      "repeat": 1,
+      "started": "brainstorm",
+      "firstTool": "Skill",
+      "costMicros": 84796,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "brainstorm-s2-r1",
+      "list": "brainstorm",
+      "kind": "should",
+      "index": 2,
+      "request": "Give me a wide spread of ways we could cut onboarding time for new users in our Rails app before we settle on one",
+      "expect": "brainstorm",
+      "repeat": 1,
+      "started": "brainstorm",
+      "firstTool": "Skill",
+      "costMicros": 86204,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "brainstorm-s3-r1",
+      "list": "brainstorm",
+      "kind": "should",
+      "index": 3,
+      "request": "We want fewer support tickets about failed CSV imports, and the only idea anyone has had so far is a longer help page.",
+      "expect": "brainstorm",
+      "repeat": 1,
+      "started": "brainstorm",
+      "firstTool": "Skill",
+      "costMicros": 86724,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "brainstorm-n1-r1",
+      "list": "brainstorm",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "I have picked an approach for the import retry queue; question me one decision at a time until nothing is left open",
+      "expect": "grill-me",
+      "repeat": 1,
+      "started": "grill-me",
+      "firstTool": "Skill",
+      "costMicros": 85508,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "brainstorm-n2-r1",
+      "list": "brainstorm",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Write up the spec for the export feature we just agreed on",
+      "expect": "to-prd",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89560,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "brainstorm-s1-r2",
+      "list": "brainstorm",
+      "kind": "should",
+      "index": 1,
+      "request": "brainstorm this",
+      "expect": "brainstorm",
+      "repeat": 2,
+      "started": "brainstorm",
+      "firstTool": "Skill",
+      "costMicros": 86636,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "brainstorm-s2-r2",
+      "list": "brainstorm",
+      "kind": "should",
+      "index": 2,
+      "request": "Give me a wide spread of ways we could cut onboarding time for new users in our Rails app before we settle on one",
+      "expect": "brainstorm",
+      "repeat": 2,
+      "started": "brainstorm",
+      "firstTool": "Skill",
+      "costMicros": 86988,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "brainstorm-s3-r2",
+      "list": "brainstorm",
+      "kind": "should",
+      "index": 3,
+      "request": "We want fewer support tickets about failed CSV imports, and the only idea anyone has had so far is a longer help page.",
+      "expect": "brainstorm",
+      "repeat": 2,
+      "started": "brainstorm",
+      "firstTool": "Skill",
+      "costMicros": 86784,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "brainstorm-n1-r2",
+      "list": "brainstorm",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "I have picked an approach for the import retry queue; question me one decision at a time until nothing is left open",
+      "expect": "grill-me",
+      "repeat": 2,
+      "started": "grill-me",
+      "firstTool": "Skill",
+      "costMicros": 85508,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "brainstorm-n2-r2",
+      "list": "brainstorm",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Write up the spec for the export feature we just agreed on",
+      "expect": "to-prd",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89104,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "brainstorm": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

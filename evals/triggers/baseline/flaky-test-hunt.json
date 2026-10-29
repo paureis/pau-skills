@@ -1,0 +1,211 @@
+{
+  "format": 1,
+  "part": "flaky-test-hunt",
+  "runs": [
+    {
+      "id": "flaky-test-hunt-s1-r1",
+      "list": "flaky-test-hunt",
+      "kind": "should",
+      "index": 1,
+      "request": "this test is flaky",
+      "expect": "flaky-test-hunt",
+      "repeat": 1,
+      "started": "flaky-test-hunt",
+      "firstTool": "Skill",
+      "costMicros": 86412,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "flaky-test-hunt-s2-r1",
+      "list": "flaky-test-hunt",
+      "kind": "should",
+      "index": 2,
+      "request": "One pytest case fails roughly once every thirty runs on CI; count how often, find what makes it nondeterministic, and show the fix holds with numbers",
+      "expect": "flaky-test-hunt",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88252,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "flaky-test-hunt-s3-r1",
+      "list": "flaky-test-hunt",
+      "kind": "should",
+      "index": 3,
+      "request": "The checkout spec in our Cypress suite goes red now and then on the shared runner, and rerunning the job always turns it green.",
+      "expect": "flaky-test-hunt",
+      "repeat": 1,
+      "started": "flaky-test-hunt",
+      "firstTool": "Skill",
+      "costMicros": 86948,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "flaky-test-hunt-n1-r1",
+      "list": "flaky-test-hunt",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "The date parser test fails on every single run since yesterday's commit",
+      "expect": "bug-fix",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87140,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "flaky-test-hunt-n2-r1",
+      "list": "flaky-test-hunt",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Should we run the full suite on every push or only once before merging?",
+      "expect": "ci-cost-and-cadence",
+      "repeat": 1,
+      "started": "ci-cost-and-cadence",
+      "firstTool": "Skill",
+      "costMicros": 88288,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "flaky-test-hunt-s1-r2",
+      "list": "flaky-test-hunt",
+      "kind": "should",
+      "index": 1,
+      "request": "this test is flaky",
+      "expect": "flaky-test-hunt",
+      "repeat": 2,
+      "started": "flaky-test-hunt",
+      "firstTool": "Skill",
+      "costMicros": 85696,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "flaky-test-hunt-s2-r2",
+      "list": "flaky-test-hunt",
+      "kind": "should",
+      "index": 2,
+      "request": "One pytest case fails roughly once every thirty runs on CI; count how often, find what makes it nondeterministic, and show the fix holds with numbers",
+      "expect": "flaky-test-hunt",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88792,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "flaky-test-hunt-s3-r2",
+      "list": "flaky-test-hunt",
+      "kind": "should",
+      "index": 3,
+      "request": "The checkout spec in our Cypress suite goes red now and then on the shared runner, and rerunning the job always turns it green.",
+      "expect": "flaky-test-hunt",
+      "repeat": 2,
+      "started": "flaky-test-hunt",
+      "firstTool": "Skill",
+      "costMicros": 85580,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "flaky-test-hunt-n1-r2",
+      "list": "flaky-test-hunt",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "The date parser test fails on every single run since yesterday's commit",
+      "expect": "bug-fix",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 86924,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "flaky-test-hunt-n2-r2",
+      "list": "flaky-test-hunt",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Should we run the full suite on every push or only once before merging?",
+      "expect": "ci-cost-and-cadence",
+      "repeat": 2,
+      "started": "ci-cost-and-cadence",
+      "firstTool": "Skill",
+      "costMicros": 86928,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "flaky-test-hunt": {
+      "hits": 4,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "flaky-test-hunt-s2-r1",
+          "request": "One pytest case fails roughly once every thirty runs on CI; count how often, find what makes it nondeterministic, and show the fix holds with numbers",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "flaky-test-hunt-s2-r2",
+          "request": "One pytest case fails roughly once every thirty runs on CI; count how often, find what makes it nondeterministic, and show the fix holds with numbers",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

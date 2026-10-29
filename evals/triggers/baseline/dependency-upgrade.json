@@ -1,0 +1,198 @@
+{
+  "format": 1,
+  "part": "dependency-upgrade",
+  "runs": [
+    {
+      "id": "dependency-upgrade-s1-r1",
+      "list": "dependency-upgrade",
+      "kind": "should",
+      "index": 1,
+      "request": "upgrade dependencies",
+      "expect": "dependency-upgrade",
+      "repeat": 1,
+      "started": "dependency-upgrade",
+      "firstTool": "Skill",
+      "costMicros": 86732,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-upgrade-s2-r1",
+      "list": "dependency-upgrade",
+      "kind": "should",
+      "index": 2,
+      "request": "Bring our Gradle project's libraries up to their latest versions, one major bump per commit, starting from a passing build",
+      "expect": "dependency-upgrade",
+      "repeat": 1,
+      "started": "dependency-upgrade",
+      "firstTool": "Skill",
+      "costMicros": 86596,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-upgrade-s3-r1",
+      "list": "dependency-upgrade",
+      "kind": "should",
+      "index": 3,
+      "request": "Our Django app is still on 3.2, several packages in requirements.txt are two majors behind, and support for that release has ended.",
+      "expect": "dependency-upgrade",
+      "repeat": 1,
+      "started": "dependency-upgrade",
+      "firstTool": "Skill",
+      "costMicros": 87120,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-upgrade-n1-r1",
+      "list": "dependency-upgrade",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Does the new advisory for the Rust TLS crate we depend on affect us?",
+      "expect": "dependency-security-audit",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89648,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-upgrade-n2-r1",
+      "list": "dependency-upgrade",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Look over the Alembic script that changes the orders.status column type before it reaches production",
+      "expect": "migration-review",
+      "repeat": 1,
+      "started": "migration-review",
+      "firstTool": "Skill",
+      "costMicros": 85332,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-upgrade-s1-r2",
+      "list": "dependency-upgrade",
+      "kind": "should",
+      "index": 1,
+      "request": "upgrade dependencies",
+      "expect": "dependency-upgrade",
+      "repeat": 2,
+      "started": "dependency-upgrade",
+      "firstTool": "Skill",
+      "costMicros": 85348,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-upgrade-s2-r2",
+      "list": "dependency-upgrade",
+      "kind": "should",
+      "index": 2,
+      "request": "Bring our Gradle project's libraries up to their latest versions, one major bump per commit, starting from a passing build",
+      "expect": "dependency-upgrade",
+      "repeat": 2,
+      "started": "dependency-upgrade",
+      "firstTool": "Skill",
+      "costMicros": 85580,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-upgrade-s3-r2",
+      "list": "dependency-upgrade",
+      "kind": "should",
+      "index": 3,
+      "request": "Our Django app is still on 3.2, several packages in requirements.txt are two majors behind, and support for that release has ended.",
+      "expect": "dependency-upgrade",
+      "repeat": 2,
+      "started": "dependency-upgrade",
+      "firstTool": "Skill",
+      "costMicros": 87100,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-upgrade-n1-r2",
+      "list": "dependency-upgrade",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Does the new advisory for the Rust TLS crate we depend on affect us?",
+      "expect": "dependency-security-audit",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89564,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-upgrade-n2-r2",
+      "list": "dependency-upgrade",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Look over the Alembic script that changes the orders.status column type before it reaches production",
+      "expect": "migration-review",
+      "repeat": 2,
+      "started": "migration-review",
+      "firstTool": "Skill",
+      "costMicros": 86032,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "dependency-upgrade": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

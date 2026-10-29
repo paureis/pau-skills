@@ -1,6 +1,6 @@
 ---
 name: skill-eval
-description: "Check blind whether a change to a skill or prompt changes what an agent does: several headless runs per variant, scored by a reviewer who does not know which is which. Use when the user says 'A/B this prompt', or asks whether a change to a skill or prompt helped or changed the agent's behaviour. Costs one agent run per variant per repeat."
+description: "Check blind whether a change to a skill or prompt changes what an agent does: headless runs per variant, scored by a reviewer who does not know which is which; or test which skill starts for which request. Use when the user says 'A/B this prompt', asks whether a change to a skill or prompt helped, or asks whether the right skills start. Costs one agent run per variant or request per repeat."
 argument-hint: "[the skill or prompt change to check] [--n <runs per variant, default 3>]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
@@ -32,6 +32,10 @@ Bundled files:
   `node "${CLAUDE_SKILL_DIR}/skill-eval.mjs"` with no arguments for the usage)
 - `${CLAUDE_SKILL_DIR}/JUDGE-BRIEF.md`: the reviewer's prompt; `blind` copies it into the reviewer's input
 - `${CLAUDE_SKILL_DIR}/ISOLATION.md`: what a run sees and how it is kept clean; read it before Phase 1
+- `${CLAUDE_SKILL_DIR}/skill-eval-triggers.mjs`: the `triggers` mode, started through `skill-eval.mjs`: one-turn runs
+  that record which skill starts for each request, within a cost cap
+- `${CLAUDE_SKILL_DIR}/TRIGGERS.md`: the `triggers` mode's request lists, counting and cost rules; read it before a
+  trigger round
 
 Make a task list with one entry per phase (Cost, Frame, Set up, Run, Read blind, Review, Unblind, Report) before
 starting anything.
@@ -216,6 +220,23 @@ letters only once `my-read.md` and `verdict.md` are moved out of the lab, since 
 
 Clean up: delete the root and the blind folder (`rm -rf "$ROOT" <blind folder>`). Keep `$LAB` while the user may
 want the transcripts, and say where it is.
+
+## Trigger tests
+
+When the question is which skill starts for which request across a set of skills (hits, misses, wrong starts),
+not what a change does to one skill's behaviour, use the `triggers` mode instead of the phases above. Read
+`${CLAUDE_SKILL_DIR}/TRIGGERS.md` first: the list format, what a run sees, the counting and the cost rules. Keep the
+request lists in a folder outside the skill folders. Make a new lab folder with `mktemp -d` and write its path
+literally. Run with `--plan`, tell the user the run count and the estimate it prints, and wait for a yes; then run
+the same line without `--plan`. A run starts only when what was spent, plus twice the price for each run in flight
+and for itself, stays within `--max-usd`, so the round stops before it can pass the cap. To keep a baseline, commit
+`<lab>/summary/` (the summary in parts under 20,000 bytes; `split-summary` makes it from an older summary.json).
+
+```bash
+node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" triggers <lab folder> --skills <skills folder> [--also <folder>]... \
+  --requests <lists folder> --model <model> --max-usd <cap> [--repeats 2] [--usd-per-run 0.08] [--parallel 3] \
+  [--baseline <older summary.json or folder>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5] --plan
+```
 
 ## Do not
 

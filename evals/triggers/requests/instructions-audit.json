@@ -1,0 +1,18 @@
+{
+  "skill": "instructions-audit",
+  "should": [
+    "audit my CLAUDE.md",
+    "Check our project instruction files for duplicated rules, contradictions, stale paths and vague wording, and tell me what to cut",
+    "Our CLAUDE.md is past 600 lines, two sections say opposite things about formatting, and it points at scripts we deleted months ago."
+  ],
+  "nearMisses": [
+    {
+      "request": "Make the rule against editing migrations by hand into a hook that blocks it",
+      "expect": "rule-to-hook"
+    },
+    {
+      "request": "Write a first CLAUDE.md for this new Flutter project by asking me how I like to work",
+      "expect": "project-setup"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "skill": "tdd",
+  "should": [
+    "test first",
+    "Build the discount rules for our Ruby checkout in small steps: one failing spec, the least code to pass it, then tidy up, and repeat",
+    "I am about to add the overdraft logic to our Java ledger service, and last time I wrote all the tests after the code they barely checked anything."
+  ],
+  "nearMisses": [
+    {
+      "request": "Show that the existing test for the overdraft check fails when the check is removed",
+      "expect": "mutation-test"
+    },
+    {
+      "request": "The new RSpec test for overdrafts passes alone but fails about once in ten full runs on CI",
+      "expect": "flaky-test-hunt"
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "format": 1,
+  "part": "skill-eval",
+  "runs": [
+    {
+      "id": "skill-eval-s1-r1",
+      "list": "skill-eval",
+      "kind": "should",
+      "index": 1,
+      "request": "A/B this prompt",
+      "expect": "skill-eval",
+      "repeat": 1,
+      "started": "skill-eval",
+      "firstTool": "Skill",
+      "costMicros": 85968,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "skill-eval-s2-r1",
+      "list": "skill-eval",
+      "kind": "should",
+      "index": 2,
+      "request": "Run the old and new versions of my code review skill several times each on the same task, blind, and tell me if behaviour actually changed",
+      "expect": "skill-eval",
+      "repeat": 1,
+      "started": "skill-eval",
+      "firstTool": "Skill",
+      "costMicros": 86672,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "skill-eval-s3-r1",
+      "list": "skill-eval",
+      "kind": "should",
+      "index": 3,
+      "request": "I rewrote the instructions in our commit-message skill last week, and I honestly cannot tell whether the agent does anything differently now.",
+      "expect": "skill-eval",
+      "repeat": 1,
+      "started": "skill-eval",
+      "firstTool": "Skill",
+      "costMicros": 87016,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "skill-eval-n1-r1",
+      "list": "skill-eval",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Have several subagents each try writing the parser under different constraints and pick the best one",
+      "expect": "arena",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88180,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "skill-eval-n2-r1",
+      "list": "skill-eval",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Shorten the instruction files we load every session and remove duplicate rules",
+      "expect": "instructions-audit",
+      "repeat": 1,
+      "started": "instructions-audit",
+      "firstTool": "Skill",
+      "costMicros": 85404,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "skill-eval-s1-r2",
+      "list": "skill-eval",
+      "kind": "should",
+      "index": 1,
+      "request": "A/B this prompt",
+      "expect": "skill-eval",
+      "repeat": 2,
+      "started": "skill-eval",
+      "firstTool": "Skill",
+      "costMicros": 84804,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "skill-eval-s2-r2",
+      "list": "skill-eval",
+      "kind": "should",
+      "index": 2,
+      "request": "Run the old and new versions of my code review skill several times each on the same task, blind, and tell me if behaviour actually changed",
+      "expect": "skill-eval",
+      "repeat": 2,
+      "started": "skill-eval",
+      "firstTool": "Skill",
+      "costMicros": 86692,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "skill-eval-s3-r2",
+      "list": "skill-eval",
+      "kind": "should",
+      "index": 3,
+      "request": "I rewrote the instructions in our commit-message skill last week, and I honestly cannot tell whether the agent does anything differently now.",
+      "expect": "skill-eval",
+      "repeat": 2,
+      "started": "skill-eval",
+      "firstTool": "Skill",
+      "costMicros": 86784,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "skill-eval-n1-r2",
+      "list": "skill-eval",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Have several subagents each try writing the parser under different constraints and pick the best one",
+      "expect": "arena",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87940,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "skill-eval-n2-r2",
+      "list": "skill-eval",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Shorten the instruction files we load every session and remove duplicate rules",
+      "expect": "instructions-audit",
+      "repeat": 2,
+      "started": "instructions-audit",
+      "firstTool": "Skill",
+      "costMicros": 86024,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "skill-eval": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

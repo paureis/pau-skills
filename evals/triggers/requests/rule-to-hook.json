@@ -1,0 +1,18 @@
+{
+  "skill": "rule-to-hook",
+  "should": [
+    "enforce this rule",
+    "Our CLAUDE.md says never edit generated files and the agent keeps doing it anyway; turn that into a check that actually blocks it",
+    "For the third time this week an agent called time.Now() directly inside our Go domain package, even though the instructions say to inject a clock."
+  ],
+  "nearMisses": [
+    {
+      "request": "Go through our last six months of review threads and fix commits and list the errors agents make again and again",
+      "expect": "agent-friendly-audit"
+    },
+    {
+      "request": "Our CLAUDE.md has grown to 900 lines with rules that contradict each other; find the problems in it",
+      "expect": "instructions-audit"
+    }
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "format": 1,
+  "part": "verify-app",
+  "runs": [
+    {
+      "id": "verify-app-s1-r1",
+      "list": "verify-app",
+      "kind": "should",
+      "index": 1,
+      "request": "make a verification skill",
+      "expect": "verify-app",
+      "repeat": 1,
+      "started": "verify-app",
+      "firstTool": "Skill",
+      "costMicros": 84776,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "verify-app-s2-r1",
+      "list": "verify-app",
+      "kind": "should",
+      "index": 2,
+      "request": "Write down for future agents exactly how to launch our Django app locally, click through it like a user, and save proof of what happened",
+      "expect": "verify-app",
+      "repeat": 1,
+      "started": "verify-app",
+      "firstTool": "Skill",
+      "costMicros": 85432,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "verify-app-s3-r1",
+      "list": "verify-app",
+      "kind": "should",
+      "index": 3,
+      "request": "Every agent that touches our Electron app claims the change works, but none of them ever opens the app, and nothing scripted can drive it.",
+      "expect": "verify-app",
+      "repeat": 1,
+      "started": "verify-app",
+      "firstTool": "Skill",
+      "costMicros": 87552,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "verify-app-n1-r1",
+      "list": "verify-app",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Check the finished reporting feature against its acceptance criteria with evidence you reproduced",
+      "expect": "evaluator",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88092,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "verify-app-n2-r1",
+      "list": "verify-app",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "How do I run Playwright tests in headed mode?",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 91896,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "verify-app-s1-r2",
+      "list": "verify-app",
+      "kind": "should",
+      "index": 1,
+      "request": "make a verification skill",
+      "expect": "verify-app",
+      "repeat": 2,
+      "started": "verify-app",
+      "firstTool": "Skill",
+      "costMicros": 84752,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "verify-app-s2-r2",
+      "list": "verify-app",
+      "kind": "should",
+      "index": 2,
+      "request": "Write down for future agents exactly how to launch our Django app locally, click through it like a user, and save proof of what happened",
+      "expect": "verify-app",
+      "repeat": 2,
+      "started": "verify-app",
+      "firstTool": "Skill",
+      "costMicros": 85416,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "verify-app-s3-r2",
+      "list": "verify-app",
+      "kind": "should",
+      "index": 3,
+      "request": "Every agent that touches our Electron app claims the change works, but none of them ever opens the app, and nothing scripted can drive it.",
+      "expect": "verify-app",
+      "repeat": 2,
+      "started": "verify-app",
+      "firstTool": "Skill",
+      "costMicros": 87292,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "verify-app-n1-r2",
+      "list": "verify-app",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Check the finished reporting feature against its acceptance criteria with evidence you reproduced",
+      "expect": "evaluator",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88312,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "verify-app-n2-r2",
+      "list": "verify-app",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "How do I run Playwright tests in headed mode?",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 92568,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "verify-app": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

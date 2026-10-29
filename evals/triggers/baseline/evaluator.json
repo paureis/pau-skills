@@ -1,0 +1,228 @@
+{
+  "format": 1,
+  "part": "evaluator",
+  "runs": [
+    {
+      "id": "evaluator-s1-r1",
+      "list": "evaluator",
+      "kind": "should",
+      "index": 1,
+      "request": "evaluate this",
+      "expect": "evaluator",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88468,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "evaluator-s2-r1",
+      "list": "evaluator",
+      "kind": "should",
+      "index": 2,
+      "request": "Grade the new refund endpoint against its acceptance criteria as an outsider who did not build it, with evidence you reproduced yourself",
+      "expect": "evaluator",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88912,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "evaluator-s3-r1",
+      "list": "evaluator",
+      "kind": "should",
+      "index": 3,
+      "request": "The agent that built the export feature says every criterion in the issue is met, but nobody other than that agent has looked at it.",
+      "expect": "evaluator",
+      "repeat": 1,
+      "started": "evaluator",
+      "firstTool": "Skill",
+      "costMicros": 213890,
+      "result": "error_max_budget_usd",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "evaluator-n1-r1",
+      "list": "evaluator",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Prove the test for the discount rule would fail if the discount check were removed",
+      "expect": "mutation-test",
+      "repeat": 1,
+      "started": "mutation-test",
+      "firstTool": "Skill",
+      "costMicros": 85940,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "evaluator-n2-r1",
+      "list": "evaluator",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Write a reusable recipe for starting our Electron app and driving it to check changes",
+      "expect": "verify-app",
+      "repeat": 1,
+      "started": "verify-app",
+      "firstTool": "Skill",
+      "costMicros": 86988,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "evaluator-s1-r2",
+      "list": "evaluator",
+      "kind": "should",
+      "index": 1,
+      "request": "evaluate this",
+      "expect": "evaluator",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87932,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "evaluator-s2-r2",
+      "list": "evaluator",
+      "kind": "should",
+      "index": 2,
+      "request": "Grade the new refund endpoint against its acceptance criteria as an outsider who did not build it, with evidence you reproduced yourself",
+      "expect": "evaluator",
+      "repeat": 2,
+      "started": "evaluator",
+      "firstTool": "Skill",
+      "costMicros": 200677,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "evaluator-s3-r2",
+      "list": "evaluator",
+      "kind": "should",
+      "index": 3,
+      "request": "The agent that built the export feature says every criterion in the issue is met, but nobody other than that agent has looked at it.",
+      "expect": "evaluator",
+      "repeat": 2,
+      "started": "evaluator",
+      "firstTool": "Skill",
+      "costMicros": 200730,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "evaluator-n1-r2",
+      "list": "evaluator",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Prove the test for the discount rule would fail if the discount check were removed",
+      "expect": "mutation-test",
+      "repeat": 2,
+      "started": "mutation-test",
+      "firstTool": "Skill",
+      "costMicros": 85964,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "evaluator-n2-r2",
+      "list": "evaluator",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Write a reusable recipe for starting our Electron app and driving it to check changes",
+      "expect": "verify-app",
+      "repeat": 2,
+      "started": "verify-app",
+      "firstTool": "Skill",
+      "costMicros": 86548,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "evaluator": {
+      "hits": 3,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "evaluator-s1-r1",
+          "request": "evaluate this",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "evaluator-s2-r1",
+          "request": "Grade the new refund endpoint against its acceptance criteria as an outsider who did not build it, with evidence you reproduced yourself",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "evaluator-s1-r2",
+          "request": "evaluate this",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "evaluator",
+      "kind": "should",
+      "index": 2,
+      "request": "Grade the new refund endpoint against its acceptance criteria as an outsider who did not build it, with evidence you reproduced yourself",
+      "started": [
+        "none",
+        "evaluator"
+      ]
+    }
+  ]
+}

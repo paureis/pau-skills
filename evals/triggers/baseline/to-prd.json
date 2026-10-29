@@ -1,0 +1,223 @@
+{
+  "format": 1,
+  "part": "to-prd",
+  "runs": [
+    {
+      "id": "to-prd-s1-r1",
+      "list": "to-prd",
+      "kind": "should",
+      "index": 1,
+      "request": "write a PRD",
+      "expect": "to-prd",
+      "repeat": 1,
+      "started": "to-prd",
+      "firstTool": "Skill",
+      "costMicros": 84768,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-prd-s2-r1",
+      "list": "to-prd",
+      "kind": "should",
+      "index": 2,
+      "request": "Turn what we settled in this chat about audit logs into a product requirements document with user stories, without asking me more questions",
+      "expect": "to-prd",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 90308,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-prd-s3-r1",
+      "list": "to-prd",
+      "kind": "should",
+      "index": 3,
+      "request": "We spent an hour deciding how the audit log should work for our Spring app, and all of it lives only in this conversation.",
+      "expect": "to-prd",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 90776,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-prd-n1-r1",
+      "list": "to-prd",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Cut the audit log plan into vertical slices and file each one as a ticket",
+      "expect": "to-issues",
+      "repeat": 1,
+      "started": "to-issues",
+      "firstTool": "Skill",
+      "costMicros": 84920,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-prd-n2-r1",
+      "list": "to-prd",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Quiz me on the audit log plan, a single question per message, until every choice is made",
+      "expect": "grill-me",
+      "repeat": 1,
+      "started": "grill-me",
+      "firstTool": "Skill",
+      "costMicros": 85808,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-prd-s1-r2",
+      "list": "to-prd",
+      "kind": "should",
+      "index": 1,
+      "request": "write a PRD",
+      "expect": "to-prd",
+      "repeat": 2,
+      "started": "to-prd",
+      "firstTool": "Skill",
+      "costMicros": 85348,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-prd-s2-r2",
+      "list": "to-prd",
+      "kind": "should",
+      "index": 2,
+      "request": "Turn what we settled in this chat about audit logs into a product requirements document with user stories, without asking me more questions",
+      "expect": "to-prd",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 90008,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-prd-s3-r2",
+      "list": "to-prd",
+      "kind": "should",
+      "index": 3,
+      "request": "We spent an hour deciding how the audit log should work for our Spring app, and all of it lives only in this conversation.",
+      "expect": "to-prd",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 91176,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-prd-n1-r2",
+      "list": "to-prd",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Cut the audit log plan into vertical slices and file each one as a ticket",
+      "expect": "to-issues",
+      "repeat": 2,
+      "started": "to-issues",
+      "firstTool": "Skill",
+      "costMicros": 85420,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-prd-n2-r2",
+      "list": "to-prd",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Quiz me on the audit log plan, a single question per message, until every choice is made",
+      "expect": "grill-me",
+      "repeat": 2,
+      "started": "grill-me",
+      "firstTool": "Skill",
+      "costMicros": 85808,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "to-prd": {
+      "hits": 2,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "to-prd-s2-r1",
+          "request": "Turn what we settled in this chat about audit logs into a product requirements document with user stories, without asking me more questions",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "to-prd-s3-r1",
+          "request": "We spent an hour deciding how the audit log should work for our Spring app, and all of it lives only in this conversation.",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "to-prd-s2-r2",
+          "request": "Turn what we settled in this chat about audit logs into a product requirements document with user stories, without asking me more questions",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "to-prd-s3-r2",
+          "request": "We spent an hour deciding how the audit log should work for our Spring app, and all of it lives only in this conversation.",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

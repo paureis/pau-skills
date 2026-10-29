@@ -1,0 +1,222 @@
+{
+  "format": 1,
+  "part": "engineering-principles",
+  "runs": [
+    {
+      "id": "engineering-principles-s1-r1",
+      "list": "engineering-principles",
+      "kind": "should",
+      "index": 1,
+      "request": "apply build the lever",
+      "expect": "engineering-principles",
+      "repeat": 1,
+      "started": "engineering-principles",
+      "firstTool": "Skill",
+      "costMicros": 85360,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "engineering-principles-s2-r1",
+      "list": "engineering-principles",
+      "kind": "should",
+      "index": 2,
+      "request": "Which of our named design principles covers adding a second boolean flag to this Java constructor, and what does it tell me to do?",
+      "expect": "engineering-principles",
+      "repeat": 1,
+      "started": "engineering-principles",
+      "firstTool": "Skill",
+      "costMicros": 86544,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "engineering-principles-s3-r1",
+      "list": "engineering-principles",
+      "kind": "should",
+      "index": 3,
+      "request": "I am about to copy the same retry wrapper into eleven handlers across our Python service, and something about that feels wrong.",
+      "expect": "engineering-principles",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87684,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "engineering-principles-n1-r1",
+      "list": "engineering-principles",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Sketch the interfaces for the new payment adapter in two shapes before any code",
+      "expect": "architect",
+      "repeat": 1,
+      "started": "architect",
+      "firstTool": "Skill",
+      "costMicros": 86128,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "engineering-principles-n2-r1",
+      "list": "engineering-principles",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Look over our existing Python billing package and find modules whose interface is nearly as big as the code behind it",
+      "expect": "improve-codebase-architecture",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88940,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "engineering-principles-s1-r2",
+      "list": "engineering-principles",
+      "kind": "should",
+      "index": 1,
+      "request": "apply build the lever",
+      "expect": "engineering-principles",
+      "repeat": 2,
+      "started": "engineering-principles",
+      "firstTool": "Skill",
+      "costMicros": 85296,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "engineering-principles-s2-r2",
+      "list": "engineering-principles",
+      "kind": "should",
+      "index": 2,
+      "request": "Which of our named design principles covers adding a second boolean flag to this Java constructor, and what does it tell me to do?",
+      "expect": "engineering-principles",
+      "repeat": 2,
+      "started": "engineering-principles",
+      "firstTool": "Skill",
+      "costMicros": 86704,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "engineering-principles-s3-r2",
+      "list": "engineering-principles",
+      "kind": "should",
+      "index": 3,
+      "request": "I am about to copy the same retry wrapper into eleven handlers across our Python service, and something about that feels wrong.",
+      "expect": "engineering-principles",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88644,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "engineering-principles-n1-r2",
+      "list": "engineering-principles",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Sketch the interfaces for the new payment adapter in two shapes before any code",
+      "expect": "architect",
+      "repeat": 2,
+      "started": "architect",
+      "firstTool": "Skill",
+      "costMicros": 86104,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "engineering-principles-n2-r2",
+      "list": "engineering-principles",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Look over our existing Python billing package and find modules whose interface is nearly as big as the code behind it",
+      "expect": "improve-codebase-architecture",
+      "repeat": 2,
+      "started": "improve-codebase-architecture",
+      "firstTool": "Skill",
+      "costMicros": 86752,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "engineering-principles": {
+      "hits": 4,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "engineering-principles-s3-r1",
+          "request": "I am about to copy the same retry wrapper into eleven handlers across our Python service, and something about that feels wrong.",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "engineering-principles-s3-r2",
+          "request": "I am about to copy the same retry wrapper into eleven handlers across our Python service, and something about that feels wrong.",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "engineering-principles",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Look over our existing Python billing package and find modules whose interface is nearly as big as the code behind it",
+      "started": [
+        "none",
+        "improve-codebase-architecture"
+      ]
+    }
+  ]
+}

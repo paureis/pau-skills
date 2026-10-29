@@ -1,0 +1,198 @@
+{
+  "format": 1,
+  "part": "mutation-test",
+  "runs": [
+    {
+      "id": "mutation-test-s1-r1",
+      "list": "mutation-test",
+      "kind": "should",
+      "index": 1,
+      "request": "mutation test",
+      "expect": "mutation-test",
+      "repeat": 1,
+      "started": "mutation-test",
+      "firstTool": "Skill",
+      "costMicros": 84804,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "mutation-test-s2-r1",
+      "list": "mutation-test",
+      "kind": "should",
+      "index": 2,
+      "request": "Break the tenant filter on purpose and show me that the new RSpec example goes red, then restore the code",
+      "expect": "mutation-test",
+      "repeat": 1,
+      "started": "mutation-test",
+      "firstTool": "Skill",
+      "costMicros": 91204,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "mutation-test-s3-r1",
+      "list": "mutation-test",
+      "kind": "should",
+      "index": 3,
+      "request": "I added a test for the permission check in our Go handler, and it passed on the very first run, so I am not sure it catches anything.",
+      "expect": "mutation-test",
+      "repeat": 1,
+      "started": "mutation-test",
+      "firstTool": "Skill",
+      "costMicros": 86252,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "mutation-test-n1-r1",
+      "list": "mutation-test",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Write the next behaviour of the cart service with a failing test before any code",
+      "expect": "tdd",
+      "repeat": 1,
+      "started": "tdd",
+      "firstTool": "Skill",
+      "costMicros": 86116,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "mutation-test-n2-r1",
+      "list": "mutation-test",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Have someone who did not build the feature judge it against the issue, criterion by criterion",
+      "expect": "evaluator",
+      "repeat": 1,
+      "started": "evaluator",
+      "firstTool": "Skill",
+      "costMicros": 153891,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "mutation-test-s1-r2",
+      "list": "mutation-test",
+      "kind": "should",
+      "index": 1,
+      "request": "mutation test",
+      "expect": "mutation-test",
+      "repeat": 2,
+      "started": "mutation-test",
+      "firstTool": "Skill",
+      "costMicros": 84732,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "mutation-test-s2-r2",
+      "list": "mutation-test",
+      "kind": "should",
+      "index": 2,
+      "request": "Break the tenant filter on purpose and show me that the new RSpec example goes red, then restore the code",
+      "expect": "mutation-test",
+      "repeat": 2,
+      "started": "mutation-test",
+      "firstTool": "Skill",
+      "costMicros": 87508,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "mutation-test-s3-r2",
+      "list": "mutation-test",
+      "kind": "should",
+      "index": 3,
+      "request": "I added a test for the permission check in our Go handler, and it passed on the very first run, so I am not sure it catches anything.",
+      "expect": "mutation-test",
+      "repeat": 2,
+      "started": "mutation-test",
+      "firstTool": "Skill",
+      "costMicros": 86452,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "mutation-test-n1-r2",
+      "list": "mutation-test",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Write the next behaviour of the cart service with a failing test before any code",
+      "expect": "tdd",
+      "repeat": 2,
+      "started": "tdd",
+      "firstTool": "Skill",
+      "costMicros": 86276,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "mutation-test-n2-r2",
+      "list": "mutation-test",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Have someone who did not build the feature judge it against the issue, criterion by criterion",
+      "expect": "evaluator",
+      "repeat": 2,
+      "started": "evaluator",
+      "firstTool": "Skill",
+      "costMicros": 149777,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "mutation-test": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

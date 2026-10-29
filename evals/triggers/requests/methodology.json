@@ -1,0 +1,18 @@
+{
+  "skill": "methodology",
+  "should": [
+    "adopt the methodology",
+    "Set up operating rules for this repo where no agent ever grades its own work, with a contract, a state file and an append-only log",
+    "Our agents keep declaring tasks finished that later turn out broken, and on this long Elixir project nobody tracks what phase we are in or what is blocked."
+  ],
+  "nearMisses": [
+    {
+      "request": "Get a second agent with no part in writing it to check the new export endpoint against the acceptance criteria",
+      "expect": "evaluator"
+    },
+    {
+      "request": "Leave this Go refactor going while I am asleep and give me something to audit in the morning",
+      "expect": "overnight-run"
+    }
+  ]
+}

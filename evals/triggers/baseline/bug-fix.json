@@ -1,0 +1,234 @@
+{
+  "format": 1,
+  "part": "bug-fix",
+  "runs": [
+    {
+      "id": "bug-fix-s1-r1",
+      "list": "bug-fix",
+      "kind": "should",
+      "index": 1,
+      "request": "find the root cause",
+      "expect": "bug-fix",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88292,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "bug-fix-s2-r1",
+      "list": "bug-fix",
+      "kind": "should",
+      "index": 2,
+      "request": "Track down why our Go service drops the last line of every uploaded CSV, using real runs rather than guesses, and ship only the fix the evidence supports",
+      "expect": "bug-fix",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88024,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "bug-fix-s3-r1",
+      "list": "bug-fix",
+      "kind": "should",
+      "index": 3,
+      "request": "We patched the off-by-one in the Python date parser last week, and the same wrong timestamp came back in production this morning.",
+      "expect": "bug-fix",
+      "repeat": 1,
+      "started": "bug-fix",
+      "firstTool": "Skill",
+      "costMicros": 87104,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "bug-fix-n1-r1",
+      "list": "bug-fix",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "This JUnit test passes locally but fails on CI about one run in twenty",
+      "expect": "flaky-test-hunt",
+      "repeat": 1,
+      "started": "flaky-test-hunt",
+      "firstTool": "Skill",
+      "costMicros": 86724,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "bug-fix-n2-r1",
+      "list": "bug-fix",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Add the missing semicolon on line 40 of app.js",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Read",
+      "costMicros": 86272,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "bug-fix-s1-r2",
+      "list": "bug-fix",
+      "kind": "should",
+      "index": 1,
+      "request": "find the root cause",
+      "expect": "bug-fix",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87528,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "bug-fix-s2-r2",
+      "list": "bug-fix",
+      "kind": "should",
+      "index": 2,
+      "request": "Track down why our Go service drops the last line of every uploaded CSV, using real runs rather than guesses, and ship only the fix the evidence supports",
+      "expect": "bug-fix",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 91208,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "bug-fix-s3-r2",
+      "list": "bug-fix",
+      "kind": "should",
+      "index": 3,
+      "request": "We patched the off-by-one in the Python date parser last week, and the same wrong timestamp came back in production this morning.",
+      "expect": "bug-fix",
+      "repeat": 2,
+      "started": "bug-fix",
+      "firstTool": "Skill",
+      "costMicros": 86924,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "bug-fix-n1-r2",
+      "list": "bug-fix",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "This JUnit test passes locally but fails on CI about one run in twenty",
+      "expect": "flaky-test-hunt",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87992,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "bug-fix-n2-r2",
+      "list": "bug-fix",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Add the missing semicolon on line 40 of app.js",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Read",
+      "costMicros": 86272,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "bug-fix": {
+      "hits": 2,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "bug-fix-s1-r1",
+          "request": "find the root cause",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "bug-fix-s2-r1",
+          "request": "Track down why our Go service drops the last line of every uploaded CSV, using real runs rather than guesses, and ship only the fix the evidence supports",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "bug-fix-s1-r2",
+          "request": "find the root cause",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "bug-fix-s2-r2",
+          "request": "Track down why our Go service drops the last line of every uploaded CSV, using real runs rather than guesses, and ship only the fix the evidence supports",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "bug-fix",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "This JUnit test passes locally but fails on CI about one run in twenty",
+      "started": [
+        "flaky-test-hunt",
+        "none"
+      ]
+    }
+  ]
+}

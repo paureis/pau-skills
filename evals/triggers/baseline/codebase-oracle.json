@@ -1,0 +1,229 @@
+{
+  "format": 1,
+  "part": "codebase-oracle",
+  "runs": [
+    {
+      "id": "codebase-oracle-s1-r1",
+      "list": "codebase-oracle",
+      "kind": "should",
+      "index": 1,
+      "request": "answer these from the code",
+      "expect": "codebase-oracle",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 87696,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "codebase-oracle-s2-r1",
+      "list": "codebase-oracle",
+      "kind": "should",
+      "index": 2,
+      "request": "Look through our Django repo and tell me how session expiry actually works today, citing the files and commits you base it on",
+      "expect": "codebase-oracle",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88688,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "codebase-oracle-s3-r1",
+      "list": "codebase-oracle",
+      "kind": "should",
+      "index": 3,
+      "request": "We are planning a change to the billing flow and nobody on the team remembers why the Rails app writes invoices twice, or whether a refunds table already exists.",
+      "expect": "codebase-oracle",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89792,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "codebase-oracle-n1-r1",
+      "list": "codebase-oracle",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Walk the Java service and point out where thin wrapper classes make the code hard to test, then propose refactors",
+      "expect": "improve-codebase-architecture",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88968,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "codebase-oracle-n2-r1",
+      "list": "codebase-oracle",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "What does the --frozen-lockfile flag do in pnpm install?",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 95724,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "codebase-oracle-s1-r2",
+      "list": "codebase-oracle",
+      "kind": "should",
+      "index": 1,
+      "request": "answer these from the code",
+      "expect": "codebase-oracle",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88176,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "codebase-oracle-s2-r2",
+      "list": "codebase-oracle",
+      "kind": "should",
+      "index": 2,
+      "request": "Look through our Django repo and tell me how session expiry actually works today, citing the files and commits you base it on",
+      "expect": "codebase-oracle",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88052,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "codebase-oracle-s3-r2",
+      "list": "codebase-oracle",
+      "kind": "should",
+      "index": 3,
+      "request": "We are planning a change to the billing flow and nobody on the team remembers why the Rails app writes invoices twice, or whether a refunds table already exists.",
+      "expect": "codebase-oracle",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 90016,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "codebase-oracle-n1-r2",
+      "list": "codebase-oracle",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Walk the Java service and point out where thin wrapper classes make the code hard to test, then propose refactors",
+      "expect": "improve-codebase-architecture",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88392,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "codebase-oracle-n2-r2",
+      "list": "codebase-oracle",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "What does the --frozen-lockfile flag do in pnpm install?",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 94764,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "codebase-oracle": {
+      "hits": 0,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "codebase-oracle-s1-r1",
+          "request": "answer these from the code",
+          "started": "none",
+          "firstTool": null
+        },
+        {
+          "id": "codebase-oracle-s2-r1",
+          "request": "Look through our Django repo and tell me how session expiry actually works today, citing the files and commits you base it on",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "codebase-oracle-s3-r1",
+          "request": "We are planning a change to the billing flow and nobody on the team remembers why the Rails app writes invoices twice, or whether a refunds table already exists.",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "codebase-oracle-s1-r2",
+          "request": "answer these from the code",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "codebase-oracle-s2-r2",
+          "request": "Look through our Django repo and tell me how session expiry actually works today, citing the files and commits you base it on",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "codebase-oracle-s3-r2",
+          "request": "We are planning a change to the billing flow and nobody on the team remembers why the Rails app writes invoices twice, or whether a refunds table already exists.",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

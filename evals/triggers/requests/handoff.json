@@ -1,0 +1,18 @@
+{
+  "skill": "handoff",
+  "should": [
+    "handoff",
+    "Write down where we are, what we learned and what comes next in a file so a fresh session tomorrow can pick this up cold",
+    "I have to switch to another laptop in ten minutes and the Scala port is half done; the new chat there will know nothing about it."
+  ],
+  "nearMisses": [
+    {
+      "request": "End today's session properly: run the lessons step, update the roadmap and log, write notes for next time, and commit",
+      "expect": "session-close"
+    },
+    {
+      "request": "Summarize this pull request description in two lines",
+      "expect": "none"
+    }
+  ]
+}

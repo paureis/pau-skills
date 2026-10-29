@@ -1,0 +1,18 @@
+{
+  "skill": "engineering-principles",
+  "should": [
+    "apply build the lever",
+    "Which of our named design principles covers adding a second boolean flag to this Java constructor, and what does it tell me to do?",
+    "I am about to copy the same retry wrapper into eleven handlers across our Python service, and something about that feels wrong."
+  ],
+  "nearMisses": [
+    {
+      "request": "Sketch the interfaces for the new payment adapter in two shapes before any code",
+      "expect": "architect"
+    },
+    {
+      "request": "Look over our existing Python billing package and find modules whose interface is nearly as big as the code behind it",
+      "expect": "improve-codebase-architecture"
+    }
+  ]
+}

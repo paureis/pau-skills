@@ -1,0 +1,242 @@
+{
+  "format": 1,
+  "part": "parallel-worktrees",
+  "runs": [
+    {
+      "id": "parallel-worktrees-s1-r1",
+      "list": "parallel-worktrees",
+      "kind": "should",
+      "index": 1,
+      "request": "run these in parallel",
+      "expect": "parallel-worktrees",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87056,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "parallel-worktrees-s2-r1",
+      "list": "parallel-worktrees",
+      "kind": "should",
+      "index": 2,
+      "request": "These four Ruby tickets touch different files, so give each one its own agent and git worktree and bring the branches back together after",
+      "expect": "parallel-worktrees",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88300,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "parallel-worktrees-s3-r1",
+      "list": "parallel-worktrees",
+      "kind": "should",
+      "index": 3,
+      "request": "Two agents worked in the same checkout yesterday and one of them committed the other agent's unfinished edits along with its own.",
+      "expect": "parallel-worktrees",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87352,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "parallel-worktrees-n1-r1",
+      "list": "parallel-worktrees",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Have three agents each attempt the same caching design under different constraints and pick the strongest result",
+      "expect": "arena",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89104,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "parallel-worktrees-n2-r1",
+      "list": "parallel-worktrees",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "What is the git command to list every worktree in this repo?",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 88276,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "parallel-worktrees-s1-r2",
+      "list": "parallel-worktrees",
+      "kind": "should",
+      "index": 1,
+      "request": "run these in parallel",
+      "expect": "parallel-worktrees",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87996,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "parallel-worktrees-s2-r2",
+      "list": "parallel-worktrees",
+      "kind": "should",
+      "index": 2,
+      "request": "These four Ruby tickets touch different files, so give each one its own agent and git worktree and bring the branches back together after",
+      "expect": "parallel-worktrees",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88096,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "parallel-worktrees-s3-r2",
+      "list": "parallel-worktrees",
+      "kind": "should",
+      "index": 3,
+      "request": "Two agents worked in the same checkout yesterday and one of them committed the other agent's unfinished edits along with its own.",
+      "expect": "parallel-worktrees",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87368,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "parallel-worktrees-n1-r2",
+      "list": "parallel-worktrees",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Have three agents each attempt the same caching design under different constraints and pick the strongest result",
+      "expect": "arena",
+      "repeat": 2,
+      "started": "arena",
+      "firstTool": "Skill",
+      "costMicros": 87644,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "parallel-worktrees-n2-r2",
+      "list": "parallel-worktrees",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "What is the git command to list every worktree in this repo?",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 87956,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "parallel-worktrees": {
+      "hits": 0,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "parallel-worktrees-s1-r1",
+          "request": "run these in parallel",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "parallel-worktrees-s2-r1",
+          "request": "These four Ruby tickets touch different files, so give each one its own agent and git worktree and bring the branches back together after",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "parallel-worktrees-s3-r1",
+          "request": "Two agents worked in the same checkout yesterday and one of them committed the other agent's unfinished edits along with its own.",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "parallel-worktrees-s1-r2",
+          "request": "run these in parallel",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "parallel-worktrees-s2-r2",
+          "request": "These four Ruby tickets touch different files, so give each one its own agent and git worktree and bring the branches back together after",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "parallel-worktrees-s3-r2",
+          "request": "Two agents worked in the same checkout yesterday and one of them committed the other agent's unfinished edits along with its own.",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "parallel-worktrees",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Have three agents each attempt the same caching design under different constraints and pick the strongest result",
+      "started": [
+        "none",
+        "arena"
+      ]
+    }
+  ]
+}

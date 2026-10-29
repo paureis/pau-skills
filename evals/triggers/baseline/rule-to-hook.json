@@ -1,0 +1,216 @@
+{
+  "format": 1,
+  "part": "rule-to-hook",
+  "runs": [
+    {
+      "id": "rule-to-hook-s1-r1",
+      "list": "rule-to-hook",
+      "kind": "should",
+      "index": 1,
+      "request": "enforce this rule",
+      "expect": "rule-to-hook",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89576,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "rule-to-hook-s2-r1",
+      "list": "rule-to-hook",
+      "kind": "should",
+      "index": 2,
+      "request": "Our CLAUDE.md says never edit generated files and the agent keeps doing it anyway; turn that into a check that actually blocks it",
+      "expect": "rule-to-hook",
+      "repeat": 1,
+      "started": "rule-to-hook",
+      "firstTool": "Skill",
+      "costMicros": 86868,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "rule-to-hook-s3-r1",
+      "list": "rule-to-hook",
+      "kind": "should",
+      "index": 3,
+      "request": "For the third time this week an agent called time.Now() directly inside our Go domain package, even though the instructions say to inject a clock.",
+      "expect": "rule-to-hook",
+      "repeat": 1,
+      "started": "rule-to-hook",
+      "firstTool": "Skill",
+      "costMicros": 87784,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "rule-to-hook-n1-r1",
+      "list": "rule-to-hook",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Go through our last six months of review threads and fix commits and list the errors agents make again and again",
+      "expect": "agent-friendly-audit",
+      "repeat": 1,
+      "started": "agent-friendly-audit",
+      "firstTool": "Skill",
+      "costMicros": 86480,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "rule-to-hook-n2-r1",
+      "list": "rule-to-hook",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Our CLAUDE.md has grown to 900 lines with rules that contradict each other; find the problems in it",
+      "expect": "instructions-audit",
+      "repeat": 1,
+      "started": "instructions-audit",
+      "firstTool": "Skill",
+      "costMicros": 87088,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "rule-to-hook-s1-r2",
+      "list": "rule-to-hook",
+      "kind": "should",
+      "index": 1,
+      "request": "enforce this rule",
+      "expect": "rule-to-hook",
+      "repeat": 2,
+      "started": "rule-to-hook",
+      "firstTool": "Skill",
+      "costMicros": 86732,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "rule-to-hook-s2-r2",
+      "list": "rule-to-hook",
+      "kind": "should",
+      "index": 2,
+      "request": "Our CLAUDE.md says never edit generated files and the agent keeps doing it anyway; turn that into a check that actually blocks it",
+      "expect": "rule-to-hook",
+      "repeat": 2,
+      "started": "rule-to-hook",
+      "firstTool": "Skill",
+      "costMicros": 86940,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "rule-to-hook-s3-r2",
+      "list": "rule-to-hook",
+      "kind": "should",
+      "index": 3,
+      "request": "For the third time this week an agent called time.Now() directly inside our Go domain package, even though the instructions say to inject a clock.",
+      "expect": "rule-to-hook",
+      "repeat": 2,
+      "started": "rule-to-hook",
+      "firstTool": "Skill",
+      "costMicros": 87024,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "rule-to-hook-n1-r2",
+      "list": "rule-to-hook",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Go through our last six months of review threads and fix commits and list the errors agents make again and again",
+      "expect": "agent-friendly-audit",
+      "repeat": 2,
+      "started": "agent-friendly-audit",
+      "firstTool": "Skill",
+      "costMicros": 86504,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "rule-to-hook-n2-r2",
+      "list": "rule-to-hook",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Our CLAUDE.md has grown to 900 lines with rules that contradict each other; find the problems in it",
+      "expect": "instructions-audit",
+      "repeat": 2,
+      "started": "instructions-audit",
+      "firstTool": "Skill",
+      "costMicros": 87948,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "rule-to-hook": {
+      "hits": 5,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "rule-to-hook-s1-r1",
+          "request": "enforce this rule",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "rule-to-hook",
+      "kind": "should",
+      "index": 1,
+      "request": "enforce this rule",
+      "started": [
+        "none",
+        "rule-to-hook"
+      ]
+    }
+  ]
+}

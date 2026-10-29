@@ -1,0 +1,18 @@
+{
+  "skill": "to-prd",
+  "should": [
+    "write a PRD",
+    "Turn what we settled in this chat about audit logs into a product requirements document with user stories, without asking me more questions",
+    "We spent an hour deciding how the audit log should work for our Spring app, and all of it lives only in this conversation."
+  ],
+  "nearMisses": [
+    {
+      "request": "Cut the audit log plan into vertical slices and file each one as a ticket",
+      "expect": "to-issues"
+    },
+    {
+      "request": "Quiz me on the audit log plan, a single question per message, until every choice is made",
+      "expect": "grill-me"
+    }
+  ]
+}

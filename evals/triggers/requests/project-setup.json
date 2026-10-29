@@ -1,0 +1,18 @@
+{
+  "skill": "project-setup",
+  "should": [
+    "set up Claude Code for this project",
+    "I just installed Claude Code and opened my Python repo; walk me through getting it configured for how I like to work",
+    "I have only ever used Claude in the browser, and now I am in a terminal inside my Go project with no idea what to ask it first."
+  ],
+  "nearMisses": [
+    {
+      "request": "Look over the CLAUDE.md we already have and find the rules that contradict each other",
+      "expect": "instructions-audit"
+    },
+    {
+      "request": "How do I switch Claude Code into plan mode?",
+      "expect": "none"
+    }
+  ]
+}

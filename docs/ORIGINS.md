@@ -39,6 +39,7 @@ Cursor's plugin repository. pstack is a single snapshot, so there is no history 
 - [which-skill](origins/session-discipline/which-skill.md): Original
 - [Branch-context hook, `hooks/session-discipline/branch-context.mjs`](origins/session-discipline/branch-context.md): Original
 - [Compact-snapshot hook, `hooks/session-discipline/compact-snapshot.mjs`](origins/session-discipline/compact-snapshot.md): Original
+- [Skill-usage hook, `hooks/session-discipline/skill-usage.mjs`](origins/session-discipline/skill-usage.md): Original
 - [project-setup](origins/session-discipline/project-setup.md): Original
 
 ---

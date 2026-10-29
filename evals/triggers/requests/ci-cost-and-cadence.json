@@ -1,0 +1,18 @@
+{
+  "skill": "ci-cost-and-cadence",
+  "should": [
+    "run tests once per PR",
+    "Our GitHub Actions bill doubled since agents started pushing; find out which jobs eat the minutes and recommend how often the full suite should run",
+    "Every push to a pull request runs our forty-minute Rust test matrix, we hit the monthly minutes cap by the 18th, and agents push a dozen times per review."
+  ],
+  "nearMisses": [
+    {
+      "request": "One integration test in the CI suite fails at random; work out why",
+      "expect": "flaky-test-hunt"
+    },
+    {
+      "request": "Make the Python test suite itself run quicker, measuring each change",
+      "expect": "hillclimb"
+    }
+  ]
+}

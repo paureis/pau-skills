@@ -1,0 +1,18 @@
+{
+  "skill": "evaluator",
+  "should": [
+    "evaluate this",
+    "Grade the new refund endpoint against its acceptance criteria as an outsider who did not build it, with evidence you reproduced yourself",
+    "The agent that built the export feature says every criterion in the issue is met, but nobody other than that agent has looked at it."
+  ],
+  "nearMisses": [
+    {
+      "request": "Prove the test for the discount rule would fail if the discount check were removed",
+      "expect": "mutation-test"
+    },
+    {
+      "request": "Write a reusable recipe for starting our Electron app and driving it to check changes",
+      "expect": "verify-app"
+    }
+  ]
+}

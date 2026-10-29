@@ -1,0 +1,228 @@
+{
+  "format": 1,
+  "part": "dependency-security-audit",
+  "runs": [
+    {
+      "id": "dependency-security-audit-s1-r1",
+      "list": "dependency-security-audit",
+      "kind": "should",
+      "index": 1,
+      "request": "security audit",
+      "expect": "dependency-security-audit",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89172,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-security-audit-s2-r1",
+      "list": "dependency-security-audit",
+      "kind": "should",
+      "index": 2,
+      "request": "Check whether any packages in our Python lockfile and Docker image have known CVEs we are exposed to, ranked by what to do first",
+      "expect": "dependency-security-audit",
+      "repeat": 1,
+      "started": "dependency-security-audit",
+      "firstTool": "Skill",
+      "costMicros": 85636,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-security-audit-s3-r1",
+      "list": "dependency-security-audit",
+      "kind": "should",
+      "index": 3,
+      "request": "There is news of a compromised npm package that stole tokens on install, and I have no idea whether anything in our build pulls it in.",
+      "expect": "dependency-security-audit",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 90004,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-security-audit-n1-r1",
+      "list": "dependency-security-audit",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Move our Spring Boot app from version 2 to 3, one major step at a time with the build green",
+      "expect": "dependency-upgrade",
+      "repeat": 1,
+      "started": "dependency-upgrade",
+      "firstTool": "Skill",
+      "costMicros": 86800,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-security-audit-n2-r1",
+      "list": "dependency-security-audit",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "What does the CVSS score on a GitHub advisory actually measure?",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 105504,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "dependency-security-audit-s1-r2",
+      "list": "dependency-security-audit",
+      "kind": "should",
+      "index": 1,
+      "request": "security audit",
+      "expect": "dependency-security-audit",
+      "repeat": 2,
+      "started": "dependency-security-audit",
+      "firstTool": "Skill",
+      "costMicros": 85992,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-security-audit-s2-r2",
+      "list": "dependency-security-audit",
+      "kind": "should",
+      "index": 2,
+      "request": "Check whether any packages in our Python lockfile and Docker image have known CVEs we are exposed to, ranked by what to do first",
+      "expect": "dependency-security-audit",
+      "repeat": 2,
+      "started": "dependency-security-audit",
+      "firstTool": "Skill",
+      "costMicros": 85136,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-security-audit-s3-r2",
+      "list": "dependency-security-audit",
+      "kind": "should",
+      "index": 3,
+      "request": "There is news of a compromised npm package that stole tokens on install, and I have no idea whether anything in our build pulls it in.",
+      "expect": "dependency-security-audit",
+      "repeat": 2,
+      "started": "dependency-security-audit",
+      "firstTool": "Skill",
+      "costMicros": 87180,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-security-audit-n1-r2",
+      "list": "dependency-security-audit",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Move our Spring Boot app from version 2 to 3, one major step at a time with the build green",
+      "expect": "dependency-upgrade",
+      "repeat": 2,
+      "started": "dependency-upgrade",
+      "firstTool": "Skill",
+      "costMicros": 86380,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "dependency-security-audit-n2-r2",
+      "list": "dependency-security-audit",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "What does the CVSS score on a GitHub advisory actually measure?",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 104224,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "dependency-security-audit": {
+      "hits": 4,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "dependency-security-audit-s1-r1",
+          "request": "security audit",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "dependency-security-audit-s3-r1",
+          "request": "There is news of a compromised npm package that stole tokens on install, and I have no idea whether anything in our build pulls it in.",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "dependency-security-audit",
+      "kind": "should",
+      "index": 1,
+      "request": "security audit",
+      "started": [
+        "none",
+        "dependency-security-audit"
+      ]
+    },
+    {
+      "list": "dependency-security-audit",
+      "kind": "should",
+      "index": 3,
+      "request": "There is news of a compromised npm package that stole tokens on install, and I have no idea whether anything in our build pulls it in.",
+      "started": [
+        "none",
+        "dependency-security-audit"
+      ]
+    }
+  ]
+}

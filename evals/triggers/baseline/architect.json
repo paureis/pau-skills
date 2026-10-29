@@ -1,0 +1,209 @@
+{
+  "format": 1,
+  "part": "architect",
+  "runs": [
+    {
+      "id": "architect-s1-r1",
+      "list": "architect",
+      "kind": "should",
+      "index": 1,
+      "request": "architect this",
+      "expect": "architect",
+      "repeat": 1,
+      "started": "architect",
+      "firstTool": "Skill",
+      "costMicros": 84712,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "architect-s2-r1",
+      "list": "architect",
+      "kind": "should",
+      "index": 2,
+      "request": "Before writing the new rate limiter in Go, draft two different sets of types and function signatures with empty bodies and compare them",
+      "expect": "architect",
+      "repeat": 1,
+      "started": "architect",
+      "firstTool": "Skill",
+      "costMicros": 86392,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "architect-s3-r1",
+      "list": "architect",
+      "kind": "should",
+      "index": 3,
+      "request": "I need a new notifications module in our Kotlin backend and I can already picture three ways to structure it, none of which I have tried against real callers.",
+      "expect": "architect",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 97572,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "architect-n1-r1",
+      "list": "architect",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Find refactors in our existing Python package that would make its modules deeper and simpler to unit test",
+      "expect": "improve-codebase-architecture",
+      "repeat": 1,
+      "started": "improve-codebase-architecture",
+      "firstTool": "Skill",
+      "costMicros": 85528,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "architect-n2-r1",
+      "list": "architect",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Explain how the current order pipeline in our Kotlin backend is wired, from the request handler down to the database",
+      "expect": "codebase-oracle",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87636,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "architect-s1-r2",
+      "list": "architect",
+      "kind": "should",
+      "index": 1,
+      "request": "architect this",
+      "expect": "architect",
+      "repeat": 2,
+      "started": "architect",
+      "firstTool": "Skill",
+      "costMicros": 85932,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "architect-s2-r2",
+      "list": "architect",
+      "kind": "should",
+      "index": 2,
+      "request": "Before writing the new rate limiter in Go, draft two different sets of types and function signatures with empty bodies and compare them",
+      "expect": "architect",
+      "repeat": 2,
+      "started": "architect",
+      "firstTool": "Skill",
+      "costMicros": 86452,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "architect-s3-r2",
+      "list": "architect",
+      "kind": "should",
+      "index": 3,
+      "request": "I need a new notifications module in our Kotlin backend and I can already picture three ways to structure it, none of which I have tried against real callers.",
+      "expect": "architect",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 91572,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "architect-n1-r2",
+      "list": "architect",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Find refactors in our existing Python package that would make its modules deeper and simpler to unit test",
+      "expect": "improve-codebase-architecture",
+      "repeat": 2,
+      "started": "improve-codebase-architecture",
+      "firstTool": "Skill",
+      "costMicros": 85900,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "architect-n2-r2",
+      "list": "architect",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Explain how the current order pipeline in our Kotlin backend is wired, from the request handler down to the database",
+      "expect": "codebase-oracle",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87472,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "architect": {
+      "hits": 4,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "architect-s3-r1",
+          "request": "I need a new notifications module in our Kotlin backend and I can already picture three ways to structure it, none of which I have tried against real callers.",
+          "started": "none",
+          "firstTool": null
+        },
+        {
+          "id": "architect-s3-r2",
+          "request": "I need a new notifications module in our Kotlin backend and I can already picture three ways to structure it, none of which I have tried against real callers.",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

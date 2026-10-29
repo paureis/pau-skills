@@ -1,0 +1,198 @@
+{
+  "format": 1,
+  "part": "review-triage",
+  "runs": [
+    {
+      "id": "review-triage-s1-r1",
+      "list": "review-triage",
+      "kind": "should",
+      "index": 1,
+      "request": "triage these review comments",
+      "expect": "review-triage",
+      "repeat": 1,
+      "started": "review-triage",
+      "firstTool": "Skill",
+      "costMicros": 85536,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "review-triage-s2-r1",
+      "list": "review-triage",
+      "kind": "should",
+      "index": 2,
+      "request": "Go through the 23 notes the AI reviewer left on my Kotlin PR, keep the ones that name a real failure, and stop after one round of fixes",
+      "expect": "review-triage",
+      "repeat": 1,
+      "started": "review-triage",
+      "firstTool": "Skill",
+      "costMicros": 86736,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "review-triage-s3-r1",
+      "list": "review-triage",
+      "kind": "should",
+      "index": 3,
+      "request": "We are on the fifth round of automated review on this Python pull request, and every fix seems to bring back three new nitpicks.",
+      "expect": "review-triage",
+      "repeat": 1,
+      "started": "review-triage",
+      "firstTool": "Skill",
+      "costMicros": 87392,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "review-triage-n1-r1",
+      "list": "review-triage",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Have a fresh agent attack the finished feature assertion by assertion",
+      "expect": "evaluator",
+      "repeat": 1,
+      "started": "evaluator",
+      "firstTool": "Skill",
+      "costMicros": 150993,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "review-triage-n2-r1",
+      "list": "review-triage",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Reply to the reviewer's question about why I used a map here",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87012,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "review-triage-s1-r2",
+      "list": "review-triage",
+      "kind": "should",
+      "index": 1,
+      "request": "triage these review comments",
+      "expect": "review-triage",
+      "repeat": 2,
+      "started": "review-triage",
+      "firstTool": "Skill",
+      "costMicros": 84752,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "review-triage-s2-r2",
+      "list": "review-triage",
+      "kind": "should",
+      "index": 2,
+      "request": "Go through the 23 notes the AI reviewer left on my Kotlin PR, keep the ones that name a real failure, and stop after one round of fixes",
+      "expect": "review-triage",
+      "repeat": 2,
+      "started": "review-triage",
+      "firstTool": "Skill",
+      "costMicros": 86784,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "review-triage-s3-r2",
+      "list": "review-triage",
+      "kind": "should",
+      "index": 3,
+      "request": "We are on the fifth round of automated review on this Python pull request, and every fix seems to bring back three new nitpicks.",
+      "expect": "review-triage",
+      "repeat": 2,
+      "started": "review-triage",
+      "firstTool": "Skill",
+      "costMicros": 87556,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "review-triage-n1-r2",
+      "list": "review-triage",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Have a fresh agent attack the finished feature assertion by assertion",
+      "expect": "evaluator",
+      "repeat": 2,
+      "started": "evaluator",
+      "firstTool": "Skill",
+      "costMicros": 149945,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "review-triage-n2-r2",
+      "list": "review-triage",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Reply to the reviewer's question about why I used a map here",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87252,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "review-triage": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

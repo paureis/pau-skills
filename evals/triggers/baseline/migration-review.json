@@ -1,0 +1,194 @@
+{
+  "format": 1,
+  "part": "migration-review",
+  "runs": [
+    {
+      "id": "migration-review-s1-r1",
+      "list": "migration-review",
+      "kind": "should",
+      "index": 1,
+      "request": "review this migration",
+      "expect": "migration-review",
+      "repeat": 1,
+      "started": "migration-review",
+      "firstTool": "Skill",
+      "costMicros": 84760,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "migration-review-s2-r1",
+      "list": "migration-review",
+      "kind": "should",
+      "index": 2,
+      "request": "Before we run this Django migration that adds an index to a 40 million row table, check it for locking, downtime and how to roll it back",
+      "expect": "migration-review",
+      "repeat": 1,
+      "started": "migration-review",
+      "firstTool": "Skill",
+      "costMicros": 86332,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "migration-review-s3-r1",
+      "list": "migration-review",
+      "kind": "should",
+      "index": 3,
+      "request": "Tomorrow's release renames a column on our busiest MySQL table, and the previous app version keeps running during the rollout.",
+      "expect": "migration-review",
+      "repeat": 1,
+      "started": "migration-review",
+      "firstTool": "Skill",
+      "costMicros": 88480,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "migration-review-n1-r1",
+      "list": "migration-review",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Write a SQL query that counts orders per day for the last month",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 99832,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "migration-review-n2-r1",
+      "list": "migration-review",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Bump the Prisma version from 4 to 5 in our Node service",
+      "expect": "dependency-upgrade",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89604,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "migration-review-s1-r2",
+      "list": "migration-review",
+      "kind": "should",
+      "index": 1,
+      "request": "review this migration",
+      "expect": "migration-review",
+      "repeat": 2,
+      "started": "migration-review",
+      "firstTool": "Skill",
+      "costMicros": 84760,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "migration-review-s2-r2",
+      "list": "migration-review",
+      "kind": "should",
+      "index": 2,
+      "request": "Before we run this Django migration that adds an index to a 40 million row table, check it for locking, downtime and how to roll it back",
+      "expect": "migration-review",
+      "repeat": 2,
+      "started": "migration-review",
+      "firstTool": "Skill",
+      "costMicros": 86356,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "migration-review-s3-r2",
+      "list": "migration-review",
+      "kind": "should",
+      "index": 3,
+      "request": "Tomorrow's release renames a column on our busiest MySQL table, and the previous app version keeps running during the rollout.",
+      "expect": "migration-review",
+      "repeat": 2,
+      "started": "migration-review",
+      "firstTool": "Skill",
+      "costMicros": 86876,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "migration-review-n1-r2",
+      "list": "migration-review",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Write a SQL query that counts orders per day for the last month",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 101512,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "migration-review-n2-r2",
+      "list": "migration-review",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Bump the Prisma version from 4 to 5 in our Node service",
+      "expect": "dependency-upgrade",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 90068,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "migration-review": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

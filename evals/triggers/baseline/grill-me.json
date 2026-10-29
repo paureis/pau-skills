@@ -1,0 +1,209 @@
+{
+  "format": 1,
+  "part": "grill-me",
+  "runs": [
+    {
+      "id": "grill-me-s1-r1",
+      "list": "grill-me",
+      "kind": "should",
+      "index": 1,
+      "request": "grill me",
+      "expect": "grill-me",
+      "repeat": 1,
+      "started": "grill-me",
+      "firstTool": "Skill",
+      "costMicros": 84752,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "grill-me-s2-r1",
+      "list": "grill-me",
+      "kind": "should",
+      "index": 2,
+      "request": "Question me about every open decision in my caching plan, one by one, each with the answer you would pick, until nothing is left vague",
+      "expect": "grill-me",
+      "repeat": 1,
+      "started": "grill-me",
+      "firstTool": "Skill",
+      "costMicros": 85908,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "grill-me-s3-r1",
+      "list": "grill-me",
+      "kind": "should",
+      "index": 3,
+      "request": "I have a rough plan for multi-tenant support in our Postgres schema, but half the decisions are still in my head and I keep changing my mind.",
+      "expect": "grill-me",
+      "repeat": 1,
+      "started": "grill-me",
+      "firstTool": "Skill",
+      "costMicros": 87388,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "grill-me-n1-r1",
+      "list": "grill-me",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Give me lots of options for how tenants could be isolated before I commit to one",
+      "expect": "brainstorm",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 90084,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "grill-me-n2-r1",
+      "list": "grill-me",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Repeat this ticket back to me in plain terms and confirm the goal before you start coding",
+      "expect": "sharpen",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 86892,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "grill-me-s1-r2",
+      "list": "grill-me",
+      "kind": "should",
+      "index": 1,
+      "request": "grill me",
+      "expect": "grill-me",
+      "repeat": 2,
+      "started": "grill-me",
+      "firstTool": "Skill",
+      "costMicros": 84752,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "grill-me-s2-r2",
+      "list": "grill-me",
+      "kind": "should",
+      "index": 2,
+      "request": "Question me about every open decision in my caching plan, one by one, each with the answer you would pick, until nothing is left vague",
+      "expect": "grill-me",
+      "repeat": 2,
+      "started": "grill-me",
+      "firstTool": "Skill",
+      "costMicros": 85908,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "grill-me-s3-r2",
+      "list": "grill-me",
+      "kind": "should",
+      "index": 3,
+      "request": "I have a rough plan for multi-tenant support in our Postgres schema, but half the decisions are still in my head and I keep changing my mind.",
+      "expect": "grill-me",
+      "repeat": 2,
+      "started": "grill-me",
+      "firstTool": "Skill",
+      "costMicros": 87348,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "grill-me-n1-r2",
+      "list": "grill-me",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Give me lots of options for how tenants could be isolated before I commit to one",
+      "expect": "brainstorm",
+      "repeat": 2,
+      "started": "brainstorm",
+      "firstTool": "Skill",
+      "costMicros": 88024,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "grill-me-n2-r2",
+      "list": "grill-me",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Repeat this ticket back to me in plain terms and confirm the goal before you start coding",
+      "expect": "sharpen",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87412,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "grill-me": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "grill-me",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Give me lots of options for how tenants could be isolated before I commit to one",
+      "started": [
+        "none",
+        "brainstorm"
+      ]
+    }
+  ]
+}

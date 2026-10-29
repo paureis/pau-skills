@@ -1,0 +1,18 @@
+{
+  "skill": "hillclimb",
+  "should": [
+    "make this faster until",
+    "Keep cutting the cold start time of our Java service until it is under 800 ms, measuring after every single change and reverting anything that does not help",
+    "Our Webpack bundle is 2.4 MB, the target is 1.5, and every past attempt to shrink it was judged by eye without real numbers."
+  ],
+  "nearMisses": [
+    {
+      "request": "This endpoint got slow after yesterday's deploy and returns wrong totals too",
+      "expect": "bug-fix"
+    },
+    {
+      "request": "Our CI uses too many minutes per month; decide how often the slow suite should run",
+      "expect": "ci-cost-and-cadence"
+    }
+  ]
+}

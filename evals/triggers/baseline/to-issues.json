@@ -1,0 +1,198 @@
+{
+  "format": 1,
+  "part": "to-issues",
+  "runs": [
+    {
+      "id": "to-issues-s1-r1",
+      "list": "to-issues",
+      "kind": "should",
+      "index": 1,
+      "request": "break this into tasks",
+      "expect": "to-issues",
+      "repeat": 1,
+      "started": "to-issues",
+      "firstTool": "Skill",
+      "costMicros": 86016,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-issues-s2-r1",
+      "list": "to-issues",
+      "kind": "should",
+      "index": 2,
+      "request": "Split the approved spec for team invites into thin end-to-end slices I can file as GitHub issues, each marked whether it needs a human",
+      "expect": "to-issues",
+      "repeat": 1,
+      "started": "to-issues",
+      "firstTool": "Skill",
+      "costMicros": 85064,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-issues-s3-r1",
+      "list": "to-issues",
+      "kind": "should",
+      "index": 3,
+      "request": "We finally agreed on the saved-searches feature for our Laravel app, and now it sits in one long document nobody can pick up and start on.",
+      "expect": "to-issues",
+      "repeat": 1,
+      "started": "to-issues",
+      "firstTool": "Skill",
+      "costMicros": 86908,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-issues-n1-r1",
+      "list": "to-issues",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Turn what we decided in this conversation about saved searches into a product spec with user stories",
+      "expect": "to-prd",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 90576,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-issues-n2-r1",
+      "list": "to-issues",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Work on these four tickets at the same time with separate agents and branches",
+      "expect": "parallel-worktrees",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87128,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-issues-s1-r2",
+      "list": "to-issues",
+      "kind": "should",
+      "index": 1,
+      "request": "break this into tasks",
+      "expect": "to-issues",
+      "repeat": 2,
+      "started": "to-issues",
+      "firstTool": "Skill",
+      "costMicros": 85352,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-issues-s2-r2",
+      "list": "to-issues",
+      "kind": "should",
+      "index": 2,
+      "request": "Split the approved spec for team invites into thin end-to-end slices I can file as GitHub issues, each marked whether it needs a human",
+      "expect": "to-issues",
+      "repeat": 2,
+      "started": "to-issues",
+      "firstTool": "Skill",
+      "costMicros": 86484,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-issues-s3-r2",
+      "list": "to-issues",
+      "kind": "should",
+      "index": 3,
+      "request": "We finally agreed on the saved-searches feature for our Laravel app, and now it sits in one long document nobody can pick up and start on.",
+      "expect": "to-issues",
+      "repeat": 2,
+      "started": "to-issues",
+      "firstTool": "Skill",
+      "costMicros": 86292,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-issues-n1-r2",
+      "list": "to-issues",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Turn what we decided in this conversation about saved searches into a product spec with user stories",
+      "expect": "to-prd",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88996,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "to-issues-n2-r2",
+      "list": "to-issues",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Work on these four tickets at the same time with separate agents and branches",
+      "expect": "parallel-worktrees",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88544,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "to-issues": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

@@ -1,0 +1,18 @@
+{
+  "skill": "codebase-oracle",
+  "should": [
+    "answer these from the code",
+    "Look through our Django repo and tell me how session expiry actually works today, citing the files and commits you base it on",
+    "We are planning a change to the billing flow and nobody on the team remembers why the Rails app writes invoices twice, or whether a refunds table already exists."
+  ],
+  "nearMisses": [
+    {
+      "request": "Walk the Java service and point out where thin wrapper classes make the code hard to test, then propose refactors",
+      "expect": "improve-codebase-architecture"
+    },
+    {
+      "request": "What does the --frozen-lockfile flag do in pnpm install?",
+      "expect": "none"
+    }
+  ]
+}

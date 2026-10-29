@@ -1,6 +1,6 @@
 // skill-eval module: the command line parser and the file system and git helpers that setup, run and blind share.
 import {
-  mkdirSync, readdirSync, readFileSync, existsSync, statSync, realpathSync, cpSync, rmSync,
+  mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, statSync, realpathSync, cpSync, rmSync,
 } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, resolve, dirname, relative, isAbsolute, basename } from 'node:path';
@@ -17,7 +17,9 @@ const USAGE = `usage:
   skill-eval.mjs actions <transcript.jsonl>
   skill-eval.mjs blind <lab-dir> [--out <dir>] [--seed <integer>] [--force]
   skill-eval.mjs judge <lab-dir> --model <model> [--effort <level>] [--pass-env <NAME>...] [--real-home] [--force]
-  skill-eval.mjs unblind <lab-dir>`;
+  skill-eval.mjs unblind <lab-dir>
+  skill-eval.mjs triggers <lab-dir> --skills <dir> [--skills <dir>]... --requests <dir> --model <model> --max-usd <x> [--also <dir>]... [--repeats 2] [--usd-per-run 0.08] [--parallel 3] [--plan] [--baseline <summary.json or folder>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5]
+  skill-eval.mjs split-summary <summary.json> --out <folder>`;
 
 const NAME = /^[a-z][a-z0-9-]*$/;
 const FLAGS = {
@@ -27,6 +29,12 @@ const FLAGS = {
   blind: { '--out': 'one', '--seed': 'one', '--force': 'bool' },
   judge: { '--model': 'one', '--effort': 'one', '--pass-env': 'list', '--real-home': 'bool', '--force': 'bool' },
   unblind: {},
+  triggers: {
+    '--skills': 'many', '--also': 'many', '--requests': 'one', '--model': 'one', '--max-usd': 'one', '--repeats': 'one',
+    '--usd-per-run': 'one', '--parallel': 'one', '--plan': 'bool', '--baseline': 'one', '--pass-env': 'list',
+    '--real-home': 'bool', '--timeout-min': 'one',
+  },
+  'split-summary': { '--out': 'one' },
 };
 const fail = (msg) => { throw new Error(`${msg}\n${USAGE}`); };
 
@@ -34,12 +42,12 @@ const fail = (msg) => { throw new Error(`${msg}\n${USAGE}`); };
 export function parseArgs(argv) {
   const [cmd, target, ...rest] = argv;
   if (!argv.length) throw new Error(USAGE);
-  if (!(cmd in FLAGS)) fail(`unknown command ${cmd}`);
+  if (!Object.hasOwn(FLAGS, cmd)) fail(`unknown command ${cmd}`);
   if (!target || target.startsWith('--')) fail(`${cmd} needs a folder or file`);
   const raw = {};
   for (let i = 0; i < rest.length; i++) {
     const flag = rest[i];
-    const kind = FLAGS[cmd][flag];
+    const kind = Object.hasOwn(FLAGS[cmd], flag) ? FLAGS[cmd][flag] : null;
     if (!kind) fail(`unknown option ${flag}`);
     if (kind === 'bool') { raw[flag] = true; continue; }
     if (kind === 'list') {
@@ -94,9 +102,26 @@ export function parseArgs(argv) {
       o.maxBudgetUsd = raw['--max-budget-usd'] || null;
       if (o.maxBudgetUsd && !/^\d+(\.\d+)?$/.test(o.maxBudgetUsd)) fail('--max-budget-usd takes a number');
     }
+  } else if (cmd === 'split-summary') {
+    if (raw['--out'] === undefined) fail('split-summary needs --out');
+    o.out = raw['--out'];
   } else if (cmd === 'blind') {
     o.out = raw['--out'] || null;
     o.seed = int('--seed', -(2 ** 31), 2 ** 31, null);
+  } else if (cmd === 'triggers') {
+    for (const f of ['--skills', '--requests', '--model', '--max-usd']) if (raw[f] === undefined) fail(`triggers needs ${f}`);
+    const usd = (flag, dflt) => {
+      const micros = parseUsdMicros(raw[flag] ?? dflt);
+      if (micros === null || micros <= 0) fail(`${flag} takes US dollars above 0 with at most 6 decimals, such as 0.08: ${raw[flag]}`);
+      return micros;
+    };
+    Object.assign(o, {
+      skills: raw['--skills'], also: raw['--also'] || [], requests: raw['--requests'], model: raw['--model'],
+      capMicros: usd('--max-usd'), usdPerRunMicros: usd('--usd-per-run', '0.08'), repeats: int('--repeats', 1, 10, 2),
+      parallel: int('--parallel', 1, 10, 3), timeoutMin: int('--timeout-min', 1, 60, 5), plan: !!raw['--plan'],
+      baseline: raw['--baseline'] || null, passEnv: raw['--pass-env'] || [], realHome: !!raw['--real-home'],
+    });
+    for (const n of o.passEnv) if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(n)) fail(`--pass-env takes variable names: ${n}`);
   }
   return o;
 }
@@ -120,6 +145,25 @@ function realOrPlanned(p) {
 }
 
 const isEmptyOrMissing = (dir) => !existsSync(dir) || readdirSync(dir).length === 0;
+
+/** A path that is missing or an empty folder: where a new set of files may go. */
+const isFreeFolder = (dir) => !existsSync(dir) || (statSync(dir).isDirectory() && readdirSync(dir).length === 0);
+
+/** The largest file the repository may track, in bytes. */
+const MAX_TRACKED = 20_000;
+
+/** Writes each { <file name>: object } into dir as indented JSON; returns a warning for each file over MAX_TRACKED. */
+function writeParts(dir, parts) {
+  mkdirSync(dir, { recursive: true });
+  const warnings = [];
+  for (const [name, data] of Object.entries(parts)) {
+    const text = JSON.stringify(data, null, 2) + '\n';
+    writeFileSync(join(dir, name), text);
+    const bytes = Buffer.byteLength(text);
+    if (bytes > MAX_TRACKED) warnings.push(`${name} is ${bytes} bytes, over ${MAX_TRACKED}, the largest file the repository may track`);
+  }
+  return warnings;
+}
 
 /** Files Claude Code reads from a folder and every folder above the working directory. */
 export const INHERITED = ['CLAUDE.md', 'CLAUDE.local.md', 'AGENTS.md', '.claude'];
@@ -204,4 +248,33 @@ const readJson = (f) => JSON.parse(readFileSync(f, 'utf8'));
 const mtime = (f) => statSync(f).mtimeMs;
 const money = (v) => `$${(v || 0).toFixed(2)}`;
 
-export { realOrPlanned, isEmptyOrMissing, walk, readText, gitEnv, git, ignoredManifest, HOME_NAME, buildRun, readJson, mtime, money };
+// ---------------------------------------------------------------------------------------------------------------
+// Money for the triggers mode: whole micro-dollars (1 US dollar is 1,000,000), never a float
+// ---------------------------------------------------------------------------------------------------------------
+
+/** "0.08" as 80000: a decimal number of US dollars with at most 6 decimals, read with integer arithmetic; null if not one. */
+function parseUsdMicros(text) {
+  const m = /^(\d{1,9})(?:\.(\d{1,6}))?$/.exec(String(text));
+  if (!m) return null;
+  return Number(m[1]) * 1_000_000 + Number((m[2] || '').padEnd(6, '0'));
+}
+
+const splitMicros = (micros) => [(micros - (micros % 1_000_000)) / 1_000_000, micros % 1_000_000];
+
+/** 80000 as "0.08", 300000 as "0.3", 40000000 as "40": the exact amount, for a command line flag. */
+function microsArg(micros) {
+  const [whole, part] = splitMicros(micros);
+  const decimals = String(part).padStart(6, '0').replace(/0+$/, '');
+  return decimals ? `${whole}.${decimals}` : String(whole);
+}
+
+/** 1235000 as "$1.24": dollars and cents for people, rounded once, half up, from whole micro-dollars. */
+function microsUsd(micros) {
+  if (micros === null || micros === undefined) return 'unknown';
+  const cents = (micros + 5_000 - ((micros + 5_000) % 10_000)) / 10_000;
+  return `$${(cents - (cents % 100)) / 100}.${String(cents % 100).padStart(2, '0')}`;
+}
+
+export { parseUsdMicros, microsArg, microsUsd };
+
+export { realOrPlanned, isEmptyOrMissing, isFreeFolder, writeParts, walk, readText, gitEnv, git, ignoredManifest, HOME_NAME, buildRun, readJson, mtime, money };
