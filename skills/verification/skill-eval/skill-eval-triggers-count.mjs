@@ -68,6 +68,7 @@ export function countRound(runs) {
   const requests = new Map();
   for (const run of runs) skill(run.list);
   for (const run of runs.filter(counts)) {
+    if (run.started !== 'none') skill(run.started);
     if (run.kind === 'should') {
       const s = skill(run.list);
       s.shouldRuns++;

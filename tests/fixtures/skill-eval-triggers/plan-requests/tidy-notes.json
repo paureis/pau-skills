@@ -1,0 +1,8 @@
+{
+  "skill": "tidy-notes",
+  "should": ["tidy my shopping notes", "sort the lines in notes.txt", "my list has the same item three times", "clean up todo.txt"],
+  "nearMisses": [
+    { "request": "water the fern on the balcony", "expect": "water-plants" },
+    { "request": "what time is it in Lisbon", "expect": "none" }
+  ]
+}

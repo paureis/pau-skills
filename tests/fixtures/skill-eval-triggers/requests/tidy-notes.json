@@ -1,0 +1,8 @@
+{
+  "skill": "tidy-notes",
+  "should": ["tidy my shopping notes", "plugin tidy the notes", "look over my notes"],
+  "nearMisses": [
+    { "request": "water the fern on the balcony", "expect": "water-plants" },
+    { "request": "check that the build works", "expect": "none" }
+  ]
+}
