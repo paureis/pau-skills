@@ -4,7 +4,8 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { LISTS, sampleSummary as summary } from './skill-eval-triggers.helpers.mjs';
-import { compareBaseline, splitSummary, mergeParts } from '../skills/verification/skill-eval/skill-eval-triggers-count.mjs';
+import { countRound, compareBaseline, splitSummary, mergeParts } from '../skills/verification/skill-eval/skill-eval-triggers-count.mjs';
+import { planRuns } from '../skills/verification/skill-eval/skill-eval-triggers.mjs';
 
 describe('splitSummary and mergeParts', () => {
   test('one part per list, named by the runs\' list, and round.json with the rest', () => {
@@ -56,10 +57,28 @@ describe('splitSummary and mergeParts', () => {
     }
   });
 
+  test('with 3 repeats and a failed repeat-1 run, unsteady comes back in the order of each request\'s first counted run', () => {
+    const lists = [{ skill: 'tidy-notes', should: ['tidy a', 'tidy b'], nearMisses: [] }];
+    const started = {
+      'tidy-notes-s1-r1': 'none', 'tidy-notes-s2-r1': 'tidy-notes', 'tidy-notes-s1-r2': 'tidy-notes',
+      'tidy-notes-s2-r2': 'none', 'tidy-notes-s1-r3': 'none', 'tidy-notes-s2-r3': 'tidy-notes',
+    };
+    const runs = planRuns(lists, 3).map((r) => {
+      const failed = r.id === 'tidy-notes-s1-r1';
+      return { ...r, started: started[r.id], firstTool: null, costMicros: 50_000, result: failed ? 'no result line' : 'success', finished: !failed, spawned: true, notes: [] };
+    });
+    const s = { format: 1, repeats: 3, runs, ...countRound(runs) };
+    assert.deepEqual(s.unsteady.map((u) => u.index), [2, 1], 'request 2 has the first counted run');
+    assert.deepEqual(mergeParts(splitSummary(s)), s);
+  });
+
   test('merge refuses a missing round.json, a part without format 1, a run id or a skill in two parts; a skill named constructor is a name', () => {
     const parts = splitSummary(summary());
     const without = (name) => Object.fromEntries(Object.entries(parts).filter(([n]) => n !== name));
     assert.throws(() => mergeParts(without('round.json')), /no round\.json/);
+    for (const odd of [{ format: 1, perSkill: [] }, { format: 1, runs: [1] }, { format: 1, unsteady: 'xy' }, { format: 1, nearMisses: { wrong: {} } }]) {
+      assert.throws(() => mergeParts({ ...parts, 'odd.json': odd }), /odd\.json: runs, nearMisses\.wrong and unsteady must be lists and perSkill an object/, JSON.stringify(odd));
+    }
     assert.throws(() => mergeParts({ ...parts, 'pack-boxes.json': { ...parts['pack-boxes.json'], format: 2 } }), /pack-boxes\.json.*"format": 1/);
     const again = parts['constructor.json'].runs[0];
     const extra = { format: 1, part: 'extra', runs: [again], perSkill: {}, nearMisses: { wrong: [] }, unsteady: [] };

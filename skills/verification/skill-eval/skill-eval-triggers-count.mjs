@@ -250,7 +250,8 @@ export function mergeParts(parts) {
   runs.sort(planOrder);
   const byId = new Map(runs.map((r, i) => [r.id, i]));
   const byRequest = new Map();
-  runs.forEach((r, i) => { if (!byRequest.has(requestKey(r))) byRequest.set(requestKey(r), i); });
+  // countRound lists a request at its first run that counts, so a failed run that started nothing does not place it.
+  runs.forEach((r, i) => { if (counts(r) && !byRequest.has(requestKey(r))) byRequest.set(requestKey(r), i); });
   const place = (map, key) => (map.has(key) ? map.get(key) : runs.length);
   wrong.sort((a, b) => place(byId, a?.id) - place(byId, b?.id));
   unsteady.sort((a, b) => place(byRequest, isObject(a) ? requestKey(a) : '') - place(byRequest, isObject(b) ? requestKey(b) : ''));
