@@ -5,7 +5,7 @@ import { SCRIPT, scratch } from './skill-eval.helpers.mjs';
 import { SKILLS, ALSO, ROUND_LISTS, writeLists, writeSkill, base, trig, sampleSummary as summary } from './skill-eval-triggers.helpers.mjs';
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, cpSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, cpSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { runNode } from './helpers.mjs';
 import { parseArgs } from '../skills/verification/skill-eval/skill-eval.mjs';
@@ -121,8 +121,15 @@ describe('--baseline with a folder of parts', () => {
     return dir;
   }
 
-  test('merges the parts and compares with them; another file in the folder is ignored', () => {
-    const dir = folder();
+  /** A folder whose round.json and tidy-notes.json are links to the files of folder(). */
+  function linked() {
+    const real = folder();
+    const dir = scratch();
+    for (const name of ['round.json', 'tidy-notes.json']) symlinkSync(join(real, name), join(dir, name));
+    return dir;
+  }
+
+  const compares = (dir) => {
     const r = trig(base(writeLists(tidy), ['--repeats', '1', '--baseline', dir]));
     assert.equal(r.code, 0, r.stderr);
     const tail = r.stdout.slice(r.stdout.indexOf('Compared with'));
@@ -131,7 +138,11 @@ describe('--baseline with a folder of parts', () => {
     assert.match(tail, /better: tidy-notes should "tidy a": right 0 of 1 -> 1 of 1/);
     assert.match(tail, /new: tidy-notes should "tidy b"/);
     assert.match(tail, /gone: tidy-notes should "gone one"/);
-  });
+  };
+
+  test('merges the parts and compares with them; another file in the folder is ignored', () => compares(folder()));
+
+  test('a part that is a link to a file is read like the file', { skip: process.platform === 'win32' }, () => compares(linked()));
 
   test('a round compared with its own parts, and with its summary.json, prints no change', () => {
     const first = trig(base(ROUND_LISTS, ['--also', ALSO]));
@@ -153,6 +164,14 @@ describe('--baseline with a folder of parts', () => {
       [folder({ 'twin.json': twin }), /run tidy-notes-s1-r1 is in two parts: tidy-notes\.json and twin\.json/],
       [folder({ 'twin.json': { ...twin, runs: [], perSkill: { constructor: {} } } }), /skill constructor is in two parts: round\.json and twin\.json/],
     ];
+    const withFolder = folder();
+    mkdirSync(join(withFolder, 'x.json'));
+    cases.push([withFolder, /x\.json is not a file or a link to a file/]);
+    if (process.platform !== 'win32') {
+      const dangling = linked();
+      symlinkSync(join(scratch(), 'missing.json'), join(dangling, 'gone.json'));
+      cases.push([dangling, /gone\.json is not a file or a link to a file/]);
+    }
     for (const [dir, re] of cases) {
       for (const extra of [[], ['--plan']]) {
         const r = trig(base(lists, ['--baseline', dir, ...extra]));

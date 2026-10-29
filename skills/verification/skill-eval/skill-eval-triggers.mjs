@@ -131,7 +131,10 @@ function readBaseline(file) {
   if (!existsSync(f)) throw refusal(`the baseline ${f} does not exist`);
   const read = (p) => { try { return JSON.parse(readFileSync(p, 'utf8')); } catch { throw refusal(`the baseline ${p} is not JSON`); } };
   if (statSync(f).isDirectory()) {
-    const names = readdirSync(f, { withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith('.json')).map((e) => e.name).sort();
+    const names = readdirSync(f).filter((n) => n.endsWith('.json')).sort();
+    // A link to a file is read as the file; a folder, a broken link or anything else named *.json is refused.
+    const odd = names.find((n) => !statSync(join(f, n), { throwIfNoEntry: false })?.isFile());
+    if (odd) throw refusal(`the baseline folder ${f}: ${odd} is not a file or a link to a file`);
     const parts = Object.fromEntries(names.map((n) => [n, read(join(f, n))]));
     try { return { file: f, data: mergeParts(parts) }; } catch (e) { throw refusal(`the baseline folder ${f}: ${e.message}`); }
   }

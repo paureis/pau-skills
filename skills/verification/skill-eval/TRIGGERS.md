@@ -202,8 +202,9 @@ not lower-case letters, digits and `-`. Commit the folder of parts as the baseli
 prints what got better or worse: per skill, hits and wrong starts that went up or down; per request (matched by
 list, kind and request text), a change in the share of its runs that were right (a should run that started its
 list's skill, or a right near miss); and the requests that are new or gone. A file must hold `"format": 1`. A folder
-is read as `round.json` plus every other `*.json` in it (other files are ignored) and merged back into one summary;
-it is refused without `round.json`, with a part that lacks `"format": 1`, or with a skill or a run id in two parts.
+is read as `round.json` plus every other `*.json` in it (other files are ignored; a link to a file is read as the
+file) and merged back into one summary; it is refused without `round.json`, with a `*.json` entry that is not a file
+or a link to one, with a part that lacks `"format": 1`, or with a skill or a run id in two parts.
 Compare rounds made with the same model and repeats.
 
 ## Reading one run
