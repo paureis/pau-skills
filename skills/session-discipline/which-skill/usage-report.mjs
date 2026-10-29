@@ -9,7 +9,8 @@
 //
 // The log is <home>/.claude/pau-skills/skill-usage.tsv, where home is PAU_SKILLS_HOME or the user's home folder. One
 // line per start: <ISO time>\t<name>\t<agent|typed>. A line with any other shape is skipped and counted as malformed;
-// a line older than the window is left out and counted apart. Without the log it says how to switch the hook on.
+// a line older than the window is left out and counted apart. Without the log it says how to switch the hook on; a
+// log it cannot read (a folder at its path, no permission) gives one line with the error code.
 // Node.js standard library only, so it works when only this skill is installed. Exit 0, or 2 for bad usage.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -128,9 +129,16 @@ function main(argv = process.argv.slice(2)) {
     process.stdout.write(missingLog(log) + '\n');
     return 0;
   }
+  let text;
+  try {
+    text = readFileSync(log, 'utf8');
+  } catch (error) {
+    process.stdout.write(`The usage log ${log} could not be read (${error.code || error.message}).\n`);
+    return 0;
+  }
   const now = Date.now();
   const since = now - days * DAY_MS;
-  const { counts, old, malformed } = count(readFileSync(log, 'utf8'), since);
+  const { counts, old, malformed } = count(text, since);
   const { names, read, missing } = installed(home, project);
   const started = new Set(counts.keys());
   const never = [...names].filter((n) => !started.has(n)).sort();

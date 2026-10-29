@@ -156,10 +156,31 @@ test('a missing log says how to get the hook and how to check it is on, and exit
   assert.ok(r.out.includes('PAU_SKILLS_DISABLE'));
 });
 
+test('a log path that cannot be read gives one plain line with the reason, and exits 0', () => {
+  const ctx = setup();
+  mkdirSync(ctx.log, { recursive: true });
+  const r = report(ctx);
+  assert.equal(r.code, 0, r.err);
+  assert.equal(r.err, '');
+  assert.equal(r.out, `The usage log ${ctx.log} could not be read (EISDIR).\n`);
+  assert.doesNotMatch(r.out + r.err, /\n\s+at /);
+});
+
+test('a control character in a name is shown as ?', () => {
+  const ctx = setup();
+  writeLog(ctx, [[ago(1), 'tdd\x1b[31m', 'agent'], [ago(2), 'handoff', 'typed'], [ago(3), 'handoff', 'typed']]);
+  const r = report(ctx);
+  assert.equal(r.code, 0, r.err);
+  assert.deepEqual(rows(r.out), [['handoff', [2, 0, 2]], ['tdd?[31m', [1, 1, 0]]]);
+  assert.ok(!r.out.includes('\x1b'), 'no raw escape byte reaches the terminal');
+});
+
 test('bad usage exits 2; --days 1 and --days 3650 are accepted', () => {
   const ctx = setup();
   writeLog(ctx, sample());
-  for (const args of [['--days', '0'], ['--days', '3651'], ['--days', '1.5'], ['--days', 'x'], ['--days'], ['--project'], ['--nope'], ['extra']]) {
+  const bad = [['--days', '0'], ['--days', '3651'], ['--days', '1.5'], ['--days', 'x'], ['--days'], ['--project'], ['--nope'], ['extra']];
+  bad.push(['--project', '--days', '5'], ['--project', '--days'], ['--project', '--verbose'], ['--project', '']);
+  for (const args of bad) {
     const r = report(ctx, args);
     assert.equal(r.code, 2, `${args.join(' ')} gave ${r.code}`);
     assert.equal(r.out, '');
