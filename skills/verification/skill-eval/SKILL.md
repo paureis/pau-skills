@@ -32,6 +32,10 @@ Bundled files:
   `node "${CLAUDE_SKILL_DIR}/skill-eval.mjs"` with no arguments for the usage)
 - `${CLAUDE_SKILL_DIR}/JUDGE-BRIEF.md`: the reviewer's prompt; `blind` copies it into the reviewer's input
 - `${CLAUDE_SKILL_DIR}/ISOLATION.md`: what a run sees and how it is kept clean; read it before Phase 1
+- `${CLAUDE_SKILL_DIR}/skill-eval-triggers.mjs`: the `triggers` mode, started through `skill-eval.mjs`: one-turn runs
+  that record which skill starts for each request, within a cost cap
+- `${CLAUDE_SKILL_DIR}/TRIGGERS.md`: the `triggers` mode's request lists, counting and cost rules; read it before a
+  trigger round
 
 Make a task list with one entry per phase (Cost, Frame, Set up, Run, Read blind, Review, Unblind, Report) before
 starting anything.
@@ -216,6 +220,19 @@ letters only once `my-read.md` and `verdict.md` are moved out of the lab, since 
 
 Clean up: delete the root and the blind folder (`rm -rf "$ROOT" <blind folder>`). Keep `$LAB` while the user may
 want the transcripts, and say where it is.
+
+## Trigger tests
+
+When the question is which skill starts for which request across a set of skills (hits, misses, wrong starts),
+not what a change does to one skill's behaviour, use the `triggers` mode instead of the phases above. Read
+`${CLAUDE_SKILL_DIR}/TRIGGERS.md` first: the list format, what a run sees, the counting and the cost rules. Run it
+with `--plan`, tell the user the run count and the estimate it prints, and wait for a yes; then run the same command
+without `--plan`.
+
+```bash
+node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" triggers "$LAB" --skills <skills folder> --requests <lists folder> \
+  --model <model> --max-usd <cap> --plan
+```
 
 ## Do not
 
