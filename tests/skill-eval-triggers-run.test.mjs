@@ -2,18 +2,16 @@
 // and the estimate, every refusal, a full round, the cost guard and the baseline. The last test checks that nothing
 // was written inside the repository.
 import { scratch } from './skill-eval.helpers.mjs';
-import { TFIX, SKILLS, ALSO, writeLists, writeSkill, base, trig, flag } from './skill-eval-triggers.helpers.mjs';
+import {
+  SKILLS, ALSO, PLAN_LISTS, ROUND_LISTS, BAD_LISTS, BAD_SKILLS, RUN_ARGV, writeLists, writeSkill, base, trig, flag, ids, copyInputs,
+  checkRunCall,
+} from './skill-eval-triggers.helpers.mjs';
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync, mkdirSync, existsSync, readdirSync, symlinkSync, cpSync, realpathSync } from 'node:fs';
-import { join, dirname, basename, sep } from 'node:path';
+import { writeFileSync, readFileSync, mkdirSync, existsSync, readdirSync, symlinkSync } from 'node:fs';
+import { join, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { repo } from './helpers.mjs';
-import { ALLOWED_ENV } from '../skills/verification/skill-eval/skill-eval.mjs';
-
-const PLAN_LISTS = join(TFIX, 'plan-requests');
-const ROUND_LISTS = join(TFIX, 'requests');
-const ids = (r) => r.summary.runs.filter((x) => x.started !== null).map((x) => x.id);
 
 describe('the plan', () => {
   test('--plan prints the counts and the estimate, and makes no call and writes nothing', () => {
@@ -51,12 +49,7 @@ describe('the plan', () => {
 describe('refusals', () => {
   test('discovery: a SKILL.md with no name or a bad name, a name twice, a folder that does not exist', () => {
     const lists = writeLists({ 'tidy-notes': { should: ['tidy my notes'] } });
-    const cases = [
-      ['no name', (d) => writeSkill(join(d, 'nameless'), null), /nameless.SKILL\.md has no name/],
-      ['bad name', (d) => writeSkill(join(d, 'shouty'), 'Shouty_Name'), /shouty.SKILL\.md.*Shouty_Name/],
-      ['twice', (d) => writeSkill(join(d, 'again'), 'tidy-notes'), /again.SKILL\.md.*tidy-notes.*twice|tidy-notes.*twice.*again.SKILL\.md/],
-    ];
-    for (const [name, make, re] of cases) {
+    for (const [name, make, re] of BAD_SKILLS) {
       const extra = scratch();
       make(extra);
       const r = trig(base(lists, ['--also', extra, '--plan']));
@@ -80,23 +73,11 @@ describe('refusals', () => {
     const r = trig(['--skills', dir, '--requests', lists, '--model', 'm', '--max-usd', '1', '--plan']);
     assert.equal(r.code, 0, r.stderr);
     assert.match(r.stdout, /Skills under test: 2 \(1 with a list\): one, two\n/);
+    assert.match(r.stdout, /Requests: 1 \(1 should, 0 near misses\) in 1 list\n/);
   });
 
   test('lists: every malformed or contradicting list is refused, naming its file', () => {
-    const cases = [
-      ['not JSON', '{ nope'],
-      ['no should array', { skill: 'tidy-notes', should: 'tidy', nearMisses: [] }],
-      ['no requests', { skill: 'tidy-notes', should: [], nearMisses: [] }],
-      ['a near miss without expect', { skill: 'tidy-notes', should: [], nearMisses: [{ request: 'x y' }] }],
-      ['skill not under test', { skill: 'water-plants', should: ['water it'], nearMisses: [] }],
-      ['expect not installed', { skill: 'tidy-notes', should: [], nearMisses: [{ request: 'x y', expect: 'nobody' }] }],
-      ['expects its own skill', { skill: 'tidy-notes', should: [], nearMisses: [{ request: 'x y', expect: 'tidy-notes' }] }],
-      ['empty request', { skill: 'tidy-notes', should: ['  '], nearMisses: [] }],
-      ['line break', { skill: 'tidy-notes', should: ['tidy\nnotes'], nearMisses: [] }],
-      ['a typed name', { skill: 'tidy-notes', should: ['/tidy-notes go'], nearMisses: [] }],
-      ['a dash', { skill: 'tidy-notes', should: ['-p tidy'], nearMisses: [] }],
-    ];
-    for (const [name, list] of cases) {
+    for (const [name, list] of BAD_LISTS) {
       const dir = join(scratch(), 'requests');
       mkdirSync(dir);
       writeFileSync(join(dir, 'odd-list.json'), typeof list === 'string' ? list : JSON.stringify(list));
@@ -130,12 +111,7 @@ describe('refusals', () => {
       assert.match(r.stderr, /summary\.json/);
       assert.equal(r.calls.length + r.auth.length, 0);
     }
-    const skills = join(scratch(), 'skills');
-    cpSync(SKILLS, skills, { recursive: true });
-    const also = join(scratch(), 'also');
-    cpSync(ALSO, also, { recursive: true });
-    const requests = join(scratch(), 'requests');
-    cpSync(ROUND_LISTS, requests, { recursive: true });
+    const { skills, also, requests } = copyInputs();
     for (const lab of [join(skills, 'lab'), join(also, 'water-plants', 'lab'), join(requests, 'lab')]) {
       const r = trig(['--skills', skills, '--also', also, '--requests', requests, '--model', 'm', '--max-usd', '5'], { lab });
       assert.equal(r.code, 1, lab);
@@ -197,19 +173,8 @@ describe('a round', () => {
     assert.equal(r.calls.length, 20);
     const cwds = new Set();
     for (const c of r.calls) {
-      assert.deepEqual(c.argv, ['-p', c.prompt, '--max-turns', '1', '--output-format', 'stream-json', '--verbose', '--model', 'some-model',
-        '--setting-sources', 'project', '--strict-mcp-config', '--no-session-persistence', '--max-budget-usd', '0.16']);
-      const extra = c.names.filter((n) => !ALLOWED_ENV.includes(n) && !/^LC_/.test(n) && !/^FAKE_TRIGGERS_/.test(n) && !['HOME', '__CF_USER_TEXT_ENCODING'].includes(n));
-      assert.deepEqual(extra, [], 'only the allowlist and the passed names reach a run');
-      assert.ok(c.names.includes('HTTPS_PROXY'));
-      assert.equal(basename(c.cwd), 'project');
-      // A run reports its real working folder; the temporary folder may be a link (macOS), so compare it resolved.
-      assert.ok(c.cwd.startsWith(realpathSync(r.tmp) + sep), 'under the temporary folder');
-      assert.equal(c.home, join(dirname(c.cwd), 'home'));
-      assert.deepEqual(c.homeList, [], 'an empty HOME');
-      assert.deepEqual(c.skills, ['pack-boxes', 'tidy-notes', 'water-plants']);
-      assert.deepEqual(c.rootList, [basename(dirname(c.cwd))], 'the root holds only this run\'s folder');
-      assert.match(basename(dirname(c.cwd)), /^tmp\./);
+      assert.deepEqual(c.argv, RUN_ARGV(c.prompt, 'some-model', '0.16'));
+      checkRunCall(c, r.tmp, ['pack-boxes', 'tidy-notes', 'water-plants']);
       cwds.add(c.cwd);
     }
     assert.equal(cwds.size, 20, 'a fresh folder per run');

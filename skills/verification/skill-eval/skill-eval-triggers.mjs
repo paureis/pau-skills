@@ -222,7 +222,7 @@ async function triggers(o, out, err) {
   const names = (m) => [...m.keys()].sort();
   out(`Skills under test: ${skills.under.size} (${lists.length} with a list): ${names(skills.under).join(', ')}`);
   out(`Also installed: ${skills.also.size ? `${skills.also.size}: ${names(skills.also).join(', ')}` : 'none'}`);
-  out(`Requests: ${should + near} (${should} should, ${near} near misses) in ${lists.length} lists`);
+  out(`Requests: ${should + near} (${should} should, ${near} near ${near === 1 ? 'miss' : 'misses'}) in ${lists.length} ${lists.length === 1 ? 'list' : 'lists'}`);
   out(`Repeats: ${o.repeats}`);
   out(`Runs: ${should + near} requests x ${o.repeats} = ${runs.length}`);
   out(`Estimate: ${microsUsd(estimate)} (${runs.length} runs x ${microsUsd(o.usdPerRunMicros)})`);
