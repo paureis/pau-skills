@@ -138,6 +138,66 @@ describe('split-summary options', () => {
 const readParts = (dir) => Object.fromEntries(readdirSync(dir).sort().map((f) => [f, readFileSync(join(dir, f), 'utf8')]));
 const asText = (parts) => Object.fromEntries(Object.entries(parts).sort(([a], [b]) => (a < b ? -1 : 1)).map(([f, x]) => [f, JSON.stringify(x, null, 2) + '\n']));
 
+/** Run `split-summary <file> --out <out>`. */
+const split = (file, out) => runNode(SCRIPT, { args: ['split-summary', file, '--out', out] });
+
+describe('the split-summary command', () => {
+  test('writes the parts of a summary.json, the same files a round writes', () => {
+    const r = trig(base(ROUND_LISTS, ['--also', ALSO]));
+    assert.equal(r.code, 0, r.stderr);
+    const out = join(scratch(), 'parts');
+    const s = split(join(r.lab, 'summary.json'), out);
+    assert.equal(s.code, 0, s.stderr);
+    assert.deepEqual(readParts(out), readParts(join(r.lab, 'summary')));
+    assert.match(s.stdout, /Wrote 3 parts to .*parts: pack-boxes\.json, round\.json, tidy-notes\.json/);
+    const empty = join(scratch(), 'empty');
+    mkdirSync(empty);
+    assert.equal(split(join(r.lab, 'summary.json'), empty).code, 0, 'an empty --out is fine');
+    assert.deepEqual(readParts(empty), readParts(out));
+  });
+
+  test('warns about a part over 20,000 bytes and still writes it', () => {
+    const s = summary();
+    s.runs = s.runs.map((r) => (r.list === 'tidy-notes' ? { ...r, request: `tidy ${'x'.repeat(5000)}` } : r));
+    const file = join(scratch(), 'summary.json');
+    writeFileSync(file, JSON.stringify(s));
+    const out = join(scratch(), 'parts');
+    const r = split(file, out);
+    assert.equal(r.code, 0, r.stderr);
+    const bytes = readFileSync(join(out, 'tidy-notes.json')).length;
+    assert.match(r.stderr, new RegExp(`warning: tidy-notes\\.json is ${bytes} bytes, over 20000`));
+    assert.doesNotMatch(r.stderr, /pack-boxes\.json|round\.json/);
+  });
+
+  test('refuses an --out that is not an empty folder, a summary without format 1, and a list name that is a path', () => {
+    const good = join(scratch(), 'summary.json');
+    writeFileSync(good, JSON.stringify(summary()));
+    const full = scratch();
+    writeFileSync(join(full, 'keep.txt'), 'mine');
+    const file = join(scratch(), 'out.txt');
+    writeFileSync(file, 'a file');
+    for (const out of [full, file]) {
+      const r = split(good, out);
+      assert.equal(r.code, 1, out);
+      assert.match(r.stderr, /already exists and is not an empty folder/, out);
+    }
+    assert.deepEqual(readdirSync(full), ['keep.txt']);
+    const s = summary();
+    const bad = (name, data) => { const f = join(scratch(), name); writeFileSync(f, typeof data === 'string' ? data : JSON.stringify(data)); return f; };
+    const escaped = s.runs.map((r) => (r.list === 'tidy-notes' ? { ...r, list: '../escaped' } : r));
+    for (const [f, re] of [[bad('old.json', { ...s, format: 2 }), /"format": 1/], [bad('broken.json', '{'), /not JSON/],
+      [join(scratch(), 'gone.json'), /does not exist/], [bad('escape.json', { ...s, runs: escaped }), /list name "\.\.\/escaped"/],
+      [bad('round.json', { ...s, runs: s.runs.map((r) => ({ ...r, list: 'round' })) }), /list name "round"/]]) {
+      const dir = scratch();
+      const out = join(dir, 'parts');
+      const r = split(f, out);
+      assert.equal(r.code, 1, f);
+      assert.match(r.stderr, re, f);
+      assert.deepEqual(readdirSync(dir), [], 'nothing written, not even beside --out');
+    }
+  });
+});
+
 describe('a round writes summary/', () => {
   test('one file per list and round.json, the parts of summary.json, which merge back into it', () => {
     const r = trig(base(ROUND_LISTS, ['--also', ALSO]));
