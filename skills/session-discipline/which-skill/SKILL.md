@@ -1,6 +1,6 @@
 ---
 name: which-skill
-description: "Recommend which pau-skills skill, or sequence of skills, fits the user's situation, and what the installed hooks already do. Use when the user asks 'which skill should I use', 'what can these skills do', 'where do I start', 'is there a skill for this', 'help me pick', or seems unsure how to approach a task."
+description: "Recommend which pau-skills skill, or sequence of skills, fits the user's situation, what the installed hooks already do, and which skills the user actually starts. Use when the user asks 'which skill should I use', 'what can these skills do', 'where do I start', 'is there a skill for this', 'help me pick', 'which skills do I actually use', or seems unsure how to approach a task."
 ---
 
 # Which Skill
@@ -150,6 +150,7 @@ Hooks act on every session where their plugin is installed. Each can be turned o
 |---|---|
 | `roadmap`, `branch-context` | Session start: roadmap position, git branch and working-tree state |
 | `compact-snapshot` | Before and after a compaction: keeps your last messages, edited files and todos |
+| `skill-usage` | Each skill start, typed or by the agent: logs the time and name (never the prompt) for the usage report below |
 | `secret-guard` | Blocks a credential being written into a file |
 | `file-size-guard` | Blocks a change that leaves a file over 5,000 tokens and larger than before, with a split recipe |
 | `destructive-guard` | Blocks commands that destroy work or data for good |
@@ -159,6 +160,15 @@ Hooks act on every session where their plugin is installed. Each can be turned o
 | `suppression-reason` | Tells the agent when an edit adds a lint or type-check suppression with no reason |
 | `verify-before-done` | Sends the agent back once if it changed code and ran no checks |
 | `no-idle` | Tells every subagent never to end its turn waiting |
+
+## Which skills do I actually use?
+
+When the user asks which skills they use, or which ones never run, run
+`node "${CLAUDE_SKILL_DIR}/usage-report.mjs"` (add `--days 90` for a longer window). It reads the log of the
+`skill-usage` hook and prints the starts per skill, typed and by the agent, and the skills in the user and project
+skill folders that never started in the last 30 days. A skill that lives only inside a plugin cannot show as never
+started. Without the log it prints how to install the hook or switch it back on: pass that on. Suggest removing
+or rewording a skill that never starts; do not remove anything yourself.
 
 ## Picking between close options
 

@@ -25,7 +25,7 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   with a separate yes, your personal preferences, in your language. Written for people new to Claude Code. When the
   project handles money, sign-in, a database, server input or secrets, it offers the matching production rules from
   its `PRODUCTION-RULES.md` for the project CLAUDE.md.
-- Hooks: [`roadmap`](../hooks/session-discipline/roadmap.mjs), [`branch-context`](../hooks/session-discipline/branch-context.mjs), [`compact-snapshot`](../hooks/session-discipline/compact-snapshot.mjs).
+- Hooks: [`roadmap`](../hooks/session-discipline/roadmap.mjs), [`branch-context`](../hooks/session-discipline/branch-context.mjs), [`compact-snapshot`](../hooks/session-discipline/compact-snapshot.mjs), [`skill-usage`](../hooks/session-discipline/skill-usage.mjs).
 
 ## verification
 

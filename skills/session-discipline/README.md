@@ -2,8 +2,9 @@
 
 Skills: `which-skill`, `retrospective` (with `audit.mjs`), `session-close`, `handoff`, `instructions-audit` (with
 `scan.mjs` and its modules `scan-units.mjs`, `scan-refs.mjs` and `scan-discover.mjs`), `project-setup` (with `PRODUCTION-RULES.md`, a copy of the one in `launch-readiness`). `session-close` carries its own copy of `audit.mjs`, so it works without
-`retrospective`. Hooks: the roadmap summary and `branch-context` at SessionStart, and `compact-snapshot` around
-compaction. The two newer hooks and their options are in [hooks/README.md](../../hooks/README.md).
+`retrospective`. `which-skill` carries `usage-report.mjs`, which reads the `skill-usage` log. Hooks: the roadmap summary
+and `branch-context` at SessionStart, `compact-snapshot` around compaction, and `skill-usage`, which logs each skill
+start for the usage report. The newer hooks and their options are in [hooks/README.md](../../hooks/README.md).
 
 ## Roadmap hook
 
