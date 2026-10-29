@@ -172,7 +172,8 @@ async function oneRun(run, { root, lab, o, installed, stop, runner = runOne }) {
     const x = readRun(existsSync(file) ? readFileSync(file, 'utf8') : '');
     const notes = [];
     if (!x.finished) notes.push('no result line: the run did not finish');
-    if (res.exit !== 0) notes.push(`exit ${res.exit ?? res.signal}`);
+    // claude -p --max-turns 1 exits 1 after every run that ends error_max_turns, the usual one-turn end: no note.
+    if (res.exit !== 0 && !(res.exit === 1 && x.subtype === 'error_max_turns')) notes.push(`exit ${res.exit ?? res.signal}`);
     const offered = new Set((x.skills || []).map((s) => s.split(':').pop()));
     const lacking = x.skills ? [...installed.keys()].filter((n) => !offered.has(n)) : [];
     if (lacking.length) notes.push(`the init skills list lacks ${lacking.join(', ')}`);
