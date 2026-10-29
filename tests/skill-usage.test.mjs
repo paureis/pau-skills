@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { repo, tempDir } from './helpers.mjs';
 
 const HOOK = repo('hooks', 'session-discipline', 'skill-usage.mjs');
@@ -19,9 +20,9 @@ function setup() {
   return { home, realHome, project, dir: join(home, '.claude', 'pau-skills'), log: join(home, '.claude', 'pau-skills', 'skill-usage.tsv') };
 }
 
-function run(ctx, input, { env = {}, timeout = 10000 } = {}) {
+function run(ctx, input, { env = {}, timeout = 10000, nodeArgs = [] } = {}) {
   const text = typeof input === 'string' ? input : JSON.stringify(input);
-  const r = spawnSync(process.execPath, [HOOK], {
+  const r = spawnSync(process.execPath, [...nodeArgs, HOOK], {
     input: text,
     encoding: 'utf8',
     timeout,
@@ -213,6 +214,81 @@ test('one more append keeps the newest whole lines that fit in 500,000 bytes, th
   assert.ok(all.slice(0, -1).every((l) => l.startsWith('2020-')));
   assert.deepEqual(readdirSync(ctx.dir), ['skill-usage.tsv'], 'no temporary file left');
 });
+
+// The log before the append: 14,286 old lines (500,010 bytes), one longer line, then 14,283 old lines. With the 35-byte
+// line the hook appends, the newest 500,000 bytes start exactly where the cut is chosen to fall.
+const FILLER = 14_286;
+const AFTER = 14_283;
+const longLine = (bytes) => `2020-01-01T00:00:00.000Z\t${'x'.repeat(bytes - 32)}\tagent\n`;
+function fillAround(ctx, special) {
+  mkdirSync(ctx.dir, { recursive: true });
+  writeFileSync(ctx.log, OLD.repeat(FILLER) + special + OLD.repeat(AFTER));
+}
+
+test('a cut that lands exactly at a line start keeps that whole line: exactly 500,000 bytes', () => {
+  const ctx = setup();
+  const special = longLine(60);
+  assert.equal(special.length, 60);
+  fillAround(ctx, special);
+  const after = statSync(ctx.log).size + 35;
+  assert.equal(after, 1_000_010);
+  assert.equal(after - 500_000, FILLER * 35, 'the cut falls on the first byte of the long line');
+  run(ctx, agent(ctx, 'tdd'));
+  assert.equal(statSync(ctx.log).size, 500_000);
+  const text = readFileSync(ctx.log, 'utf8');
+  assert.ok(text.startsWith(special), 'the long line is kept whole');
+  assert.equal(lines(ctx).length, 1 + AFTER + 1);
+});
+
+test('a cut that lands on a newline byte drops only that newline: every kept line is whole', () => {
+  const ctx = setup();
+  const special = longLine(59);
+  assert.equal(special.length, 59);
+  fillAround(ctx, special);
+  const after = statSync(ctx.log).size + 35;
+  assert.equal(after, 1_000_009);
+  assert.equal(after - 500_000, FILLER * 35 - 1, 'the cut falls on the newline that ends the filler');
+  run(ctx, agent(ctx, 'tdd'));
+  assert.equal(statSync(ctx.log).size, 499_999);
+  const text = readFileSync(ctx.log, 'utf8');
+  assert.ok(text.startsWith(special), 'the kept text starts with the long line, not an empty line');
+  for (const l of text.split('\n').slice(0, -1)) assert.match(l, new RegExp(`^${ISO}\\t(tdd|x+)\\tagent$`));
+});
+
+// A preload that makes the trim fail: it records the path it was asked to write or rename, then throws.
+const PRELOAD = `import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
+const mode = process.env.SKILL_USAGE_FAIL;
+const record = process.env.SKILL_USAGE_RECORD;
+const write = fs.writeFileSync;
+if (mode === 'rename') {
+  fs.renameSync = (from) => { fs.appendFileSync(record, String(from) + '\\n'); throw Object.assign(new Error('forced'), { code: 'EXDEV' }); };
+}
+if (mode === 'write') {
+  fs.writeFileSync = (path, ...rest) => {
+    if (!String(path).endsWith('.tmp')) return write(path, ...rest);
+    write(path, 'partial');
+    fs.appendFileSync(record, String(path) + '\\n');
+    throw Object.assign(new Error('forced'), { code: 'ENOSPC' });
+  };
+}
+syncBuiltinESMExports();
+`;
+
+for (const mode of ['rename', 'write']) {
+  test('a ' + mode + ' that fails during the trim leaves the log and no temporary file, named by the process id', () => {
+    const ctx = setup();
+    const tools = tempDir();
+    const preload = join(tools, 'fail-preload.mjs');
+    const record = join(tools, 'record.txt');
+    writeFileSync(preload, PRELOAD);
+    fill(ctx, 28_571);
+    const r = run(ctx, agent(ctx, 'tdd'), { nodeArgs: ['--import', pathToFileURL(preload).href], env: { SKILL_USAGE_FAIL: mode, SKILL_USAGE_RECORD: record } });
+    assert.deepEqual(readFileSync(record, 'utf8').split('\n').filter(Boolean), [join(ctx.dir, `skill-usage.tsv.${r.pid}.tmp`)]);
+    assert.deepEqual(readdirSync(ctx.dir), ['skill-usage.tsv'], 'no temporary file left');
+    assert.equal(statSync(ctx.log).size, 1_000_035, 'the log keeps every line when the trim fails');
+  });
+}
 
 test('a log path that is a folder is a silent exit 0', () => {
   const ctx = setup();
