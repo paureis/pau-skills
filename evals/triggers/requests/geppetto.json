@@ -1,0 +1,18 @@
+{
+  "skill": "geppetto",
+  "should": [
+    "create an agent",
+    "Write me a new subagent file under .claude/agents for reviewing pull requests in our Python monorepo, and show it before saving",
+    "Two of the subagents in our repo do almost the same job, one still lists tools it never uses, and Claude Code seems to skip one of them entirely."
+  ],
+  "nearMisses": [
+    {
+      "request": "For the rest of today on the Spring Boot service, pass each task to a single helper with its own written instructions, and verify what comes back yourself",
+      "expect": "lean-subagent-dev"
+    },
+    {
+      "request": "Split the Swift app work into three independent pieces, each agent on its own branch and folder, then bring them back one by one",
+      "expect": "parallel-worktrees"
+    }
+  ]
+}

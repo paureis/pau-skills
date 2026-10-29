@@ -1,0 +1,18 @@
+{
+  "skill": "lean-subagent-dev",
+  "should": [
+    "work lean",
+    "For this session, give work to a single helper agent at once, with a short brief each time, check what it hands back yourself, and keep usage low",
+    "I keep hitting my usage limit by mid-afternoon, and today I still need to get three small features into our Flask API."
+  ],
+  "nearMisses": [
+    {
+      "request": "Install the starter team of planner, builder and reviewer agents into this Node project",
+      "expect": "geppetto"
+    },
+    {
+      "request": "Take these 14 notes from the reviewer on my Go pull request and tell me which ones are worth acting on",
+      "expect": "review-triage"
+    }
+  ]
+}
