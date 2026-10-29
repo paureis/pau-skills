@@ -198,6 +198,66 @@ describe('the split-summary command', () => {
   });
 });
 
+describe('--baseline with a folder of parts', () => {
+  const tidy = { 'tidy-notes': { should: ['tidy a', 'tidy b'] } };
+  const run = (index, request, started) => ({ id: `tidy-notes-s${index}-r1`, list: 'tidy-notes', kind: 'should', index, repeat: 1, request, expect: 'tidy-notes', started, finished: true });
+  /** A folder with round.json, tidy-notes.json and a README.txt, plus any extra files. */
+  function folder(extra = {}, { round = true } = {}) {
+    const dir = scratch();
+    const files = {
+      'tidy-notes.json': { format: 1, part: 'tidy-notes', runs: [run(1, 'tidy a', 'none'), run(2, 'gone one', 'none')], perSkill: { 'tidy-notes': { hits: 0, wrongStarts: [] } } },
+      ...(round ? { 'round.json': { format: 1, part: 'round', perSkill: { constructor: { hits: 1, wrongStarts: [] } } } } : {}),
+      ...extra,
+    };
+    for (const [name, data] of Object.entries(files)) writeFileSync(join(dir, name), typeof data === 'string' ? data : JSON.stringify(data));
+    writeFileSync(join(dir, 'README.txt'), 'not a part');
+    return dir;
+  }
+
+  test('merges the parts and compares with them; another file in the folder is ignored', () => {
+    const dir = folder();
+    const r = trig(base(writeLists(tidy), ['--repeats', '1', '--baseline', dir]));
+    assert.equal(r.code, 0, r.stderr);
+    const tail = r.stdout.slice(r.stdout.indexOf('Compared with'));
+    assert.ok(tail.startsWith(`Compared with ${dir}:`), tail);
+    assert.match(tail, /better: tidy-notes hits 0 -> 2/);
+    assert.match(tail, /better: tidy-notes should "tidy a": right 0 of 1 -> 1 of 1/);
+    assert.match(tail, /new: tidy-notes should "tidy b"/);
+    assert.match(tail, /gone: tidy-notes should "gone one"/);
+  });
+
+  test('a round compared with its own parts, and with its summary.json, prints no change', () => {
+    const first = trig(base(ROUND_LISTS, ['--also', ALSO]));
+    assert.equal(first.code, 0, first.stderr);
+    for (const old of [join(first.lab, 'summary'), join(first.lab, 'summary.json')]) {
+      const again = trig(base(ROUND_LISTS, ['--also', ALSO, '--baseline', old]));
+      assert.equal(again.code, 0, again.stderr);
+      assert.ok(again.stdout.endsWith(`Compared with ${old}:\n  no change\n`), old);
+    }
+  });
+
+  test('refuses, before any call and also with --plan, a missing round.json, a part without format 1 or not JSON, and a run id or skill in two parts', () => {
+    const lists = writeLists(tidy);
+    const twin = { format: 1, part: 'twin', runs: [run(1, 'tidy a', 'none')], perSkill: {} };
+    const cases = [
+      [folder({}, { round: false }), /no round\.json/],
+      [folder({ 'old.json': { format: 2, runs: [] } }), /old\.json is not a summary part with "format": 1/],
+      [folder({ 'broken.json': '{' }), /broken\.json is not JSON/],
+      [folder({ 'twin.json': twin }), /run tidy-notes-s1-r1 is in two parts: tidy-notes\.json and twin\.json/],
+      [folder({ 'twin.json': { ...twin, runs: [], perSkill: { constructor: {} } } }), /skill constructor is in two parts: round\.json and twin\.json/],
+    ];
+    for (const [dir, re] of cases) {
+      for (const extra of [[], ['--plan']]) {
+        const r = trig(base(lists, ['--baseline', dir, ...extra]));
+        assert.equal(r.code, 1, `${re}`);
+        assert.match(r.stderr, re);
+        assert.match(r.stderr, /refused: the baseline/);
+        assert.equal(r.calls.length + r.auth.length, 0);
+      }
+    }
+  });
+});
+
 describe('a round writes summary/', () => {
   test('one file per list and round.json, the parts of summary.json, which merge back into it', () => {
     const r = trig(base(ROUND_LISTS, ['--also', ALSO]));

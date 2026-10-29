@@ -125,11 +125,17 @@ function planRuns(lists, repeats) {
   return runs;
 }
 
+/** An older summary.json, or a folder of its parts (round.json and every other *.json) merged into one. */
 function readBaseline(file) {
   const f = resolve(file);
   if (!existsSync(f)) throw refusal(`the baseline ${f} does not exist`);
-  let b;
-  try { b = JSON.parse(readFileSync(f, 'utf8')); } catch { throw refusal(`the baseline ${f} is not JSON`); }
+  const read = (p) => { try { return JSON.parse(readFileSync(p, 'utf8')); } catch { throw refusal(`the baseline ${p} is not JSON`); } };
+  if (statSync(f).isDirectory()) {
+    const names = readdirSync(f, { withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith('.json')).map((e) => e.name).sort();
+    const parts = Object.fromEntries(names.map((n) => [n, read(join(f, n))]));
+    try { return { file: f, data: mergeParts(parts) }; } catch (e) { throw refusal(`the baseline folder ${f}: ${e.message}`); }
+  }
+  const b = read(f);
   if (!b || typeof b !== 'object' || !Object.hasOwn(b, 'format') || b.format !== 1) throw refusal(`the baseline ${f} is not a summary.json with "format": 1`);
   return { file: f, data: b };
 }
