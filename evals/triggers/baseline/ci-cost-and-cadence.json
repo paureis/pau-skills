@@ -1,0 +1,209 @@
+{
+  "format": 1,
+  "part": "ci-cost-and-cadence",
+  "runs": [
+    {
+      "id": "ci-cost-and-cadence-s1-r1",
+      "list": "ci-cost-and-cadence",
+      "kind": "should",
+      "index": 1,
+      "request": "run tests once per PR",
+      "expect": "ci-cost-and-cadence",
+      "repeat": 1,
+      "started": "ci-cost-and-cadence",
+      "firstTool": "Skill",
+      "costMicros": 85488,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "ci-cost-and-cadence-s2-r1",
+      "list": "ci-cost-and-cadence",
+      "kind": "should",
+      "index": 2,
+      "request": "Our GitHub Actions bill doubled since agents started pushing; find out which jobs eat the minutes and recommend how often the full suite should run",
+      "expect": "ci-cost-and-cadence",
+      "repeat": 1,
+      "started": "ci-cost-and-cadence",
+      "firstTool": "Skill",
+      "costMicros": 86992,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "ci-cost-and-cadence-s3-r1",
+      "list": "ci-cost-and-cadence",
+      "kind": "should",
+      "index": 3,
+      "request": "Every push to a pull request runs our forty-minute Rust test matrix, we hit the monthly minutes cap by the 18th, and agents push a dozen times per review.",
+      "expect": "ci-cost-and-cadence",
+      "repeat": 1,
+      "started": "ci-cost-and-cadence",
+      "firstTool": "Skill",
+      "costMicros": 87256,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "ci-cost-and-cadence-n1-r1",
+      "list": "ci-cost-and-cadence",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "One integration test in the CI suite fails at random; work out why",
+      "expect": "flaky-test-hunt",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88168,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "ci-cost-and-cadence-n2-r1",
+      "list": "ci-cost-and-cadence",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Make the Python test suite itself run quicker, measuring each change",
+      "expect": "hillclimb",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88332,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "ci-cost-and-cadence-s1-r2",
+      "list": "ci-cost-and-cadence",
+      "kind": "should",
+      "index": 1,
+      "request": "run tests once per PR",
+      "expect": "ci-cost-and-cadence",
+      "repeat": 2,
+      "started": "ci-cost-and-cadence",
+      "firstTool": "Skill",
+      "costMicros": 86204,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "ci-cost-and-cadence-s2-r2",
+      "list": "ci-cost-and-cadence",
+      "kind": "should",
+      "index": 2,
+      "request": "Our GitHub Actions bill doubled since agents started pushing; find out which jobs eat the minutes and recommend how often the full suite should run",
+      "expect": "ci-cost-and-cadence",
+      "repeat": 2,
+      "started": "ci-cost-and-cadence",
+      "firstTool": "Skill",
+      "costMicros": 87016,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "ci-cost-and-cadence-s3-r2",
+      "list": "ci-cost-and-cadence",
+      "kind": "should",
+      "index": 3,
+      "request": "Every push to a pull request runs our forty-minute Rust test matrix, we hit the monthly minutes cap by the 18th, and agents push a dozen times per review.",
+      "expect": "ci-cost-and-cadence",
+      "repeat": 2,
+      "started": "ci-cost-and-cadence",
+      "firstTool": "Skill",
+      "costMicros": 87460,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "ci-cost-and-cadence-n1-r2",
+      "list": "ci-cost-and-cadence",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "One integration test in the CI suite fails at random; work out why",
+      "expect": "flaky-test-hunt",
+      "repeat": 2,
+      "started": "flaky-test-hunt",
+      "firstTool": "Skill",
+      "costMicros": 86908,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "ci-cost-and-cadence-n2-r2",
+      "list": "ci-cost-and-cadence",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Make the Python test suite itself run quicker, measuring each change",
+      "expect": "hillclimb",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89492,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "ci-cost-and-cadence": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "ci-cost-and-cadence",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "One integration test in the CI suite fails at random; work out why",
+      "started": [
+        "none",
+        "flaky-test-hunt"
+      ]
+    }
+  ]
+}

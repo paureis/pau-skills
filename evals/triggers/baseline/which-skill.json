@@ -1,0 +1,214 @@
+{
+  "format": 1,
+  "part": "which-skill",
+  "runs": [
+    {
+      "id": "which-skill-s1-r1",
+      "list": "which-skill",
+      "kind": "should",
+      "index": 1,
+      "request": "which skill should I use",
+      "expect": "which-skill",
+      "repeat": 1,
+      "started": "which-skill",
+      "firstTool": "Skill",
+      "costMicros": 85192,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "which-skill-s2-r1",
+      "list": "which-skill",
+      "kind": "should",
+      "index": 2,
+      "request": "I have a database migration and a slow test suite this week; which of the installed plugins should I start with, and in what order?",
+      "expect": "which-skill",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 102220,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "which-skill-s3-r1",
+      "list": "which-skill",
+      "kind": "should",
+      "index": 3,
+      "request": "There are dozens of slash commands in this marketplace and I cannot tell which one fits a bug that only shows up in production.",
+      "expect": "which-skill",
+      "repeat": 1,
+      "started": "which-skill",
+      "firstTool": "Skill",
+      "costMicros": 88832,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "which-skill-n1-r1",
+      "list": "which-skill",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Get Claude Code ready in my new repo by asking me how I want to work",
+      "expect": "project-setup",
+      "repeat": 1,
+      "started": "project-setup",
+      "firstTool": "Skill",
+      "costMicros": 84912,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "which-skill-n2-r1",
+      "list": "which-skill",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "How do I list the plugins I have installed?",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88512,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "which-skill-s1-r2",
+      "list": "which-skill",
+      "kind": "should",
+      "index": 1,
+      "request": "which skill should I use",
+      "expect": "which-skill",
+      "repeat": 2,
+      "started": "which-skill",
+      "firstTool": "Skill",
+      "costMicros": 84776,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "which-skill-s2-r2",
+      "list": "which-skill",
+      "kind": "should",
+      "index": 2,
+      "request": "I have a database migration and a slow test suite this week; which of the installed plugins should I start with, and in what order?",
+      "expect": "which-skill",
+      "repeat": 2,
+      "started": "which-skill",
+      "firstTool": "Skill",
+      "costMicros": 89740,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "which-skill-s3-r2",
+      "list": "which-skill",
+      "kind": "should",
+      "index": 3,
+      "request": "There are dozens of slash commands in this marketplace and I cannot tell which one fits a bug that only shows up in production.",
+      "expect": "which-skill",
+      "repeat": 2,
+      "started": "which-skill",
+      "firstTool": "Skill",
+      "costMicros": 90952,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "which-skill-n1-r2",
+      "list": "which-skill",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Get Claude Code ready in my new repo by asking me how I want to work",
+      "expect": "project-setup",
+      "repeat": 2,
+      "started": "project-setup",
+      "firstTool": "Skill",
+      "costMicros": 84864,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "which-skill-n2-r2",
+      "list": "which-skill",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "How do I list the plugins I have installed?",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88696,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "which-skill": {
+      "hits": 5,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "which-skill-s2-r1",
+          "request": "I have a database migration and a slow test suite this week; which of the installed plugins should I start with, and in what order?",
+          "started": "none",
+          "firstTool": null
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "which-skill",
+      "kind": "should",
+      "index": 2,
+      "request": "I have a database migration and a slow test suite this week; which of the installed plugins should I start with, and in what order?",
+      "started": [
+        "none",
+        "which-skill"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,224 @@
+{
+  "format": 1,
+  "part": "overnight-run",
+  "runs": [
+    {
+      "id": "overnight-run-s1-r1",
+      "list": "overnight-run",
+      "kind": "should",
+      "index": 1,
+      "request": "run this overnight",
+      "expect": "overnight-run",
+      "repeat": 1,
+      "started": "overnight-run",
+      "firstTool": "Skill",
+      "costMicros": 89128,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "overnight-run-s2-r1",
+      "list": "overnight-run",
+      "kind": "should",
+      "index": 2,
+      "request": "I am heading to bed, keep working on the Rust parser port until the test suite is green, and leave me a log I can check tomorrow",
+      "expect": "overnight-run",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88752,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "overnight-run-s3-r1",
+      "list": "overnight-run",
+      "kind": "should",
+      "index": 3,
+      "request": "Keep the Kotlin test migration going while I am out tonight; last time an agent worked alone I came back to forty commits and could not tell which ones helped.",
+      "expect": "overnight-run",
+      "repeat": 1,
+      "started": "overnight-run",
+      "firstTool": "Skill",
+      "costMicros": 87460,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "overnight-run-n1-r1",
+      "list": "overnight-run",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Shrink the JavaScript bundle size gradually and back each change with numbers from before and after it",
+      "expect": "hillclimb",
+      "repeat": 1,
+      "started": "hillclimb",
+      "firstTool": "Skill",
+      "costMicros": 87768,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "overnight-run-n2-r1",
+      "list": "overnight-run",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "How do I schedule a cron job that runs a Python script every night at 2am?",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 99612,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "overnight-run-s1-r2",
+      "list": "overnight-run",
+      "kind": "should",
+      "index": 1,
+      "request": "run this overnight",
+      "expect": "overnight-run",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 90168,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "overnight-run-s2-r2",
+      "list": "overnight-run",
+      "kind": "should",
+      "index": 2,
+      "request": "I am heading to bed, keep working on the Rust parser port until the test suite is green, and leave me a log I can check tomorrow",
+      "expect": "overnight-run",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89372,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "overnight-run-s3-r2",
+      "list": "overnight-run",
+      "kind": "should",
+      "index": 3,
+      "request": "Keep the Kotlin test migration going while I am out tonight; last time an agent worked alone I came back to forty commits and could not tell which ones helped.",
+      "expect": "overnight-run",
+      "repeat": 2,
+      "started": "overnight-run",
+      "firstTool": "Skill",
+      "costMicros": 86880,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "overnight-run-n1-r2",
+      "list": "overnight-run",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Shrink the JavaScript bundle size gradually and back each change with numbers from before and after it",
+      "expect": "hillclimb",
+      "repeat": 2,
+      "started": "hillclimb",
+      "firstTool": "Skill",
+      "costMicros": 86408,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "overnight-run-n2-r2",
+      "list": "overnight-run",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "How do I schedule a cron job that runs a Python script every night at 2am?",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 99260,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "overnight-run": {
+      "hits": 3,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "overnight-run-s2-r1",
+          "request": "I am heading to bed, keep working on the Rust parser port until the test suite is green, and leave me a log I can check tomorrow",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "overnight-run-s1-r2",
+          "request": "run this overnight",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "overnight-run-s2-r2",
+          "request": "I am heading to bed, keep working on the Rust parser port until the test suite is green, and leave me a log I can check tomorrow",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "overnight-run",
+      "kind": "should",
+      "index": 1,
+      "request": "run this overnight",
+      "started": [
+        "overnight-run",
+        "none"
+      ]
+    }
+  ]
+}

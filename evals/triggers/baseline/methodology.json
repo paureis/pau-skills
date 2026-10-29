@@ -1,0 +1,198 @@
+{
+  "format": 1,
+  "part": "methodology",
+  "runs": [
+    {
+      "id": "methodology-s1-r1",
+      "list": "methodology",
+      "kind": "should",
+      "index": 1,
+      "request": "adopt the methodology",
+      "expect": "methodology",
+      "repeat": 1,
+      "started": "methodology",
+      "firstTool": "Skill",
+      "costMicros": 84740,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "methodology-s2-r1",
+      "list": "methodology",
+      "kind": "should",
+      "index": 2,
+      "request": "Set up operating rules for this repo where no agent ever grades its own work, with a contract, a state file and an append-only log",
+      "expect": "methodology",
+      "repeat": 1,
+      "started": "methodology",
+      "firstTool": "Skill",
+      "costMicros": 85424,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "methodology-s3-r1",
+      "list": "methodology",
+      "kind": "should",
+      "index": 3,
+      "request": "Our agents keep declaring tasks finished that later turn out broken, and on this long Elixir project nobody tracks what phase we are in or what is blocked.",
+      "expect": "methodology",
+      "repeat": 1,
+      "started": "methodology",
+      "firstTool": "Skill",
+      "costMicros": 86848,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "methodology-n1-r1",
+      "list": "methodology",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Get a second agent with no part in writing it to check the new export endpoint against the acceptance criteria",
+      "expect": "evaluator",
+      "repeat": 1,
+      "started": "evaluator",
+      "firstTool": "Skill",
+      "costMicros": 197872,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "methodology-n2-r1",
+      "list": "methodology",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Leave this Go refactor going while I am asleep and give me something to audit in the morning",
+      "expect": "overnight-run",
+      "repeat": 1,
+      "started": "overnight-run",
+      "firstTool": "Skill",
+      "costMicros": 87068,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "methodology-s1-r2",
+      "list": "methodology",
+      "kind": "should",
+      "index": 1,
+      "request": "adopt the methodology",
+      "expect": "methodology",
+      "repeat": 2,
+      "started": "methodology",
+      "firstTool": "Skill",
+      "costMicros": 84788,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "methodology-s2-r2",
+      "list": "methodology",
+      "kind": "should",
+      "index": 2,
+      "request": "Set up operating rules for this repo where no agent ever grades its own work, with a contract, a state file and an append-only log",
+      "expect": "methodology",
+      "repeat": 2,
+      "started": "methodology",
+      "firstTool": "Skill",
+      "costMicros": 85424,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "methodology-s3-r2",
+      "list": "methodology",
+      "kind": "should",
+      "index": 3,
+      "request": "Our agents keep declaring tasks finished that later turn out broken, and on this long Elixir project nobody tracks what phase we are in or what is blocked.",
+      "expect": "methodology",
+      "repeat": 2,
+      "started": "methodology",
+      "firstTool": "Skill",
+      "costMicros": 88044,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "methodology-n1-r2",
+      "list": "methodology",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Get a second agent with no part in writing it to check the new export endpoint against the acceptance criteria",
+      "expect": "evaluator",
+      "repeat": 2,
+      "started": "evaluator",
+      "firstTool": "Skill",
+      "costMicros": 207398,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "methodology-n2-r2",
+      "list": "methodology",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Leave this Go refactor going while I am asleep and give me something to audit in the morning",
+      "expect": "overnight-run",
+      "repeat": 2,
+      "started": "overnight-run",
+      "firstTool": "Skill",
+      "costMicros": 86492,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "methodology": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

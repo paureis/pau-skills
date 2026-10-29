@@ -1,0 +1,198 @@
+{
+  "format": 1,
+  "part": "safe-merge",
+  "runs": [
+    {
+      "id": "safe-merge-s1-r1",
+      "list": "safe-merge",
+      "kind": "should",
+      "index": 1,
+      "request": "merge PR",
+      "expect": "safe-merge",
+      "repeat": 1,
+      "started": "safe-merge",
+      "firstTool": "Skill",
+      "costMicros": 84756,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "safe-merge-s2-r1",
+      "list": "safe-merge",
+      "kind": "should",
+      "index": 2,
+      "request": "Land pull request 482 into main, pinned to its current head commit, without closing the PRs that sit on top of it",
+      "expect": "safe-merge",
+      "repeat": 1,
+      "started": "safe-merge",
+      "firstTool": "Skill",
+      "costMicros": 85472,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "safe-merge-s3-r1",
+      "list": "safe-merge",
+      "kind": "should",
+      "index": 3,
+      "request": "PR 311 is approved and green at the bottom of a stack of three on GitHub; get it into main now without the two above it being closed.",
+      "expect": "safe-merge",
+      "repeat": 1,
+      "started": "safe-merge",
+      "firstTool": "Skill",
+      "costMicros": 85472,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "safe-merge-n1-r1",
+      "list": "safe-merge",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Resolve the conflict in config.yaml between my branch and main",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 86908,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "safe-merge-n2-r1",
+      "list": "safe-merge",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Decide which of the reviewer's notes on pull request 77 need a fix before it goes in",
+      "expect": "review-triage",
+      "repeat": 1,
+      "started": "review-triage",
+      "firstTool": "Skill",
+      "costMicros": 85860,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "safe-merge-s1-r2",
+      "list": "safe-merge",
+      "kind": "should",
+      "index": 1,
+      "request": "merge PR",
+      "expect": "safe-merge",
+      "repeat": 2,
+      "started": "safe-merge",
+      "firstTool": "Skill",
+      "costMicros": 84804,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "safe-merge-s2-r2",
+      "list": "safe-merge",
+      "kind": "should",
+      "index": 2,
+      "request": "Land pull request 482 into main, pinned to its current head commit, without closing the PRs that sit on top of it",
+      "expect": "safe-merge",
+      "repeat": 2,
+      "started": "safe-merge",
+      "firstTool": "Skill",
+      "costMicros": 85448,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "safe-merge-s3-r2",
+      "list": "safe-merge",
+      "kind": "should",
+      "index": 3,
+      "request": "PR 311 is approved and green at the bottom of a stack of three on GitHub; get it into main now without the two above it being closed.",
+      "expect": "safe-merge",
+      "repeat": 2,
+      "started": "safe-merge",
+      "firstTool": "Skill",
+      "costMicros": 85472,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "safe-merge-n1-r2",
+      "list": "safe-merge",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Resolve the conflict in config.yaml between my branch and main",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 86608,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "safe-merge-n2-r2",
+      "list": "safe-merge",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Decide which of the reviewer's notes on pull request 77 need a fix before it goes in",
+      "expect": "review-triage",
+      "repeat": 2,
+      "started": "review-triage",
+      "firstTool": "Skill",
+      "costMicros": 85820,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "safe-merge": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

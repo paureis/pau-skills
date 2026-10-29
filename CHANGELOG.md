@@ -9,7 +9,11 @@ the plugin they installed is bumped.
   of request lists as a one-turn headless run with all the skills under test installed, records the first skill the
   agent starts, and reports hits, misses, wrong starts, near misses and requests whose repeats disagree. It prints the
   estimate first (`--plan` spends nothing), keeps money in whole micro-dollars and stops before the cap. `TRIGGERS.md`
-  documents it.
+  documents it. A round also writes its summary in parts under the 20,000-byte limit, `split-summary` splits an
+  older one, and `--baseline` takes a folder of parts.
+- The first full round ran: 380 one-turn runs for 34.10 US dollars. No request started a wrong skill, every near miss
+  came out right, and 175 of 228 runs started the skill they should; 41 of the 53 misses looked around the empty folder
+  first. `evals/triggers/baseline/` holds its summary and `evals/triggers/baseline.md` what it showed.
 - `evals/triggers/requests/` holds 5 requests for each of the 38 skills, written by an agent that never saw a
   description; `tests/trigger-lists.test.mjs` checks their shape.
 - New hook `skill-usage` (session-discipline 0.13.0, pau-skills-hooks 0.4.0): one line per skill start (the time, the

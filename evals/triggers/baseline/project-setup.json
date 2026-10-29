@@ -1,0 +1,194 @@
+{
+  "format": 1,
+  "part": "project-setup",
+  "runs": [
+    {
+      "id": "project-setup-s1-r1",
+      "list": "project-setup",
+      "kind": "should",
+      "index": 1,
+      "request": "set up Claude Code for this project",
+      "expect": "project-setup",
+      "repeat": 1,
+      "started": "project-setup",
+      "firstTool": "Skill",
+      "costMicros": 85548,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "project-setup-s2-r1",
+      "list": "project-setup",
+      "kind": "should",
+      "index": 2,
+      "request": "I just installed Claude Code and opened my Python repo; walk me through getting it configured for how I like to work",
+      "expect": "project-setup",
+      "repeat": 1,
+      "started": "project-setup",
+      "firstTool": "Skill",
+      "costMicros": 85432,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "project-setup-s3-r1",
+      "list": "project-setup",
+      "kind": "should",
+      "index": 3,
+      "request": "I have only ever used Claude in the browser, and now I am in a terminal inside my Go project with no idea what to ask it first.",
+      "expect": "project-setup",
+      "repeat": 1,
+      "started": "project-setup",
+      "firstTool": "Skill",
+      "costMicros": 86508,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "project-setup-n1-r1",
+      "list": "project-setup",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Look over the CLAUDE.md we already have and find the rules that contradict each other",
+      "expect": "instructions-audit",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88316,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "project-setup-n2-r1",
+      "list": "project-setup",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "How do I switch Claude Code into plan mode?",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 90636,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "project-setup-s1-r2",
+      "list": "project-setup",
+      "kind": "should",
+      "index": 1,
+      "request": "set up Claude Code for this project",
+      "expect": "project-setup",
+      "repeat": 2,
+      "started": "project-setup",
+      "firstTool": "Skill",
+      "costMicros": 84808,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "project-setup-s2-r2",
+      "list": "project-setup",
+      "kind": "should",
+      "index": 2,
+      "request": "I just installed Claude Code and opened my Python repo; walk me through getting it configured for how I like to work",
+      "expect": "project-setup",
+      "repeat": 2,
+      "started": "project-setup",
+      "firstTool": "Skill",
+      "costMicros": 85408,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "project-setup-s3-r2",
+      "list": "project-setup",
+      "kind": "should",
+      "index": 3,
+      "request": "I have only ever used Claude in the browser, and now I am in a terminal inside my Go project with no idea what to ask it first.",
+      "expect": "project-setup",
+      "repeat": 2,
+      "started": "project-setup",
+      "firstTool": "Skill",
+      "costMicros": 86076,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "project-setup-n1-r2",
+      "list": "project-setup",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Look over the CLAUDE.md we already have and find the rules that contradict each other",
+      "expect": "instructions-audit",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88096,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "project-setup-n2-r2",
+      "list": "project-setup",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "How do I switch Claude Code into plan mode?",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 93676,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "project-setup": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

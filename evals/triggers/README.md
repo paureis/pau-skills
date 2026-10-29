@@ -16,5 +16,6 @@ node skills/verification/skill-eval/skill-eval.mjs triggers "$LAB/round" --skill
   --model <model> --max-usd 40 --plan
 ```
 
-Drop `--plan` to run it, and pass `--baseline evals/triggers/baseline.json` to see what got better or worse.
-`baseline.json` is the summary of the first full round, and `baseline.md` says what it showed.
+Drop `--plan` to run it, and pass `--baseline evals/triggers/baseline` to see what got better or worse. `baseline/`
+holds the summary of the first full round in parts (one per list, and `round.json`), each under the 20,000-byte limit,
+and `baseline.md` says what the round showed.

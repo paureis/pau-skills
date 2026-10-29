@@ -1,0 +1,198 @@
+{
+  "format": 1,
+  "part": "session-close",
+  "runs": [
+    {
+      "id": "session-close-s1-r1",
+      "list": "session-close",
+      "kind": "should",
+      "index": 1,
+      "request": "close the session",
+      "expect": "session-close",
+      "repeat": 1,
+      "started": "session-close",
+      "firstTool": "Skill",
+      "costMicros": 84708,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "session-close-s2-r1",
+      "list": "session-close",
+      "kind": "should",
+      "index": 2,
+      "request": "We are done for today: wrap things up in order, lessons first, then the roadmap and log, notes for next time, and a commit",
+      "expect": "session-close",
+      "repeat": 1,
+      "started": "session-close",
+      "firstTool": "Skill",
+      "costMicros": 85348,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "session-close-s3-r1",
+      "list": "session-close",
+      "kind": "should",
+      "index": 3,
+      "request": "It is six o'clock, a few files are still uncommitted, the roadmap and log are stale, nothing about today's mistakes is written down, and I am about to log off.",
+      "expect": "session-close",
+      "repeat": 1,
+      "started": "session-close",
+      "firstTool": "Skill",
+      "costMicros": 85484,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "session-close-n1-r1",
+      "list": "session-close",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Just print a summary of today's changes I can paste into a new chat",
+      "expect": "handoff",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87788,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "session-close-n2-r1",
+      "list": "session-close",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Lessons only: what did I correct you on today and where should each one live?",
+      "expect": "retrospective",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 91576,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "session-close-s1-r2",
+      "list": "session-close",
+      "kind": "should",
+      "index": 1,
+      "request": "close the session",
+      "expect": "session-close",
+      "repeat": 2,
+      "started": "session-close",
+      "firstTool": "Skill",
+      "costMicros": 84708,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "session-close-s2-r2",
+      "list": "session-close",
+      "kind": "should",
+      "index": 2,
+      "request": "We are done for today: wrap things up in order, lessons first, then the roadmap and log, notes for next time, and a commit",
+      "expect": "session-close",
+      "repeat": 2,
+      "started": "session-close",
+      "firstTool": "Skill",
+      "costMicros": 85372,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "session-close-s3-r2",
+      "list": "session-close",
+      "kind": "should",
+      "index": 3,
+      "request": "It is six o'clock, a few files are still uncommitted, the roadmap and log are stale, nothing about today's mistakes is written down, and I am about to log off.",
+      "expect": "session-close",
+      "repeat": 2,
+      "started": "session-close",
+      "firstTool": "Skill",
+      "costMicros": 85460,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "session-close-n1-r2",
+      "list": "session-close",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Just print a summary of today's changes I can paste into a new chat",
+      "expect": "handoff",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 87748,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "session-close-n2-r2",
+      "list": "session-close",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Lessons only: what did I correct you on today and where should each one live?",
+      "expect": "retrospective",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89580,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "session-close": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

@@ -1,0 +1,198 @@
+{
+  "format": 1,
+  "part": "instructions-audit",
+  "runs": [
+    {
+      "id": "instructions-audit-s1-r1",
+      "list": "instructions-audit",
+      "kind": "should",
+      "index": 1,
+      "request": "audit my CLAUDE.md",
+      "expect": "instructions-audit",
+      "repeat": 1,
+      "started": "instructions-audit",
+      "firstTool": "Skill",
+      "costMicros": 84880,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "instructions-audit-s2-r1",
+      "list": "instructions-audit",
+      "kind": "should",
+      "index": 2,
+      "request": "Check our project instruction files for duplicated rules, contradictions, stale paths and vague wording, and tell me what to cut",
+      "expect": "instructions-audit",
+      "repeat": 1,
+      "started": "instructions-audit",
+      "firstTool": "Skill",
+      "costMicros": 85080,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "instructions-audit-s3-r1",
+      "list": "instructions-audit",
+      "kind": "should",
+      "index": 3,
+      "request": "Our CLAUDE.md is past 600 lines, two sections say opposite things about formatting, and it points at scripts we deleted months ago.",
+      "expect": "instructions-audit",
+      "repeat": 1,
+      "started": "instructions-audit",
+      "firstTool": "Skill",
+      "costMicros": 85576,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "instructions-audit-n1-r1",
+      "list": "instructions-audit",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Make the rule against editing migrations by hand into a hook that blocks it",
+      "expect": "rule-to-hook",
+      "repeat": 1,
+      "started": "rule-to-hook",
+      "firstTool": "Skill",
+      "costMicros": 86012,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "instructions-audit-n2-r1",
+      "list": "instructions-audit",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Write a first CLAUDE.md for this new Flutter project by asking me how I like to work",
+      "expect": "project-setup",
+      "repeat": 1,
+      "started": "project-setup",
+      "firstTool": "Skill",
+      "costMicros": 88636,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "instructions-audit-s1-r2",
+      "list": "instructions-audit",
+      "kind": "should",
+      "index": 1,
+      "request": "audit my CLAUDE.md",
+      "expect": "instructions-audit",
+      "repeat": 2,
+      "started": "instructions-audit",
+      "firstTool": "Skill",
+      "costMicros": 84832,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "instructions-audit-s2-r2",
+      "list": "instructions-audit",
+      "kind": "should",
+      "index": 2,
+      "request": "Check our project instruction files for duplicated rules, contradictions, stale paths and vague wording, and tell me what to cut",
+      "expect": "instructions-audit",
+      "repeat": 2,
+      "started": "instructions-audit",
+      "firstTool": "Skill",
+      "costMicros": 85536,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "instructions-audit-s3-r2",
+      "list": "instructions-audit",
+      "kind": "should",
+      "index": 3,
+      "request": "Our CLAUDE.md is past 600 lines, two sections say opposite things about formatting, and it points at scripts we deleted months ago.",
+      "expect": "instructions-audit",
+      "repeat": 2,
+      "started": "instructions-audit",
+      "firstTool": "Skill",
+      "costMicros": 86832,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "instructions-audit-n1-r2",
+      "list": "instructions-audit",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Make the rule against editing migrations by hand into a hook that blocks it",
+      "expect": "rule-to-hook",
+      "repeat": 2,
+      "started": "rule-to-hook",
+      "firstTool": "Skill",
+      "costMicros": 86032,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "instructions-audit-n2-r2",
+      "list": "instructions-audit",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Write a first CLAUDE.md for this new Flutter project by asking me how I like to work",
+      "expect": "project-setup",
+      "repeat": 2,
+      "started": "project-setup",
+      "firstTool": "Skill",
+      "costMicros": 89260,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "instructions-audit": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

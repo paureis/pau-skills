@@ -1,0 +1,219 @@
+{
+  "format": 1,
+  "part": "sharpen",
+  "runs": [
+    {
+      "id": "sharpen-s1-r1",
+      "list": "sharpen",
+      "kind": "should",
+      "index": 1,
+      "request": "sharpen this",
+      "expect": "sharpen",
+      "repeat": 1,
+      "started": "sharpen",
+      "firstTool": "Skill",
+      "costMicros": 84744,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "sharpen-s2-r1",
+      "list": "sharpen",
+      "kind": "should",
+      "index": 2,
+      "request": "Before you touch anything, put this task in your own words with the reason behind it and how we will know it worked, then check with me",
+      "expect": "sharpen",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 89304,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "sharpen-s3-r1",
+      "list": "sharpen",
+      "kind": "should",
+      "index": 3,
+      "request": "The ticket just says make the Rust exporter better, and I am not sure myself whether that means speed, memory, or the output format.",
+      "expect": "sharpen",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88380,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "sharpen-n1-r1",
+      "list": "sharpen",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Interview me on each unresolved choice in the deployment plan until every branch is settled",
+      "expect": "grill-me",
+      "repeat": 1,
+      "started": "grill-me",
+      "firstTool": "Skill",
+      "costMicros": 85816,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "sharpen-n2-r1",
+      "list": "sharpen",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Fix the typo in the README heading",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 86280,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "sharpen-s1-r2",
+      "list": "sharpen",
+      "kind": "should",
+      "index": 1,
+      "request": "sharpen this",
+      "expect": "sharpen",
+      "repeat": 2,
+      "started": "sharpen",
+      "firstTool": "Skill",
+      "costMicros": 84768,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "sharpen-s2-r2",
+      "list": "sharpen",
+      "kind": "should",
+      "index": 2,
+      "request": "Before you touch anything, put this task in your own words with the reason behind it and how we will know it worked, then check with me",
+      "expect": "sharpen",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 89048,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "sharpen-s3-r2",
+      "list": "sharpen",
+      "kind": "should",
+      "index": 3,
+      "request": "The ticket just says make the Rust exporter better, and I am not sure myself whether that means speed, memory, or the output format.",
+      "expect": "sharpen",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 88000,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "sharpen-n1-r2",
+      "list": "sharpen",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Interview me on each unresolved choice in the deployment plan until every branch is settled",
+      "expect": "grill-me",
+      "repeat": 2,
+      "started": "grill-me",
+      "firstTool": "Skill",
+      "costMicros": 85836,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "sharpen-n2-r2",
+      "list": "sharpen",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Fix the typo in the README heading",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 86076,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "sharpen": {
+      "hits": 2,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "sharpen-s2-r1",
+          "request": "Before you touch anything, put this task in your own words with the reason behind it and how we will know it worked, then check with me",
+          "started": "none",
+          "firstTool": null
+        },
+        {
+          "id": "sharpen-s3-r1",
+          "request": "The ticket just says make the Rust exporter better, and I am not sure myself whether that means speed, memory, or the output format.",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "sharpen-s2-r2",
+          "request": "Before you touch anything, put this task in your own words with the reason behind it and how we will know it worked, then check with me",
+          "started": "none",
+          "firstTool": null
+        },
+        {
+          "id": "sharpen-s3-r2",
+          "request": "The ticket just says make the Rust exporter better, and I am not sure myself whether that means speed, memory, or the output format.",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

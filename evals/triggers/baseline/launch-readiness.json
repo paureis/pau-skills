@@ -1,0 +1,209 @@
+{
+  "format": 1,
+  "part": "launch-readiness",
+  "runs": [
+    {
+      "id": "launch-readiness-s1-r1",
+      "list": "launch-readiness",
+      "kind": "should",
+      "index": 1,
+      "request": "is this ready for paying customers",
+      "expect": "launch-readiness",
+      "repeat": 1,
+      "started": "launch-readiness",
+      "firstTool": "Skill",
+      "costMicros": 85800,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "launch-readiness-s2-r1",
+      "list": "launch-readiness",
+      "kind": "should",
+      "index": 2,
+      "request": "We open our Next.js SaaS to paid plans next month; check whether it holds up for that stage, with evidence for each item",
+      "expect": "launch-readiness",
+      "repeat": 1,
+      "started": "launch-readiness",
+      "firstTool": "Skill",
+      "costMicros": 87188,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "launch-readiness-s3-r1",
+      "list": "launch-readiness",
+      "kind": "should",
+      "index": 3,
+      "request": "An agent wrote most of our Flask app, the private beta went fine, and next month real customers start entering card details.",
+      "expect": "launch-readiness",
+      "repeat": 1,
+      "started": "launch-readiness",
+      "firstTool": "Skill",
+      "costMicros": 86880,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "launch-readiness-n1-r1",
+      "list": "launch-readiness",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Scan our Go module's dependencies for known vulnerabilities",
+      "expect": "dependency-security-audit",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 89476,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "launch-readiness-n2-r1",
+      "list": "launch-readiness",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Look at the migration that adds a not null column to the users table before we deploy it",
+      "expect": "migration-review",
+      "repeat": 1,
+      "started": "migration-review",
+      "firstTool": "Skill",
+      "costMicros": 84912,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "launch-readiness-s1-r2",
+      "list": "launch-readiness",
+      "kind": "should",
+      "index": 1,
+      "request": "is this ready for paying customers",
+      "expect": "launch-readiness",
+      "repeat": 2,
+      "started": "launch-readiness",
+      "firstTool": "Skill",
+      "costMicros": 85320,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "launch-readiness-s2-r2",
+      "list": "launch-readiness",
+      "kind": "should",
+      "index": 2,
+      "request": "We open our Next.js SaaS to paid plans next month; check whether it holds up for that stage, with evidence for each item",
+      "expect": "launch-readiness",
+      "repeat": 2,
+      "started": "launch-readiness",
+      "firstTool": "Skill",
+      "costMicros": 86592,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "launch-readiness-s3-r2",
+      "list": "launch-readiness",
+      "kind": "should",
+      "index": 3,
+      "request": "An agent wrote most of our Flask app, the private beta went fine, and next month real customers start entering card details.",
+      "expect": "launch-readiness",
+      "repeat": 2,
+      "started": "launch-readiness",
+      "firstTool": "Skill",
+      "costMicros": 86880,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "launch-readiness-n1-r2",
+      "list": "launch-readiness",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Scan our Go module's dependencies for known vulnerabilities",
+      "expect": "dependency-security-audit",
+      "repeat": 2,
+      "started": "dependency-security-audit",
+      "firstTool": "Skill",
+      "costMicros": 88576,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "launch-readiness-n2-r2",
+      "list": "launch-readiness",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Look at the migration that adds a not null column to the users table before we deploy it",
+      "expect": "migration-review",
+      "repeat": 2,
+      "started": "migration-review",
+      "firstTool": "Skill",
+      "costMicros": 84912,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    }
+  ],
+  "perSkill": {
+    "launch-readiness": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "launch-readiness",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Scan our Go module's dependencies for known vulnerabilities",
+      "started": [
+        "none",
+        "dependency-security-audit"
+      ]
+    }
+  ]
+}

@@ -82,7 +82,9 @@ project skill is listed in the init line and a start comes back as `Skill {"skil
 `--max-turns 1` the call is printed, then the run ends with the subtype `error_max_turns` and a `total_cost_usd`, and
 claude exits 1 (350 of the 380 runs; the 29 that answered with no tool ended `success` and exited 0). A
 skill with `allowed-tools` is refused permission in `-p`, but its call is still printed, so it still counts as started.
-One run cost 0.08 to 0.10 US dollars with 38 skills installed.
+A run cost 0.08 to 0.10 US dollars with 38 skills installed. One run cost 0.21 against a hard stop of 0.16 and ended
+`error_max_budget_usd` with its call printed: claude checks `--max-budget-usd` after a turn, not during it, so the hard
+stop does not cut a single turn short.
 
 The arguments of every run are exactly:
 

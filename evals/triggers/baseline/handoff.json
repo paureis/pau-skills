@@ -1,0 +1,196 @@
+{
+  "format": 1,
+  "part": "handoff",
+  "runs": [
+    {
+      "id": "handoff-s1-r1",
+      "list": "handoff",
+      "kind": "should",
+      "index": 1,
+      "request": "handoff",
+      "expect": "handoff",
+      "repeat": 1,
+      "started": "handoff",
+      "firstTool": "Skill",
+      "costMicros": 84732,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "handoff-s2-r1",
+      "list": "handoff",
+      "kind": "should",
+      "index": 2,
+      "request": "Write down where we are, what we learned and what comes next in a file so a fresh session tomorrow can pick this up cold",
+      "expect": "handoff",
+      "repeat": 1,
+      "started": "handoff",
+      "firstTool": "Skill",
+      "costMicros": 85364,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "handoff-s3-r1",
+      "list": "handoff",
+      "kind": "should",
+      "index": 3,
+      "request": "I have to switch to another laptop in ten minutes and the Scala port is half done; the new chat there will know nothing about it.",
+      "expect": "handoff",
+      "repeat": 1,
+      "started": "handoff",
+      "firstTool": "Skill",
+      "costMicros": 85416,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "handoff-n1-r1",
+      "list": "handoff",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "End today's session properly: run the lessons step, update the roadmap and log, write notes for next time, and commit",
+      "expect": "session-close",
+      "repeat": 1,
+      "started": "session-close",
+      "firstTool": "Skill",
+      "costMicros": 84996,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "handoff-n2-r1",
+      "list": "handoff",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Summarize this pull request description in two lines",
+      "expect": "none",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "costMicros": 86832,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "handoff-s1-r2",
+      "list": "handoff",
+      "kind": "should",
+      "index": 1,
+      "request": "handoff",
+      "expect": "handoff",
+      "repeat": 2,
+      "started": "handoff",
+      "firstTool": "Skill",
+      "costMicros": 84756,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "handoff-s2-r2",
+      "list": "handoff",
+      "kind": "should",
+      "index": 2,
+      "request": "Write down where we are, what we learned and what comes next in a file so a fresh session tomorrow can pick this up cold",
+      "expect": "handoff",
+      "repeat": 2,
+      "started": "handoff",
+      "firstTool": "Skill",
+      "costMicros": 85364,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "handoff-s3-r2",
+      "list": "handoff",
+      "kind": "should",
+      "index": 3,
+      "request": "I have to switch to another laptop in ten minutes and the Scala port is half done; the new chat there will know nothing about it.",
+      "expect": "handoff",
+      "repeat": 2,
+      "started": "handoff",
+      "firstTool": "Skill",
+      "costMicros": 85480,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "handoff-n1-r2",
+      "list": "handoff",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "End today's session properly: run the lessons step, update the roadmap and log, write notes for next time, and commit",
+      "expect": "session-close",
+      "repeat": 2,
+      "started": "session-close",
+      "firstTool": "Skill",
+      "costMicros": 84948,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": [
+        "exit 1"
+      ]
+    },
+    {
+      "id": "handoff-n2-r2",
+      "list": "handoff",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Summarize this pull request description in two lines",
+      "expect": "none",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": null,
+      "costMicros": 85888,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "handoff": {
+      "hits": 6,
+      "shouldRuns": 6,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}
