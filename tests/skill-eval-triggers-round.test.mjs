@@ -95,9 +95,10 @@ describe('the cost guard', () => {
 
   test('a run that costs more than its hard stop and passes the cap is reported, and the round exits 1', () => {
     const one = writeLists({ 'tidy-notes': { should: ['tidy a'] } });
-    const r = trig(base(one, ['--max-usd', '1', '--parallel', '1']), COST('1.50'));
-    assert.equal(r.code, 1);
+    const r = trig(base(one, ['--max-usd', '1', '--parallel', '1', '--repeats', '1']), COST('1.50'));
+    assert.equal(r.code, 1, 'the only planned run ran and finished, so only the overrun makes it 1');
     assert.equal(r.calls.length, 1);
+    assert.equal(r.summary.runsMade, r.summary.runsPlanned);
     assert.equal(r.summary.costMicros, 1_500_000);
     assert.match(r.stdout, /Above the cap by \$0\.50/);
     assert.match(r.stderr, /above the cap by \$0\.50/);
