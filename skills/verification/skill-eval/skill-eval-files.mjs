@@ -18,7 +18,8 @@ const USAGE = `usage:
   skill-eval.mjs blind <lab-dir> [--out <dir>] [--seed <integer>] [--force]
   skill-eval.mjs judge <lab-dir> --model <model> [--effort <level>] [--pass-env <NAME>...] [--real-home] [--force]
   skill-eval.mjs unblind <lab-dir>
-  skill-eval.mjs triggers <lab-dir> --skills <dir> [--skills <dir>]... --requests <dir> --model <model> --max-usd <x> [--also <dir>]... [--repeats 2] [--usd-per-run 0.08] [--parallel 3] [--plan] [--baseline <summary.json>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5]`;
+  skill-eval.mjs triggers <lab-dir> --skills <dir> [--skills <dir>]... --requests <dir> --model <model> --max-usd <x> [--also <dir>]... [--repeats 2] [--usd-per-run 0.08] [--parallel 3] [--plan] [--baseline <summary.json or folder>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5]
+  skill-eval.mjs split-summary <summary.json> --out <folder>`;
 
 const NAME = /^[a-z][a-z0-9-]*$/;
 const FLAGS = {
@@ -33,6 +34,7 @@ const FLAGS = {
     '--usd-per-run': 'one', '--parallel': 'one', '--plan': 'bool', '--baseline': 'one', '--pass-env': 'list',
     '--real-home': 'bool', '--timeout-min': 'one',
   },
+  'split-summary': { '--out': 'one' },
 };
 const fail = (msg) => { throw new Error(`${msg}\n${USAGE}`); };
 
@@ -40,12 +42,12 @@ const fail = (msg) => { throw new Error(`${msg}\n${USAGE}`); };
 export function parseArgs(argv) {
   const [cmd, target, ...rest] = argv;
   if (!argv.length) throw new Error(USAGE);
-  if (!(cmd in FLAGS)) fail(`unknown command ${cmd}`);
+  if (!Object.hasOwn(FLAGS, cmd)) fail(`unknown command ${cmd}`);
   if (!target || target.startsWith('--')) fail(`${cmd} needs a folder or file`);
   const raw = {};
   for (let i = 0; i < rest.length; i++) {
     const flag = rest[i];
-    const kind = FLAGS[cmd][flag];
+    const kind = Object.hasOwn(FLAGS[cmd], flag) ? FLAGS[cmd][flag] : null;
     if (!kind) fail(`unknown option ${flag}`);
     if (kind === 'bool') { raw[flag] = true; continue; }
     if (kind === 'list') {
@@ -100,6 +102,9 @@ export function parseArgs(argv) {
       o.maxBudgetUsd = raw['--max-budget-usd'] || null;
       if (o.maxBudgetUsd && !/^\d+(\.\d+)?$/.test(o.maxBudgetUsd)) fail('--max-budget-usd takes a number');
     }
+  } else if (cmd === 'split-summary') {
+    if (raw['--out'] === undefined) fail('split-summary needs --out');
+    o.out = raw['--out'];
   } else if (cmd === 'blind') {
     o.out = raw['--out'] || null;
     o.seed = int('--seed', -(2 ** 31), 2 ** 31, null);

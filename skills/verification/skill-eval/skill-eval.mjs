@@ -94,7 +94,8 @@ export async function main(argv, out = console.log, err = console.error) {
       case 'blind': return blind(o, out, err);
       case 'judge': return judge(o, out, err);
       case 'triggers': return await triggers(o, out, err);
-      default: return unblind(o, out, err);
+      case 'unblind': return unblind(o, out, err);
+      default: throw new Error(`unknown command ${o.cmd}`);
     }
   } catch (e) {
     err(`failed: ${e.message}`);
