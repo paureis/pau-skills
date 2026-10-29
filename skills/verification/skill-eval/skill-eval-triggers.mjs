@@ -6,9 +6,9 @@ import { mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, statSy
 import { join, resolve, basename } from 'node:path';
 import { tmpdir } from 'node:os';
 import { findMetaWords, skillNameOf, childEnv, platformProblem, claudeName, checkLogin } from './skill-eval-core.mjs';
-import { isInside, realOrPlanned, inheritedConfig, microsArg, microsUsd, git } from './skill-eval-files.mjs';
+import { isInside, realOrPlanned, inheritedConfig, microsArg, microsUsd, git, isFreeFolder, writeParts } from './skill-eval-files.mjs';
 import { runOne } from './skill-eval-setup.mjs';
-import { readRun, countRound, renderReport, compareBaseline } from './skill-eval-triggers-count.mjs';
+import { readRun, countRound, renderReport, compareBaseline, splitSummary, mergeParts } from './skill-eval-triggers-count.mjs';
 
 /**
  * True when a run with hard stop `stop` may start: what was spent, plus the hard stops of the runs in flight
@@ -89,6 +89,7 @@ function readLists(dir, under, installed) {
       && l.nearMisses.every((n) => n && typeof n === 'object' && isRequest(n.request) && typeof n.expect === 'string');
     if (!shape) throw bad('a list is { "skill": "<name>", "should": ["<request>", ...], "nearMisses": [{ "request": "...", "expect": "<skill or none>" }, ...] }');
     if (!l.should.length && !l.nearMisses.length) throw bad('no requests');
+    if (l.skill === 'round') throw bad('a list may not be for a skill named round: its part would clash with round.json in summary/');
     if (!under.has(l.skill)) throw bad(`${l.skill} is not a skill under test (--skills)`);
     if (bySkill.has(l.skill)) throw bad(`a second list for ${l.skill}, after ${bySkill.get(l.skill)}`);
     bySkill.set(l.skill, file);
@@ -240,6 +241,7 @@ async function triggers(o, out, err) {
   }
   if (existsSync(lab) && !statSync(lab).isDirectory()) return refuse(`${lab} is not a folder`);
   if (existsSync(join(lab, 'summary.json'))) return refuse(`${lab} already holds a summary.json; use a new lab folder`);
+  if (!isFreeFolder(join(lab, 'summary'))) return refuse(`${join(lab, 'summary')} already exists and is not an empty folder; use a new lab folder`);
   const labReal = realOrPlanned(lab);
   for (const d of [...o.skills, ...o.also, o.requests]) {
     if (isInside(labReal, realOrPlanned(d))) return refuse(`the lab folder ${lab} is inside ${resolve(d)}; keep it apart from the skills and the lists`);
@@ -301,10 +303,11 @@ async function triggers(o, out, err) {
       runsPlanned: runs.length, runsMade: entries.size, parallel: o.parallel, realHome: o.realHome, runs: all, ...countRound(all),
     };
     writeFileSync(join(lab, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
+    for (const w of writeParts(join(lab, 'summary'), splitSummary(summary))) err(`warning: ${w}`);
     out('');
     out(renderReport(summary));
     out('');
-    out(`Summary: ${join(lab, 'summary.json')}; transcripts in ${join(lab, 'runs')}`);
+    out(`Summary: ${join(lab, 'summary.json')} and its parts in ${join(lab, 'summary')}; transcripts in ${join(lab, 'runs')}`);
     if (baseline) {
       const lines = compareBaseline(baseline.data, summary);
       out('');

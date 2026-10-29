@@ -1,6 +1,6 @@
 // skill-eval module: the command line parser and the file system and git helpers that setup, run and blind share.
 import {
-  mkdirSync, readdirSync, readFileSync, existsSync, statSync, realpathSync, cpSync, rmSync,
+  mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, statSync, realpathSync, cpSync, rmSync,
 } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, resolve, dirname, relative, isAbsolute, basename } from 'node:path';
@@ -146,6 +146,25 @@ function realOrPlanned(p) {
 
 const isEmptyOrMissing = (dir) => !existsSync(dir) || readdirSync(dir).length === 0;
 
+/** A path that is missing or an empty folder: where a new set of files may go. */
+const isFreeFolder = (dir) => !existsSync(dir) || (statSync(dir).isDirectory() && readdirSync(dir).length === 0);
+
+/** The largest file the repository may track, in bytes. */
+const MAX_TRACKED = 20_000;
+
+/** Writes each { <file name>: object } into dir as indented JSON; returns a warning for each file over MAX_TRACKED. */
+function writeParts(dir, parts) {
+  mkdirSync(dir, { recursive: true });
+  const warnings = [];
+  for (const [name, data] of Object.entries(parts)) {
+    const text = JSON.stringify(data, null, 2) + '\n';
+    writeFileSync(join(dir, name), text);
+    const bytes = Buffer.byteLength(text);
+    if (bytes > MAX_TRACKED) warnings.push(`${name} is ${bytes} bytes, over ${MAX_TRACKED}, the largest file the repository may track`);
+  }
+  return warnings;
+}
+
 /** Files Claude Code reads from a folder and every folder above the working directory. */
 export const INHERITED = ['CLAUDE.md', 'CLAUDE.local.md', 'AGENTS.md', '.claude'];
 
@@ -258,4 +277,4 @@ function microsUsd(micros) {
 
 export { parseUsdMicros, microsArg, microsUsd };
 
-export { realOrPlanned, isEmptyOrMissing, walk, readText, gitEnv, git, ignoredManifest, HOME_NAME, buildRun, readJson, mtime, money };
+export { realOrPlanned, isEmptyOrMissing, isFreeFolder, writeParts, walk, readText, gitEnv, git, ignoredManifest, HOME_NAME, buildRun, readJson, mtime, money };

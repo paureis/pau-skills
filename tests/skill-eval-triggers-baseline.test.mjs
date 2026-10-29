@@ -1,9 +1,12 @@
 // skill-eval triggers: a summary split into parts that fit the file-size rule, and --baseline reading those parts.
 // splitSummary and mergeParts are pure; the split-summary command, the round's summary/ folder and --baseline with a
 // folder run the command with the stand-in for `claude` (no model is called).
-import { SCRIPT } from './skill-eval.helpers.mjs';
+import { SCRIPT, scratch } from './skill-eval.helpers.mjs';
+import { SKILLS, ALSO, ROUND_LISTS, writeLists, writeSkill, base, trig } from './skill-eval-triggers.helpers.mjs';
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, cpSync } from 'node:fs';
+import { join } from 'node:path';
 import { runNode } from './helpers.mjs';
 import { parseArgs } from '../skills/verification/skill-eval/skill-eval.mjs';
 import { planRuns } from '../skills/verification/skill-eval/skill-eval-triggers.mjs';
@@ -128,5 +131,68 @@ describe('split-summary options', () => {
     assert.equal(r.code, 2);
     assert.match(r.stderr, /skill-eval\.mjs split-summary <summary\.json> --out <folder>/);
     assert.match(r.stderr, /--baseline <summary\.json or folder>/);
+  });
+});
+
+/** Every file in a folder, by name, as its text. */
+const readParts = (dir) => Object.fromEntries(readdirSync(dir).sort().map((f) => [f, readFileSync(join(dir, f), 'utf8')]));
+const asText = (parts) => Object.fromEntries(Object.entries(parts).sort(([a], [b]) => (a < b ? -1 : 1)).map(([f, x]) => [f, JSON.stringify(x, null, 2) + '\n']));
+
+describe('a round writes summary/', () => {
+  test('one file per list and round.json, the parts of summary.json, which merge back into it', () => {
+    const r = trig(base(ROUND_LISTS, ['--also', ALSO]));
+    assert.equal(r.code, 0, r.stderr);
+    const dir = join(r.lab, 'summary');
+    const files = readParts(dir);
+    assert.deepEqual(Object.keys(files), ['pack-boxes.json', 'round.json', 'tidy-notes.json']);
+    assert.deepEqual(files, asText(splitSummary(r.summary)));
+    assert.deepEqual(mergeParts(Object.fromEntries(Object.entries(files).map(([f, t]) => [f, JSON.parse(t)]))), r.summary);
+    assert.ok(r.stdout.includes(`Summary: ${join(r.lab, 'summary.json')} and its parts in ${dir}; transcripts in`));
+    assert.doesNotMatch(r.stderr, /warning/);
+  });
+
+  test('a part over 20,000 bytes is written with a warning', () => {
+    const long = Array.from({ length: 12 }, (_, i) => `tidy ${String(i).padStart(2, '0')} ${'x'.repeat(1900)}`);
+    const r = trig(base(writeLists({ 'tidy-notes': { should: long } }), ['--repeats', '1']));
+    assert.equal(r.code, 0, r.stderr);
+    const bytes = readFileSync(join(r.lab, 'summary', 'tidy-notes.json')).length;
+    assert.ok(bytes > 20_000, String(bytes));
+    assert.match(r.stderr, new RegExp(`warning: tidy-notes\\.json is ${bytes} bytes, over 20000`));
+    assert.doesNotMatch(r.stderr, /round\.json is/);
+  });
+
+  test('a lab whose summary/ is not an empty folder is refused before any call, also with --plan', () => {
+    const lists = writeLists({ 'tidy-notes': { should: ['tidy a'] } });
+    const full = join(scratch(), 'lab');
+    mkdirSync(join(full, 'summary'), { recursive: true });
+    writeFileSync(join(full, 'summary', 'old.json'), '{}');
+    const file = join(scratch(), 'lab');
+    mkdirSync(file);
+    writeFileSync(join(file, 'summary'), 'not a folder');
+    for (const lab of [full, file]) {
+      for (const extra of [[], ['--plan']]) {
+        const r = trig(base(lists, ['--repeats', '1', ...extra]), { lab });
+        assert.equal(r.code, 1, lab);
+        assert.match(r.stderr, /summary already exists and is not an empty folder/, lab);
+        assert.equal(r.calls.length + r.auth.length, 0, lab);
+      }
+    }
+    const empty = join(scratch(), 'lab');
+    mkdirSync(join(empty, 'summary'), { recursive: true });
+    assert.equal(trig(base(lists, ['--repeats', '1']), { lab: empty }).code, 0, 'an empty summary/ is fine');
+    assert.ok(existsSync(join(empty, 'summary', 'round.json')));
+  });
+
+  test('a list for a skill named round is refused before any call, also with --plan', () => {
+    const skills = scratch();
+    cpSync(SKILLS, skills, { recursive: true });
+    writeSkill(join(skills, 'round'), 'round');
+    const lists = writeLists({ round: { should: ['round it'] } });
+    for (const extra of [[], ['--plan']]) {
+      const r = trig(['--skills', skills, '--requests', lists, '--model', 'm', '--max-usd', '5', ...extra]);
+      assert.equal(r.code, 1);
+      assert.match(r.stderr, /round\.json: a list may not be for a skill named round/);
+      assert.equal(r.calls.length + r.auth.length, 0);
+    }
   });
 });
