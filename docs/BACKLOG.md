@@ -145,7 +145,8 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 13. Done: the eleventh batch, Q13 what Q12 left (pull request 50).
 14. Done: Q15 html-plan pages that are easy on the eyes (pull request 53), ahead of Q14 at the owner's choice.
 15. Done: the twelfth batch, Q14 what Q13 left (pull request 55); its scope was decision 16.
-16. **Next:** Q16 trigger tests and a skill usage log; its scope is decision 18. The kickoff is in
-    [backlog/kickoff.md](backlog/kickoff.md).
+16. Done: the thirteenth batch, Q16 trigger tests and a skill usage log (pull request 59); its scope was decision 18.
+17. **Next:** nothing yet. The owner's decisions after Q16 are open; the page proposes Q17, a rewording of the
+    weakest skill descriptions measured against the baseline. [backlog/kickoff.md](backlog/kickoff.md) says what to do.
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

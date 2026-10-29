@@ -153,3 +153,19 @@ Work from 2026-10-17 to 2026-10-19 (the first six batches) is in
   - Did not: `eng-lead`'s brief had to be pulled out of its handback with a script; the first fake costs could not
     catch one wrong sum; the plan check's own runs left three folders in `/tmp` before the test pointed TMPDIR at a
     test folder.
+- 2026-10-29: the thirteenth batch, Q16 trigger tests and a skill usage log, merged as
+  [pull request 59](https://github.com/paureis/pau-skills/pull/59). `eng-lead` planned four slices (the trigger mode,
+  the request lists written blind, their shape test, the hook and report); a fifth (the baseline in parts) followed the
+  paid round. Every brief had a read-only plan check that built the slice in a clone, every slice a fresh reviewer, a
+  fix round and a second look. The first paid round: 380 one-turn runs for 34.10 US dollars (cap 40), no wrong starts,
+  175 of 228 hits, 41 of 53 misses after a look around the empty folder. 1,470 tests (1,357 before). skill-eval and
+  which-skill went to the owner as zips; `pau-skills-hooks` went to 0.4.0, and the profile README says 14 hooks. With
+  the roster:
+  - Worked: `eng-lead` handing back at once with the builders' IDs; splitting the list slice so its fix round stayed
+    blind; a hash-based overlap checker that told the blind writer what to reword without showing a phrase; plan checks
+    that found real problems in all five briefs, among them a cap that could be passed and tests that wrote to the
+    real HOME; a reviewer that read the lists as data and found 10 weak requests before the money was spent; the first
+    paid transcripts doubling as the fact check.
+  - Did not: the cap rule needed the review to find that reserving the price still passed the cap; the first summary
+    was 210 KB and needed a fifth slice to fit the size rule; a container restart lost one review; builders and a
+    reviewer still wrote `2>/dev/null`.
