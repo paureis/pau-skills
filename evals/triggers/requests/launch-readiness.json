@@ -1,0 +1,18 @@
+{
+  "skill": "launch-readiness",
+  "should": [
+    "is this ready for paying customers",
+    "We open our Next.js SaaS to paid plans next month; check whether it holds up for that stage, with evidence for each item",
+    "An agent wrote most of our Flask app, the private beta went fine, and next month real customers start entering card details."
+  ],
+  "nearMisses": [
+    {
+      "request": "Scan our Go module's dependencies for known vulnerabilities",
+      "expect": "dependency-security-audit"
+    },
+    {
+      "request": "Look at the migration that adds a not null column to the users table before we deploy it",
+      "expect": "migration-review"
+    }
+  ]
+}

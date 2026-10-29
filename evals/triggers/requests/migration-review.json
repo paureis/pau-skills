@@ -1,0 +1,18 @@
+{
+  "skill": "migration-review",
+  "should": [
+    "review this migration",
+    "Before we run this Django migration that adds an index to a 40 million row table, check it for locking, downtime and how to roll it back",
+    "Tomorrow's release renames a column on our busiest MySQL table, and the previous app version keeps running during the rollout."
+  ],
+  "nearMisses": [
+    {
+      "request": "Write a SQL query that counts orders per day for the last month",
+      "expect": "none"
+    },
+    {
+      "request": "Bump the Prisma version from 4 to 5 in our Node service",
+      "expect": "dependency-upgrade"
+    }
+  ]
+}
