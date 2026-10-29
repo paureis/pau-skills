@@ -10,7 +10,7 @@ import { repo, tempDir } from './helpers.mjs';
 
 const HOOK = repo('hooks', 'session-discipline', 'skill-usage.mjs');
 const HOOKS_JSON = repo('hooks', 'session-discipline', 'hooks.json');
-const ISO = '\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z';
+const ISO = /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z/.source;
 
 function setup() {
   const home = tempDir(); // PAU_SKILLS_HOME: where the hook must write

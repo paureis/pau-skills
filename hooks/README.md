@@ -59,6 +59,7 @@ To remove every hook from one plugin, disable the plugin: `claude plugin disable
 | [`roadmap`](session-discipline/roadmap.mjs) | session-discipline | SessionStart | Prints the current, next and blocked roadmap items and open questions | No |
 | [`branch-context`](session-discipline/branch-context.mjs) | session-discipline | SessionStart | Prints branch, ahead/behind, uncommitted files, stashes, an unfinished merge or rebase, and a warning on a protected branch | No |
 | [`compact-snapshot`](session-discipline/compact-snapshot.mjs) | session-discipline | PreCompact, SessionStart (compact) | Saves your last messages, edited files, recent commands and the todo list before a compaction, and prints them after | No |
+| [`skill-usage`](session-discipline/skill-usage.mjs) | session-discipline | PreToolUse (Skill), UserPromptSubmit | Records each skill start (time, name, typed or by the agent) for which-skill's usage report, and never the prompt | No |
 | [`no-idle`](agent-orchestration/no-idle.mjs) | agent-orchestration | PreToolUse (Agent, Task), SubagentStart | Adds "never end your turn waiting" to every subagent launch | No |
 
 ## Options per hook
@@ -157,6 +158,30 @@ It blocks at most once per stop: if the agent stops again right after being sent
 |---|---|---|
 | `dir` | `.claude/pau-skills/snapshots` | Where snapshots go, relative to the project. The folder gets its own `.gitignore`. |
 | `keep` | `10` | How many snapshots to keep. |
+
+### skill-usage
+
+No options besides the switch. Turn it off with `"hooks": { "skill-usage": false }` in either config file, or with
+`PAU_SKILLS_DISABLE=skill-usage` for one session.
+
+It appends one line per skill start to `~/.claude/pau-skills/skill-usage.tsv`, outside every repository. When
+`PAU_SKILLS_HOME` is set, that folder takes the place of your home folder, as it does for the config file. Each line
+is tab-separated: the time (ISO 8601, UTC), the skill name as given, and `agent` or `typed`. It never writes the
+prompt or its arguments, the folder, the session or the transcript. Past 1,000,000 bytes the log keeps the newest
+whole lines that fit in 500,000 bytes, written to a temporary file next to it and renamed over it.
+
+A start by the agent (the Skill tool) is always recorded. A typed `/name` is recorded only when the prompt starts with
+it, followed by a space or the end, and a `SKILL.md` exists for the bare name (the part after the last colon) in one
+of four folders: `~/.claude/skills/<name>/`, `~/.claude/skills/synced/<any>/<name>/`, the project's
+`.claude/skills/<name>/`, or this marketplace's own plugin skills. A built-in or custom command (`/clear`, a
+`.claude/commands` file) has no `SKILL.md` and is not recorded. A skill typed with another marketplace's prefix, such
+as `/other:name`, is recorded when its bare name is a skill in one of the four folders, or when the synced plugin
+folder of that prefix holds it (`~/.claude/plugins/synced/<any>/<prefix>/skills/<name>/`); the synced folder of every
+account on the machine is read. Any other skill from another marketplace's plugin is not recorded. A prompt that does
+not start with `/` returns at once.
+
+`usage-report.mjs` in the `which-skill` skill reads the log: starts per skill, typed and by the agent, and the skills
+never started in the last 30 days.
 
 ### roadmap, merge-guard, inline-backtick-guard, no-idle
 
