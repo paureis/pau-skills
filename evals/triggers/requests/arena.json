@@ -3,7 +3,7 @@
   "should": [
     "arena this",
     "Spin up a few competing attempts at this Rust trait design, each pushed a different way, and have someone neutral rank them before we choose",
-    "I keep going back and forth on how the plugin interface for our Go CLI should look, and picking the wrong shape now would mean rewriting every plugin later."
+    "The Go config parser could be written several very different ways, a wrong pick is costly to undo, and I would rather see a few finished versions next to each other than trust my first idea."
   ],
   "nearMisses": [
     {

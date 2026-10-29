@@ -3,7 +3,7 @@
   "should": [
     "retrospective",
     "Look back over this session, pull out every correction I had to make, and suggest lines to add to CLAUDE.md or to memory so it does not happen again",
-    "I corrected you four times today about using the wrong test runner, and I do not want to repeat that next week."
+    "In this session you used the wrong test runner, put the helper in the wrong folder, and I had to make you redo the changelog entry three times."
   ],
   "nearMisses": [
     {

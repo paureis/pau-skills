@@ -11,8 +11,8 @@
       "expect": "improve-codebase-architecture"
     },
     {
-      "request": "Which naming convention does Rust use for constants?",
-      "expect": "none"
+      "request": "Explain how the current order pipeline in our Kotlin backend is wired, from the request handler down to the database",
+      "expect": "codebase-oracle"
     }
   ]
 }

@@ -11,8 +11,8 @@
       "expect": "geppetto"
     },
     {
-      "request": "Take these 14 notes from the reviewer on my Go pull request and tell me which ones are worth acting on",
-      "expect": "review-triage"
+      "request": "Give two subagents the same task of writing the CSV importer, each with a different constraint, and have a neutral reviewer compare them",
+      "expect": "arena"
     }
   ]
 }

@@ -11,8 +11,8 @@
       "expect": "mutation-test"
     },
     {
-      "request": "Write a script that starts our Go web app and drives the login page to prove a change works",
-      "expect": "verify-app"
+      "request": "The new RSpec test for overdrafts passes alone but fails about once in ten full runs on CI",
+      "expect": "flaky-test-hunt"
     }
   ]
 }

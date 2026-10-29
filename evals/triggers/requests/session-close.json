@@ -3,7 +3,7 @@
   "should": [
     "close the session",
     "We are done for today: wrap things up in order, lessons first, then the roadmap and log, notes for next time, and a commit",
-    "That was the last item on today's list, there is a little context left, and tomorrow someone else picks up the C++ build work."
+    "It is six o'clock, a few files are still uncommitted, the roadmap and log are stale, nothing about today's mistakes is written down, and I am about to log off."
   ],
   "nearMisses": [
     {

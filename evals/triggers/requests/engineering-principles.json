@@ -11,8 +11,8 @@
       "expect": "architect"
     },
     {
-      "request": "Our Node service returns a 500 on every request with an empty cart, and the obvious patch did not hold",
-      "expect": "bug-fix"
+      "request": "Look over our existing Python billing package and find modules whose interface is nearly as big as the code behind it",
+      "expect": "improve-codebase-architecture"
     }
   ]
 }

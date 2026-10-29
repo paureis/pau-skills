@@ -3,7 +3,7 @@
   "should": [
     "make this repo agent friendly",
     "Mine our fix commits and old review threads for errors coding agents repeat in this TypeScript monorepo, and propose a guard for each",
-    "Every week I leave the same comment on agent pull requests in our Java service: they skip the repository layer and query the database from controllers."
+    "Across forty agent pull requests in our Java service I keep writing different fixes: raw SQL in controllers, missing null checks, tests that mock everything, copied config."
   ],
   "nearMisses": [
     {
