@@ -244,6 +244,10 @@ describe('the report and the baseline', () => {
     assert.match(text, /Should runs that started nothing: 1 answered or did nothing, 1 looked first \(Read 1\)/);
     assert.match(text, /tidy-notes-s6-r1: no result line: the run did not finish/);
     assert.match(text, /Not run \(cap\): 1: tidy-notes-s4-r1/);
+    assert.doesNotMatch(text, /above the cap/i);
+    const over = renderReport({ ...summary(), costMicros: 1_234_999 });
+    assert.match(over, /Above the cap by \$0\.23: a run cost more than its hard stop/);
+    assert.doesNotMatch(renderReport({ ...summary(), costMicros: 1_000_000 }), /above the cap/i, 'exactly the cap is not above it');
   });
 
   test('the baseline comparison: better, worse, new and gone', () => {
@@ -282,10 +286,11 @@ describe('the report and the baseline', () => {
 });
 
 describe('the cost check', () => {
-  test('fits allows a run that brings the spend to exactly the cap, and no more', () => {
-    assert.equal(fits(600_000, 1, 300_000, 1_200_000), true);
-    assert.equal(fits(600_001, 1, 300_000, 1_200_000), false);
-    assert.equal(fits(0, 2, 300_000, 900_000), true);
-    assert.equal(fits(0, 3, 300_000, 900_000), false);
+  test('fits: what was spent, the hard stops in flight and this hard stop may reach the cap exactly, and no more', () => {
+    assert.equal(fits(200_000, 400_000, 400_000, 1_000_000), true);
+    assert.equal(fits(200_001, 400_000, 400_000, 1_000_000), false);
+    assert.equal(fits(0, 600_000, 300_000, 900_000), true);
+    assert.equal(fits(0, 600_001, 300_000, 900_000), false);
+    assert.equal(fits(0, 0, 160_000, 150_000), false, 'one hard stop above the cap never fits');
   });
 });

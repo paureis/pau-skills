@@ -14,7 +14,7 @@ const ALSO = join(TFIX, 'also');
 
 // The variables the stand-in reads, passed the way a user passes a login variable.
 const PASS = ['--pass-env', 'FAKE_TRIGGERS_LOG', 'FAKE_TRIGGERS_COST', 'FAKE_TRIGGERS_FAIL', 'FAKE_TRIGGERS_EXIT1',
-  'FAKE_TRIGGERS_DROP', 'FAKE_TRIGGERS_LOGGED_OUT'];
+  'FAKE_TRIGGERS_DROP', 'FAKE_TRIGGERS_LOGGED_OUT', 'FAKE_TRIGGERS_BREAK'];
 
 /** Write { <skill>: { should, nearMisses } } as one <skill>.json per list into a new folder; returns the folder. */
 function writeLists(lists, dir = join(scratch(), 'requests')) {

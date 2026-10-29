@@ -100,7 +100,9 @@ const quote = (s) => JSON.stringify(String(s));
 
 /** The readable report of a summary, as one string. */
 export function renderReport(s) {
-  const lines = [`Cost: ${microsUsd(s.costMicros)} spent, estimate ${microsUsd(s.estimateMicros)}, cap ${microsUsd(s.capMicros)}; ${s.runsMade} of ${s.runsPlanned} runs made`, '', 'Per skill:'];
+  const lines = [`Cost: ${microsUsd(s.costMicros)} spent, estimate ${microsUsd(s.estimateMicros)}, cap ${microsUsd(s.capMicros)}; ${s.runsMade} of ${s.runsPlanned} runs made`];
+  if (s.costMicros > s.capMicros) lines.push(`Above the cap by ${microsUsd(s.costMicros - s.capMicros)}: a run cost more than its hard stop`);
+  lines.push('', 'Per skill:');
   for (const [name, p] of Object.entries(s.perSkill)) {
     const misses = p.misses.map((m) => (m.started !== 'none' ? m.started : m.firstTool ? `none after ${m.firstTool}` : 'none with no tool'));
     const wrong = p.wrongStarts.map((w) => `${w.id} (meant for ${w.meantFor})`);

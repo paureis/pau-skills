@@ -6,12 +6,16 @@ import { mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, statSy
 import { join, resolve, basename } from 'node:path';
 import { tmpdir } from 'node:os';
 import { findMetaWords, skillNameOf, childEnv, platformProblem, claudeName, checkLogin } from './skill-eval-core.mjs';
-import { isInside, realOrPlanned, inheritedConfig, microsArg, microsUsd } from './skill-eval-files.mjs';
+import { isInside, realOrPlanned, inheritedConfig, microsArg, microsUsd, git } from './skill-eval-files.mjs';
 import { runOne } from './skill-eval-setup.mjs';
 import { readRun, countRound, renderReport, compareBaseline } from './skill-eval-triggers-count.mjs';
 
-/** True when one more run at `price` keeps what is spent plus every run in flight within the cap (all micro-dollars). */
-const fits = (spent, inFlight, price, cap) => spent + (inFlight + 1) * price <= cap;
+/**
+ * True when a run with hard stop `stop` may start: what was spent, plus the hard stops of the runs in flight
+ * (`reserved`), plus its own hard stop stay within the cap (all micro-dollars). A run cannot spend past its hard stop,
+ * so the round cannot pass the cap unless a run costs more than its hard stop.
+ */
+const fits = (spent, reserved, stop, cap) => spent + reserved + stop <= cap;
 
 const SKILL_NAME = /^[a-z0-9-]+$/;
 const MAX_LIST_BYTES = 1_000_000;
@@ -20,13 +24,22 @@ const MAX_REQUEST = 2_000;
 class Refusal extends Error {}
 const refusal = (msg) => new Refusal(msg);
 
-/** Every skill folder below `dir`: one with a SKILL.md, not looked into further; dot folders and node_modules skipped. */
+/**
+ * Every skill folder below `dir`: one with a SKILL.md, not looked into further; dot folders and node_modules skipped.
+ * A link to a folder is followed, the way Claude Code loads a linked skill folder; a folder already seen is skipped.
+ */
 function skillFolders(dir) {
   const out = [];
+  const seen = new Set();
   const visit = (d) => {
+    const real = realpathSync(d);
+    if (seen.has(real)) return;
+    seen.add(real);
     if (existsSync(join(d, 'SKILL.md'))) { out.push(d); return; }
     for (const e of readdirSync(d, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
-      if (e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules') visit(join(d, e.name));
+      if (e.name.startsWith('.') || e.name === 'node_modules') continue;
+      const p = join(d, e.name);
+      if (e.isDirectory() || (e.isSymbolicLink() && statSync(p, { throwIfNoEntry: false })?.isDirectory())) visit(p);
     }
   };
   visit(dir);
@@ -79,12 +92,14 @@ function readLists(dir, under, installed) {
     if (!under.has(l.skill)) throw bad(`${l.skill} is not a skill under test (--skills)`);
     if (bySkill.has(l.skill)) throw bad(`a second list for ${l.skill}, after ${bySkill.get(l.skill)}`);
     bySkill.set(l.skill, file);
-    for (const r of [...l.should, ...l.nearMisses.map((n) => n.request)]) {
-      if (!r.trim()) throw bad('an empty request');
-      if (/[\r\n]/.test(r)) throw bad(`a request with a line break: ${JSON.stringify(r)}`);
-      if (r.length > MAX_REQUEST) throw bad(`a request longer than ${MAX_REQUEST} characters`);
-      if (/^\s*\//.test(r)) throw bad(`a request starts with / (a typed name never goes through the Skill tool): ${r}`);
-      if (/^\s*-/.test(r)) throw bad(`a request starts with - (it would read as an option): ${r}`);
+    const requests = [...l.should.map((r, i) => [`should ${i + 1}`, r]), ...l.nearMisses.map((n, i) => [`nearMisses ${i + 1}`, n.request])];
+    for (const [where, r] of requests) {
+      if (!r.trim()) throw bad(`${where} is empty`);
+      // A line break, a tab, NUL and the like: a request is one line a user types, and NUL cannot reach a process.
+      if (/[\x00-\x1f\x7f]/.test(r)) throw bad(`${where} has a control character: ${JSON.stringify(r)}`);
+      if (r.length > MAX_REQUEST) throw bad(`${where} is longer than ${MAX_REQUEST} characters`);
+      if (/^\s*\//.test(r)) throw bad(`${where} starts with / (a typed name never goes through the Skill tool): ${r}`);
+      if (/^\s*-/.test(r)) throw bad(`${where} starts with - (it would read as an option): ${r}`);
     }
     for (const n of l.nearMisses) {
       if (n.expect === l.skill) throw bad(`the near miss ${JSON.stringify(n.request)} expects its own list's skill; put it under should`);
@@ -118,43 +133,57 @@ function readBaseline(file) {
   return { file: f, data: b };
 }
 
-/** One run in its own folder under the root; resolves to its runs entry and its real cost. */
-async function oneRun(run, { root, lab, o, installed, reserved }) {
-  let parent;
-  for (let tries = 0; ; tries++) {
-    parent = mkdtempSync(join(root, 'tmp.'));
-    if (!findMetaWords(basename(parent)).length) break;
-    rmSync(parent, { recursive: true, force: true });
-    if (tries > 20) throw new Error('could not make a neutral folder name');
-  }
+/** A runs entry for a run that never started claude: it is failed, and it costs nothing. */
+const notStarted = (run, why) => ({
+  ...run, started: 'none', firstTool: null, costMicros: null, result: 'failed before claude started', finished: false, spawned: false,
+  notes: [`failed before claude started: ${why}`],
+});
+
+/**
+ * One run in its own folder under the root, with hard stop `stop`; resolves to its runs entry and never rejects: a run
+ * whose folder, copy or start fails is a failed run. `runner` starts claude (runOne; the tests pass a stand-in).
+ */
+async function oneRun(run, { root, lab, o, installed, stop, runner = runOne }) {
+  let parent = null;
   try {
+    for (let tries = 0; ; tries++) {
+      parent = mkdtempSync(join(root, 'tmp.'));
+      if (!findMetaWords(basename(parent)).length) break;
+      rmSync(parent, { recursive: true, force: true });
+      parent = null;
+      if (tries > 20) throw new Error('could not make a neutral folder name');
+    }
     const project = join(parent, 'project');
     const home = join(parent, 'home');
     for (const [name, dir] of installed) {
-      cpSync(dir, join(project, '.claude', 'skills', name), { recursive: true, filter: (src) => basename(src) !== '.git' });
+      // The real files, also behind a link, so a run never writes through a link into the source.
+      cpSync(dir, join(project, '.claude', 'skills', name), { recursive: true, dereference: true, filter: (src) => basename(src) !== '.git' });
     }
     mkdirSync(home);
     const argv = ['-p', run.request,
       '--max-turns', '1',
       '--output-format', 'stream-json', '--verbose', '--model', o.model,
       '--setting-sources', 'project',
-      '--strict-mcp-config', '--no-session-persistence', '--max-budget-usd', microsArg(2 * reserved)];
+      '--strict-mcp-config', '--no-session-persistence', '--max-budget-usd', microsArg(stop)];
     const env = childEnv(process.env, o.realHome ? process.env.HOME : home, o.passEnv);
-    const res = await runOne({ id: run.id, dir: project }, argv, { lab, timeoutMin: o.timeoutMin, env });
-    const x = readRun(readFileSync(join(lab, 'runs', `${run.id}.jsonl`), 'utf8'));
+    const res = await runner({ id: run.id, dir: project }, argv, { lab, timeoutMin: o.timeoutMin, env });
+    if (res.error) return notStarted(run, res.error);
+    const file = join(lab, 'runs', `${run.id}.jsonl`);
+    const x = readRun(existsSync(file) ? readFileSync(file, 'utf8') : '');
     const notes = [];
     if (!x.finished) notes.push('no result line: the run did not finish');
-    if (res.error) notes.push(res.error);
-    else if (res.exit !== 0) notes.push(`exit ${res.exit ?? res.signal}`);
+    if (res.exit !== 0) notes.push(`exit ${res.exit ?? res.signal}`);
     const offered = new Set((x.skills || []).map((s) => s.split(':').pop()));
     const lacking = x.skills ? [...installed.keys()].filter((n) => !offered.has(n)) : [];
     if (lacking.length) notes.push(`the init skills list lacks ${lacking.join(', ')}`);
     return {
       ...run, started: x.started, firstTool: x.firstTool, costMicros: x.costMicros,
-      result: x.finished ? (x.subtype ?? 'unknown') : 'no result line', finished: x.finished, notes,
+      result: x.finished ? (x.subtype ?? 'unknown') : 'no result line', finished: x.finished, spawned: true, notes,
     };
+  } catch (e) {
+    return notStarted(run, e.message);
   } finally {
-    rmSync(parent, { recursive: true, force: true });
+    if (parent) rmSync(parent, { recursive: true, force: true });
   }
 }
 
@@ -163,24 +192,26 @@ async function round(runs, ctx, { cap, usdPerRun, parallel }) {
   const entries = new Map();
   const running = new Set();
   let spent = 0;
-  let price = usdPerRun;
+  let price = usdPerRun; // the highest real cost seen, never lowered, at least --usd-per-run
+  let reserved = 0; // the hard stops of the runs in flight
   let inFlight = 0;
   let costKnown = false; // until a real cost is known, one run at a time
   let next = 0;
   while (next < runs.length) {
-    if (inFlight < parallel && (costKnown || inFlight === 0) && fits(spent, inFlight, price, cap)) {
+    const stop = 2 * price;
+    if (inFlight < parallel && (costKnown || inFlight === 0) && fits(spent, reserved, stop, cap)) {
       const run = runs[next++];
-      const reserved = price;
       inFlight++;
-      const p = oneRun(run, { ...ctx, reserved }).then((entry) => {
+      reserved += stop;
+      const p = oneRun(run, { ...ctx, stop }).then((entry) => {
         const cost = entry.costMicros;
-        spent += cost ?? reserved;
+        spent += cost ?? (entry.spawned ? stop : 0);
         if (cost !== null) {
           price = Math.max(price, cost);
           costKnown = true;
         }
         entries.set(run.id, entry);
-      }).finally(() => { inFlight--; running.delete(p); });
+      }).finally(() => { inFlight--; reserved -= stop; running.delete(p); });
       running.add(p);
       continue;
     }
@@ -227,8 +258,13 @@ async function triggers(o, out, err) {
   out(`Runs: ${should + near} requests x ${o.repeats} = ${runs.length}`);
   out(`Estimate: ${microsUsd(estimate)} (${runs.length} runs x ${microsUsd(o.usdPerRunMicros)})`);
   out(`Cap: ${microsUsd(cap)}`);
+  let why = null;
   if (estimate > cap) {
-    const why = `the estimate ${microsUsd(estimate)} passes the cap ${microsUsd(cap)}; raise --max-usd or lower --repeats`;
+    why = `the estimate ${microsUsd(estimate)} passes the cap ${microsUsd(cap)}; raise --max-usd or lower --repeats`;
+  } else if (2 * o.usdPerRunMicros > cap) {
+    why = `the cap ${microsUsd(cap)} is below one run's hard stop ${microsUsd(2 * o.usdPerRunMicros)} (twice --usd-per-run), so no run could start; raise --max-usd`;
+  }
+  if (why) {
     if (o.plan) { out(`This round would be refused: ${why}`); return 0; }
     return refuse(why);
   }
@@ -242,6 +278,10 @@ async function triggers(o, out, err) {
     if (inherited.length) {
       return refuse(`a run under ${root} would also load ${inherited.join(', ')}; set TMPDIR to a folder with no Claude Code files in it or above it`);
     }
+    const repo = git(root, ['rev-parse', '--show-toplevel']);
+    if (repo.status === 0) {
+      return refuse(`the run root ${root} is inside the git work tree ${repo.stdout.trim()} (git rev-parse --show-toplevel succeeds there), so a run's git commands would reach that repository; set TMPDIR to a folder outside every repository`);
+    }
     const sample = join(root, 'tmp.XXXXXX', 'project');
     const hits = findMetaWords(sample);
     if (hits.length) return refuse(`the run folders' path ${sample} contains ${hits.map((h) => `"${h}"`).join(', ')}; every run sees it. Set TMPDIR to a plain folder`);
@@ -249,14 +289,15 @@ async function triggers(o, out, err) {
     if (login) return refuse(login);
 
     mkdirSync(join(lab, 'runs'), { recursive: true });
+    // round never rejects: a run that fails is a failed entry, and every run in flight has ended when it returns.
     const { entries, spent } = await round(runs, { root, lab, o, installed }, { cap, usdPerRun: o.usdPerRunMicros, parallel: o.parallel });
     const all = runs.map((r) => entries.get(r.id) || {
-      ...r, started: null, firstTool: null, costMicros: null, result: 'not run (cap)', finished: false, notes: [],
+      ...r, started: null, firstTool: null, costMicros: null, result: 'not run (cap)', finished: false, spawned: false, notes: [],
     });
     const summary = {
       format: 1, model: o.model, repeats: o.repeats, at: new Date().toISOString(), skills: names(skills.under), also: names(skills.also),
-      capMicros: cap, usdPerRunMicros: o.usdPerRunMicros, estimateMicros: estimate, costMicros: spent, runsPlanned: runs.length,
-      runsMade: entries.size, parallel: o.parallel, realHome: o.realHome, runs: all, ...countRound(all),
+      currency: 'USD', capMicros: cap, usdPerRunMicros: o.usdPerRunMicros, estimateMicros: estimate, costMicros: spent,
+      runsPlanned: runs.length, runsMade: entries.size, parallel: o.parallel, realHome: o.realHome, runs: all, ...countRound(all),
     };
     writeFileSync(join(lab, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
     out('');
@@ -269,13 +310,14 @@ async function triggers(o, out, err) {
       out(`Compared with ${baseline.file}:`);
       for (const l of lines.length ? lines : ['no change']) out(`  ${l}`);
     }
-    const failed = all.filter((r) => r.result === 'no result line').length;
+    const failed = all.filter((r) => r.started !== null && !r.finished).length;
     if (entries.size < runs.length) err(`stopped at the cap: ${entries.size} of ${runs.length} runs made, ${microsUsd(spent)} spent of ${microsUsd(cap)}`);
+    if (spent > cap) err(`the round ended above the cap by ${microsUsd(spent - cap)}: a run cost more than its hard stop`);
     if (failed) err(`${failed} run(s) failed or did not finish; read ${join(lab, 'runs')}/<id>.err`);
-    return entries.size < runs.length || failed ? 1 : 0;
+    return entries.size < runs.length || failed || spent > cap ? 1 : 0;
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 }
 
-export { fits, triggers, planRuns, discover, readLists };
+export { fits, triggers, planRuns, discover, readLists, oneRun };

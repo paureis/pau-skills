@@ -1,9 +1,9 @@
 // The skill-eval triggers command against real folders, with a stand-in for `claude` (no model is called): the plan
-// and the estimate, every refusal, a full round, the cost guard and the baseline. The last test checks that nothing
-// was written inside the repository.
+// and the estimate, every refusal, a full round, what a run gets installed and the baseline (the cost guard is in
+// skill-eval-triggers-cost.test.mjs). The last test checks that nothing was written inside the repository.
 import { scratch } from './skill-eval.helpers.mjs';
 import {
-  SKILLS, ALSO, PLAN_LISTS, ROUND_LISTS, BAD_LISTS, BAD_SKILLS, RUN_ARGV, writeLists, writeSkill, base, trig, flag, ids, copyInputs,
+  TFIX, SKILLS, ALSO, PLAN_LISTS, ROUND_LISTS, BAD_LISTS, BAD_SKILLS, RUN_ARGV, writeLists, writeSkill, base, trig, copyInputs,
   checkRunCall,
 } from './skill-eval-triggers.helpers.mjs';
 import { test, describe } from 'node:test';
@@ -43,6 +43,11 @@ describe('the plan', () => {
     const exact = trig(base(PLAN_LISTS, ['--also', ALSO, '--max-usd', '1.44', '--plan']));
     assert.equal(exact.code, 0);
     assert.doesNotMatch(exact.stdout, /refused/, 'an estimate equal to the cap is allowed');
+    const one = writeLists({ 'tidy-notes': { should: ['tidy a'] } });
+    const low = trig(base(one, ['--max-usd', '0.15', '--repeats', '1']));
+    assert.equal(low.code, 1);
+    assert.match(low.stderr, /cap \$0\.15 is below one run's hard stop \$0\.16/);
+    assert.equal(low.calls.length + low.auth.length, 0);
   });
 });
 
@@ -100,6 +105,33 @@ describe('refusals', () => {
     assert.equal(trig(base(ok, ['--also', ALSO, '--plan'])).code, 0, 'an --also skill and none are accepted');
   });
 
+  test('lists: a control character, a request over 2,000 characters and a file over 1,000,000 bytes are refused', () => {
+    const one = (should) => writeLists({ 'tidy-notes': { should } });
+    for (const [bad, where] of [[['tidy a', `tidy${String.fromCharCode(0)}b`], 'should 2'], [[`tidy\tc`], 'should 1'], [[`tidy${String.fromCharCode(127)}`], 'should 1']]) {
+      const r = trig(base(one(bad), ['--plan']));
+      assert.equal(r.code, 1, where);
+      assert.match(r.stderr, new RegExp(`tidy-notes\\.json: ${where} has a control character`), where);
+      assert.equal(r.stdout, '', 'refused before the plan is printed');
+    }
+    const near = writeLists({ 'tidy-notes': { should: ['tidy a'], nearMisses: [{ request: `hi${String.fromCharCode(27)}`, expect: 'none' }] } });
+    assert.match(trig(base(near, ['--plan'])).stderr, /nearMisses 1 has a control character/);
+    assert.equal(trig(base(one([`tidy ${'x'.repeat(1995)}`]), ['--plan'])).code, 0, '2,000 characters are allowed');
+    const long = trig(base(one([`tidy ${'x'.repeat(1996)}`]), ['--plan']));
+    assert.equal(long.code, 1);
+    assert.match(long.stderr, /should 1 is longer than 2000 characters/);
+    const sized = (bytes) => {
+      const dir = join(scratch(), 'requests');
+      mkdirSync(dir);
+      const text = JSON.stringify({ skill: 'tidy-notes', should: ['tidy a'], nearMisses: [] });
+      writeFileSync(join(dir, 'tidy-notes.json'), text + ' '.repeat(bytes - text.length));
+      return dir;
+    };
+    assert.equal(trig(base(sized(1_000_000), ['--plan'])).code, 0, '1,000,000 bytes are allowed');
+    const big = trig(base(sized(1_000_001), ['--plan']));
+    assert.equal(big.code, 1);
+    assert.match(big.stderr, /tidy-notes\.json: larger than 1000000 bytes/);
+  });
+
   test('a lab holding summary.json, or inside a --skills, --also or --requests folder (copies), is refused', () => {
     const lists = writeLists({ 'tidy-notes': { should: ['tidy a'] } });
     const used = join(scratch(), 'lab');
@@ -121,7 +153,7 @@ describe('refusals', () => {
     }
   });
 
-  test('a run root below a CLAUDE.md (directly or through a link), or with a meta word in its path, is refused', () => {
+  test('a run root below a CLAUDE.md (directly or through a link), inside a git work tree, or with a meta word in its path, is refused', () => {
     const lists = writeLists({ 'tidy-notes': { should: ['tidy a'] } });
     const above = scratch();
     writeFileSync(join(above, 'CLAUDE.md'), '# rules\n');
@@ -131,7 +163,11 @@ describe('refusals', () => {
     symlinkSync(below, link);
     const meta = join(scratch(), 'scoring');
     mkdirSync(meta);
-    for (const [tmp, re] of [[below, /CLAUDE\.md/], [link, /CLAUDE\.md/], [meta, /"score"/]]) {
+    const repoDir = scratch();
+    assert.equal(spawnSync('git', ['init', '-q', repoDir]).status, 0);
+    const inRepo = join(repoDir, 'tmp');
+    mkdirSync(inRepo);
+    for (const [tmp, re] of [[below, /CLAUDE\.md/], [link, /CLAUDE\.md/], [meta, /"score"/], [inRepo, /inside the git work tree .*git rev-parse/]]) {
       const r = trig(base(lists), { tmp });
       assert.equal(r.code, 1, tmp);
       assert.match(r.stderr, re, tmp);
@@ -182,6 +218,7 @@ describe('a round', () => {
 
     const s = r.summary;
     assert.equal(s.format, 1);
+    assert.equal(s.currency, 'USD', 'the currency sits next to the amounts');
     assert.equal(s.model, 'some-model');
     assert.equal(s.repeats, 2);
     assert.ok(!Number.isNaN(Date.parse(s.at)));
@@ -193,7 +230,7 @@ describe('a round', () => {
     const plugin = s.runs.find((x) => x.id === 'tidy-notes-s2-r1');
     assert.deepEqual({ ...plugin, notes: undefined }, {
       id: 'tidy-notes-s2-r1', list: 'tidy-notes', kind: 'should', index: 2, repeat: 1, request: 'plugin tidy the notes', expect: 'tidy-notes',
-      started: 'tidy-notes', firstTool: 'Skill', costMicros: 50_000, result: 'error_max_turns', finished: true, notes: undefined,
+      started: 'tidy-notes', firstTool: 'Skill', costMicros: 50_000, result: 'error_max_turns', finished: true, spawned: true, notes: undefined,
     });
     for (const x of s.runs) assert.ok(existsSync(join(r.lab, 'runs', `${x.id}.jsonl`)), x.id);
     assert.deepEqual([s.perSkill['tidy-notes'].hits, s.perSkill['tidy-notes'].shouldRuns, s.perSkill['tidy-notes'].misses.length, s.perSkill['tidy-notes'].wrongStarts.length], [4, 6, 2, 3]);
@@ -253,75 +290,6 @@ describe('a round', () => {
   });
 });
 
-describe('the cost guard', () => {
-  const three = () => writeLists({ 'tidy-notes': { should: ['tidy a', 'tidy b', 'tidy c'] } });
-
-  test('S1: the price rises to the real cost, and the round stops before it would pass the cap', () => {
-    const r = trig(base(three(), ['--max-usd', '1', '--parallel', '1']), { env: { FAKE_TRIGGERS_COST: '0.30' } });
-    assert.equal(r.code, 1);
-    assert.equal(r.calls.length, 3);
-    assert.deepEqual(ids(r), ['tidy-notes-s1-r1', 'tidy-notes-s2-r1', 'tidy-notes-s3-r1']);
-    assert.deepEqual(r.calls.map((c) => flag(c, '--max-budget-usd')), ['0.16', '0.6', '0.6']);
-    assert.equal(r.summary.costMicros, 900_000);
-    assert.equal(r.summary.runsMade, 3);
-    assert.equal(r.summary.runsPlanned, 6);
-    assert.equal(r.summary.perSkill['tidy-notes'].shouldRuns, 3);
-    assert.equal(r.summary.runs.filter((x) => x.result === 'not run (cap)').length, 3);
-    assert.match(r.stdout, /Not run \(cap\): 3: tidy-notes-s1-r2, tidy-notes-s2-r2, tidy-notes-s3-r2/);
-    assert.match(r.stderr, /cap/);
-  });
-
-  test('S2: a run that brings the spend to exactly the cap still starts', () => {
-    const r = trig(base(three(), ['--max-usd', '0.9', '--parallel', '1']), { env: { FAKE_TRIGGERS_COST: '0.30' } });
-    assert.equal(r.code, 1);
-    assert.equal(r.calls.length, 3);
-    assert.equal(r.summary.costMicros, 900_000);
-  });
-
-  test('S3: the runs in flight count against the cap', () => {
-    const six = writeLists({ 'tidy-notes': { should: ['tidy a', 'tidy b', 'tidy c', 'tidy d', 'tidy e', 'tidy f'] } });
-    const r = trig(base(six, ['--max-usd', '1', '--parallel', '3']), { env: { FAKE_TRIGGERS_COST: '0.30' } });
-    assert.equal(r.code, 1);
-    assert.equal(r.summary.runsPlanned, 12);
-    assert.equal(r.calls.length, 3);
-    assert.ok(r.summary.costMicros <= 1_000_000, String(r.summary.costMicros));
-  });
-
-  test('S4: a run that prints no cost is charged what it reserved, and fails', () => {
-    const one = writeLists({ 'tidy-notes': { should: ['tidy a'] } });
-    const r = trig(base(one, ['--max-usd', '1', '--parallel', '1']), { env: { FAKE_TRIGGERS_FAIL: '1' } });
-    assert.equal(r.code, 1);
-    assert.equal(r.calls.length, 2);
-    assert.equal(r.summary.costMicros, 160_000);
-    for (const x of r.summary.runs) assert.match(x.notes.join(';'), /no result line/);
-    assert.equal(r.summary.perSkill['tidy-notes'].shouldRuns, 0, 'a failed run that started nothing is not counted');
-  });
-
-  test('S5: when the next run does not fit while others run, it waits for one to end and checks again', () => {
-    const four = writeLists({ 'tidy-notes': { should: ['tidy a', 'tidy slowly cheaply', 'tidy c', 'tidy d'] } });
-    const r = trig(base(four, ['--usd-per-run', '0.1', '--max-usd', '0.5', '--parallel', '2', '--repeats', '1']), { env: { FAKE_TRIGGERS_COST: '0.20' } });
-    assert.equal(r.code, 1);
-    assert.equal(r.calls.length, 3);
-    assert.equal(r.summary.costMicros, 410_000);
-    assert.deepEqual(ids(r), ['tidy-notes-s1-r1', 'tidy-notes-s2-r1', 'tidy-notes-s3-r1']);
-  });
-
-  test('S6: only one run starts until a real cost is known', () => {
-    const r = trig(base(three(), ['--max-usd', '0.3', '--parallel', '3', '--repeats', '1']), { env: { FAKE_TRIGGERS_COST: '0.30' } });
-    assert.equal(r.code, 1);
-    assert.equal(r.calls.length, 1);
-    assert.equal(r.summary.costMicros, 300_000);
-  });
-
-  test('the price is never lowered by a cheaper run', () => {
-    const lists = writeLists({ 'tidy-notes': { should: ['tidy a', 'tidy cheaply b', 'tidy c'] } });
-    const r = trig(base(lists, ['--parallel', '1', '--repeats', '1']), { env: { FAKE_TRIGGERS_COST: '0.30' } });
-    assert.equal(r.code, 0, r.stderr);
-    assert.deepEqual(r.calls.map((c) => [c.prompt, flag(c, '--max-budget-usd')]), [['tidy a', '0.16'], ['tidy cheaply b', '0.6'], ['tidy c', '0.6']]);
-    assert.equal(r.summary.costMicros, 610_000);
-  });
-});
-
 test('nothing above writes inside the repository', () => {
   const status = spawnSync('git', ['-C', repo(), 'status', '--porcelain', '--', 'tests/fixtures/skill-eval-triggers'], { encoding: 'utf8' }).stdout;
   assert.doesNotMatch(status, /answered\.txt|\.seen|summary\.json|\.jsonl/);
@@ -329,4 +297,5 @@ test('nothing above writes inside the repository', () => {
     assert.doesNotMatch(readFileSync(join(SKILLS, name, 'SKILL.md'), 'utf8'), /INSTALLED COPY/, name);
   }
   assert.doesNotMatch(readFileSync(join(ALSO, 'water-plants', 'SKILL.md'), 'utf8'), /INSTALLED COPY/);
+  assert.doesNotMatch(readFileSync(join(TFIX, 'renamed', 'some-folder', 'SKILL.md'), 'utf8'), /INSTALLED COPY/);
 });
