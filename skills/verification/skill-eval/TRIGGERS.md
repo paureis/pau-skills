@@ -40,21 +40,26 @@ look close but should start another installed skill, or nothing (`"none"`).
 Any number of each, at least one request in all. Write requests the way a user would type them, on one line. The
 command refuses, naming the file: a file that does not have this shape; a skill that is not under test; two lists
 for one skill; an `expect` that is neither an installed skill nor `"none"`; a near miss that expects its own list's
-skill; an empty request or one with a line break; a request that starts with `/` (a typed `/name` never goes through
-the Skill tool, so it cannot show a trigger) or with `-` (it would read as an option). A folder with no list is
-refused too. A skill under test with no list is fine: it is installed and can still collect wrong starts.
+skill; a file over 1,000,000 bytes. For a request it also names where it is (`should 2`, `nearMisses 1`): an empty
+request, one with a control character (a line break, a tab, NUL and the like), one over 2,000 characters, and one
+that starts with `/` (a typed `/name` never goes through the Skill tool, so it cannot show a trigger) or with `-` (it
+would read as an option). A folder with no list is refused too. A skill under test with no list is fine: it is
+installed and can still collect wrong starts. Keep the lists outside the skill folders, so they are not installed
+with the skills.
 
 ## The skills
 
 Every `SKILL.md` below each `--skills` folder is a skill under test; every one below an `--also` folder is installed
-beside them and never has a list. Discovery does not look inside a folder that has a `SKILL.md`, and skips dot
-folders and `node_modules`. The name comes from the frontmatter. A `SKILL.md` with no name, a name that is not lower
+beside them and never has a list. Discovery does not look inside a folder that has a `SKILL.md`, skips dot folders
+and `node_modules`, and follows a link to a folder, as Claude Code does for a linked skill folder. The name comes
+from the frontmatter, and the skill is installed under that name, whatever its folder is called. A `SKILL.md` with no name, a name that is not lower
 case letters, digits and `-`, the same name twice, and a folder that does not exist (or holds no skill) are refused.
 
 ## What a run sees
 
 Each run gets a fresh folder of its own: `<root>/tmp.XXXXXX/project`, with every skill under test and every
-`--also` skill copied into the project's `.claude/skills/<name>/`, and an empty HOME beside it. The skills go in the
+`--also` skill copied into the project's `.claude/skills/<name>/` (the real files, also behind a link, without
+`.git`), and an empty HOME beside it. The skills go in the
 project and not under HOME because `--setting-sources project` hides skills under HOME. The run also sees Claude
 Code's built-in skills (`verify`, `debug`, `code-review` and the rest), which compete with yours like any other skill.
 
@@ -63,9 +68,13 @@ session, and an environment built from the allowlist plus the names you pass wit
 explains the allowlist, the login check, `--pass-env` and `--real-home` (your HOME, with the same flags; a weaker
 isolation to name in the report). The run folders are not git repositories, and the transcripts are written to
 `<lab>/runs/<id>.jsonl`, never into a run folder. The root is made in the temporary folder (set `TMPDIR` to move
-it); it is refused when it has a `CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md` or `.claude` in it or above it, or when
-the run folders' path holds a word that tells a run it is measured. Each run's folder is removed when the run ends,
-and the root at the end of the round, also when the round fails.
+it); it is refused when it has a `CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md` or `.claude` in it or above it, when it
+lies inside a git work tree (`git rev-parse --show-toplevel` succeeds in it, so a run's git commands would reach
+that repository), or when the run folders' path holds a word that tells a run it is measured. Each run's folder is
+removed when the run ends, and the root once every run has ended, also when a run fails.
+
+A run whose folder, copy or start fails is a failed run with a note; the round goes on, and summary.json and the
+report are still written.
 
 Checked on a real run: (to fill in after the first paid check on Claude Code 2.1.312: whether a project skill in a
 folder that is not a git repository is offered and comes back as a Skill call with its bare name).
@@ -114,14 +123,17 @@ Every run costs real money. The cost rules:
   no run, no login check, no root, nothing written. It checks the skills, the lists, the baseline, and that the lab
   folder holds no summary.json and is not inside an input folder. Tell the user the run count and the estimate, and
   wait for a yes before the round without `--plan`.
-- **The cap** (`--max-usd`, required) refuses a round whose estimate passes it, before any call: raise the cap or
-  lower `--repeats`. During the round, a run starts only when what was spent, plus the runs in flight, plus this
-  one, each at the price, stays within the cap. When the next run does not fit, the round waits for a run in flight
-  to end and checks again; with none in flight it stops, and the rest are "not run (cap)".
-- **The price** starts at `--usd-per-run` and rises to the highest real cost seen; it never goes down. Only one run
-  starts until the first real cost is known. A run that prints no cost is charged its price.
-- **The hard stop** per run is `--max-budget-usd` at twice the price when the run starts. The cap counts each run at
-  the price, so a round can end above the cap by at most one price per run that was in flight.
+- **The price** is the highest real cost of a run seen so far, never lowered, and at least `--usd-per-run`.
+- **The hard stop** of a run is twice the price when it starts, passed as `--max-budget-usd`.
+- **The cap** (`--max-usd`, required) refuses, before any call, a round whose estimate passes it (raise the cap or
+  lower `--repeats`) and a cap below one hard stop. During the round, a run starts only when what was spent, plus the
+  hard stops of the runs in flight, plus its own hard stop, is at most the cap. So the round stops before it can
+  pass the cap. When the next run does not fit, the round waits for a run in flight to end and checks again; with
+  none in flight it stops, and the rest are "not run (cap)". Only one run starts until the first real cost is known.
+  Leave room above the estimate, about one hard stop per parallel run, or the round ends before its last runs.
+- **What a run costs**: the cost on its result line; its hard stop when it started claude and printed no cost;
+  nothing when claude never started. If a run still costs more than its hard stop and the round ends above the cap,
+  the report says by how much and the round exits 1.
 - **Parallel runs** default to 3 (`--parallel`, 1 to 10), to stay under rate limits. Each run may take up to
   `--timeout-min` minutes (default 5).
 - Money is held as whole micro-dollars and printed in dollars and cents, rounded once, half up. `--max-usd` and
@@ -139,12 +151,13 @@ pass it with `--pass-env SLASH_COMMAND_TOOL_CHAR_BUDGET`.
 Written to `<lab>/summary.json` after the round. A lab folder that already holds one is refused.
 
 - `format`: 1. `model`, `repeats`, `at` (ISO time), `skills` (under test), `also`, `parallel`, `realHome`.
-- `capMicros`, `usdPerRunMicros`, `estimateMicros`, `costMicros` (spent, with the price charged for a run that
-  printed no cost), `runsPlanned`, `runsMade`. All money in micro-dollars (1 US dollar is 1,000,000).
+- `currency`: `USD`, for every amount below. `capMicros`, `usdPerRunMicros`, `estimateMicros`, `costMicros` (spent,
+  counted as in the cost rules), `runsPlanned`, `runsMade`. All money in micro-dollars (1 US dollar is 1,000,000).
 - `runs`: one entry per planned run, in plan order: `id` (list, kind, index and repeat, as `tidy-notes-s1-r2` or
   `tidy-notes-n2-r1`), `list`, `kind` (`should` or `nearMiss`), `index`, `repeat`, `request`, `expect`, `started`
   (a bare name, `none`, or `null` for a run not made), `firstTool`, `costMicros`, `result` (the result line's
-  subtype, `no result line`, or `not run (cap)`), `finished` and `notes`.
+  subtype, `no result line`, `failed before claude started`, or `not run (cap)`), `finished`, `spawned` (whether
+  claude started) and `notes`.
 - `perSkill`: for every skill with a list or a start, built-ins included: `hits`, `shouldRuns`, `misses` (each with
   `id`, `request`, `started` and `firstTool`) and `wrongStarts` (each with `id`, `list`, `kind`, `request` and
   `meantFor`).
@@ -153,9 +166,10 @@ Written to `<lab>/summary.json` after the round. A lab folder that already holds
 - `missKinds`: over the should runs that started nothing, `answered`, `lookedFirst`, and `byTool` (the count per
   first tool).
 
-The command prints a report from it: the cost line, one line per skill, the wrong near misses, the unsteady
-requests, the miss kinds, each run's notes and the runs not made. It exits 0 when every planned run ran and
-finished, 1 when the round stopped at the cap, a run failed, or the round was refused, and 2 on a usage error.
+The command prints a report from it: the cost line (and how far above the cap, if it ended there), one line per
+skill, the wrong near misses, the unsteady requests, the miss kinds, each run's notes and the runs not made. It exits
+0 when every planned run ran and finished within the cap, 1 when the round stopped at the cap, ended above it, a run
+failed, or the round was refused, and 2 on a usage error.
 
 ## Comparing with an earlier round
 

@@ -225,13 +225,16 @@ want the transcripts, and say where it is.
 
 When the question is which skill starts for which request across a set of skills (hits, misses, wrong starts),
 not what a change does to one skill's behaviour, use the `triggers` mode instead of the phases above. Read
-`${CLAUDE_SKILL_DIR}/TRIGGERS.md` first: the list format, what a run sees, the counting and the cost rules. Run it
-with `--plan`, tell the user the run count and the estimate it prints, and wait for a yes; then run the same command
-without `--plan`.
+`${CLAUDE_SKILL_DIR}/TRIGGERS.md` first: the list format, what a run sees, the counting and the cost rules. Keep the
+request lists in a folder outside the skill folders. Make a new lab folder with `mktemp -d` and write its path
+literally. Run with `--plan`, tell the user the run count and the estimate it prints, and wait for a yes; then run
+the same line without `--plan`. A run starts only when what was spent, plus twice the price for each run in flight
+and for itself, stays within `--max-usd`, so the round stops before it can pass the cap.
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" triggers "$LAB" --skills <skills folder> --requests <lists folder> \
-  --model <model> --max-usd <cap> --plan
+node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" triggers <lab folder> --skills <skills folder> [--also <folder>]... \
+  --requests <lists folder> --model <model> --max-usd <cap> [--repeats 2] [--usd-per-run 0.08] [--parallel 3] \
+  [--baseline <older summary.json>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5] --plan
 ```
 
 ## Do not
