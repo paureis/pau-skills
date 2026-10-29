@@ -75,6 +75,16 @@
         ],
         "PreToolUse": [
           {
+            "matcher": "Skill",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/skill-usage.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
             "matcher": "Write|Edit|MultiEdit",
             "hooks": [
               {
@@ -140,6 +150,17 @@
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/file-size-guard.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "UserPromptSubmit": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/skill-usage.mjs\"",
                 "timeout": 5
               }
             ]
@@ -229,6 +250,16 @@
         ],
         "PreToolUse": [
           {
+            "matcher": "Skill",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/skill-usage.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
             "matcher": "Write|Edit|MultiEdit",
             "hooks": [
               {
@@ -294,6 +325,17 @@
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guards/file-size-guard.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "UserPromptSubmit": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/skill-usage.mjs\"",
                 "timeout": 5
               }
             ]
@@ -382,6 +424,29 @@
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/compact-snapshot.mjs\"",
                 "timeout": 15
+              }
+            ]
+          }
+        ],
+        "PreToolUse": [
+          {
+            "matcher": "Skill",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/skill-usage.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "UserPromptSubmit": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/skill-usage.mjs\"",
+                "timeout": 5
               }
             ]
           }
