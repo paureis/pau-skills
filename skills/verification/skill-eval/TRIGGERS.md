@@ -76,8 +76,11 @@ removed when the run ends, and the root once every run has ended, also when a ru
 A run whose folder, copy or start fails is a failed run with a note; the round goes on, and summary.json and the
 report are still written.
 
-Checked on a real run: (to fill in after the first paid check on Claude Code 2.1.312: whether a project skill in a
-folder that is not a git repository is offered and comes back as a Skill call with its bare name).
+Checked on a real run (Claude Code 2.1.312, October 2026, 380 runs): in a folder that is not a git repository, every
+project skill is listed in the init line and a start comes back as `Skill {"skill":"<name>"}` with its bare name. With
+`--max-turns 1` the call is printed, then the run ends with the subtype `error_max_turns` and a `total_cost_usd`. A
+skill with `allowed-tools` is refused permission in `-p`, but its call is still printed, so it still counts as started.
+One run cost 0.08 to 0.10 US dollars with 38 skills installed.
 
 The arguments of every run are exactly:
 
