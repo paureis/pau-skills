@@ -174,4 +174,89 @@ export function compareBaseline(old, now) {
   return lines;
 }
 
+const PART_NAME = /^[a-z0-9-]+$/;
+const isObject = (x) => !!x && typeof x === 'object' && !Array.isArray(x);
+const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+const requestKey = (r) => `${r.list}\n${r.kind}\n${r.index}`;
+
+/**
+ * A summary as parts small enough to commit, by file name: "<list>.json" for each list of the runs, with its runs, its
+ * perSkill entry and its entries of nearMisses.wrong and unsteady, and "round.json" with the rest (no runs; perSkill
+ * only for skills with no list). Throws an Error on a summary without "format": 1 or runs, or a list name that could
+ * not be a plain file name.
+ */
+export function splitSummary(s) {
+  if (!isObject(s) || s.format !== 1) throw new Error('not a summary.json with "format": 1');
+  if (!Array.isArray(s.runs) || !s.runs.every(isObject)) throw new Error('the summary has no runs list');
+  const lists = [...new Set(s.runs.map((r) => r.list))];
+  for (const l of lists) {
+    if (typeof l !== 'string' || !PART_NAME.test(l) || l === 'round') {
+      throw new Error(`the list name ${JSON.stringify(l)} cannot name a part file: lower-case letters, digits and - only, and not round`);
+    }
+  }
+  const has = new Set(lists);
+  const { runs, ...rest } = s;
+  const per = isObject(s.perSkill) ? s.perSkill : {};
+  const wrong = Array.isArray(s.nearMisses?.wrong) ? s.nearMisses.wrong : [];
+  const unsteady = Array.isArray(s.unsteady) ? s.unsteady : [];
+  const parts = {
+    'round.json': {
+      format: 1, part: 'round', ...rest, perSkill: Object.fromEntries(Object.entries(per).filter(([name]) => !has.has(name))),
+      nearMisses: { ...rest.nearMisses, wrong: wrong.filter((w) => !has.has(w?.list)) }, unsteady: unsteady.filter((u) => !has.has(u?.list)),
+    },
+  };
+  for (const l of lists) {
+    parts[`${l}.json`] = {
+      format: 1, part: l, runs: runs.filter((r) => r.list === l), perSkill: Object.hasOwn(per, l) ? { [l]: per[l] } : {},
+      nearMisses: { wrong: wrong.filter((w) => w?.list === l) }, unsteady: unsteady.filter((u) => u?.list === l),
+    };
+  }
+  return parts;
+}
+
+/** Plan order: by repeat, then list, then should before nearMiss, then index. */
+const planOrder = (a, b) => (a.repeat - b.repeat) || cmp(a.list, b.list) || cmp(a.kind !== 'should', b.kind !== 'should') || (a.index - b.index);
+
+/**
+ * One summary from the parts splitSummary made, by file name: runs in plan order, nearMisses.wrong and unsteady in the
+ * order of their runs. Throws an Error on a missing round.json, a part without "format": 1, and a skill or a run id in
+ * two parts.
+ */
+export function mergeParts(parts) {
+  if (!Object.hasOwn(parts, 'round.json')) throw new Error('no round.json');
+  const per = new Map();
+  const ids = new Map();
+  const runs = [];
+  const wrong = [];
+  const unsteady = [];
+  for (const [name, p] of Object.entries(parts)) {
+    if (!isObject(p) || p.format !== 1) throw new Error(`${name} is not a summary part with "format": 1`);
+    const [r, ps, w, u] = [p.runs ?? [], p.perSkill ?? {}, p.nearMisses?.wrong ?? [], p.unsteady ?? []];
+    if (!Array.isArray(r) || !r.every(isObject) || !isObject(ps) || !Array.isArray(w) || !Array.isArray(u)) {
+      throw new Error(`${name}: runs, nearMisses.wrong and unsteady must be lists and perSkill an object`);
+    }
+    for (const [skill, entry] of Object.entries(ps)) {
+      if (per.has(skill)) throw new Error(`the skill ${skill} is in two parts: ${per.get(skill).name} and ${name}`);
+      per.set(skill, { name, entry });
+    }
+    for (const run of r) {
+      if (ids.has(run.id)) throw new Error(`the run ${run.id} is in two parts: ${ids.get(run.id)} and ${name}`);
+      ids.set(run.id, name);
+      runs.push(run);
+    }
+    wrong.push(...w);
+    unsteady.push(...u);
+  }
+  runs.sort(planOrder);
+  const byId = new Map(runs.map((r, i) => [r.id, i]));
+  const byRequest = new Map();
+  runs.forEach((r, i) => { if (!byRequest.has(requestKey(r))) byRequest.set(requestKey(r), i); });
+  const place = (map, key) => (map.has(key) ? map.get(key) : runs.length);
+  wrong.sort((a, b) => place(byId, a?.id) - place(byId, b?.id));
+  unsteady.sort((a, b) => place(byRequest, isObject(a) ? requestKey(a) : '') - place(byRequest, isObject(b) ? requestKey(b) : ''));
+  const { part, ...round } = parts['round.json'];
+  const perSkill = Object.fromEntries([...per].sort(([a], [b]) => cmp(a, b)).map(([name, x]) => [name, x.entry]));
+  return { ...round, runs, perSkill, nearMisses: { ...round.nearMisses, wrong }, unsteady };
+}
+
 export { bare, nearMissRight, meantFor, isUnsteady, counts };
