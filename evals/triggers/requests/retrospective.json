@@ -1,0 +1,18 @@
+{
+  "skill": "retrospective",
+  "should": [
+    "retrospective",
+    "Look back over this session, pull out every correction I had to make, and suggest lines to add to CLAUDE.md or to memory so it does not happen again",
+    "I corrected you four times today about using the wrong test runner, and I do not want to repeat that next week."
+  ],
+  "nearMisses": [
+    {
+      "request": "Mine the whole git history and review threads for errors that agents repeat in this repo",
+      "expect": "agent-friendly-audit"
+    },
+    {
+      "request": "Write the notes the next session needs to continue this database port",
+      "expect": "handoff"
+    }
+  ]
+}
