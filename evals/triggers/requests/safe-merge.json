@@ -1,0 +1,18 @@
+{
+  "skill": "safe-merge",
+  "should": [
+    "merge PR",
+    "Land pull request 482 into main, pinned to its current head commit, without closing the PRs that sit on top of it",
+    "Last time we squashed the bottom branch of a stack on GitHub, the three pull requests above it were closed and had to be reopened by hand."
+  ],
+  "nearMisses": [
+    {
+      "request": "Resolve the conflict in config.yaml between my branch and main",
+      "expect": "none"
+    },
+    {
+      "request": "Decide which of the reviewer's notes on pull request 77 need a fix before it goes in",
+      "expect": "review-triage"
+    }
+  ]
+}
