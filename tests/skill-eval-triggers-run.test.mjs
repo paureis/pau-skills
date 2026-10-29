@@ -244,7 +244,7 @@ describe('a round', () => {
     assert.match(r.stdout, /Cost: \$1\.00 spent, estimate \$1\.60, cap \$5\.00; 20 of 20 runs made/);
     assert.match(r.stdout, /tidy-notes: hits 4 of 6; misses 2: none after Read, none after Read; wrong starts 3/);
     assert.match(r.stdout, /pack-boxes: hits 2 of 6; misses 4/);
-    assert.match(r.stdout, /Near misses right: 5 of 8/);
+    assert.match(r.stdout, /Near misses right: 5 of 8 \(of 4 that name a skill: 2 started it, 2 started nothing\)\n/);
     assert.match(r.stdout, /wrong: tidy-notes-n2-r1 started verify, expected none/);
     assert.match(r.stdout, /Unsteady requests: 1\n {2}pack-boxes nearMiss 2: tidy-notes \/ none: "coin toss for the notes"/);
     assert.match(r.stdout, /Should runs that started nothing: 2 answered or did nothing, 2 looked first \(Read 2\)/);
@@ -261,17 +261,25 @@ describe('a round', () => {
     for (const a of r.auth) assert.equal(a.home, home);
   });
 
-  test('a skill missing from the init list gets a note; a nonzero exit with a result line gets a note but does not fail', () => {
-    const lists = writeLists({ 'tidy-notes': { should: ['tidy a'] }, 'pack-boxes': { should: ['pack b'] } });
+  test('a skill missing from the init list gets a note; exit 1 after error_max_turns gets none, another nonzero exit gets one and does not fail', () => {
+    const lists = writeLists({ 'tidy-notes': { should: ['tidy a', 'say hello'] }, 'pack-boxes': { should: ['pack b'] } });
     const dropped = trig(base(lists, ['--repeats', '1']), { env: { FAKE_TRIGGERS_DROP: 'pack-boxes' } });
     assert.equal(dropped.code, 0, dropped.stderr);
     for (const x of dropped.summary.runs) assert.match(x.notes.join(';'), /skills list lacks pack-boxes/, x.id);
     assert.match(dropped.stdout, /tidy-notes-s1-r1: .*skills list lacks pack-boxes/);
+    const notes = (r) => Object.fromEntries(r.summary.runs.map((x) => [x.id, [x.started, x.result, x.notes]]));
     const exit1 = trig(base(lists, ['--repeats', '1']), { env: { FAKE_TRIGGERS_EXIT1: '1' } });
     assert.equal(exit1.code, 0, exit1.stderr);
-    assert.equal(exit1.summary.runs[0].started, 'pack-boxes');
-    assert.match(exit1.summary.runs[0].notes.join(';'), /exit 1/);
-    assert.match(exit1.stdout, /pack-boxes-s1-r1: exit 1/);
+    assert.deepEqual(notes(exit1), {
+      'pack-boxes-s1-r1': ['pack-boxes', 'error_max_turns', []],
+      'tidy-notes-s1-r1': ['tidy-notes', 'error_max_turns', []],
+      'tidy-notes-s2-r1': ['none', 'success', ['exit 1']],
+    }, 'only the run that ended success keeps its exit 1 note');
+    assert.match(exit1.stdout, /Notes:\n {2}tidy-notes-s2-r1: exit 1\n/);
+    assert.doesNotMatch(exit1.stdout, /s1-r1: exit/);
+    const exit2 = trig(base(lists, ['--repeats', '1']), { env: { FAKE_TRIGGERS_EXIT1: '2' } });
+    assert.equal(exit2.code, 0, exit2.stderr);
+    assert.deepEqual(Object.values(notes(exit2)).map((x) => x[2]), [['exit 2'], ['exit 2'], ['exit 2']], 'exit 2 after error_max_turns keeps its note');
   });
 
   test('--baseline prints what got better or worse after the report', () => {

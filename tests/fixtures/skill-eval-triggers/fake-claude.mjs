@@ -19,7 +19,8 @@
 // The cost is FAKE_TRIGGERS_COST (default 0.05; "stop" spends the whole --max-budget-usd), or 0.01 when the prompt
 // says cheaply. slowly waits 1500 ms before printing, pause 500 ms. sabotage removes the folder FAKE_TRIGGERS_BREAK
 // names (a skill's source folder), so the next run's copy of it fails.
-// FAKE_TRIGGERS_FAIL=1 exits 1 with no output; FAKE_TRIGGERS_EXIT1=1 prints the whole transcript and then exits 1;
+// FAKE_TRIGGERS_FAIL=1 exits 1 with no output; FAKE_TRIGGERS_EXIT1=<code> prints the whole transcript and then exits
+// with that code (real claude -p --max-turns 1 exits 1 after a run that ends error_max_turns);
 // FAKE_TRIGGERS_DROP=<name> leaves that skill out of the init line's skills list. A run also writes answered.txt in its
 // working folder, appends a line to each installed SKILL.md and to $HOME/.seen, none of which may reach the repository.
 import { writeFileSync, readFileSync, appendFileSync, readdirSync, mkdirSync, existsSync, rmSync, lstatSync } from 'node:fs';
@@ -111,5 +112,5 @@ appendFileSync(join(env.HOME, '.seen'), 'seen\n');
 setTimeout(() => {
   if (logFile) writeFileSync(logFile, JSON.stringify({ ...record, end: Date.now(), cwdAtEnd: existsSync(cwd) }));
   process.stdout.write(out.map((o) => JSON.stringify(o)).join('\n') + '\n');
-  if (env.FAKE_TRIGGERS_EXIT1 === '1') process.exitCode = 1;
+  if (env.FAKE_TRIGGERS_EXIT1) process.exitCode = Number(env.FAKE_TRIGGERS_EXIT1);
 }, has('slowly') ? 1500 : has('pause') ? 500 : 0);

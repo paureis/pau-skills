@@ -238,7 +238,7 @@ describe('the report and the baseline', () => {
     assert.match(text, /tidy-notes: hits 3 of 5; misses 2: none after Read, pack-boxes; wrong starts 1: tidy-notes-n3-r1 \(meant for none\)/);
     assert.match(text, /pack-boxes: hits 0 of 1; misses 1: none with no tool; wrong starts 1: tidy-notes-s3-r1 \(meant for tidy-notes\)/);
     assert.match(text, /verify: hits 0 of 0; misses 0; wrong starts 1: pack-boxes-n1-r1 \(meant for none\)/);
-    assert.match(text, /Near misses right: 2 of 4/);
+    assert.match(text, /Near misses right: 2 of 4 \(of 2 that name a skill: 1 started it, 1 started nothing\)\n/);
     assert.match(text, /wrong: pack-boxes-n1-r1 started verify, expected none: "pack-boxes nearMiss 1"/);
     assert.match(text, /Unsteady requests: none/);
     assert.match(text, /Should runs that started nothing: 1 answered or did nothing, 1 looked first \(Read 1\)/);
@@ -248,6 +248,21 @@ describe('the report and the baseline', () => {
     const over = renderReport({ ...summary(), costMicros: 1_234_999 });
     assert.match(over, /Above the cap by \$0\.23: a run cost more than its hard stop/);
     assert.doesNotMatch(renderReport({ ...summary(), costMicros: 1_000_000 }), /above the cap/i, 'exactly the cap is not above it');
+  });
+
+  test('the near-miss line counts the near misses that name a skill: started it, started nothing; failed and not made left out', () => {
+    const near = (index, expect, started, extra = {}) => entry('tidy-notes', 'nearMiss', index, 1, started, { expect, ...extra });
+    const runs = [
+      near(1, 'pack-boxes', 'pack-boxes'), near(2, 'pack-boxes', 'pack-boxes'), near(3, 'pack-boxes', 'pack-boxes'), near(4, 'pack-boxes', 'pack-boxes'),
+      near(5, 'water-plants', 'none'), near(6, 'water-plants', 'none', { firstTool: 'Read' }),
+      near(7, 'pack-boxes', 'verify'), near(8, 'pack-boxes', 'tidy-notes'),
+      near(9, 'pack-boxes', null), near(10, 'water-plants', 'none', { finished: false }),
+      near(11, 'none', 'none'), near(12, 'none', 'none'), near(13, 'none', 'none'), near(14, 'none', 'verify'),
+    ];
+    const s = { costMicros: 0, estimateMicros: 0, capMicros: 1, runsMade: 13, runsPlanned: 14, runs, ...countRound(runs) };
+    assert.match(renderReport(s), /\nNear misses right: 9 of 12 \(of 8 that name a skill: 4 started it, 2 started nothing\)\n/);
+    const quiet = [near(1, 'none', 'none'), near(2, 'none', 'verify')];
+    assert.match(renderReport({ ...s, runs: quiet, ...countRound(quiet) }), /\nNear misses right: 1 of 2\n/, 'no near miss names a skill');
   });
 
   test('the baseline comparison: better, worse, new and gone', () => {

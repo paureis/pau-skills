@@ -46,12 +46,16 @@
  *
  *   node skill-eval.mjs triggers <lab-dir> --skills <dir> [--skills <dir>]... --requests <dir> --model <model>
  *                       --max-usd <x> [--also <dir>]... [--repeats 2] [--usd-per-run 0.08] [--parallel 3] [--plan]
- *                       [--baseline <summary.json>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5]
+ *                       [--baseline <summary.json or folder>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5]
  *       Runs every request of the lists in --requests (one <name>.json per skill) as a one-turn `claude -p`, each in a
  *       fresh folder with every skill of --skills and --also in its .claude/skills/, and records the first skill it
  *       started. Prints the plan and the estimate first (--plan stops there), keeps the round under --max-usd, writes
- *       <lab-dir>/summary.json and prints hits, misses and wrong starts per skill; --baseline compares with an older
- *       summary. TRIGGERS.md has the rules.
+ *       <lab-dir>/summary.json and its parts in <lab-dir>/summary/, and prints hits, misses and wrong starts per skill;
+ *       --baseline compares with an older summary.json or folder of parts. TRIGGERS.md has the rules.
+ *
+ *   node skill-eval.mjs split-summary <summary.json> --out <folder>
+ *       Writes the parts of a summary.json (one <list>.json per list and round.json), as a round does, into a new or
+ *       empty folder, so a baseline fits the repository's file-size rule.
  *
  * Scores, in my-read.md and in the verdict: a "Criterion <n>: <text>" line, then one "  <letter>: <1-5>/5  <evidence>"
  * line per output; the block ends at the first other line. SKILL_EVAL_CLAUDE names the command to run instead of
@@ -62,10 +66,11 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { extractActions, renderActions } from './skill-eval-core.mjs';
-import { parseArgs, money } from './skill-eval-files.mjs';
+import { parseArgs, money, isFreeFolder, writeParts } from './skill-eval-files.mjs';
 import { setup, run } from './skill-eval-setup.mjs';
 import { blind, judge, unblind } from './skill-eval-blind.mjs';
 import { triggers } from './skill-eval-triggers.mjs';
+import { splitSummary } from './skill-eval-triggers-count.mjs';
 
 export {
   META_WORDS, findMetaWords, skillNameOf, ALLOWED_ENV, childEnv, platformProblem, candidateArgv, judgeArgv, targetOf,
@@ -83,6 +88,21 @@ function actions(o, out, err) {
   return 0;
 }
 
+function splitCommand(o, out, err) {
+  const refuse = (msg) => { err(`refused: ${msg}`); return 1; };
+  const f = resolve(o.target);
+  const dir = resolve(o.out);
+  if (!existsSync(f)) return refuse(`${f} does not exist`);
+  if (!isFreeFolder(dir)) return refuse(`${dir} already exists and is not an empty folder`);
+  let s;
+  try { s = JSON.parse(readFileSync(f, 'utf8')); } catch { return refuse(`${f} is not JSON`); }
+  let parts;
+  try { parts = splitSummary(s); } catch (e) { return refuse(`${f}: ${e.message}`); }
+  for (const w of writeParts(dir, parts)) err(`warning: ${w}`);
+  out(`Wrote ${Object.keys(parts).length} parts to ${dir}: ${Object.keys(parts).sort().join(', ')}`);
+  return 0;
+}
+
 export async function main(argv, out = console.log, err = console.error) {
   let o;
   try { o = parseArgs(argv); } catch (e) { err(e.message); return 2; }
@@ -94,7 +114,9 @@ export async function main(argv, out = console.log, err = console.error) {
       case 'blind': return blind(o, out, err);
       case 'judge': return judge(o, out, err);
       case 'triggers': return await triggers(o, out, err);
-      default: return unblind(o, out, err);
+      case 'unblind': return unblind(o, out, err);
+      case 'split-summary': return splitCommand(o, out, err);
+      default: throw new Error(`unknown command ${o.cmd}`);
     }
   } catch (e) {
     err(`failed: ${e.message}`);

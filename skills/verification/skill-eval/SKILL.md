@@ -229,12 +229,13 @@ not what a change does to one skill's behaviour, use the `triggers` mode instead
 request lists in a folder outside the skill folders. Make a new lab folder with `mktemp -d` and write its path
 literally. Run with `--plan`, tell the user the run count and the estimate it prints, and wait for a yes; then run
 the same line without `--plan`. A run starts only when what was spent, plus twice the price for each run in flight
-and for itself, stays within `--max-usd`, so the round stops before it can pass the cap.
+and for itself, stays within `--max-usd`, so the round stops before it can pass the cap. To keep a baseline, commit
+`<lab>/summary/` (the summary in parts under 20,000 bytes; `split-summary` makes it from an older summary.json).
 
 ```bash
 node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" triggers <lab folder> --skills <skills folder> [--also <folder>]... \
   --requests <lists folder> --model <model> --max-usd <cap> [--repeats 2] [--usd-per-run 0.08] [--parallel 3] \
-  [--baseline <older summary.json>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5] --plan
+  [--baseline <older summary.json or folder>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5] --plan
 ```
 
 ## Do not

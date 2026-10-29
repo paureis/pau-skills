@@ -1,6 +1,6 @@
 // skill-eval module: the command line parser and the file system and git helpers that setup, run and blind share.
 import {
-  mkdirSync, readdirSync, readFileSync, existsSync, statSync, realpathSync, cpSync, rmSync,
+  mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, statSync, realpathSync, cpSync, rmSync,
 } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, resolve, dirname, relative, isAbsolute, basename } from 'node:path';
@@ -18,7 +18,8 @@ const USAGE = `usage:
   skill-eval.mjs blind <lab-dir> [--out <dir>] [--seed <integer>] [--force]
   skill-eval.mjs judge <lab-dir> --model <model> [--effort <level>] [--pass-env <NAME>...] [--real-home] [--force]
   skill-eval.mjs unblind <lab-dir>
-  skill-eval.mjs triggers <lab-dir> --skills <dir> [--skills <dir>]... --requests <dir> --model <model> --max-usd <x> [--also <dir>]... [--repeats 2] [--usd-per-run 0.08] [--parallel 3] [--plan] [--baseline <summary.json>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5]`;
+  skill-eval.mjs triggers <lab-dir> --skills <dir> [--skills <dir>]... --requests <dir> --model <model> --max-usd <x> [--also <dir>]... [--repeats 2] [--usd-per-run 0.08] [--parallel 3] [--plan] [--baseline <summary.json or folder>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5]
+  skill-eval.mjs split-summary <summary.json> --out <folder>`;
 
 const NAME = /^[a-z][a-z0-9-]*$/;
 const FLAGS = {
@@ -33,6 +34,7 @@ const FLAGS = {
     '--usd-per-run': 'one', '--parallel': 'one', '--plan': 'bool', '--baseline': 'one', '--pass-env': 'list',
     '--real-home': 'bool', '--timeout-min': 'one',
   },
+  'split-summary': { '--out': 'one' },
 };
 const fail = (msg) => { throw new Error(`${msg}\n${USAGE}`); };
 
@@ -40,12 +42,12 @@ const fail = (msg) => { throw new Error(`${msg}\n${USAGE}`); };
 export function parseArgs(argv) {
   const [cmd, target, ...rest] = argv;
   if (!argv.length) throw new Error(USAGE);
-  if (!(cmd in FLAGS)) fail(`unknown command ${cmd}`);
+  if (!Object.hasOwn(FLAGS, cmd)) fail(`unknown command ${cmd}`);
   if (!target || target.startsWith('--')) fail(`${cmd} needs a folder or file`);
   const raw = {};
   for (let i = 0; i < rest.length; i++) {
     const flag = rest[i];
-    const kind = FLAGS[cmd][flag];
+    const kind = Object.hasOwn(FLAGS[cmd], flag) ? FLAGS[cmd][flag] : null;
     if (!kind) fail(`unknown option ${flag}`);
     if (kind === 'bool') { raw[flag] = true; continue; }
     if (kind === 'list') {
@@ -100,6 +102,9 @@ export function parseArgs(argv) {
       o.maxBudgetUsd = raw['--max-budget-usd'] || null;
       if (o.maxBudgetUsd && !/^\d+(\.\d+)?$/.test(o.maxBudgetUsd)) fail('--max-budget-usd takes a number');
     }
+  } else if (cmd === 'split-summary') {
+    if (raw['--out'] === undefined) fail('split-summary needs --out');
+    o.out = raw['--out'];
   } else if (cmd === 'blind') {
     o.out = raw['--out'] || null;
     o.seed = int('--seed', -(2 ** 31), 2 ** 31, null);
@@ -140,6 +145,25 @@ function realOrPlanned(p) {
 }
 
 const isEmptyOrMissing = (dir) => !existsSync(dir) || readdirSync(dir).length === 0;
+
+/** A path that is missing or an empty folder: where a new set of files may go. */
+const isFreeFolder = (dir) => !existsSync(dir) || (statSync(dir).isDirectory() && readdirSync(dir).length === 0);
+
+/** The largest file the repository may track, in bytes. */
+const MAX_TRACKED = 20_000;
+
+/** Writes each { <file name>: object } into dir as indented JSON; returns a warning for each file over MAX_TRACKED. */
+function writeParts(dir, parts) {
+  mkdirSync(dir, { recursive: true });
+  const warnings = [];
+  for (const [name, data] of Object.entries(parts)) {
+    const text = JSON.stringify(data, null, 2) + '\n';
+    writeFileSync(join(dir, name), text);
+    const bytes = Buffer.byteLength(text);
+    if (bytes > MAX_TRACKED) warnings.push(`${name} is ${bytes} bytes, over ${MAX_TRACKED}, the largest file the repository may track`);
+  }
+  return warnings;
+}
 
 /** Files Claude Code reads from a folder and every folder above the working directory. */
 export const INHERITED = ['CLAUDE.md', 'CLAUDE.local.md', 'AGENTS.md', '.claude'];
@@ -253,4 +277,4 @@ function microsUsd(micros) {
 
 export { parseUsdMicros, microsArg, microsUsd };
 
-export { realOrPlanned, isEmptyOrMissing, walk, readText, gitEnv, git, ignoredManifest, HOME_NAME, buildRun, readJson, mtime, money };
+export { realOrPlanned, isEmptyOrMissing, isFreeFolder, writeParts, walk, readText, gitEnv, git, ignoredManifest, HOME_NAME, buildRun, readJson, mtime, money };
