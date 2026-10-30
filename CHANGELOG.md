@@ -3,6 +3,12 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-10-30: Q17 planned (decision 19)
+
+- The owner kept every recommendation after Q16 (decision 19). Q17 measures how much the one-turn limit cost the
+  first trigger round, then rewords the descriptions that still miss. `docs/backlog/q17.md` holds the plan, and
+  `docs/backlog/kickoff.md` the message that starts the batch.
+
 ## 2026-10-29: Q16, trigger tests and a skill usage log
 
 - `skill-eval` (verification 0.13.0) gets a trigger mode, `skill-eval.mjs triggers`: it runs every request of a folder

@@ -146,3 +146,14 @@
    - The usage log is on by default and records names, times and how a skill started, never the prompt; the report
      is asked for through `which-skill`.
    - The batch measures only; fixing misfiring descriptions is a follow-up item.
+
+## Decisions taken (2026-10-30)
+
+19. **Settled after Q16 (pull request 59)**, each as recommended, on an html-plan page:
+   - A near miss counts as right when the named skill or no skill starts: the round measures misfires of the skill
+     under test. The report also says how many near misses started the named skill.
+   - Before any description is reworded, the 41 baseline misses that looked around the empty folder run again with
+     two turns (approximately 4 to 7 US dollars), to tell the one-turn limit from a weak description.
+   - A follow-up item, Q17, rewords the weakest descriptions and measures them with `--baseline`.
+   - The owner checks the skill-usage hook's real inputs after the update, for free, instead of a paid headless run.
+   - A round whose run passes its hard stop goes on and reports any amount above the cap, with exit 1.

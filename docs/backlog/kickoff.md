@@ -2,16 +2,62 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The thirteenth batch is done: Q16 merged as pull request 59. The backlog is empty. The owner's decisions after Q16
-are open on an html-plan page; it recommends a follow-up item, Q17: first rerun the 41 baseline misses that looked
-around the empty folder with two turns, then reword the weakest skill descriptions (`codebase-oracle`,
-`parallel-worktrees`, `bug-fix`, `lean-subagent-dev`, `sharpen`, `to-prd`) and run the trigger round again with
-`--baseline evals/triggers/baseline`.
+The thirteenth batch is done: Q16 merged as pull request 59, and the owner kept every recommendation on its
+decisions page (decision 19). The next batch is Q17, descriptions that start their skill: first measure how much the
+one-turn limit cost the baseline, then reword the descriptions that still miss and run the trigger round again against
+the baseline. Read "Things that bit the thirteenth batch" (`docs/backlog/things-that-bit/batch-13.md`) first. The
+owner starts it with this message:
 
-When the owner answers, record the answers as decision 19 in `docs/backlog/decisions.md`. If Q17 is added, write it
-as `docs/backlog/q17.md`, add it to the Contents and "Order" in `docs/BACKLOG.md`, and replace this paragraph with its
-kickoff, built from the template below and the Q16 kickoff in this file as of commit 504455f. Read "Things
-that bit the thirteenth batch" (`docs/backlog/things-that-bit/batch-13.md`) first.
+```text
+You are the orchestrator for Q17 in this repository: descriptions that start their skill. Do not build it yourself;
+run the roster in .claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My choices are decision 19
+in docs/backlog/decisions.md; build what it chooses.
+
+Before anything else, read these in full:
+1. CLAUDE.md and docs/ADDING-A-SKILL.md (the repository rules, including step 2 and step 8's bump-listing command).
+2. docs/BACKLOG.md (the note at the top, "How to work an item", the Contents and "Order"), docs/backlog/q17.md,
+   docs/backlog/q16.md (what batch 13 built and changed), decisions 7 to 19 in docs/backlog/decisions.md, "Policy
+   since P0.5" in docs/backlog/context-budget.md, docs/backlog/how-to-run-a-batch.md (all 10 steps and "With the
+   roster"), evals/triggers/baseline.md, and every file in docs/backlog/things-that-bit/, batch-13.md first.
+3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, the five agent files
+   in .claude/agents/ (roster 4), and skills/verification/skill-eval/ (all of it, TRIGGERS.md first). Work that way
+   for the whole session. The usage budget is generous: same model for every agent, a read-only plan check of every
+   brief that builds the slice in a clone and tries mutations of its own, and a fresh reviewer per slice.
+
+First, before any brief:
+- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
+  builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds, with the
+  reviewer contract as a file. If the permission check refuses eng-lead's call for a builder, ask me before you
+  start it yourself. eng-lead has no Write tool: save its briefs to files yourself.
+- Review Q17 against the code and the baseline and tell me anything you would change; record it in the item.
+- Commits carry the harness's two attribution trailers; say so once in the standing orders.
+
+Q17 needs two paid runs: the two-turn rerun of the 41 baseline misses (approximately 4 to 7 US dollars), and, after
+the rewording, one full trigger round with --baseline evals/triggers/baseline (380 runs, approximately 34 US dollars,
+cap 40). Run each from a folder outside the repository, after the code it needs is reviewed, and tell me the estimate
+before it starts. Any other paid run needs my yes first.
+
+Rules that matter most:
+- Every skill works on its own; no em or en dashes; plain English; Node standard library only.
+- Descriptions stay at most 400 characters each and 14,000 in total, with no angle-bracket tag. A request list never
+  changes to fit a description.
+- No tracked file may pass 20,000 bytes (when the ISO week of the CHANGELOG entries has ended, move them to
+  docs/changelog/ first). The four PRODUCTION-RULES.md copies stay identical (COPIES).
+- Every new test must fail when the behaviour it covers breaks: prove each with mutate.sh after committing, and have
+  every run report its "# tests" line.
+- Builders commit and never push. You push the working branch and open the PR. When CI is green on Linux, macOS and
+  the validate job and every review is clean, merge it yourself and carry on.
+- Give long briefs to agents as files they read, with a common part and a "Corrections after the plan check"
+  section. Use absolute paths and git -C from the orchestrator; never cd into an agent's worktree.
+- Commit as the session's default author.
+
+When the PR is open, tell me in plain words what changed, what the reviews found, what both rounds show, and anything
+I need to decide; if html-plan is installed, give me the decisions as an html-plan page published as a private
+artifact. After the merge, run `node scripts/pack-skills.mjs --since <main before the batch>` on main and send me the
+changed skills' zips in one bundle zip with HOW-TO-UPLOAD.txt, mark Q17 done in docs/backlog/ with what worked and what
+did not with the roster, write the kickoff for whatever is left in the backlog (or say it is empty) into
+docs/backlog/kickoff.md, and update my profile README in paureis/paureis if a count changes.
+```
 
 ## The fifth batch's kickoff, as a template
 
