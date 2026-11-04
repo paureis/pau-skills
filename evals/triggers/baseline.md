@@ -66,3 +66,27 @@ as the baseline: the 41 should runs of the baseline that ran Bash first and star
 What it decided for Q17: counting each rerun run in place of the baseline run it repeats, every one of the ten
 candidates still misses 2 or more of 6, so all ten are reworded. Four other skills also still miss 2 of 6
 (`architect`, `engineering-principles`, `flaky-test-hunt`, `hillclimb`); they are named for the owner, not reworded.
+
+## The full round after the rewording (Q17, 2026-11-04)
+
+Run with Claude Code 2.1.318 and `claude-opus-5-5`, from a folder outside this repository, exactly as the baseline
+(one turn, 2 repeats, 5 in parallel, the same 190 requests), after ten descriptions were reworded by an agent that
+never saw the lists. It cost 34.67 US dollars against an estimate of 30.40 and a cap of 40. Its parts are in
+`after-q17/`.
+
+- **Still no wrong start, and every near miss right** (152 of 152; of the 124 that name a skill, 83 started it and 41
+  started nothing).
+- **Hits: 186 of 228 runs (82 percent), up from 175.** The misses are again all "started nothing": 31 after Bash, 11
+  with no tool.
+- **The ten reworded skills, hits of 6:** `arena` 3 to 6, `overnight-run` 3 to 5, `codebase-oracle` 0 to 2,
+  `parallel-worktrees` 0 to 2, `evaluator` 3 to 4, `retrospective` 3 to 4; `bug-fix`, `lean-subagent-dev`, `sharpen`
+  and `to-prd` stayed at 2.
+- **How much is noise:** six skills whose descriptions did not change also moved, by 1 or 2 either way
+  (`dependency-security-audit` 4 to 6, `rule-to-hook` 5 to 6, `flaky-test-hunt` 4 to 5, `migration-review` 6 to 4,
+  `mutation-test` and `tdd` 6 to 5). So a change of 1 or 2 for one skill can be run to run variation; the gains of
+  `arena` (+3) and the two skills that went from 0 to 2 are the clearest, and the total rose by 11.
+- **Where the reworded skills still miss**, by request, both repeats each: `lean-subagent-dev` requests 2 and 3,
+  `sharpen` request 2 and `codebase-oracle` request 1 got a text answer (the agent did the planning, the restating or
+  the answering in its reply); `bug-fix` requests 1 and 2, `to-prd` requests 2 and 3, `parallel-worktrees` requests
+  1 and 3, `codebase-oracle` request 2 and `sharpen` request 3 looked around the empty folder first. The two-turn
+  rerun showed that a second turn does not bring such a run back to the skill.

@@ -19,7 +19,8 @@ node skills/verification/skill-eval/skill-eval.mjs triggers "$LAB/round" --skill
 
 Drop `--plan` to run it, and pass `--baseline evals/triggers/baseline` to see what got better or worse. `baseline/`
 holds the summary of the first full round in parts (one per list, and `round.json`), each under the 20,000-byte limit,
-and `baseline.md` says what the round showed.
+and `baseline.md` says what the round showed. `after-q17/` holds the full round run after Q17 reworded ten
+descriptions, in the same parts, and `baseline.md` says what it showed under its own heading.
 
 `two-turn/requests/` holds the 41 should runs of the baseline that ran a tool first and started nothing ("looked
 first"), one list per skill that had such a miss; a request that missed in both repeats is listed twice.

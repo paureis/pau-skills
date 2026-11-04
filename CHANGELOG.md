@@ -14,7 +14,8 @@ the plugin they installed is bumped.
 - Ten descriptions reworded so they say plainly what work is theirs, every request-1 phrase kept: `arena`,
   `codebase-oracle`, `lean-subagent-dev`, `overnight-run`, `parallel-worktrees` (agent-orchestration 0.11.2),
   `sharpen`, `to-prd` (planning 0.8.4), `retrospective` (session-discipline 0.13.1), `bug-fix` and `evaluator`
-  (verification 0.14.0). All descriptions together go from 13,101 to 13,592 characters.
+  (verification 0.14.0). All descriptions together go from 13,101 to 13,592 characters. The full round after it (34.67 US
+  dollars, in `evals/triggers/after-q17/`) had no wrong start, every near miss right, and 186 hits of 228, up from 175.
 - The entries of 2026-10-26 to 2026-10-30 moved to `docs/changelog/2026-W44.md`, since week 44 had ended.
 - The bundle goes to 0.18.0.
 
