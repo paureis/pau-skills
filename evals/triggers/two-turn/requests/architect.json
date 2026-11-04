@@ -1,0 +1,7 @@
+{
+  "skill": "architect",
+  "should": [
+    "I need a new notifications module in our Kotlin backend and I can already picture three ways to structure it, none of which I have tried against real callers."
+  ],
+  "nearMisses": []
+}

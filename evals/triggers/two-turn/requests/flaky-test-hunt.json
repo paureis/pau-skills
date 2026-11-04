@@ -1,0 +1,8 @@
+{
+  "skill": "flaky-test-hunt",
+  "should": [
+    "One pytest case fails roughly once every thirty runs on CI; count how often, find what makes it nondeterministic, and show the fix holds with numbers",
+    "One pytest case fails roughly once every thirty runs on CI; count how often, find what makes it nondeterministic, and show the fix holds with numbers"
+  ],
+  "nearMisses": []
+}
