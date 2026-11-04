@@ -1,34 +1,19 @@
 // Every skill loads on its own (docs/backlog/decisions.md, decision 7), so the model can start a skill the user never asked for.
 // The skills that launch subagents or paid runs, take over the session, or write outside the conversation first say
 // what they will do and what it costs, and wait for a yes. They all use the same paragraph, word for word, so the
-// rule reads the same everywhere and this test can find it. The list below is the only place it is decided: a skill
-// on it must carry the paragraph, and a skill not on it must not.
+// rule reads the same everywhere and this test can find it. The list in tests/confirm-list.mjs is the only place it is
+// decided: a skill on it must carry the paragraph, and a skill not on it must not.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT } from './helpers.mjs';
+import { CONFIRM_LIST } from './confirm-list.mjs';
 
 const CONFIRM_PARAGRAPH = 'If you started this skill on your own, without the user typing its name or asking for what it does, first '
   + 'say in one or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that '
   + 'only matches its description is not asking for it. If the user asked for it, or the brief you are working from '
   + 'does, go ahead.';
-
-// Settled with the owner after the P0.5 review: only skills whose cost has no other gate. Skills that already stop
-// for the user's yes before they write (retrospective, instructions-audit, to-issues, ci-cost-and-cadence,
-// project-setup, improve-codebase-architecture, whose code changes start only on an explicit ask to implement),
-// conversations the user can stop with a word (brainstorm, grill-me) and skills that write only a local file or a
-// proposal (handoff, to-prd) do not ask twice.
-const CONFIRM_LIST = [
-  // launches subagents or headless runs
-  'agent-orchestration/arena', 'agent-orchestration/codebase-oracle', 'agent-orchestration/overnight-run',
-  'agent-orchestration/parallel-worktrees',
-  'planning/agent-friendly-audit', 'verification/hillclimb', 'verification/skill-eval', 'verification/verify-app',
-  // commits, pushes or installs with no other gate
-  'guards/dependency-upgrade', 'guards/rule-to-hook', 'planning/architect', 'session-discipline/session-close',
-  // sets the whole session's way of working
-  'agent-orchestration/lean-subagent-dev', 'agent-orchestration/methodology',
-];
 
 // The words every copy starts with: a paragraph that starts this way but differs is a copy that drifted.
 const OPENING = 'If you started this skill on your own';
