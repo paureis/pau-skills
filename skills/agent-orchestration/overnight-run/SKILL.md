@@ -1,6 +1,6 @@
 ---
 name: overnight-run
-description: "Run one task unattended under a contract: trust checks first, a finish condition a script checks, an append-only decision log, reverts, an off switch, and a morning audit by a fresh reviewer. Use when the user says 'run this overnight', 'keep going while I sleep', 'work on this while I am away'. /loop only wakes; for one number, hillclimb fits."
+description: "Leave an agent working alone on one task under a contract: trust checks first, a finish condition a script checks, an append-only log, reverts, an off switch and a morning audit by a fresh reviewer. Use when the user says 'run this overnight', 'keep going while I sleep', 'work on this while I am away', or wants a long unattended run. /loop only wakes; for one number, hillclimb fits."
 argument-hint: "[the task, what done means, the budget]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)

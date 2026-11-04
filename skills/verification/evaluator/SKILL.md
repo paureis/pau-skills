@@ -1,6 +1,6 @@
 ---
 name: evaluator
-description: "A fresh agent that has not seen the build attacks a finished change against its contract, grading each assertion PASS, FAIL or UNVERIFIED with reproducible evidence. Use before calling an increment done, or when the user says 'evaluate this', 'run the evaluator', 'attack this build', 'independent review', 'is this really done'."
+description: "Check a finished change against its contract, issue or acceptance criteria: a fresh agent that has not seen the build attacks it, grading each assertion PASS, FAIL or UNVERIFIED with reproducible evidence. Use before calling an increment done, or when the user says 'evaluate this', 'run the evaluator', 'attack this build', 'is this really done', or wants independent proof that work is finished."
 argument-hint: "<repo path> <contract path> <assertion ids, e.g. SEC-1..SEC-10>"
 context: fork
 agent: general-purpose

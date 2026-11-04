@@ -1,6 +1,6 @@
 ---
 name: codebase-oracle
-description: "Answer architecture, design or implementation questions from code and history, grading the evidence for each answer. Use when the user pastes questions about their code, asks what the codebase actually does, wants assumptions checked before a design decision, or says 'answer these from the code', 'research this in the codebase', 'use the oracle'."
+description: "Answer questions about the user's own project (how a part works, why it was built that way, whether something exists) from its code and history, not general knowledge, grading the evidence for each answer. Use when the user says 'answer these from the code', 'research this in the codebase', 'use the oracle', pastes questions about their code, or needs facts checked before a design decision."
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:

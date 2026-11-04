@@ -1,6 +1,6 @@
 ---
 name: arena
-description: "Run several subagents at one task with different briefs, have a blind judge score them, then pick a base and graft in the best parts. Use when the user says 'arena this', 'try it several ways and pick', 'design it twice', or when a first attempt at an interface, data model or algorithm could lock in the wrong shape."
+description: "Build one task several ways at once: subagents with different briefs each make a version, a blind judge scores them, then pick a base and graft in the best parts of the rest. Use when the user says 'arena this', 'try it several ways and pick', 'design it twice', wants rival versions built and compared, or when a first try at an interface, data model or algorithm could lock in the wrong shape."
 argument-hint: "[the task] [--n <candidates, default 3>]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)

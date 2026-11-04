@@ -1,6 +1,6 @@
 ---
 name: sharpen
-description: "Restate a task before starting it: the goal, the problem behind it, how an expert would approach it, what is missing, and one outside check of the result; confirm in a few lines, then do the work. Use when the user says 'sharpen this', 'think before you start', 'make sure you understand the task' or 'restate the task before you start'."
+description: "Restate a task before doing it: the goal, the problem behind it, how an expert would approach it, what is missing, one outside check of the result; confirm in a few lines, then do the work. Use when the user says 'sharpen this', 'think before you start', 'make sure you understand the task', wants your reading of the task first, or when a task is vague or was misread. One confirm, no interview."
 argument-hint: "[the task, or nothing to use the last message]"
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
