@@ -32,8 +32,8 @@ Bundled files:
   `node "${CLAUDE_SKILL_DIR}/skill-eval.mjs"` with no arguments for the usage)
 - `${CLAUDE_SKILL_DIR}/JUDGE-BRIEF.md`: the reviewer's prompt; `blind` copies it into the reviewer's input
 - `${CLAUDE_SKILL_DIR}/ISOLATION.md`: what a run sees and how it is kept clean; read it before Phase 1
-- `${CLAUDE_SKILL_DIR}/skill-eval-triggers.mjs`: the `triggers` mode, started through `skill-eval.mjs`: one-turn runs
-  that record which skill starts for each request, within a cost cap
+- `${CLAUDE_SKILL_DIR}/skill-eval-triggers.mjs`: the `triggers` mode, started through `skill-eval.mjs`: runs of one
+  turn unless `--max-turns` says more, that record which skill starts for each request, within a cost cap
 - `${CLAUDE_SKILL_DIR}/TRIGGERS.md`: the `triggers` mode's request lists, counting and cost rules; read it before a
   trigger round
 
@@ -231,11 +231,13 @@ literally. Run with `--plan`, tell the user the run count and the estimate it pr
 the same line without `--plan`. A run starts only when what was spent, plus twice the price for each run in flight
 and for itself, stays within `--max-usd`, so the round stops before it can pass the cap. To keep a baseline, commit
 `<lab>/summary/` (the summary in parts under 20,000 bytes; `split-summary` makes it from an older summary.json).
+`--max-turns 2` (at most 3) lets an agent that looks around first still start a skill in a later turn, and the summary
+records the turn of each start. A second turn costs more, so raise `--usd-per-run` (0.12 for two turns).
 
 ```bash
 node "${CLAUDE_SKILL_DIR}/skill-eval.mjs" triggers <lab folder> --skills <skills folder> [--also <folder>]... \
-  --requests <lists folder> --model <model> --max-usd <cap> [--repeats 2] [--usd-per-run 0.08] [--parallel 3] \
-  [--baseline <older summary.json or folder>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5] --plan
+  --requests <lists folder> --model <model> --max-usd <cap> [--repeats 2] [--max-turns 1] [--usd-per-run 0.08] \
+  [--parallel 3] [--baseline <older summary.json or folder>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5] --plan
 ```
 
 ## Do not

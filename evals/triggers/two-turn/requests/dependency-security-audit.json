@@ -1,0 +1,8 @@
+{
+  "skill": "dependency-security-audit",
+  "should": [
+    "security audit",
+    "There is news of a compromised npm package that stole tokens on install, and I have no idea whether anything in our build pulls it in."
+  ],
+  "nearMisses": []
+}

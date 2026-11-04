@@ -1,0 +1,7 @@
+{
+  "skill": "retrospective",
+  "should": [
+    "In this session you used the wrong test runner, put the helper in the wrong folder, and I had to make you redo the changelog entry three times."
+  ],
+  "nearMisses": []
+}

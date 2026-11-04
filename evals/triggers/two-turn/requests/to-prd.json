@@ -1,0 +1,10 @@
+{
+  "skill": "to-prd",
+  "should": [
+    "Turn what we settled in this chat about audit logs into a product requirements document with user stories, without asking me more questions",
+    "Turn what we settled in this chat about audit logs into a product requirements document with user stories, without asking me more questions",
+    "We spent an hour deciding how the audit log should work for our Spring app, and all of it lives only in this conversation.",
+    "We spent an hour deciding how the audit log should work for our Spring app, and all of it lives only in this conversation."
+  ],
+  "nearMisses": []
+}

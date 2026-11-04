@@ -1,0 +1,8 @@
+{
+  "skill": "sharpen",
+  "should": [
+    "The ticket just says make the Rust exporter better, and I am not sure myself whether that means speed, memory, or the output format.",
+    "The ticket just says make the Rust exporter better, and I am not sure myself whether that means speed, memory, or the output format."
+  ],
+  "nearMisses": []
+}

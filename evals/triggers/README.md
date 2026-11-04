@@ -19,3 +19,15 @@ node skills/verification/skill-eval/skill-eval.mjs triggers "$LAB/round" --skill
 Drop `--plan` to run it, and pass `--baseline evals/triggers/baseline` to see what got better or worse. `baseline/`
 holds the summary of the first full round in parts (one per list, and `round.json`), each under the 20,000-byte limit,
 and `baseline.md` says what the round showed.
+
+`two-turn/requests/` holds the 41 should runs of the baseline that ran a tool first and started nothing ("looked
+first"), one list per skill that had such a miss; a request that missed in both repeats is listed twice.
+`tests/trigger-lists-two-turn.test.mjs` checks them against `baseline/`. They are rerun once each with two turns, to
+tell the one-turn limit from a weak description. As for the full round, run it from the repository root with `TMPDIR`
+set to a folder outside every repository (the mode refuses a run root inside a git work tree):
+
+```bash
+LAB=$(mktemp -d)
+node skills/verification/skill-eval/skill-eval.mjs triggers "$LAB/round" --skills skills --requests evals/triggers/two-turn/requests \
+  --model <model> --max-turns 2 --repeats 1 --usd-per-run 0.12 --max-usd 7 --plan
+```

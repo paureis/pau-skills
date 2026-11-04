@@ -45,13 +45,15 @@
  *       read, every score where you and the reviewer are 2 or more apart, and the cost.
  *
  *   node skill-eval.mjs triggers <lab-dir> --skills <dir> [--skills <dir>]... --requests <dir> --model <model>
- *                       --max-usd <x> [--also <dir>]... [--repeats 2] [--usd-per-run 0.08] [--parallel 3] [--plan]
- *                       [--baseline <summary.json or folder>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5]
- *       Runs every request of the lists in --requests (one <name>.json per skill) as a one-turn `claude -p`, each in a
- *       fresh folder with every skill of --skills and --also in its .claude/skills/, and records the first skill it
- *       started. Prints the plan and the estimate first (--plan stops there), keeps the round under --max-usd, writes
- *       <lab-dir>/summary.json and its parts in <lab-dir>/summary/, and prints hits, misses and wrong starts per skill;
- *       --baseline compares with an older summary.json or folder of parts. TRIGGERS.md has the rules.
+ *                       --max-usd <x> [--also <dir>]... [--repeats 2] [--max-turns 1] [--usd-per-run 0.08]
+ *                       [--parallel 3] [--plan] [--baseline <summary.json or folder>] [--pass-env <NAME>...]
+ *                       [--real-home] [--timeout-min 5]
+ *       Runs every request of the lists in --requests (one <name>.json per skill) as a `claude -p` of at most
+ *       --max-turns turns (1 to 3, default 1), each in a fresh folder with every skill of --skills and --also in its
+ *       .claude/skills/, and records the first skill it started and the turn it started in. Prints the plan and the
+ *       estimate first (--plan stops there), keeps the round under --max-usd, writes <lab-dir>/summary.json and its
+ *       parts in <lab-dir>/summary/, and prints hits, misses and wrong starts per skill; --baseline compares with an
+ *       older summary.json or folder of parts. TRIGGERS.md has the rules.
  *
  *   node skill-eval.mjs split-summary <summary.json> --out <folder>
  *       Writes the parts of a summary.json (one <list>.json per list and round.json), as a round does, into a new or

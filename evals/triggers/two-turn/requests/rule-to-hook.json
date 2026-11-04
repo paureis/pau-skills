@@ -1,0 +1,7 @@
+{
+  "skill": "rule-to-hook",
+  "should": [
+    "enforce this rule"
+  ],
+  "nearMisses": []
+}

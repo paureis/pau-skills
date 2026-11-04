@@ -104,8 +104,8 @@ function copyInputs() {
   return out;
 }
 
-// The arguments of every run, in order, with the prompt right after -p.
-const RUN_ARGV = (prompt, model, budget) => ['-p', prompt, '--max-turns', '1', '--output-format', 'stream-json', '--verbose',
+// The arguments of every run, in order, with the prompt right after -p; `turns` is --max-turns (the default 1).
+const RUN_ARGV = (prompt, model, budget, turns = '1') => ['-p', prompt, '--max-turns', turns, '--output-format', 'stream-json', '--verbose',
   '--model', model, '--setting-sources', 'project', '--strict-mcp-config', '--no-session-persistence', '--max-budget-usd', budget];
 
 /**
