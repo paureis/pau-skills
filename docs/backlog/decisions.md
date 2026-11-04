@@ -157,3 +157,15 @@
    - A follow-up item, Q17, rewords the weakest descriptions and measures them with `--baseline`.
    - The owner checks the skill-usage hook's real inputs after the update, for free, instead of a paid headless run.
    - A round whose run passes its hard stop goes on and reports any amount above the cap, with exit 1.
+
+## Decisions taken (2026-11-04)
+
+20. **Settled after Q17 (pull request 62)**, each as recommended, on an html-plan page:
+   - The four reworded skills that stayed at 2 of 6 (`bug-fix`, `lean-subagent-dev`, `sharpen`, `to-prd`) stay as
+     they are: a third rewording can pull neighbours' requests, and one round cannot tell a change of 1 or 2 from noise.
+   - The four skills outside the ten at 4 of 6 (`architect`, `engineering-principles`, `hillclimb`,
+     `migration-review`) are not reworded.
+   - A small follow-up item, Q18, adds tests for the description rules the Q17 builder checked by hand. No paid run.
+   - The next trigger round passes `evals/triggers/after-q17` to `--baseline`; `baseline/` stays as the first round.
+   - The owner uploaded the eleven Q17 zips (arena, bug-fix, codebase-oracle, evaluator, lean-subagent-dev,
+     overnight-run, parallel-worktrees, retrospective, sharpen, skill-eval, to-prd).
