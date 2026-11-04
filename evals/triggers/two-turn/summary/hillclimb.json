@@ -1,0 +1,65 @@
+{
+  "format": 1,
+  "part": "hillclimb",
+  "runs": [
+    {
+      "id": "hillclimb-s1-r1",
+      "list": "hillclimb",
+      "kind": "should",
+      "index": 1,
+      "request": "Keep cutting the cold start time of our Java service until it is under 800 ms, measuring after every single change and reverting anything that does not help",
+      "expect": "hillclimb",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 98217,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "hillclimb-s2-r1",
+      "list": "hillclimb",
+      "kind": "should",
+      "index": 2,
+      "request": "Keep cutting the cold start time of our Java service until it is under 800 ms, measuring after every single change and reverting anything that does not help",
+      "expect": "hillclimb",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 97773,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "hillclimb": {
+      "hits": 0,
+      "shouldRuns": 2,
+      "misses": [
+        {
+          "id": "hillclimb-s1-r1",
+          "request": "Keep cutting the cold start time of our Java service until it is under 800 ms, measuring after every single change and reverting anything that does not help",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "hillclimb-s2-r1",
+          "request": "Keep cutting the cold start time of our Java service until it is under 800 ms, measuring after every single change and reverting anything that does not help",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

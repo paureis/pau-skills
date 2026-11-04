@@ -1,0 +1,65 @@
+{
+  "format": 1,
+  "part": "sharpen",
+  "runs": [
+    {
+      "id": "sharpen-s1-r1",
+      "list": "sharpen",
+      "kind": "should",
+      "index": 1,
+      "request": "The ticket just says make the Rust exporter better, and I am not sure myself whether that means speed, memory, or the output format.",
+      "expect": "sharpen",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 108349,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "sharpen-s2-r1",
+      "list": "sharpen",
+      "kind": "should",
+      "index": 2,
+      "request": "The ticket just says make the Rust exporter better, and I am not sure myself whether that means speed, memory, or the output format.",
+      "expect": "sharpen",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 107760,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "sharpen": {
+      "hits": 0,
+      "shouldRuns": 2,
+      "misses": [
+        {
+          "id": "sharpen-s1-r1",
+          "request": "The ticket just says make the Rust exporter better, and I am not sure myself whether that means speed, memory, or the output format.",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "sharpen-s2-r1",
+          "request": "The ticket just says make the Rust exporter better, and I am not sure myself whether that means speed, memory, or the output format.",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

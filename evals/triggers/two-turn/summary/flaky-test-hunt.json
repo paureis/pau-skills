@@ -1,0 +1,65 @@
+{
+  "format": 1,
+  "part": "flaky-test-hunt",
+  "runs": [
+    {
+      "id": "flaky-test-hunt-s1-r1",
+      "list": "flaky-test-hunt",
+      "kind": "should",
+      "index": 1,
+      "request": "One pytest case fails roughly once every thirty runs on CI; count how often, find what makes it nondeterministic, and show the fix holds with numbers",
+      "expect": "flaky-test-hunt",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 98474,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "flaky-test-hunt-s2-r1",
+      "list": "flaky-test-hunt",
+      "kind": "should",
+      "index": 2,
+      "request": "One pytest case fails roughly once every thirty runs on CI; count how often, find what makes it nondeterministic, and show the fix holds with numbers",
+      "expect": "flaky-test-hunt",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 98327,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "flaky-test-hunt": {
+      "hits": 0,
+      "shouldRuns": 2,
+      "misses": [
+        {
+          "id": "flaky-test-hunt-s1-r1",
+          "request": "One pytest case fails roughly once every thirty runs on CI; count how often, find what makes it nondeterministic, and show the fix holds with numbers",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "flaky-test-hunt-s2-r1",
+          "request": "One pytest case fails roughly once every thirty runs on CI; count how often, find what makes it nondeterministic, and show the fix holds with numbers",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

@@ -1,0 +1,111 @@
+{
+  "format": 1,
+  "part": "to-prd",
+  "runs": [
+    {
+      "id": "to-prd-s1-r1",
+      "list": "to-prd",
+      "kind": "should",
+      "index": 1,
+      "request": "Turn what we settled in this chat about audit logs into a product requirements document with user stories, without asking me more questions",
+      "expect": "to-prd",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 108043,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "to-prd-s2-r1",
+      "list": "to-prd",
+      "kind": "should",
+      "index": 2,
+      "request": "Turn what we settled in this chat about audit logs into a product requirements document with user stories, without asking me more questions",
+      "expect": "to-prd",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 104788,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "to-prd-s3-r1",
+      "list": "to-prd",
+      "kind": "should",
+      "index": 3,
+      "request": "We spent an hour deciding how the audit log should work for our Spring app, and all of it lives only in this conversation.",
+      "expect": "to-prd",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 108968,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "to-prd-s4-r1",
+      "list": "to-prd",
+      "kind": "should",
+      "index": 4,
+      "request": "We spent an hour deciding how the audit log should work for our Spring app, and all of it lives only in this conversation.",
+      "expect": "to-prd",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 109443,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "to-prd": {
+      "hits": 0,
+      "shouldRuns": 4,
+      "misses": [
+        {
+          "id": "to-prd-s1-r1",
+          "request": "Turn what we settled in this chat about audit logs into a product requirements document with user stories, without asking me more questions",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "to-prd-s2-r1",
+          "request": "Turn what we settled in this chat about audit logs into a product requirements document with user stories, without asking me more questions",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "to-prd-s3-r1",
+          "request": "We spent an hour deciding how the audit log should work for our Spring app, and all of it lives only in this conversation.",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "to-prd-s4-r1",
+          "request": "We spent an hour deciding how the audit log should work for our Spring app, and all of it lives only in this conversation.",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

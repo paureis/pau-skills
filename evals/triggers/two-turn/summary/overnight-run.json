@@ -1,0 +1,82 @@
+{
+  "format": 1,
+  "part": "overnight-run",
+  "runs": [
+    {
+      "id": "overnight-run-s1-r1",
+      "list": "overnight-run",
+      "kind": "should",
+      "index": 1,
+      "request": "run this overnight",
+      "expect": "overnight-run",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 104222,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "overnight-run-s2-r1",
+      "list": "overnight-run",
+      "kind": "should",
+      "index": 2,
+      "request": "I am heading to bed, keep working on the Rust parser port until the test suite is green, and leave me a log I can check tomorrow",
+      "expect": "overnight-run",
+      "repeat": 1,
+      "started": "overnight-run",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 98549,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "overnight-run-s3-r1",
+      "list": "overnight-run",
+      "kind": "should",
+      "index": 3,
+      "request": "I am heading to bed, keep working on the Rust parser port until the test suite is green, and leave me a log I can check tomorrow",
+      "expect": "overnight-run",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 105497,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "overnight-run": {
+      "hits": 1,
+      "shouldRuns": 3,
+      "misses": [
+        {
+          "id": "overnight-run-s1-r1",
+          "request": "run this overnight",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "overnight-run-s3-r1",
+          "request": "I am heading to bed, keep working on the Rust parser port until the test suite is green, and leave me a log I can check tomorrow",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

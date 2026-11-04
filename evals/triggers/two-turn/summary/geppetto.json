@@ -1,0 +1,35 @@
+{
+  "format": 1,
+  "part": "geppetto",
+  "runs": [
+    {
+      "id": "geppetto-s1-r1",
+      "list": "geppetto",
+      "kind": "should",
+      "index": 1,
+      "request": "Write me a new subagent file under .claude/agents for reviewing pull requests in our Python monorepo, and show it before saving",
+      "expect": "geppetto",
+      "repeat": 1,
+      "started": "geppetto",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 98300,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "geppetto": {
+      "hits": 1,
+      "shouldRuns": 1,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

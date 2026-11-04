@@ -1,0 +1,105 @@
+{
+  "format": 1,
+  "part": "bug-fix",
+  "runs": [
+    {
+      "id": "bug-fix-s1-r1",
+      "list": "bug-fix",
+      "kind": "should",
+      "index": 1,
+      "request": "find the root cause",
+      "expect": "bug-fix",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 97421,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "bug-fix-s2-r1",
+      "list": "bug-fix",
+      "kind": "should",
+      "index": 2,
+      "request": "find the root cause",
+      "expect": "bug-fix",
+      "repeat": 1,
+      "started": "bug-fix",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 95293,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "bug-fix-s3-r1",
+      "list": "bug-fix",
+      "kind": "should",
+      "index": 3,
+      "request": "Track down why our Go service drops the last line of every uploaded CSV, using real runs rather than guesses, and ship only the fix the evidence supports",
+      "expect": "bug-fix",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 107542,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "bug-fix-s4-r1",
+      "list": "bug-fix",
+      "kind": "should",
+      "index": 4,
+      "request": "Track down why our Go service drops the last line of every uploaded CSV, using real runs rather than guesses, and ship only the fix the evidence supports",
+      "expect": "bug-fix",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 106782,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "bug-fix": {
+      "hits": 1,
+      "shouldRuns": 4,
+      "misses": [
+        {
+          "id": "bug-fix-s1-r1",
+          "request": "find the root cause",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "bug-fix-s3-r1",
+          "request": "Track down why our Go service drops the last line of every uploaded CSV, using real runs rather than guesses, and ship only the fix the evidence supports",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "bug-fix-s4-r1",
+          "request": "Track down why our Go service drops the last line of every uploaded CSV, using real runs rather than guesses, and ship only the fix the evidence supports",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

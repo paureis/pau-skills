@@ -41,3 +41,28 @@ description does not reach it: `agent-friendly-audit` n2 (retrospective), `archi
 This batch measures only. A follow-up item can reword the descriptions of the weakest skills and run the round again
 with `--baseline`. Before that, it is worth one cheap check of the one-turn limit: rerun only the 41 "after Bash"
 misses with two turns, to see how many were real misses.
+
+## Two turns for the 41 "looked first" misses (Q17, 2026-11-04)
+
+Run with Claude Code 2.1.318 and `claude-opus-5-5`, from a folder outside this repository, with the same isolation
+as the baseline: the 41 should runs of the baseline that ran Bash first and started nothing, once each
+(`two-turn/requests/`), with `--max-turns 2`. It cost 4.49 US dollars against an estimate of 4.92 and a cap of 7
+(0.095 to 0.254 a run). Its summary parts are in `two-turn/summary/`.
+
+- **No skill started in turn 2.** 9 of the 41 runs started their skill in turn 1 this time (`arena`, `bug-fix`,
+  `evaluator`, `overnight-run`, `retrospective`, `rule-to-hook`, `geppetto` once each, `dependency-security-audit`
+  twice): the same request that looked first in the baseline went straight to the skill, which is run to run
+  variation, not the second turn. The other 32 looked first again, all with Bash, and in turn 2 either answered in
+  text (16 runs, mostly that the folder holds no code) or looked further (16 runs, often with `find .claude`).
+- **So the one-turn limit is not what cost these skills.** An agent that looks around the empty folder first finds
+  nothing and answers; a second turn does not bring it back to the skill. A description has to make the agent start
+  the skill before it looks.
+- With `--max-turns 2`, a run that used both turns ends `error_max_turns` with `num_turns` 3; one that answered in
+  turn 2 ends `success` with `num_turns` 2. Every Skill call came in a message whose blocks share one `message.id`,
+  as the turn rule assumes.
+- The comparison with the baseline prints per-skill "worse" lines and "gone" requests because this round holds only
+  the 41 misses; read only its per-request lines.
+
+What it decided for Q17: counting each rerun run in place of the baseline run it repeats, every one of the ten
+candidates still misses 2 or more of 6, so all ten are reworded. Four other skills also still miss 2 of 6
+(`architect`, `engineering-principles`, `flaky-test-hunt`, `hillclimb`); they are named for the owner, not reworded.

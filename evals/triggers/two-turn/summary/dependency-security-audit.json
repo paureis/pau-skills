@@ -1,0 +1,52 @@
+{
+  "format": 1,
+  "part": "dependency-security-audit",
+  "runs": [
+    {
+      "id": "dependency-security-audit-s1-r1",
+      "list": "dependency-security-audit",
+      "kind": "should",
+      "index": 1,
+      "request": "security audit",
+      "expect": "dependency-security-audit",
+      "repeat": 1,
+      "started": "dependency-security-audit",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 137426,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "dependency-security-audit-s2-r1",
+      "list": "dependency-security-audit",
+      "kind": "should",
+      "index": 2,
+      "request": "There is news of a compromised npm package that stole tokens on install, and I have no idea whether anything in our build pulls it in.",
+      "expect": "dependency-security-audit",
+      "repeat": 1,
+      "started": "dependency-security-audit",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 135728,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "dependency-security-audit": {
+      "hits": 2,
+      "shouldRuns": 2,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

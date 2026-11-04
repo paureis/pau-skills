@@ -1,0 +1,82 @@
+{
+  "format": 1,
+  "part": "evaluator",
+  "runs": [
+    {
+      "id": "evaluator-s1-r1",
+      "list": "evaluator",
+      "kind": "should",
+      "index": 1,
+      "request": "evaluate this",
+      "expect": "evaluator",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 99910,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "evaluator-s2-r1",
+      "list": "evaluator",
+      "kind": "should",
+      "index": 2,
+      "request": "evaluate this",
+      "expect": "evaluator",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 97780,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "evaluator-s3-r1",
+      "list": "evaluator",
+      "kind": "should",
+      "index": 3,
+      "request": "Grade the new refund endpoint against its acceptance criteria as an outsider who did not build it, with evidence you reproduced yourself",
+      "expect": "evaluator",
+      "repeat": 1,
+      "started": "evaluator",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 253512,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "evaluator": {
+      "hits": 1,
+      "shouldRuns": 3,
+      "misses": [
+        {
+          "id": "evaluator-s1-r1",
+          "request": "evaluate this",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "evaluator-s2-r1",
+          "request": "evaluate this",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

@@ -1,0 +1,134 @@
+{
+  "format": 1,
+  "part": "codebase-oracle",
+  "runs": [
+    {
+      "id": "codebase-oracle-s1-r1",
+      "list": "codebase-oracle",
+      "kind": "should",
+      "index": 1,
+      "request": "answer these from the code",
+      "expect": "codebase-oracle",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 98741,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "codebase-oracle-s2-r1",
+      "list": "codebase-oracle",
+      "kind": "should",
+      "index": 2,
+      "request": "Look through our Django repo and tell me how session expiry actually works today, citing the files and commits you base it on",
+      "expect": "codebase-oracle",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 106403,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "codebase-oracle-s3-r1",
+      "list": "codebase-oracle",
+      "kind": "should",
+      "index": 3,
+      "request": "Look through our Django repo and tell me how session expiry actually works today, citing the files and commits you base it on",
+      "expect": "codebase-oracle",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 108454,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "codebase-oracle-s4-r1",
+      "list": "codebase-oracle",
+      "kind": "should",
+      "index": 4,
+      "request": "We are planning a change to the billing flow and nobody on the team remembers why the Rails app writes invoices twice, or whether a refunds table already exists.",
+      "expect": "codebase-oracle",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 98470,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "codebase-oracle-s5-r1",
+      "list": "codebase-oracle",
+      "kind": "should",
+      "index": 5,
+      "request": "We are planning a change to the billing flow and nobody on the team remembers why the Rails app writes invoices twice, or whether a refunds table already exists.",
+      "expect": "codebase-oracle",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 97786,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "codebase-oracle": {
+      "hits": 0,
+      "shouldRuns": 5,
+      "misses": [
+        {
+          "id": "codebase-oracle-s1-r1",
+          "request": "answer these from the code",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "codebase-oracle-s2-r1",
+          "request": "Look through our Django repo and tell me how session expiry actually works today, citing the files and commits you base it on",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "codebase-oracle-s3-r1",
+          "request": "Look through our Django repo and tell me how session expiry actually works today, citing the files and commits you base it on",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "codebase-oracle-s4-r1",
+          "request": "We are planning a change to the billing flow and nobody on the team remembers why the Rails app writes invoices twice, or whether a refunds table already exists.",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "codebase-oracle-s5-r1",
+          "request": "We are planning a change to the billing flow and nobody on the team remembers why the Rails app writes invoices twice, or whether a refunds table already exists.",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

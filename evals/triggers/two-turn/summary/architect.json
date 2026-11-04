@@ -1,0 +1,42 @@
+{
+  "format": 1,
+  "part": "architect",
+  "runs": [
+    {
+      "id": "architect-s1-r1",
+      "list": "architect",
+      "kind": "should",
+      "index": 1,
+      "request": "I need a new notifications module in our Kotlin backend and I can already picture three ways to structure it, none of which I have tried against real callers.",
+      "expect": "architect",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 110701,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "architect": {
+      "hits": 0,
+      "shouldRuns": 1,
+      "misses": [
+        {
+          "id": "architect-s1-r1",
+          "request": "I need a new notifications module in our Kotlin backend and I can already picture three ways to structure it, none of which I have tried against real callers.",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}
