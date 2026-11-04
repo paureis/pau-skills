@@ -7,8 +7,9 @@ the README's problem lists, so they cannot copy the description's wording. `test
 shape on every `npm test`; CI never runs a model.
 
 A round runs each request as a one-turn headless `claude -p` with all 38 skills installed, through `skill-eval`'s
-trigger mode (see `skills/verification/skill-eval/TRIGGERS.md`). Run it from a folder outside this repository, so no
-run reads this repository's `CLAUDE.md`:
+trigger mode (see `skills/verification/skill-eval/TRIGGERS.md`). Run it from the repository root with `TMPDIR` set to a folder
+outside every repository, so no run reads this repository's `CLAUDE.md` (the mode refuses a run root inside a git work
+tree):
 
 ```bash
 LAB=$(mktemp -d)
