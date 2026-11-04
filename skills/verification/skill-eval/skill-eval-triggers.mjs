@@ -1,6 +1,6 @@
 // skill-eval module: the triggers command. Finds the skills and the request lists, prints the plan and the estimate,
-// keeps the round within the cap, runs every request as a one-turn headless `claude -p` in a fresh folder that has
-// every skill installed, and writes summary.json. Reading and counting the transcripts is in
+// keeps the round within the cap, runs every request as a headless `claude -p` of at most --max-turns turns (default 1)
+// in a fresh folder that has every skill installed, and writes summary.json. Reading and counting the transcripts is in
 // skill-eval-triggers-count.mjs. Money is whole micro-dollars throughout.
 import { mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, statSync, mkdtempSync, cpSync, rmSync, realpathSync } from 'node:fs';
 import { join, resolve, basename } from 'node:path';
@@ -145,7 +145,7 @@ function readBaseline(file) {
 
 /** A runs entry for a run that never started claude: it is failed, and it costs nothing. */
 const notStarted = (run, why) => ({
-  ...run, started: 'none', firstTool: null, costMicros: null, result: 'failed before claude started', finished: false, spawned: false,
+  ...run, started: 'none', firstTool: null, turn: null, costMicros: null, result: 'failed before claude started', finished: false, spawned: false,
   notes: [`failed before claude started: ${why}`],
 });
 
@@ -171,7 +171,7 @@ async function oneRun(run, { root, lab, o, installed, stop, runner = runOne }) {
     }
     mkdirSync(home);
     const argv = ['-p', run.request,
-      '--max-turns', '1',
+      '--max-turns', String(o.maxTurns),
       '--output-format', 'stream-json', '--verbose', '--model', o.model,
       '--setting-sources', 'project',
       '--strict-mcp-config', '--no-session-persistence', '--max-budget-usd', microsArg(stop)];
@@ -182,13 +182,13 @@ async function oneRun(run, { root, lab, o, installed, stop, runner = runOne }) {
     const x = readRun(existsSync(file) ? readFileSync(file, 'utf8') : '');
     const notes = [];
     if (!x.finished) notes.push('no result line: the run did not finish');
-    // claude -p --max-turns 1 exits 1 after every run that ends error_max_turns, the usual one-turn end: no note.
+    // claude -p exits 1 after every run that ends error_max_turns, the usual end of a run that used its last turn: no note.
     if (res.exit !== 0 && !(res.exit === 1 && x.subtype === 'error_max_turns')) notes.push(`exit ${res.exit ?? res.signal}`);
     const offered = new Set((x.skills || []).map((s) => s.split(':').pop()));
     const lacking = x.skills ? [...installed.keys()].filter((n) => !offered.has(n)) : [];
     if (lacking.length) notes.push(`the init skills list lacks ${lacking.join(', ')}`);
     return {
-      ...run, started: x.started, firstTool: x.firstTool, costMicros: x.costMicros,
+      ...run, started: x.started, firstTool: x.firstTool, turn: x.turn, costMicros: x.costMicros,
       result: x.finished ? (x.subtype ?? 'unknown') : 'no result line', finished: x.finished, spawned: true, notes,
     };
   } catch (e) {
@@ -267,6 +267,7 @@ async function triggers(o, out, err) {
   out(`Also installed: ${skills.also.size ? `${skills.also.size}: ${names(skills.also).join(', ')}` : 'none'}`);
   out(`Requests: ${should + near} (${should} should, ${near} near ${near === 1 ? 'miss' : 'misses'}) in ${lists.length} ${lists.length === 1 ? 'list' : 'lists'}`);
   out(`Repeats: ${o.repeats}`);
+  out(`Max turns: ${o.maxTurns}`);
   out(`Runs: ${should + near} requests x ${o.repeats} = ${runs.length}`);
   out(`Estimate: ${microsUsd(estimate)} (${runs.length} runs x ${microsUsd(o.usdPerRunMicros)})`);
   out(`Cap: ${microsUsd(cap)}`);
@@ -304,10 +305,10 @@ async function triggers(o, out, err) {
     // round never rejects: a run that fails is a failed entry, and every run in flight has ended when it returns.
     const { entries, spent } = await round(runs, { root, lab, o, installed }, { cap, usdPerRun: o.usdPerRunMicros, parallel: o.parallel });
     const all = runs.map((r) => entries.get(r.id) || {
-      ...r, started: null, firstTool: null, costMicros: null, result: 'not run (cap)', finished: false, spawned: false, notes: [],
+      ...r, started: null, firstTool: null, turn: null, costMicros: null, result: 'not run (cap)', finished: false, spawned: false, notes: [],
     });
     const summary = {
-      format: 1, model: o.model, repeats: o.repeats, at: new Date().toISOString(), skills: names(skills.under), also: names(skills.also),
+      format: 1, model: o.model, repeats: o.repeats, maxTurns: o.maxTurns, at: new Date().toISOString(), skills: names(skills.under), also: names(skills.also),
       currency: 'USD', capMicros: cap, usdPerRunMicros: o.usdPerRunMicros, estimateMicros: estimate, costMicros: spent,
       runsPlanned: runs.length, runsMade: entries.size, parallel: o.parallel, realHome: o.realHome, runs: all, ...countRound(all),
     };

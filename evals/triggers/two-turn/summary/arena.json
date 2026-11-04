@@ -1,0 +1,59 @@
+{
+  "format": 1,
+  "part": "arena",
+  "runs": [
+    {
+      "id": "arena-s1-r1",
+      "list": "arena",
+      "kind": "should",
+      "index": 1,
+      "request": "arena this",
+      "expect": "arena",
+      "repeat": 1,
+      "started": "arena",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 96005,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "arena-s2-r1",
+      "list": "arena",
+      "kind": "should",
+      "index": 2,
+      "request": "Spin up a few competing attempts at this Rust trait design, each pushed a different way, and have someone neutral rank them before we choose",
+      "expect": "arena",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 114501,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "arena": {
+      "hits": 1,
+      "shouldRuns": 2,
+      "misses": [
+        {
+          "id": "arena-s2-r1",
+          "request": "Spin up a few competing attempts at this Rust trait design, each pushed a different way, and have someone neutral rank them before we choose",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

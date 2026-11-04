@@ -1,0 +1,206 @@
+{
+  "format": 1,
+  "part": "tdd",
+  "runs": [
+    {
+      "id": "tdd-s1-r1",
+      "list": "tdd",
+      "kind": "should",
+      "index": 1,
+      "request": "test first",
+      "expect": "tdd",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 89796,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "tdd-s2-r1",
+      "list": "tdd",
+      "kind": "should",
+      "index": 2,
+      "request": "Build the discount rules for our Ruby checkout in small steps: one failing spec, the least code to pass it, then tidy up, and repeat",
+      "expect": "tdd",
+      "repeat": 1,
+      "started": "tdd",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 88332,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "tdd-s3-r1",
+      "list": "tdd",
+      "kind": "should",
+      "index": 3,
+      "request": "I am about to add the overdraft logic to our Java ledger service, and last time I wrote all the tests after the code they barely checked anything.",
+      "expect": "tdd",
+      "repeat": 1,
+      "started": "tdd",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 88296,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "tdd-n1-r1",
+      "list": "tdd",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Show that the existing test for the overdraft check fails when the check is removed",
+      "expect": "mutation-test",
+      "repeat": 1,
+      "started": "mutation-test",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 88308,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "tdd-n2-r1",
+      "list": "tdd",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "The new RSpec test for overdrafts passes alone but fails about once in ten full runs on CI",
+      "expect": "flaky-test-hunt",
+      "repeat": 1,
+      "started": "flaky-test-hunt",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 87560,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "tdd-s1-r2",
+      "list": "tdd",
+      "kind": "should",
+      "index": 1,
+      "request": "test first",
+      "expect": "tdd",
+      "repeat": 2,
+      "started": "tdd",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 86228,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "tdd-s2-r2",
+      "list": "tdd",
+      "kind": "should",
+      "index": 2,
+      "request": "Build the discount rules for our Ruby checkout in small steps: one failing spec, the least code to pass it, then tidy up, and repeat",
+      "expect": "tdd",
+      "repeat": 2,
+      "started": "tdd",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 87848,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "tdd-s3-r2",
+      "list": "tdd",
+      "kind": "should",
+      "index": 3,
+      "request": "I am about to add the overdraft logic to our Java ledger service, and last time I wrote all the tests after the code they barely checked anything.",
+      "expect": "tdd",
+      "repeat": 2,
+      "started": "tdd",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 87612,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "tdd-n1-r2",
+      "list": "tdd",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Show that the existing test for the overdraft check fails when the check is removed",
+      "expect": "mutation-test",
+      "repeat": 2,
+      "started": "mutation-test",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 86808,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "tdd-n2-r2",
+      "list": "tdd",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "The new RSpec test for overdrafts passes alone but fails about once in ten full runs on CI",
+      "expect": "flaky-test-hunt",
+      "repeat": 2,
+      "started": "flaky-test-hunt",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 87536,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "tdd": {
+      "hits": 5,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "tdd-s1-r1",
+          "request": "test first",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": [
+    {
+      "list": "tdd",
+      "kind": "should",
+      "index": 1,
+      "request": "test first",
+      "started": [
+        "none",
+        "tdd"
+      ]
+    }
+  ]
+}

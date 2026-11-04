@@ -1,0 +1,35 @@
+{
+  "format": 1,
+  "part": "retrospective",
+  "runs": [
+    {
+      "id": "retrospective-s1-r1",
+      "list": "retrospective",
+      "kind": "should",
+      "index": 1,
+      "request": "In this session you used the wrong test runner, put the helper in the wrong folder, and I had to make you redo the changelog entry three times.",
+      "expect": "retrospective",
+      "repeat": 1,
+      "started": "retrospective",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 137137,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "retrospective": {
+      "hits": 1,
+      "shouldRuns": 1,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

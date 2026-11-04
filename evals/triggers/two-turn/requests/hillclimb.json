@@ -1,0 +1,8 @@
+{
+  "skill": "hillclimb",
+  "should": [
+    "Keep cutting the cold start time of our Java service until it is under 800 ms, measuring after every single change and reverting anything that does not help",
+    "Keep cutting the cold start time of our Java service until it is under 800 ms, measuring after every single change and reverting anything that does not help"
+  ],
+  "nearMisses": []
+}

@@ -1,0 +1,35 @@
+{
+  "format": 1,
+  "part": "rule-to-hook",
+  "runs": [
+    {
+      "id": "rule-to-hook-s1-r1",
+      "list": "rule-to-hook",
+      "kind": "should",
+      "index": 1,
+      "request": "enforce this rule",
+      "expect": "rule-to-hook",
+      "repeat": 1,
+      "started": "rule-to-hook",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 97190,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "rule-to-hook": {
+      "hits": 1,
+      "shouldRuns": 1,
+      "misses": [],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

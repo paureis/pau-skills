@@ -7,13 +7,18 @@ import { microsUsd } from './skill-eval-files.mjs';
 const bare = (name) => String(name).split(':').pop();
 
 /**
- * What one stream-json transcript shows: { started, firstTool, costMicros, subtype, skills, finished }. `started` is the
- * bare `skill` of the main agent's first Skill call, or "none"; `skills` is the init line's list, or null without one.
+ * What one stream-json transcript shows: { started, firstTool, turn, costMicros, subtype, skills, finished }. `started`
+ * is the bare `skill` of the main agent's first Skill call, or "none"; `skills` is the init line's list, or null without
+ * one. `turn` is null when nothing started, else the number of distinct main-agent assistant message ids up to and
+ * including the line with that call: claude prints each content block of a message as its own line with the message's
+ * id. A main-agent line whose id is not a non-empty string counts as a message of its own.
  */
 export function readRun(text) {
-  const x = { started: 'none', firstTool: null, costMicros: null, subtype: null, skills: null, finished: false };
+  const x = { started: 'none', firstTool: null, turn: null, costMicros: null, subtype: null, skills: null, finished: false };
   let toolSeen = false;
   let skillSeen = false;
+  const ids = new Set();
+  let noId = 0;
   for (const line of String(text).split(/\r?\n/)) {
     if (!line.trim()) continue;
     let e;
@@ -23,6 +28,11 @@ export function readRun(text) {
       x.skills = Array.isArray(e.skills) ? e.skills.map(String) : [];
     } else if (e.type === 'assistant' && Array.isArray(e.message?.content)) {
       if (e.parent_tool_use_id) continue; // a subagent's call does not count
+      if (!skillSeen) {
+        const id = e.message.id;
+        if (typeof id === 'string' && id) ids.add(id);
+        else noId++;
+      }
       for (const c of e.message.content) {
         if (c?.type !== 'tool_use') continue;
         if (!toolSeen) { toolSeen = true; x.firstTool = typeof c.name === 'string' ? c.name : null; }
@@ -30,6 +40,7 @@ export function readRun(text) {
         skillSeen = true;
         const s = c.input?.skill;
         x.started = typeof s === 'string' && bare(s).trim() ? bare(s) : 'none';
+        x.turn = x.started === 'none' ? null : ids.size + noId;
       }
     } else if (e.type === 'result') {
       x.finished = true;
@@ -98,16 +109,31 @@ export function countRound(runs) {
 
 const quote = (s) => JSON.stringify(String(s));
 
-/** The readable report of a summary, as one string. */
+/** The max turns of a summary; one made before --max-turns existed has none, and ran one turn. */
+const turnsOf = (s) => own(s, 'maxTurns') ?? 1;
+
+/** The hits of these runs by turn, as "turn 1: <a>, turn 2: <b>" in ascending order, or '' with no hit. */
+function hitsByTurn(runs) {
+  const by = new Map();
+  for (const r of runs) {
+    if (r.kind === 'should' && counts(r) && r.started === r.list && Number.isInteger(r.turn)) by.set(r.turn, (by.get(r.turn) || 0) + 1);
+  }
+  return [...by].sort(([a], [b]) => a - b).map(([t, n]) => `turn ${t}: ${n}`).join(', ');
+}
+
+/** The readable report of a summary, as one string. With maxTurns above 1 it also shows the hits by turn. */
 export function renderReport(s) {
+  const turns = turnsOf(s) > 1;
   const lines = [`Cost: ${microsUsd(s.costMicros)} spent, estimate ${microsUsd(s.estimateMicros)}, cap ${microsUsd(s.capMicros)}; ${s.runsMade} of ${s.runsPlanned} runs made`];
   if (s.costMicros > s.capMicros) lines.push(`Above the cap by ${microsUsd(s.costMicros - s.capMicros)}: a run cost more than its hard stop`);
   lines.push('', 'Per skill:');
   for (const [name, p] of Object.entries(s.perSkill)) {
     const misses = p.misses.map((m) => (m.started !== 'none' ? m.started : m.firstTool ? `none after ${m.firstTool}` : 'none with no tool'));
     const wrong = p.wrongStarts.map((w) => `${w.id} (meant for ${w.meantFor})`);
-    lines.push(`  ${name}: hits ${p.hits} of ${p.shouldRuns}; misses ${misses.length}${misses.length ? `: ${misses.join(', ')}` : ''}; wrong starts ${wrong.length}${wrong.length ? `: ${wrong.join(', ')}` : ''}`);
+    const byTurn = turns ? hitsByTurn(s.runs.filter((r) => r.list === name)) : '';
+    lines.push(`  ${name}: hits ${p.hits} of ${p.shouldRuns}${byTurn ? ` (${byTurn})` : ''}; misses ${misses.length}${misses.length ? `: ${misses.join(', ')}` : ''}; wrong starts ${wrong.length}${wrong.length ? `: ${wrong.join(', ')}` : ''}`);
   }
+  if (turns) lines.push(`Hits by turn: ${hitsByTurn(s.runs) || 'none'}`);
   // The near misses that name a skill, over the same runs as nearMisses.total: how many started it, how many nothing.
   const named = s.runs.filter((r) => r.kind === 'nearMiss' && r.expect !== 'none' && counts(r));
   const startedIt = named.filter((r) => r.started === r.expect).length;
@@ -146,9 +172,13 @@ function shares(runs) {
 const own = (obj, key) => (obj && typeof obj === 'object' && Object.hasOwn(obj, key) ? obj[key] : undefined);
 const wrongCount = (p) => (Array.isArray(own(p, 'wrongStarts')) ? p.wrongStarts.length : null);
 
-/** What got better or worse since an older summary, one line each: hits and wrong starts per skill, then requests. */
+/**
+ * What got better or worse since an older summary, one line each: hits and wrong starts per skill, then requests. A
+ * note comes first when the two rounds ran with different max turns.
+ */
 export function compareBaseline(old, now) {
   const lines = [];
+  if (turnsOf(old) !== turnsOf(now)) lines.push(`note: max turns differ: baseline ${turnsOf(old)}, this round ${turnsOf(now)}`);
   const change = (what, before, after, higherIsBetter) => {
     if (typeof before !== 'number' || typeof after !== 'number' || before === after) return;
     lines.push(`${(after > before) === higherIsBetter ? 'better' : 'worse'}: ${what} ${before} -> ${after}`);

@@ -18,7 +18,7 @@ const USAGE = `usage:
   skill-eval.mjs blind <lab-dir> [--out <dir>] [--seed <integer>] [--force]
   skill-eval.mjs judge <lab-dir> --model <model> [--effort <level>] [--pass-env <NAME>...] [--real-home] [--force]
   skill-eval.mjs unblind <lab-dir>
-  skill-eval.mjs triggers <lab-dir> --skills <dir> [--skills <dir>]... --requests <dir> --model <model> --max-usd <x> [--also <dir>]... [--repeats 2] [--usd-per-run 0.08] [--parallel 3] [--plan] [--baseline <summary.json or folder>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5]
+  skill-eval.mjs triggers <lab-dir> --skills <dir> [--skills <dir>]... --requests <dir> --model <model> --max-usd <x> [--also <dir>]... [--repeats 2] [--max-turns 1] [--usd-per-run 0.08] [--parallel 3] [--plan] [--baseline <summary.json or folder>] [--pass-env <NAME>...] [--real-home] [--timeout-min 5]
   skill-eval.mjs split-summary <summary.json> --out <folder>`;
 
 const NAME = /^[a-z][a-z0-9-]*$/;
@@ -31,8 +31,8 @@ const FLAGS = {
   unblind: {},
   triggers: {
     '--skills': 'many', '--also': 'many', '--requests': 'one', '--model': 'one', '--max-usd': 'one', '--repeats': 'one',
-    '--usd-per-run': 'one', '--parallel': 'one', '--plan': 'bool', '--baseline': 'one', '--pass-env': 'list',
-    '--real-home': 'bool', '--timeout-min': 'one',
+    '--max-turns': 'one', '--usd-per-run': 'one', '--parallel': 'one', '--plan': 'bool', '--baseline': 'one',
+    '--pass-env': 'list', '--real-home': 'bool', '--timeout-min': 'one',
   },
   'split-summary': { '--out': 'one' },
 };
@@ -118,8 +118,8 @@ export function parseArgs(argv) {
     Object.assign(o, {
       skills: raw['--skills'], also: raw['--also'] || [], requests: raw['--requests'], model: raw['--model'],
       capMicros: usd('--max-usd'), usdPerRunMicros: usd('--usd-per-run', '0.08'), repeats: int('--repeats', 1, 10, 2),
-      parallel: int('--parallel', 1, 10, 3), timeoutMin: int('--timeout-min', 1, 60, 5), plan: !!raw['--plan'],
-      baseline: raw['--baseline'] || null, passEnv: raw['--pass-env'] || [], realHome: !!raw['--real-home'],
+      maxTurns: int('--max-turns', 1, 3, 1), parallel: int('--parallel', 1, 10, 3), timeoutMin: int('--timeout-min', 1, 60, 5),
+      plan: !!raw['--plan'], baseline: raw['--baseline'] || null, passEnv: raw['--pass-env'] || [], realHome: !!raw['--real-home'],
     });
     for (const n of o.passEnv) if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(n)) fail(`--pass-env takes variable names: ${n}`);
   }

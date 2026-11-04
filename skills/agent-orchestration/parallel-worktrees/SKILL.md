@@ -1,6 +1,6 @@
 ---
 name: parallel-worktrees
-description: "Run independent pieces of work at the same time, one git worktree and branch per agent, then merge them back one at a time testing after each. Use when the user says 'run these in parallel', 'split this across agents', 'use worktrees', 'spin up several sessions on this', 'fan out', 'parallelize the refactor', 'work on several features at once'."
+description: "Get several independent tasks done at the same time: each goes to its own agent in its own git worktree and branch, with a check that no two edit the same files, then the branches merge back one at a time, testing after each. Use when the user says 'run these in parallel', 'split this across agents', 'use worktrees', 'fan out', or has several issues, features or fixes to do side by side."
 argument-hint: "[the work to split, e.g. 'issues 41, 42 and 47' or a path to a plan]"
 ---
 

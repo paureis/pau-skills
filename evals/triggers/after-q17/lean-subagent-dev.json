@@ -1,0 +1,213 @@
+{
+  "format": 1,
+  "part": "lean-subagent-dev",
+  "runs": [
+    {
+      "id": "lean-subagent-dev-s1-r1",
+      "list": "lean-subagent-dev",
+      "kind": "should",
+      "index": 1,
+      "request": "work lean",
+      "expect": "lean-subagent-dev",
+      "repeat": 1,
+      "started": "lean-subagent-dev",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 86576,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "lean-subagent-dev-s2-r1",
+      "list": "lean-subagent-dev",
+      "kind": "should",
+      "index": 2,
+      "request": "For this session, give work to a single helper agent at once, with a short brief each time, check what it hands back yourself, and keep usage low",
+      "expect": "lean-subagent-dev",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "turn": null,
+      "costMicros": 92292,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "lean-subagent-dev-s3-r1",
+      "list": "lean-subagent-dev",
+      "kind": "should",
+      "index": 3,
+      "request": "I keep hitting my usage limit by mid-afternoon, and today I still need to get three small features into our Flask API.",
+      "expect": "lean-subagent-dev",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": null,
+      "turn": null,
+      "costMicros": 95848,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "lean-subagent-dev-n1-r1",
+      "list": "lean-subagent-dev",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Install the starter team of planner, builder and reviewer agents into this Node project",
+      "expect": "geppetto",
+      "repeat": 1,
+      "started": "geppetto",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 87988,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "lean-subagent-dev-n2-r1",
+      "list": "lean-subagent-dev",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Give two subagents the same task of writing the CSV importer, each with a different constraint, and have a neutral reviewer compare them",
+      "expect": "arena",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 90576,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "lean-subagent-dev-s1-r2",
+      "list": "lean-subagent-dev",
+      "kind": "should",
+      "index": 1,
+      "request": "work lean",
+      "expect": "lean-subagent-dev",
+      "repeat": 2,
+      "started": "lean-subagent-dev",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 86476,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "lean-subagent-dev-s2-r2",
+      "list": "lean-subagent-dev",
+      "kind": "should",
+      "index": 2,
+      "request": "For this session, give work to a single helper agent at once, with a short brief each time, check what it hands back yourself, and keep usage low",
+      "expect": "lean-subagent-dev",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": null,
+      "turn": null,
+      "costMicros": 89692,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "lean-subagent-dev-s3-r2",
+      "list": "lean-subagent-dev",
+      "kind": "should",
+      "index": 3,
+      "request": "I keep hitting my usage limit by mid-afternoon, and today I still need to get three small features into our Flask API.",
+      "expect": "lean-subagent-dev",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": null,
+      "turn": null,
+      "costMicros": 93992,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "lean-subagent-dev-n1-r2",
+      "list": "lean-subagent-dev",
+      "kind": "nearMiss",
+      "index": 1,
+      "request": "Install the starter team of planner, builder and reviewer agents into this Node project",
+      "expect": "geppetto",
+      "repeat": 2,
+      "started": "geppetto",
+      "firstTool": "Skill",
+      "turn": 1,
+      "costMicros": 88004,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "lean-subagent-dev-n2-r2",
+      "list": "lean-subagent-dev",
+      "kind": "nearMiss",
+      "index": 2,
+      "request": "Give two subagents the same task of writing the CSV importer, each with a different constraint, and have a neutral reviewer compare them",
+      "expect": "arena",
+      "repeat": 2,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 89068,
+      "result": "error_max_turns",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "lean-subagent-dev": {
+      "hits": 2,
+      "shouldRuns": 6,
+      "misses": [
+        {
+          "id": "lean-subagent-dev-s2-r1",
+          "request": "For this session, give work to a single helper agent at once, with a short brief each time, check what it hands back yourself, and keep usage low",
+          "started": "none",
+          "firstTool": null
+        },
+        {
+          "id": "lean-subagent-dev-s3-r1",
+          "request": "I keep hitting my usage limit by mid-afternoon, and today I still need to get three small features into our Flask API.",
+          "started": "none",
+          "firstTool": null
+        },
+        {
+          "id": "lean-subagent-dev-s2-r2",
+          "request": "For this session, give work to a single helper agent at once, with a short brief each time, check what it hands back yourself, and keep usage low",
+          "started": "none",
+          "firstTool": null
+        },
+        {
+          "id": "lean-subagent-dev-s3-r2",
+          "request": "I keep hitting my usage limit by mid-afternoon, and today I still need to get three small features into our Flask API.",
+          "started": "none",
+          "firstTool": null
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

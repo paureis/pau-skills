@@ -1,6 +1,6 @@
 ---
 name: bug-fix
-description: "Fix a bug at its root cause with runtime evidence: reproduce it twice, test one hypothesis at a time, commit a failing test before the fix. Use when the cause is not obvious, a first fix did not hold, the bug came back or the fix is risky, or for 'find the root cause', 'why does X return Y'. An obvious one-line fix needs no skill; a failure that comes and goes needs counted runs."
+description: "Debug and fix a bug at its root cause from runtime evidence: reproduce it twice, test one hypothesis at a time, commit a failing test first. Use when something is broken and the cause is unclear, a first fix did not hold or the bug came back, or for 'find the root cause', 'why does X return Y'. An obvious one-line fix needs no skill; a failure that comes and goes needs counted runs."
 argument-hint: "<the bug report: what you did, what you expected, what happened, where>"
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:

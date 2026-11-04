@@ -1,0 +1,12 @@
+{
+  "skill": "parallel-worktrees",
+  "should": [
+    "run these in parallel",
+    "run these in parallel",
+    "These four Ruby tickets touch different files, so give each one its own agent and git worktree and bring the branches back together after",
+    "These four Ruby tickets touch different files, so give each one its own agent and git worktree and bring the branches back together after",
+    "Two agents worked in the same checkout yesterday and one of them committed the other agent's unfinished edits along with its own.",
+    "Two agents worked in the same checkout yesterday and one of them committed the other agent's unfinished edits along with its own."
+  ],
+  "nearMisses": []
+}

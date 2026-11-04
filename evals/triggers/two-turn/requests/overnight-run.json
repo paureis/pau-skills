@@ -1,0 +1,9 @@
+{
+  "skill": "overnight-run",
+  "should": [
+    "run this overnight",
+    "I am heading to bed, keep working on the Rust parser port until the test suite is green, and leave me a log I can check tomorrow",
+    "I am heading to bed, keep working on the Rust parser port until the test suite is green, and leave me a log I can check tomorrow"
+  ],
+  "nearMisses": []
+}

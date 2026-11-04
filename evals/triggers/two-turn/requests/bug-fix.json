@@ -1,0 +1,10 @@
+{
+  "skill": "bug-fix",
+  "should": [
+    "find the root cause",
+    "find the root cause",
+    "Track down why our Go service drops the last line of every uploaded CSV, using real runs rather than guesses, and ship only the fix the evidence supports",
+    "Track down why our Go service drops the last line of every uploaded CSV, using real runs rather than guesses, and ship only the fix the evidence supports"
+  ],
+  "nearMisses": []
+}

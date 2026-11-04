@@ -1,0 +1,7 @@
+{
+  "skill": "geppetto",
+  "should": [
+    "Write me a new subagent file under .claude/agents for reviewing pull requests in our Python monorepo, and show it before saving"
+  ],
+  "nearMisses": []
+}

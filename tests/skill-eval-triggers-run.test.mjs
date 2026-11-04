@@ -230,7 +230,7 @@ describe('a round', () => {
     const plugin = s.runs.find((x) => x.id === 'tidy-notes-s2-r1');
     assert.deepEqual({ ...plugin, notes: undefined }, {
       id: 'tidy-notes-s2-r1', list: 'tidy-notes', kind: 'should', index: 2, repeat: 1, request: 'plugin tidy the notes', expect: 'tidy-notes',
-      started: 'tidy-notes', firstTool: 'Skill', costMicros: 50_000, result: 'error_max_turns', finished: true, spawned: true, notes: undefined,
+      started: 'tidy-notes', firstTool: 'Skill', turn: 1, costMicros: 50_000, result: 'error_max_turns', finished: true, spawned: true, notes: undefined,
     });
     for (const x of s.runs) assert.ok(existsSync(join(r.lab, 'runs', `${x.id}.jsonl`)), x.id);
     assert.deepEqual([s.perSkill['tidy-notes'].hits, s.perSkill['tidy-notes'].shouldRuns, s.perSkill['tidy-notes'].misses.length, s.perSkill['tidy-notes'].wrongStarts.length], [4, 6, 2, 3]);

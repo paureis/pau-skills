@@ -1,0 +1,65 @@
+{
+  "format": 1,
+  "part": "engineering-principles",
+  "runs": [
+    {
+      "id": "engineering-principles-s1-r1",
+      "list": "engineering-principles",
+      "kind": "should",
+      "index": 1,
+      "request": "I am about to copy the same retry wrapper into eleven handlers across our Python service, and something about that feels wrong.",
+      "expect": "engineering-principles",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 110687,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    },
+    {
+      "id": "engineering-principles-s2-r1",
+      "list": "engineering-principles",
+      "kind": "should",
+      "index": 2,
+      "request": "I am about to copy the same retry wrapper into eleven handlers across our Python service, and something about that feels wrong.",
+      "expect": "engineering-principles",
+      "repeat": 1,
+      "started": "none",
+      "firstTool": "Bash",
+      "turn": null,
+      "costMicros": 115639,
+      "result": "success",
+      "finished": true,
+      "spawned": true,
+      "notes": []
+    }
+  ],
+  "perSkill": {
+    "engineering-principles": {
+      "hits": 0,
+      "shouldRuns": 2,
+      "misses": [
+        {
+          "id": "engineering-principles-s1-r1",
+          "request": "I am about to copy the same retry wrapper into eleven handlers across our Python service, and something about that feels wrong.",
+          "started": "none",
+          "firstTool": "Bash"
+        },
+        {
+          "id": "engineering-principles-s2-r1",
+          "request": "I am about to copy the same retry wrapper into eleven handlers across our Python service, and something about that feels wrong.",
+          "started": "none",
+          "firstTool": "Bash"
+        }
+      ],
+      "wrongStarts": []
+    }
+  },
+  "nearMisses": {
+    "wrong": []
+  },
+  "unsteady": []
+}

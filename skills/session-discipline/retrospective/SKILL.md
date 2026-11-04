@@ -1,6 +1,6 @@
 ---
 name: retrospective
-description: "Turn this session's corrections and redone work into short edits to CLAUDE.md, memory or a skill, checked against what is already written. Use when the user says 'retrospective', 'what did we learn' or 'how should skills be updated', or after a session with repeated corrections or redone work. About how we work, not an incident postmortem."
+description: "Review this session and turn its corrections and redone work into short proposed edits or checks for CLAUDE.md, memory or a skill, checked against what is already written. Use when the user says 'retrospective', 'what did we learn', 'how should skills be updated', asks what to do differently next time, or after repeated corrections or redone work. About how we work, not an incident postmortem."
 ---
 
 # Retrospective
