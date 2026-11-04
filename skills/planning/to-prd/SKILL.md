@@ -1,6 +1,6 @@
 ---
 name: to-prd
-description: "Write a PRD (product requirements document: problem, solution, user stories, implementation and testing decisions, scope) from what the conversation and the code already settled, without interviewing, and save it as a markdown file. Use when the user says 'write a PRD', 'make this into a PRD', or wants an agreed feature, plan or finished grilling session written up as a spec or requirements doc."
+description: "Write a PRD (product requirements document) from what the conversation and the code already settled, without interviewing, and save it as a markdown file. Use when the user says 'write a PRD', 'make this into a PRD', or wants an agreed feature, plan or finished grilling session written up as a spec or requirements doc."
 license: MIT (adapted from mattpocock/skills; see NOTICE)
 metadata:
   upstream: https://github.com/mattpocock/skills/tree/main/skills/engineering/to-prd
