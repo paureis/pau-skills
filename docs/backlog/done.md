@@ -169,3 +169,17 @@ Work from 2026-10-17 to 2026-10-19 (the first six batches) is in
   - Did not: the cap rule needed the review to find that reserving the price still passed the cap; the first summary
     was 210 KB and needed a fifth slice to fit the size rule; a container restart lost one review; builders and a
     reviewer still wrote `2>/dev/null`.
+- 2026-11-04: the fourteenth batch, Q17 descriptions that start their skill, merged as
+  [pull request 62](https://github.com/paureis/pau-skills/pull/62). `eng-lead` planned two slices: the code
+  (`--max-turns`, the turn of a start, the two-turn lists) in full, and the rewording as a draft the orchestrator
+  filled after the rerun. Each brief had a read-only plan check, each slice a fresh reviewer; one fix round. The two
+  paid runs: 41 two-turn runs for 4.49 US dollars (no start in turn 2), then 380 one-turn runs for 34.67 (cap 40): no
+  wrong start, 152 of 152 near misses right, 186 of 228 hits (175 before); six of the ten reworded skills went up,
+  four stayed at 2 of 6. 1,489 tests. Eleven skills went to the owner as one bundle. With the roster:
+  - Worked: `eng-lead` handing back at once with each builder's ID; a draft brief with fields to fill after the paid
+    rerun; plan checks that built or tried each slice (nine surviving mutations in A, four ways past the blind rule
+    in B); a builder and a reviewer kept away from the lists, with test output read only through a grep; the cheap
+    rerun before the expensive round.
+  - Did not: four description rules (curly quotes, a backticked name with "if installed", the opener, quoted remarks)
+    have no test and were checked by hand; four reworded skills did not move, and one round cannot tell a change of 1
+    or 2 hits from noise.
