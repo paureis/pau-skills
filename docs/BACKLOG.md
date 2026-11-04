@@ -67,7 +67,7 @@ under "Work items" below.
 - [How to run a batch](backlog/how-to-run-a-batch.md): the 10 steps and "With the roster".
 - [Kickoff for the next session](backlog/kickoff.md): the next session's kickoff, and the fifth batch's kickoff as a
   template.
-- [Decisions](backlog/decisions.md): decisions 1 to 19, taken from 2026-10-17 to 2026-10-30.
+- [Decisions](backlog/decisions.md): decisions 1 to 20, taken from 2026-10-17 to 2026-11-04.
 - [Context budget](backlog/context-budget.md): the facts and the policy since P0.5.
 - [Things that bit the first batch](backlog/things-that-bit/batch-1.md)
 - [Things that bit the second batch](backlog/things-that-bit/batch-2.md)
@@ -122,6 +122,7 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q15 html-plan pages that are easy on the eyes](backlog/q15.md)
 - [Q16 trigger tests and a skill usage log](backlog/q16.md)
 - [Q17 descriptions that start their skill](backlog/q17.md)
+- [Q18 tests for the description rules checked by hand](backlog/q18.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -149,7 +150,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 15. Done: the twelfth batch, Q14 what Q13 left (pull request 55); its scope was decision 16.
 16. Done: the thirteenth batch, Q16 trigger tests and a skill usage log (pull request 59); its scope was decision 18.
 17. Done: the fourteenth batch, Q17 descriptions that start their skill (pull request 62); its scope was decision 19.
-18. **Next:** nothing yet. The owner's decisions after Q17 are open on an html-plan page; see
+18. **Next:** Q18 tests for the description rules checked by hand; its scope is decision 20. The kickoff is in
     [backlog/kickoff.md](backlog/kickoff.md).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

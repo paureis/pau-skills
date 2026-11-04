@@ -18,6 +18,9 @@ the plugin they installed is bumped.
   dollars, in `evals/triggers/after-q17/`) had no wrong start, every near miss right, and 186 hits of 228, up from 175.
 - The entries of 2026-10-26 to 2026-10-30 moved to `docs/changelog/2026-W44.md`, since week 44 had ended.
 - The bundle goes to 0.18.0.
+- The owner kept every recommendation after Q17 (decision 20). Q18 adds tests for the description rules the Q17
+  builder checked by hand; `docs/backlog/q18.md` holds the plan, and `docs/backlog/kickoff.md` the message that starts
+  it. The next trigger round compares with `evals/triggers/after-q17`.
 
 ## Older entries
 
