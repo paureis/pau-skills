@@ -20,9 +20,12 @@ Facts (Claude Code documentation, skills page, checked 2026-10-17):
   batch and to 14,000 for the sixth, by the owner's choice).
 - Skills that launch subagents or headless runs, commit, push or install with no other check, or change how the whole
   session works carry the confirm paragraph word for word, unless something in them already stops for the user's yes
-  before that cost. `CONFIRM_LIST` in `tests/confirm-step.test.mjs` is the list (14 skills), and the README and
+  before that cost. `CONFIRM_LIST` in `tests/confirm-list.mjs` is the list (14 skills), and the README and
   `which-skill` must name the same skills. In those skills' descriptions only phrases that ask for the work are
   quoted; remarks and questions are written as situations.
+- Every description is one double-quoted line with no quote mark but the ASCII apostrophe and double quote, no
+  backtick, and exactly one "Use ..." opener. On a confirm-list skill no quoted phrase holds a question mark or has one
+  right after it. `tests/description-rules.test.mjs` checks the four rules (Q18).
 - A skill starts another one directly ("use `x` if it is installed") for a step inside the work the user asked for,
   and offers it ("offer to run `x` if it is installed") for a next step or while the current skill is read-only.
 - After each upload, a new session measures the listing with `/context`, and asks "List every skill in your skill

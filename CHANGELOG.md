@@ -3,6 +3,15 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-04: Q18, tests for the description rules checked by hand
+
+- `tests/description-rules.test.mjs` checks four rules on every description that the Q17 builder checked by hand: no
+  quote mark but the ASCII apostrophe and double quote, no backtick, exactly one "Use ..." opener, and on a
+  confirm-list skill no question mark in or right after a quoted phrase. Each rule is proven with `mutate.sh` on a real
+  description.
+- The confirm list moves to `tests/confirm-list.mjs`, which `tests/confirm-step.test.mjs` and the new test import.
+- No skill changed, so no version changes.
+
 ## 2026-11-04: Q17, descriptions that start their skill
 
 - `skill-eval` (verification 0.14.0): `triggers` takes `--max-turns` (1 to 3, default 1). summary.json records

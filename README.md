@@ -214,7 +214,7 @@ messy") does not count as asking.
 - `dependency-upgrade`, `rule-to-hook`, `architect`, `session-close`;
 - `lean-subagent-dev`, `methodology`.
 
-`tests/confirm-step.test.mjs` keeps this list and the skills in step.
+`tests/confirm-list.mjs` keeps this list, and `tests/confirm-step.test.mjs` keeps the skills in step.
 The other skills either cost little or already ask before they write (for example `retrospective` and `to-issues`
 show you their edits or issues and wait).
 
