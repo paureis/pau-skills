@@ -160,7 +160,10 @@ test('the reader names a skill whose description it cannot read, and never skips
     'a plain unquoted value': skillMd(`description: ${GOOD}`),
     'a single-quoted value': skillMd(`description: '${GOOD.replaceAll("'", "''")}'`),
     'a > block': skillMd(`description: >\n  ${GOOD}`),
-    'no frontmatter': `# Title\n\n${GOOD}\n`,
+    // A later --- line, so only the check on line 1 can reject these three.
+    'no frontmatter': `title\ndescription: "${GOOD}"\n---\n\nBody.\n`,
+    'a first line of four dashes': `----\nname: s\ndescription: "${GOOD}"\n---\n\nBody.\n`,
+    'a first line with text after the dashes': `--- x\nname: s\ndescription: "${GOOD}"\n---\n\nBody.\n`,
     'a frontmatter never closed': `---\nname: s\ndescription: "${GOOD}"\n\nBody.\n`,
     'two description lines': skillMd(`description: "${GOOD}"\ndescription: "${GOOD}"`),
     'no description line': skillMd('name2: s', `\n${GOOD}\n`),
@@ -217,6 +220,14 @@ test('rule 1 catches every quote mark and look-alike, and passes the straight ap
   const [p] = expectProblems(checks.rule1([{ id: 'a/b', description: curly }]), 1, 'a/b: rule 1: ', curly);
   assert.ok(p.includes(uPlus(0x2018)) && p.includes(uPlus(0x2019)), `${JSON.stringify(p)} names both marks`);
 
+  // A mark right after a straight apostrophe, a mark first and a mark last: each one problem naming only that mark.
+  for (const [n, description] of [[0x2019, `Plans the user'${ch(0x2019)}s work. Use when the user says 'plan the work'.`],
+    [0x201c, `${ch(0x201c)}Plans the work. Use when the user says 'plan the work'.`],
+    [0x201d, `Plans the work. Use when the user says 'plan the work'.${ch(0x201d)}`]]) {
+    const [one] = expectProblems(checks.rule1([{ id: 'a/b', description }]), 1, 'a/b: rule 1: ', description);
+    assert.ok(one.includes(uPlus(n)) && !one.includes(uPlus(0x27)), `${JSON.stringify(one)} names ${uPlus(n)} only`);
+  }
+
   for (const description of [
     "Plans the user's work. Use when the user says 'plan it'.",
     'Plans the "big" work. Use when the user says \'plan the work\'.',
@@ -230,7 +241,9 @@ test('rule 1 catches every quote mark and look-alike, and passes the straight ap
 test('rule 2 catches a lone backtick and a pair', () => {
   const tick = ch(0x60);
   for (const description of [`Runs ${tick}make${tick} for you. Use when the user says 'run the build'.`,
-    `Runs ${tick}make for you. Use when the user says 'run the build'.`]) {
+    `Runs ${tick}make for you. Use when the user says 'run the build'.`,
+    `${tick}Runs make for you. Use when the user says 'run the build'.`,
+    `Runs make for you. Use when the user says 'run the build'.${tick}`]) {
     expectProblems(checks.rule2([{ id: 'a/b', description }]), 1, 'a/b: rule 2: ', description);
   }
   for (const description of ["Runs the user's build. Use when the user says 'run the build'.",
@@ -258,11 +271,14 @@ test('rule 3 catches no opener and a second one, and passes each form alone and 
 
 test('rule 4 catches a question mark in or right after a quoted phrase on a listed skill, and nothing else', () => {
   const list = ['a/listed'];
-  for (const description of ["Checks work. Use when the user says 'check the work' or 'is it ready?'.",
-    "Checks work. Use when the user says 'check the work' or 'is it ready'? today.",
-    "Checks work. Use when the user says 'check the work' or 'is it? then go'."]) {
+  // The bad phrase is phrase 2 (never the first), except in the last case, which checks that phrase 1 is read too.
+  for (const [k, description] of [[2, "Checks work. Use when the user says 'check the work' or 'is it ready?'."],
+    [2, "Checks work. Use when the user says 'check the work' or 'is it ready'? today."],
+    [2, "Checks work. Use when the user says 'check the work' or 'is it? then go'."],
+    [2, "Checks work. Use when the user says 'check the work' or '?ready'."],
+    [1, "Checks work. Use when the user says 'is it ready?' or 'check the work'."]]) {
     const [p] = expectProblems(checks.rule4([{ id: 'a/listed', description }], list), 1, 'a/listed: rule 4: ', description);
-    assert.match(p, /\bphrase 2\b/, `${JSON.stringify(p)} names phrase 2`);
+    assert.match(p, new RegExp(`\\bphrase ${k}\\b`), `${JSON.stringify(p)} names phrase ${k}`);
     assert.ok(!p.includes('is it ready'));
   }
   const two = "Checks work. Use when the user says 'check the work', 'is it ready?' or 'is it done'?.";
@@ -273,6 +289,8 @@ test('rule 4 catches a question mark in or right after a quoted phrase on a list
   expectProblems(checks.rule4([{ id: 'a/listed', description: outside }], list), 0, '', outside);
   const off = "Checks work. Use when the user says 'check the work' or 'is it ready?'.";
   expectProblems(checks.rule4([{ id: 'b/other', description: off }], list), 0, '', off);
+  // Off the list in the same plugin as a listed skill: the list holds whole ids.
+  expectProblems(checks.rule4([{ id: 'a/other', description: off }], list), 0, '', off);
 });
 
 test('the reader and the opener and phrase patterns are the same as in tests/trigger-lists.test.mjs', () => {
