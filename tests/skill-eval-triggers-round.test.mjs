@@ -137,15 +137,15 @@ describe('a run that fails before it starts', () => {
     mkdirSync(join(lab, 'runs'));
     const seen = [];
     const runner = async (run, argv, opts) => {
-      seen.push(opts.timeoutMin, argv.at(-1));
+      seen.push(opts.timeoutMin, argv.at(-1), argv[3]);
       writeFileSync(join(lab, 'runs', `${run.id}.jsonl`), '');
       return { exit: null, error: 'spawn ENOENT' };
     };
     const run = { id: 'tidy-notes-s1-r1', list: 'tidy-notes', kind: 'should', index: 1, repeat: 1, request: 'tidy a', expect: 'tidy-notes' };
-    const o = { model: 'm', timeoutMin: 7, passEnv: [], realHome: false };
+    const o = { model: 'm', maxTurns: 1, timeoutMin: 7, passEnv: [], realHome: false };
     const installed = new Map([['tidy-notes', join(SKILLS, 'tidy-notes')]]);
     const entry = await oneRun(run, { root, lab, o, installed, stop: 160_000, runner });
-    assert.deepEqual(seen, [7, '0.16']);
+    assert.deepEqual(seen, [7, '0.16', '1']);
     assert.equal(entry.spawned, false);
     assert.equal(entry.finished, false);
     assert.match(entry.notes.join(';'), /spawn ENOENT/);

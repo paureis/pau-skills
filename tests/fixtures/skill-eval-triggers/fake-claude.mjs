@@ -14,8 +14,13 @@
 //   look     reads a file first and starts nothing
 //   helper   a subagent starts pack-boxes before anything else (the main agent then goes on as below)
 //   plugin   the skill is started with a plugin prefix, as moving-kit:<name>
+//   browse   turn 1 prints a text block and a Bash call (ls) as two lines of one message, then a user line with the
+//            tool result. With --max-turns 2 or more, turn 2 starts the skill the prompt names (as below) or answers
+//            with no tool; with --max-turns 1 the run ends after turn 1 with error_max_turns
 //   any other prompt starts the installed skill whose first word (tidy in tidy-notes) is a word of the prompt, or
 //   answers with no tool when none is.
+// Every assistant line carries a message.id, as real claude prints: msg_<turn> for the main agent (the lines of one
+// turn share it) and msg_sub_1 for the subagent. num_turns on the result line is the number of turns used.
 // The cost is FAKE_TRIGGERS_COST (default 0.05; "stop" spends the whole --max-budget-usd), or 0.01 when the prompt
 // says cheaply. slowly waits 1500 ms before printing, pause 500 ms. sabotage removes the folder FAKE_TRIGGERS_BREAK
 // names (a skill's source folder), so the next run's copy of it fails.
@@ -76,14 +81,16 @@ if (env.FAKE_TRIGGERS_FAIL === '1') {
 
 const words = new Set(String(prompt).toLowerCase().split(/[^a-z0-9-]+/).filter(Boolean));
 const has = (w) => words.has(w);
-const use = (name, input, parent = null) => ({
+const use = (name, input, parent, id) => ({
   type: 'assistant', parent_tool_use_id: parent,
-  message: { role: 'assistant', content: [{ type: 'tool_use', id: `toolu_${name}`, name, input }] },
+  message: { id, role: 'assistant', content: [{ type: 'tool_use', id: `toolu_${name}`, name, input }] },
 });
+const say = (text, id) => ({ type: 'assistant', parent_tool_use_id: null, message: { id, role: 'assistant', content: [{ type: 'text', text }] } });
+const maxTurns = kind === 'call' ? Number(argv[argv.indexOf('--max-turns') + 1]) : 0;
 if (has('sabotage') && env.FAKE_TRIGGERS_BREAK) rmSync(env.FAKE_TRIGGERS_BREAK, { recursive: true, force: true });
 
 const lines = [];
-if (has('helper')) lines.push(use('Skill', { skill: 'pack-boxes' }, 'toolu_agent'));
+if (has('helper')) lines.push(use('Skill', { skill: 'pack-boxes' }, 'toolu_agent', 'msg_sub_1'));
 let skill = null;
 let read = false;
 if (has('coin')) skill = earlier % 2 === 0 ? 'tidy-notes' : null;
@@ -91,18 +98,29 @@ else if (has('check')) skill = 'verify';
 else if (has('look')) read = true;
 else skill = installed.find((s) => has(s.split('-')[0])) ?? null;
 if (skill && has('plugin')) skill = `moving-kit:${skill}`;
-if (skill) lines.push(use('Skill', { skill }));
-else if (read) lines.push(use('Read', { file_path: join(cwd, 'notes.txt') }));
-else lines.push({ type: 'assistant', parent_tool_use_id: null, message: { role: 'assistant', content: [{ type: 'text', text: 'Here you go.' }] } });
+let turns = 1;
+let tool = !!(skill || read);
+if (has('browse')) {
+  lines.push(say('Let me see what is here first.', 'msg_1'), use('Bash', { command: 'ls' }, null, 'msg_1'), {
+    type: 'user', parent_tool_use_id: null, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'toolu_Bash', content: 'notes.txt' }] },
+  });
+  tool = true;
+  if (maxTurns >= 2) {
+    turns = 2;
+    tool = !!skill;
+    lines.push(skill ? use('Skill', { skill }, null, 'msg_2') : say('Here you go.', 'msg_2'));
+  }
+} else if (skill) lines.push(use('Skill', { skill }, null, 'msg_1'));
+else if (read) lines.push(use('Read', { file_path: join(cwd, 'notes.txt') }, null, 'msg_1'));
+else lines.push(say('Here you go.', 'msg_1'));
 
 const offered = [...installed, 'verify', 'debug'].filter((s) => s !== env.FAKE_TRIGGERS_DROP);
 const budget = Number(argv[argv.indexOf('--max-budget-usd') + 1]);
 const cost = has('cheaply') ? 0.01 : env.FAKE_TRIGGERS_COST === 'stop' ? budget : Number(env.FAKE_TRIGGERS_COST || '0.05');
-const tool = !!(skill || read);
 const out = [
   { type: 'system', subtype: 'init', cwd, model: 'fake-model', skills: offered, slash_commands: offered, plugins: [], mcp_servers: [] },
   ...lines,
-  { type: 'result', subtype: tool ? 'error_max_turns' : 'success', is_error: tool, num_turns: 1, total_cost_usd: cost, result: tool ? '' : 'Here you go.' },
+  { type: 'result', subtype: tool ? 'error_max_turns' : 'success', is_error: tool, num_turns: turns, total_cost_usd: cost, result: tool ? '' : 'Here you go.' },
 ];
 
 writeFileSync(join(cwd, 'answered.txt'), 'answered\n');
