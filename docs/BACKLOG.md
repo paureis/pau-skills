@@ -155,6 +155,8 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 17. Done: the fourteenth batch, Q17 descriptions that start their skill (pull request 62); its scope was decision 19.
 18. Done: the fifteenth batch, Q18 tests for the description rules checked by hand (pull request 65); its scope was
     decision 20.
-19. **Next:** Q19 descriptions in printable ASCII only; its scope is decision 21. After it the backlog is empty.
+19. Done: the fifteenth batch's second part, Q19 descriptions in printable ASCII only (pull request 67); its scope was
+    decision 21.
+20. **Next:** nothing. The backlog is empty until the owner adds an item; see [backlog/kickoff.md](backlog/kickoff.md).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

@@ -47,3 +47,12 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
     test each mutation must fail; resuming the builder by ID after a container restart.
   - Did not: the review still found six mutations no fixture caught, and two kinds of character the rules as written
     let through (other question marks, quote ornaments), left to the owner.
+- 2026-11-05: the fifteenth batch's second part, Q19 descriptions in printable ASCII only, merged as
+  [pull request 67](https://github.com/paureis/pau-skills/pull/67), from the owner's answer on the Q18 decisions page
+  (decision 21). The same shape as Q18: one slice, a plan check that built it in a clone, one builder, a fresh
+  reviewer, one fix round and a second look. Rule 1 now flags every character outside U+0020 to U+007E; 1,500 tests,
+  as before. With the roster:
+  - Worked: proving each gap SURVIVED at the base before the change; a sweep of every BMP code point; a reviewer that
+    checked rule 1 against a hand-written decoder on every code point.
+  - Did not: the orchestrator's own correction put the only bad skill last in the multi-skill case, so a rule that read
+    only the last skill passed every test until the review; the test file is now 189 bytes under the size limit.
