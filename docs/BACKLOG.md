@@ -67,7 +67,7 @@ under "Work items" below.
 - [How to run a batch](backlog/how-to-run-a-batch.md): the 10 steps and "With the roster".
 - [Kickoff for the next session](backlog/kickoff.md): the next session's kickoff, and the fifth batch's kickoff as a
   template.
-- [Decisions](backlog/decisions.md): decisions 1 to 20, taken from 2026-10-17 to 2026-11-04.
+- [Decisions](backlog/decisions.md): decisions 1 to 21, taken from 2026-10-17 to 2026-11-05.
 - [Context budget](backlog/context-budget.md): the facts and the policy since P0.5.
 - [Things that bit the first batch](backlog/things-that-bit/batch-1.md)
 - [Things that bit the second batch](backlog/things-that-bit/batch-2.md)
@@ -125,6 +125,7 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q16 trigger tests and a skill usage log](backlog/q16.md)
 - [Q17 descriptions that start their skill](backlog/q17.md)
 - [Q18 tests for the description rules checked by hand](backlog/q18.md)
+- [Q19 descriptions in printable ASCII only](backlog/q19.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -154,7 +155,6 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 17. Done: the fourteenth batch, Q17 descriptions that start their skill (pull request 62); its scope was decision 19.
 18. Done: the fifteenth batch, Q18 tests for the description rules checked by hand (pull request 65); its scope was
     decision 20.
-19. **Next:** nothing. The backlog is empty until the owner answers the Q18 decisions page or adds an item; see
-    [backlog/kickoff.md](backlog/kickoff.md).
+19. **Next:** Q19 descriptions in printable ASCII only; its scope is decision 21. After it the backlog is empty.
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
