@@ -2,20 +2,17 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The fifteenth batch is done: Q18 merged as pull request 65. Four description rules that were checked by hand are now
-tests in `tests/description-rules.test.mjs`, and the confirm list lives in `tests/confirm-list.mjs`. No skill changed,
-so there were no zips.
+The fifteenth batch is done: Q18 (pull request 65) turned four description rules into tests in
+`tests/description-rules.test.mjs`, and Q19 (pull request 67), the owner's answer on the Q18 decisions page (decision
+21), made rule 1 "printable ASCII only". No skill changed, so there were no zips.
 
-**The backlog is empty.** No item is planned. Two things can start the next batch:
-- The owner's answers on the Q18 decisions page (a private html-plan artifact). Its recommendation is that rule 1
-  becomes "a description is printable ASCII only", which also closes the gap the Q18 review found for other question
-  marks (U+FF1F and the like) and quote ornaments (U+275B to U+275E). If the owner says yes, that is a small
-  follow-up item, Q19: one rule change in `tests/description-rules.test.mjs`, its fixtures, and a `mutate.sh` proof,
-  with no skill change and no paid run.
-- A new item the owner adds. Write it as `docs/backlog/q<n>.md` with a Contents line in `docs/BACKLOG.md`, then
-  start the batch with the template below, changing the item list and the decision paragraph.
+**The backlog is empty.** The owner chose nothing next (decision 21). A new batch starts when the owner adds an item:
+write it as `docs/backlog/q<n>.md` with a Contents line in `docs/BACKLOG.md`, then start the batch with the template
+below, changing the item list and the decision paragraph.
 
-Read "Things that bit the fifteenth batch" (`docs/backlog/things-that-bit/batch-15.md`) before planning anything.
+Before planning, read "Things that bit the fifteenth batch" (`docs/backlog/things-that-bit/batch-15.md`). Note that
+`tests/description-rules.test.mjs` is 19,811 bytes: a change to it needs room first, for example by moving the fixtures
+of one rule into a file of their own.
 
 ## The fifth batch's kickoff, as a template
 

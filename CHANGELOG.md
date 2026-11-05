@@ -10,6 +10,7 @@ the plugin they installed is bumped.
   mark inside a quoted phrase on a confirm-list skill, and quote ornaments. All 38 descriptions pass it, and each gap
   is proven with `mutate.sh` on a real description (decision 21).
 - No skill changed, so no version changes.
+- Q19 is done (pull request 67). The backlog is empty until the owner adds an item.
 
 ## 2026-11-04: Q18, tests for the description rules checked by hand
 
