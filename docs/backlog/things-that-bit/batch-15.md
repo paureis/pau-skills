@@ -1,0 +1,21 @@
+# Things that bit the fifteenth batch
+
+[Back to the backlog index](../../BACKLOG.md)
+
+Things that bit the fifteenth batch (Q18, tests for the description rules checked by hand):
+- A done-when grep for non-ASCII characters over an edited file failed at the base: `tests/confirm-step.test.mjs`
+  already holds a raw en and em dash inside its "no dash" regex. Check a done-when command at the base before the
+  brief goes out; the plan check did.
+- A test that compares two files' regex sources lets a flag drift: `/x/g` is a prefix of `/x/gu`. Compare the source
+  and the flags, and check that the next character is not a letter.
+- `new RegExp(re.source, 'g')` drops the other flags of `re`; build it with `re.flags` plus `g`.
+- Fixtures that use the check's own constant (a list of look-alike characters) cannot catch a change to that constant.
+  Keep fixture lists literal in the test.
+- The review still found six mutations no fixture caught after the plan check's 16: the first phrase, the first and
+  last character, a start check that a later check hid. Ask for fixtures at both ends and at position one.
+- The worktree guard refused every `sed` form that carries a non-ASCII character (`sed -f`, a computed script, shell
+  variables). A `node -e` that builds the sed script with `String.fromCharCode`, piped into `mutate.sh`, worked.
+- The container restarted during the builder's proofs. Its commits and worktree survived, and SendMessage to its agent
+  ID resumed it, as in batches 5 and 7.
+- `eng-lead` handed back at once with the builder's ID, as told, and the builder's reports came to the main session,
+  as in batches 7 to 14.
