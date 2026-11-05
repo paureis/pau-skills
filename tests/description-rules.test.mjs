@@ -184,6 +184,10 @@ test('the reader names a skill whose description it cannot read, and never skips
     expectProblems(problems, 0, '', text);
     assert.deepEqual(skills, [{ id: 'f/x', description: GOOD }]);
   }
+  // A value that starts and ends with a space is read whole, never trimmed.
+  const spaced = readAll([{ id: 'f/x', text: skillMd(`description: " ${GOOD} "`) }]);
+  expectProblems(spaced.problems, 0, '', GOOD);
+  assert.deepEqual(spaced.skills, [{ id: 'f/x', description: ` ${GOOD} ` }]);
 
   // The walk keeps a skill folder without a SKILL.md and passes over a file.
   const root = tempDir();
@@ -229,7 +233,8 @@ test('rule 1 flags every character outside U+0020 to U+007E, at both ends of the
   assert.equal(QUOTE_MARKS.length, 28);
   const PASSED_IN_Q18 = [0xe9, 0xb7, 0x2033];
   const REVIEW_GAPS = [0xff1f, 0x275b, 0x275c, 0x275d, 0x275e];
-  for (const n of [...QUOTE_MARKS, ...LOOK_ALIKES, ...PASSED_IN_Q18, ...REVIEW_GAPS, 0x1f600, 0x10000, 0x10ffff]) {
+  const ASTRAL = [0x1f600, 0x10000, 0x10001, 0x1d400, 0x20000, 0xe0001, 0xe0041, 0xe007f, 0x10fffe, 0x10ffff];
+  for (const n of [...QUOTE_MARKS, ...LOOK_ALIKES, ...PASSED_IN_Q18, ...REVIEW_GAPS, ...ASTRAL]) {
     for (const description of places(String.fromCodePoint(n))) rule1Gives(description, [n]);
   }
 
@@ -240,11 +245,25 @@ test('rule 1 flags every character outside U+0020 to U+007E, at both ends of the
   const long = `${ch(0x2018)}Plans the work.${' Plans it.'.repeat(50)} caf${ch(0xe9)}.${' Plans it.'.repeat(50)}${SAID}${ch(0x2019)}`;
   assert.ok(long.length > 1000);
   rule1Gives(long, [0x2018, 0xe9, 0x2019]);
+  rule1Gives(`${ch(0x2018)}Plans the caf${ch(0xe9)} work${ch(0xb7)}.${SAID}${ch(0x2019)}`, [0x2018, 0xe9, 0xb7, 0x2019]);
 
-  // Two skills in one call: only the second one is named.
-  const bad = `Plans the work.${SAID}${ch(0x2019)}`;
-  const [p] = expectProblems(checks.rule1([{ id: 'a/b', description: `Plans the work.${SAID}` }, { id: 'c/d', description: bad }]), 1, 'c/d: rule 1: ', bad);
-  assert.equal(p, 'c/d: rule 1: holds ' + uPlus(0x2019) + TAIL);
+  // Several skills in one call: each bad one is named, in order, and a good one never.
+  const good = `Plans the work.${SAID}`;
+  const bad = (n) => good + ch(n);
+  const one = (id, n) => id + ': rule 1: holds ' + uPlus(n) + TAIL;
+  for (const [skills, want] of [[[['a/b', good], ['c/d', bad(0x2019)]], [one('c/d', 0x2019)]],
+    [[['c/d', bad(0x2019)], ['a/b', good]], [one('c/d', 0x2019)]],
+    [[['c/d', bad(0x2018)], ['a/b', good], ['e/f', bad(0xe9)]], [one('c/d', 0x2018), one('e/f', 0xe9)]]]) {
+    const problems = checks.rule1(skills.map(([id, description]) => ({ id, description })));
+    expectProblems(problems, want.length, '', skills.map(([, d]) => d).join(' '));
+    assert.deepEqual(problems, want);
+  }
+
+  // Through the reader: a quoted value that starts with a tab is read whole and flagged.
+  const tabbed = readAll([{ id: 'a/b', text: skillMd(`description: "${ch(9)}${GOOD}"`) }]);
+  assert.deepEqual(tabbed.problems, []);
+  const [p] = expectProblems(checks.rule1(tabbed.skills), 1, 'a/b: rule 1: ', GOOD);
+  assert.equal(p, 'a/b: rule 1: holds ' + uPlus(9) + TAIL);
 });
 
 test('rule 2 catches a lone backtick and a pair', () => {
