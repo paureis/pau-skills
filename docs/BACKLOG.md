@@ -84,8 +84,10 @@ under "Work items" below.
 - [Things that bit the twelfth batch](backlog/things-that-bit/batch-12.md)
 - [Things that bit the thirteenth batch](backlog/things-that-bit/batch-13.md)
 - [Things that bit the fourteenth batch](backlog/things-that-bit/batch-14.md)
+- [Things that bit the fifteenth batch](backlog/things-that-bit/batch-15.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not; the first six batches are in
-  [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md).
+  [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md), and the seventh to twelfth in
+  [done-2026-10-20-to-25.md](backlog/done-2026-10-20-to-25.md).
 
 ## Work items
 
@@ -150,7 +152,9 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 15. Done: the twelfth batch, Q14 what Q13 left (pull request 55); its scope was decision 16.
 16. Done: the thirteenth batch, Q16 trigger tests and a skill usage log (pull request 59); its scope was decision 18.
 17. Done: the fourteenth batch, Q17 descriptions that start their skill (pull request 62); its scope was decision 19.
-18. **Next:** Q18 tests for the description rules checked by hand; its scope is decision 20. The kickoff is in
+18. Done: the fifteenth batch, Q18 tests for the description rules checked by hand (pull request 65); its scope was
+    decision 20.
+19. **Next:** nothing. The backlog is empty until the owner answers the Q18 decisions page or adds an item; see
     [backlog/kickoff.md](backlog/kickoff.md).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

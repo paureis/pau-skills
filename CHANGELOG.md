@@ -11,6 +11,9 @@ the plugin they installed is bumped.
   description.
 - The confirm list moves to `tests/confirm-list.mjs`, which `tests/confirm-step.test.mjs` and the new test import.
 - No skill changed, so no version changes.
+- Q18 is done (pull request 65). The backlog is empty until the owner answers its decisions page, which recommends
+  that rule 1 become "printable ASCII only". The done entries of 2026-10-20 to 2026-10-25 moved to
+  `docs/backlog/done-2026-10-20-to-25.md`, since `done.md` would have passed 20,000 bytes.
 
 ## 2026-11-04: Q17, descriptions that start their skill
 
