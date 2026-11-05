@@ -3,6 +3,14 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-05: Q19, descriptions in printable ASCII only
+
+- Rule 1 of `tests/description-rules.test.mjs` now flags every character of a description outside the space to the
+  tilde (U+0020 to U+007E), not only quote marks. It closes the two gaps the Q18 review found: a fullwidth question
+  mark inside a quoted phrase on a confirm-list skill, and quote ornaments. All 38 descriptions pass it, and each gap
+  is proven with `mutate.sh` on a real description (decision 21).
+- No skill changed, so no version changes.
+
 ## 2026-11-04: Q18, tests for the description rules checked by hand
 
 - `tests/description-rules.test.mjs` checks four rules on every description that the Q17 builder checked by hand: no

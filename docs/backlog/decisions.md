@@ -169,3 +169,11 @@
    - The next trigger round passes `evals/triggers/after-q17` to `--baseline`; `baseline/` stays as the first round.
    - The owner uploaded the eleven Q17 zips (arena, bug-fix, codebase-oracle, evaluator, lean-subagent-dev,
      overnight-run, parallel-worktrees, retrospective, sharpen, skill-eval, to-prd).
+
+## Decisions taken (2026-11-05)
+
+21. **Settled after Q18 (pull request 65)**, each as recommended, on an html-plan page:
+   - Rule 1 of `tests/description-rules.test.mjs` becomes "a description is printable ASCII only". It closes the two
+     gaps the Q18 review found (other question marks such as U+FF1F, and quote ornaments such as U+275B), and all 38
+     descriptions pass it. A small item, Q19, does it.
+   - Nothing comes after Q19 for now: the backlog stays empty until the owner adds an item.

@@ -19,9 +19,9 @@ order; the scrub check and the validator at the end catch most of what gets forg
    sentence on what the skill does, then "Use when" with the phrases a person would actually say, and, where another
    skill could be picked for the same words, what makes this one different. At most 400 characters, all descriptions
    together at most 14,000, no XML-like tag such as `<word>`, and no other skill's name in backticks. Leave out what
-   the body already says. Write it as one double-quoted line with no backslash or double quote inside, with no quote
-   mark but the ASCII apostrophe (no curly quote), no backtick, and exactly one "Use when" (or whenever, before, for,
-   after) opener. On a skill in the confirm list, no quoted phrase holds a question mark or has one right after it:
+   the body already says. Write it as one double-quoted line with no backslash or double quote inside, in printable
+   ASCII only (no curly quote, no accented letter, nothing outside the space to the tilde), with no backtick, and
+   exactly one "Use when" (or whenever, before, for, after) opener. On a skill in the confirm list, no quoted phrase holds a question mark or has one right after it:
    write a question as a situation. `tests/description-rules.test.mjs` checks these four rules.
    If the skill launches subagents or headless runs, commits, pushes or installs with no other check, or changes how
    the whole session works, and nothing in it already stops for the user's yes before that cost, add it to

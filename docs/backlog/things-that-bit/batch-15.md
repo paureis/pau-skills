@@ -19,3 +19,11 @@ Things that bit the fifteenth batch (Q18, tests for the description rules checke
   ID resumed it, as in batches 5 and 7.
 - `eng-lead` handed back at once with the builder's ID, as told, and the builder's reports came to the main session,
   as in batches 7 to 14.
+
+Things that bit Q19, the second part of the fifteenth batch:
+- The orchestrator's own correction put the bad skill last in the only multi-skill fixture, so a rule that read only
+  the last skill passed every test. Put a bad case first, in the middle and last, whatever the list is.
+- A sweep of every BMP code point at three places runs in under a second here and caught range mutations a hand list
+  missed. Astral characters cannot be swept that way; sample several, not only the ends.
+- mutate.sh strips carriage returns before it compares, so it cannot apply a mutation that adds one. Make that change by
+  hand in a clone.
