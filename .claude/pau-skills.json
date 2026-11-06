@@ -1,1 +1,4 @@
-{ "file-size-guard": { "pathLimits": { ".claude-plugin/marketplace.json": 8000 } } }
+{
+  "file-size-guard": { "pathLimits": { ".claude-plugin/marketplace.json": 8000 } },
+  "verify-before-done": { "testCommands": ["npm run scrub", "node scripts/build-marketplace[.]mjs --check", "claude plugin validate"] }
+}

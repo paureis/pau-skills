@@ -55,7 +55,7 @@ To remove every hook from one plugin, disable the plugin: `claude plugin disable
 | [`inline-backtick-guard`](guards/block-inline-backtick-payload.mjs) | guards | PreToolUse (Bash) | Denies `node -e`, `python -c` and similar when a backtick in the payload would be run by bash | Denies |
 | [`test-tamper-guard`](verification/test-tamper-guard.mjs) | verification | PreToolUse (Write, Edit, MultiEdit) | Asks before an edit to a test file adds a skip or focus marker or removes assertions, in 11 languages | Asks |
 | [`suppression-reason`](verification/suppression-reason.mjs) | verification | PreToolUse (Write, Edit, MultiEdit) | Tells the agent when an edit to a code file adds a lint or type-check suppression (`eslint-disable`, `@ts-ignore`, `# noqa`, `//nolint`, `#[allow(` and others) with no reason next to it | No |
-| [`verify-before-done`](verification/verify-before-done.mjs) | verification | Stop | Sends the agent back once when it edited code since your last message and ran no test, build, lint or type check after the last edit | Once |
+| [`verify-before-done`](verification/verify-before-done.mjs) | verification | Stop | Sends the agent back once when it edited code in the project since your last message and ran no test, build, lint or type check after the last edit | Once |
 | [`roadmap`](session-discipline/roadmap.mjs) | session-discipline | SessionStart | Prints the current, next and blocked roadmap items and open questions | No |
 | [`branch-context`](session-discipline/branch-context.mjs) | session-discipline | SessionStart | Prints branch, ahead/behind, uncommitted files, stashes, an unfinished merge or rebase, and a warning on a protected branch | No |
 | [`compact-snapshot`](session-discipline/compact-snapshot.mjs) | session-discipline | PreCompact, SessionStart (compact) | Saves your last messages, edited files, recent commands and the todo list before a compaction, and prints them after | No |
@@ -145,6 +145,13 @@ suppressions stay quiet until someone adds another. Edits over 1 MB are skipped.
 | `ignorePaths` | `[]` | Globs of edited files that never need verification. Markdown, text and image files are always ignored. |
 
 It blocks at most once per stop: if the agent stops again right after being sent back, it is allowed to.
+
+Only edits inside the project count: `$CLAUDE_PROJECT_DIR`, else the hook input's working folder. A relative path
+resolves against that folder, and an edit is inside if the path as written or its real path is inside, so a linked
+project and macOS `/var` against `/private/var` both work; a path it cannot place still counts. A check counts when it
+runs through Bash, PowerShell or the `command` of a Monitor call, and `npm`, `pnpm`, `yarn` and `bun` may carry
+`--prefix`, `--cwd`, `--filter`, `--workspace`, `-C` or `-w` with a value before the script, as in
+`npm --prefix web test`. A check that ran inside a subagent does not count: the main session reruns the checks itself.
 
 ### branch-context
 

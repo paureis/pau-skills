@@ -3,6 +3,17 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-06: Q20, verify-before-done without false alarms
+
+- `verify-before-done` (verification 0.14.1, `pau-skills-hooks` 0.4.1) counts only edits inside the project, by the
+  path as written or its real path, so a check followed by an edit to a scratchpad, `/tmp`, `~/.claude` or an artifact
+  page no longer sends the agent back. Package-manager flags before the script (`npm --prefix web test`,
+  `pnpm -C dir test`, `yarn --cwd dir test` and the like) and a Monitor call's command count as checks. A check inside
+  a subagent still does not count, and a JSON edit in the project still needs a check (decision 22).
+- This repository's `.claude/pau-skills.json` names its own checks (`npm run scrub`, the marketplace check and
+  `claude plugin validate`) as `testCommands`.
+- Decision 22 also settles the direction of Q21, a subagent watchdog. The bundle goes to 0.18.1.
+
 ## 2026-11-05: Q19, descriptions in printable ASCII only
 
 - Rule 1 of `tests/description-rules.test.mjs` now flags every character of a description outside the space to the
