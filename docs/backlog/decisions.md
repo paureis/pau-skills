@@ -191,3 +191,24 @@
      small item, Q20, fixes the false alarms first. A check that ran inside a subagent still does not count for the
      orchestrator's edits: the orchestrator reruns the checks itself (`lean-subagent-dev`).
    - The other chat also said the AskUserQuestion prompts worked well on the owner's phone.
+
+23. **The design of Q21, the subagent watchdog**, settled in a grilling on 2026-11-06, each as recommended:
+   - A repeat is the same shell command, spaces collapsed, run again with no edit in between. An edit is Edit, Write,
+     MultiEdit or NotebookEdit on a file in the project (the `verify-before-done` rule), or a `git commit`.
+   - The no-progress rule skips a configurable list of read-only agent types (default `reviewer`, `Explore`, `Plan`,
+     `claude-code-guide`, `web-fetch`); the repeat rule applies to every agent.
+   - Defaults: a note on the 3rd identical run, "ask" on the 5th; a note at 40 tool calls since the last edit, "ask"
+     at 80. All configurable.
+   - The note is added after the tool call and blocks nothing. "Ask" stays on everywhere: interactive, it prompts;
+     headless, it denies that one call with the reason, and the agent carries on (prototype below).
+   - The main session sees one line per running subagent only when one is flagged, at most once every 5 minutes, on
+     the owner's message or its next tool call. Stuck means no tool call started or finished for 10 minutes and none
+     in flight; a command still running shows as "running <command> for N minutes" and is flagged only past 30.
+   - The state lives in one file per session under the system temp folder; an agent's entry goes at SubagentStop,
+     files older than a day are pruned.
+   - On by default, off with `"subagent-watchdog": false`. One script,
+     `hooks/agent-orchestration/subagent-watchdog.mjs`.
+   - Prototype (one headless run, 0.005 US dollars): subagent hooks carry the main session's `session_id`, and their
+     own `agent_id` and `agent_type`; main-session events carry neither. In `-p`, "ask" from PreToolUse denies the
+     call, the reason reaches the agent, and it went on with its task. A denied call has a PreToolUse and no
+     PostToolUse.
