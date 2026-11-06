@@ -15,15 +15,23 @@ const tool = (name, input) => ({ type: 'assistant', message: { content: [{ type:
 const edit = (file_path) => tool('Edit', { file_path, old_string: 'a', new_string: 'b' });
 const bash = (command) => tool('Bash', { command });
 const jsonl = (entries) => entries.map((e) => JSON.stringify(e)).join('\n');
+const turn = (...entries) => toolCallsSinceLastPrompt([user('go'), ...entries]);
+const side = (entry) => ({ ...entry, isSidechain: true });
+const REPO_CHECKS = ['npm run scrub', 'node scripts/build-marketplace[.]mjs --check', 'claude plugin validate'];
 
 describe('verify-before-done: recognising checks', () => {
   for (const c of ['npm test', 'pnpm run lint', 'yarn build', 'npx vitest run', 'node --test tests/', 'pytest -q', 'python -m pytest',
     'uv run pytest', 'ruff check .', 'mypy src', 'cargo test', 'cargo clippy', 'go test ./...', 'go vet ./...', './gradlew test',
     'mvn -q verify', 'dotnet test', 'bundle exec rspec', 'rails test', 'vendor/bin/phpunit', 'mix test', 'swift test',
-    'flutter test', 'make', 'make test', 'make -j4 check', 'just test', 'bazel test //...', 'tsc --noEmit', 'cd api && go build ./...']) {
+    'flutter test', 'make', 'make test', 'make -j4 check', 'just test', 'bazel test //...', 'tsc --noEmit', 'cd api && go build ./...',
+    'npm --prefix web test', 'pnpm -C packages/api test', 'yarn --cwd web test', 'pnpm --filter web test', 'npm --workspace=web test',
+    'npm -w web run lint', 'npm --prefix=web run build', 'npm --prefix "my app" test', "npm --prefix 'my app' test",
+    'npm --prefix web -w app test', 'bun --cwd web run test', 'npm test > log', 'cd web && npm test',
+    "bash skills/verification/mutation-test/mutate.sh --sed 's/a/b/' hooks/x.mjs node --test tests/x.test.mjs"]) {
     test(`counts: ${c}`, () => assert.ok(VERIFY.test(c), c));
   }
-  for (const c of ['npm install', 'git status', 'ls -la', 'cat package.json', 'git commit -m "add tests"', 'echo testing', 'makefile-lint-free']) {
+  for (const c of ['npm install', 'git status', 'ls -la', 'cat package.json', 'git commit -m "add tests"', 'echo testing', 'makefile-lint-free',
+    'npm --prefix test install', 'yarn --cwd build add react', 'pnpm -C web add test-utils', 'npm --global install test-utils']) {
     test(`does not count: ${c}`, () => assert.equal(VERIFY.test(c), false, c));
   }
 });
@@ -57,6 +65,28 @@ describe('verify-before-done: assessing the turn', () => {
   });
   test('parseTranscript skips broken lines', () => {
     assert.equal(parseTranscript('{"a":1}\nnot json\n\n{"b":2}').length, 2);
+  });
+  test('a Monitor command counts like a shell command', () => {
+    const after = (call) => assess(turn(edit('src/a.js'), call)).verified;
+    assert.equal(after(tool('Monitor', { command: 'npm test', description: 'run the tests' })), true);
+    assert.equal(after(tool('Monitor', { command: 'tail -f server.log' })), false);
+    assert.equal(after(tool('Monitor', { description: 'npm test' })), false);
+    assert.equal(after(tool('PowerShell', { command: 'npm test' })), true);
+  });
+  test('a check that ran inside a subagent does not count (decision 22)', () => {
+    const r = assess(turn(edit('src/a.js'),
+      tool('Agent', { description: 'run the tests', prompt: 'Run npm test and report.', subagent_type: 'builder' }),
+      tool('Task', { description: 'run the tests', prompt: 'npm test' }),
+      side(user('npm test')), side(bash('npm test')), result()));
+    assert.equal(r.verified, false);
+  });
+  test('the repository checks count through testCommands', () => {
+    for (const c of ['npm run scrub', 'node scripts/build-marketplace.mjs --check', 'claude plugin validate . --strict']) {
+      const calls = turn(edit('src/a.js'), bash(c));
+      assert.equal(assess(calls).verified, false, c);
+      assert.equal(assess(calls, { testCommands: REPO_CHECKS }).verified, true, c);
+    }
+    assert.equal(assess(turn(edit('src/a.js'), bash('node scripts/build-marketplace.mjs')), { testCommands: REPO_CHECKS }).verified, false);
   });
 });
 
