@@ -9,9 +9,15 @@
 // How it decides:
 //   1. Find the user's last real message in the transcript (tool results do not count).
 //   2. After it, list file edits (Write, Edit, MultiEdit, NotebookEdit). Documentation and plain text files
-//      (.md, .mdx, .txt, .rst, .adoc, images) do not count.
-//   3. If there was at least one edit, look for a shell command after the LAST edit that runs a check: a test runner,
-//      a build, a linter or a type checker, in any common language (see VERIFY below), or one of "testCommands".
+//      (.md, .mdx, .txt, .rst, .adoc, images) do not count. Only edits inside the project count ($CLAUDE_PROJECT_DIR,
+//      else the input's cwd), so an edit to a scratchpad or a temp folder does not. A relative path resolves against
+//      the input's cwd. An edit is inside if the path as written or its real path is inside. A path it cannot place
+//      counts.
+//   3. If there was at least one edit, look for a shell command (Bash, PowerShell, or the command of a Monitor call)
+//      after the LAST edit that runs a check: a test runner, a build, a linter or a type checker, in any common
+//      language (see VERIFY below), or one of "testCommands". Package-manager flags between the tool and its script
+//      count (--prefix, --cwd, --filter, --workspace, -C, -w, each with its value), as in "npm --prefix web test".
+//      A check inside a subagent does not count, because the main session reruns the checks itself (decision 22).
 //   4. None found: block the stop with a reason. If the agent has already been sent back once (stop_hook_active),
 //      it is allowed to stop, so this can never loop.
 //
@@ -22,19 +28,26 @@
 // Turn it off with { "hooks": { "verify-before-done": false } }.
 //
 // Writes {"decision":"block","reason":...} on stdout to block. Exits 0 always; silent on anything it cannot read.
+// An edit it cannot place inside or outside the project still counts.
 import { readFileSync, realpathSync } from 'node:fs';
-import { basename } from 'node:path';
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { loadConfig, hookEnabled, hookOptions, projectDir, readStdin, parseInput } from '../lib/config.mjs';
 
 export const NAME = 'verify-before-done';
 
 const EDIT_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit']);
-const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
+// A Monitor call carries a shell command in `command` too.
+const SHELL_TOOLS = new Set(['Bash', 'PowerShell', 'Monitor']);
 const NON_CODE = /\.(md|mdx|markdown|txt|rst|adoc|png|jpe?g|gif|svg|webp|ico|pdf|csv)$/i;
 
+// One package-manager flag with its value: --prefix, --cwd, --filter, --workspace, -C or -w. A bare value cannot start
+// with a quote, so a quoted value matches one way only: two ways made many quoted flags take exponential time, and a
+// bare match of `"my build"` read its second word as the script.
+const PM_FLAG = String.raw`\s+(?:--prefix|--cwd|--filter|--workspace|-C|-w)(?:=|\s+)(?:"[^"]*"|'[^']*'|[^\s"']\S*)`;
+
 export const VERIFY = new RegExp([
-  String.raw`\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?(?:test|tests|check|lint|build|typecheck|type-check|verify|validate|ci)\b`,
+  String.raw`\b(?:npm|pnpm|yarn|bun)(?:${PM_FLAG})*\s+(?:run\s+)?(?:test|tests|check|lint|build|typecheck|type-check|verify|validate|ci)\b`,
   String.raw`\b(?:npx|pnpm\s+exec|bunx)\s+(?:jest|vitest|mocha|ava|tsc|eslint|biome|playwright|cypress)\b`,
   String.raw`\b(?:jest|vitest|mocha|tsc|eslint|biome|playwright\s+test|cypress\s+run)\b`,
   String.raw`\bnode\s+--test\b|\bdeno\s+(?:test|check|lint)\b|\bbun\s+test\b`,
@@ -98,16 +111,53 @@ export function toolCallsSinceLastPrompt(entries) {
   return calls;
 }
 
+/** The real path of p. For a path that does not exist, the real path of its nearest existing folder plus the rest. */
+function realOrNearest(p, api) {
+  const rest = [];
+  let dir = p;
+  for (;;) {
+    try { return api.join(realpathSync.native(dir), ...rest); } catch { /* missing, or not a path on this system */ }
+    const up = api.dirname(dir);
+    if (up === dir) return p;
+    rest.unshift(api.basename(dir));
+    dir = up;
+  }
+}
+
+/** True when file is root or inside it. Both are absolute, for the same path functions. */
+function within(file, root, api) {
+  const rel = api.relative(root, file);
+  return rel !== '..' && !rel.startsWith('..' + api.sep) && !api.isAbsolute(rel);
+}
+
+/**
+ * True when an edited file is inside the project folder. A relative path resolves against cwd. The edit is inside if
+ * the path as written or its real path is inside: real paths place a file in a linked project, or on macOS a /var path
+ * against /private/var, and the path as written keeps a file reached through a link inside the project (a linked
+ * package, a vendored folder) inside. A path it cannot place (no project, a relative path with no cwd, a value that is
+ * not a string) counts as inside, so the hook never goes quiet on input it cannot read. api is node:path; the tests
+ * pass path.win32.
+ */
+export function insideProject(file, { project, cwd, api = path } = {}) {
+  if (typeof file !== 'string') return true;
+  if (typeof project !== 'string' || !project) return true;
+  if (!api.isAbsolute(file) && (typeof cwd !== 'string' || !cwd)) return true;
+  const abs = api.isAbsolute(file) ? api.resolve(file) : api.resolve(cwd, file);
+  const root = api.resolve(project);
+  return within(abs, root, api) || within(realOrNearest(abs, api), realOrNearest(root, api), api);
+}
+
 /** Pure decision over the tool calls: { edited: string[], verified: boolean }. */
-export function assess(calls, options = {}) {
+export function assess(calls, options = {}, where = {}) {
   const extra = (Array.isArray(options.testCommands) ? options.testCommands : []).map((s) => { try { return new RegExp(s); } catch { return null; } }).filter(Boolean);
   const ignore = (Array.isArray(options.ignorePaths) ? options.ignorePaths : []).map(globToRegExp);
   let lastEdit = -1;
   const edited = [];
   calls.forEach((c, i) => {
     if (!EDIT_TOOLS.has(c.name)) return;
-    const p = String(c.input.file_path || c.input.notebook_path || '').replace(/\\/g, '/');
-    if (!p || NON_CODE.test(p) || ignore.some((re) => re.test(p))) return;
+    const raw = String(c.input.file_path || c.input.notebook_path || '');
+    const p = raw.replace(/\\/g, '/');
+    if (!p || NON_CODE.test(p) || ignore.some((re) => re.test(p)) || !insideProject(raw, where || {})) return;
     lastEdit = i;
     if (!edited.includes(p)) edited.push(p);
   });
@@ -120,11 +170,11 @@ export function assess(calls, options = {}) {
 }
 
 /** The Stop hook output, or null to let the agent stop. */
-export function decide(input, { transcript = '', options = {} } = {}) {
+export function decide(input, { transcript = '', options = {}, project } = {}) {
   if (!input || input.stop_hook_active) return null;
-  const { edited, verified } = assess(toolCallsSinceLastPrompt(parseTranscript(transcript)), options);
+  const { edited, verified } = assess(toolCallsSinceLastPrompt(parseTranscript(transcript)), options, { project, cwd: input.cwd });
   if (verified) return null;
-  const names = edited.slice(0, 5).map((p) => basename(p)).join(', ') + (edited.length > 5 ? `, and ${edited.length - 5} more` : '');
+  const names = edited.slice(0, 5).map((p) => path.basename(p)).join(', ') + (edited.length > 5 ? `, and ${edited.length - 5} more` : '');
   return {
     decision: 'block',
     reason:
@@ -139,11 +189,12 @@ const isMain = (() => { try { return import.meta.url === pathToFileURL(realpathS
 if (isMain) {
   const input = parseInput(await readStdin());
   if (input && !input.stop_hook_active && typeof input.transcript_path === 'string') {
-    const config = loadConfig({ project: projectDir(input) });
+    const project = projectDir(input);
+    const config = loadConfig({ project });
     if (hookEnabled(NAME, config)) {
       let transcript = '';
       try { transcript = readFileSync(input.transcript_path, 'utf8'); } catch { transcript = ''; }
-      const out = decide(input, { transcript, options: hookOptions(NAME, config) });
+      const out = decide(input, { transcript, options: hookOptions(NAME, config), project });
       if (out) process.stdout.write(JSON.stringify(out) + '\n');
     }
   }
