@@ -10,6 +10,7 @@ the plugin they installed is bumped.
   page no longer sends the agent back. Package-manager flags before the script (`npm --prefix web test`,
   `pnpm -C dir test`, `yarn --cwd dir test` and the like) and a Monitor call's command count as checks. A check inside
   a subagent still does not count, and a JSON edit in the project still needs a check (decision 22).
+  A flag's bare value cannot start with a quote, so many quoted flags do not slow the hook down.
 - This repository's `.claude/pau-skills.json` names its own checks (`npm run scrub`, the marketplace check and
   `claude plugin validate`) as `testCommands`.
 - Decision 22 also settles the direction of Q21, a subagent watchdog. The bundle goes to 0.18.1.
