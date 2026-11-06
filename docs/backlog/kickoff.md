@@ -10,14 +10,14 @@ The owner starts it with this message:
 
 ```text
 You are the orchestrator for Q21 in this repository: a subagent watchdog. Do not build it yourself; run the roster in
-.claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My choices are decision 22 in
-docs/backlog/decisions.md; build the direction it chooses (the waste detector and the orchestrator status, sharing one
-state file).
+.claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My choices are decisions 22 and 23 in
+docs/backlog/decisions.md; build what they choose (the waste detector and the orchestrator status, sharing one state
+file).
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (step 5 covers hooks).
 2. docs/BACKLOG.md (the note at the top, "How to work an item", the Contents and "Order"), docs/backlog/q21.md,
-   docs/backlog/q20.md, decisions 7 to 22, docs/backlog/how-to-run-a-batch.md (all 10 steps and "With the roster"),
+   docs/backlog/q20.md, decisions 7 to 23, docs/backlog/how-to-run-a-batch.md (all 10 steps and "With the roster"),
    and every file in docs/backlog/things-that-bit/, batch-15.md first.
 3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, the five agent files
    in .claude/agents/, hooks/README.md, hooks/lib/config.mjs, hooks/agent-orchestration/no-idle.mjs and
@@ -28,10 +28,8 @@ Before anything else, read these in full:
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
   builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds.
-- Settle the two facts q21.md leaves open with one small headless prototype (a throwaway hook that logs its input,
-  one subagent with a few tool calls, empty HOME): what "ask" from a PreToolUse hook does in a headless run, and
-  whether a subagent's hooks see the parent's session_id. Give me the estimate first: it is a paid run and needs my
-  yes. Then propose the default thresholds and what counts as an edit, and ask me.
+- The design is settled (decision 23, from a grilling and a headless prototype): build it as written, and ask me
+  only if the code shows a decision is wrong.
 - Commits carry the harness's two attribution trailers; say so once in the standing orders.
 
 Rules that matter most:
