@@ -41,8 +41,10 @@ const EDIT_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit']);
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell', 'Monitor']);
 const NON_CODE = /\.(md|mdx|markdown|txt|rst|adoc|png|jpe?g|gif|svg|webp|ico|pdf|csv)$/i;
 
-// One package-manager flag with its value: --prefix, --cwd, --filter, --workspace, -C or -w.
-const PM_FLAG = String.raw`\s+(?:--prefix|--cwd|--filter|--workspace|-C|-w)(?:=|\s+)(?:"[^"]*"|'[^']*'|\S+)`;
+// One package-manager flag with its value: --prefix, --cwd, --filter, --workspace, -C or -w. A bare value cannot start
+// with a quote, so a quoted value matches one way only: two ways made many quoted flags take exponential time, and a
+// bare match of `"my build"` read its second word as the script.
+const PM_FLAG = String.raw`\s+(?:--prefix|--cwd|--filter|--workspace|-C|-w)(?:=|\s+)(?:"[^"]*"|'[^']*'|[^\s"']\S*)`;
 
 export const VERIFY = new RegExp([
   String.raw`\b(?:npm|pnpm|yarn|bun)(?:${PM_FLAG})*\s+(?:run\s+)?(?:test|tests|check|lint|build|typecheck|type-check|verify|validate|ci)\b`,
@@ -155,7 +157,7 @@ export function assess(calls, options = {}, where = {}) {
     if (!EDIT_TOOLS.has(c.name)) return;
     const raw = String(c.input.file_path || c.input.notebook_path || '');
     const p = raw.replace(/\\/g, '/');
-    if (!p || NON_CODE.test(p) || ignore.some((re) => re.test(p)) || !insideProject(raw, where)) return;
+    if (!p || NON_CODE.test(p) || ignore.some((re) => re.test(p)) || !insideProject(raw, where || {})) return;
     lastEdit = i;
     if (!edited.includes(p)) edited.push(p);
   });

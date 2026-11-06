@@ -4,6 +4,8 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import { decide, assess, toolCallsSinceLastPrompt, parseTranscript, VERIFY } from '../hooks/verification/verify-before-done.mjs';
 
@@ -27,13 +29,29 @@ describe('verify-before-done: recognising checks', () => {
     'npm --prefix web test', 'pnpm -C packages/api test', 'yarn --cwd web test', 'pnpm --filter web test', 'npm --workspace=web test',
     'npm -w web run lint', 'npm --prefix=web run build', 'npm --prefix "my app" test', "npm --prefix 'my app' test",
     'npm --prefix web -w app test', 'bun --cwd web run test', 'npm test > log', 'cd web && npm test',
-    "bash skills/verification/mutation-test/mutate.sh --sed 's/a/b/' hooks/x.mjs node --test tests/x.test.mjs"]) {
+    "bash skills/verification/mutation-test/mutate.sh --sed 's/a/b/' hooks/x.mjs node --test tests/x.test.mjs",
+    'npm  --prefix  web  test', 'pnpm --filter=web  test']) {
     test(`counts: ${c}`, () => assert.ok(VERIFY.test(c), c));
   }
   for (const c of ['npm install', 'git status', 'ls -la', 'cat package.json', 'git commit -m "add tests"', 'echo testing', 'makefile-lint-free',
-    'npm --prefix test install', 'yarn --cwd build add react', 'pnpm -C web add test-utils', 'npm --global install test-utils']) {
+    'npm --prefix test install', 'yarn --cwd build add react', 'pnpm -C web add test-utils', 'npm --global install test-utils',
+    'yarn --cwd "my build" add react', 'npm --prefix "a test" install', "npm --filter 'x lint' add y"]) {
     test(`does not count: ${c}`, () => assert.equal(VERIFY.test(c), false, c));
   }
+  // Runs in a child process that is killed after 10 s, so a slow pattern fails the test instead of hanging the suite.
+  test('many quoted flags on a command that is not a check are read in under 500 ms', () => {
+    for (const q of ['"', "'"]) {
+      const c = 'pnpm' + ` --filter ${q}a${q}`.repeat(30) + ' install';
+      const code = `import { VERIFY } from ${JSON.stringify(pathToFileURL(HOOK).href)};
+        const t = performance.now(); const r = VERIFY.test(${JSON.stringify(c)});
+        console.log(JSON.stringify({ r, ms: performance.now() - t }));`;
+      const run = spawnSync(process.execPath, ['--input-type=module', '-e', code], { encoding: 'utf8', timeout: 10000 });
+      assert.equal(run.signal, null, `killed after 10 s, quote ${q}`);
+      const { r, ms } = JSON.parse(run.stdout);
+      assert.equal(r, false, `quote ${q}`);
+      assert.ok(ms < 500, `${ms} ms, quote ${q}`);
+    }
+  });
 });
 
 describe('verify-before-done: assessing the turn', () => {
@@ -87,6 +105,9 @@ describe('verify-before-done: assessing the turn', () => {
       assert.equal(assess(calls, { testCommands: REPO_CHECKS }).verified, true, c);
     }
     assert.equal(assess(turn(edit('src/a.js'), bash('node scripts/build-marketplace.mjs')), { testCommands: REPO_CHECKS }).verified, false);
+  });
+  test('a where of null counts every edit', () => {
+    assert.deepEqual(assess(turn(edit('src/a.js')), {}, null), { edited: ['src/a.js'], verified: false });
   });
 });
 
