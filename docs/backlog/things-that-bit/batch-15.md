@@ -27,3 +27,12 @@ Things that bit Q19, the second part of the fifteenth batch:
   missed. Astral characters cannot be swept that way; sample several, not only the ends.
 - mutate.sh strips carriage returns before it compares, so it cannot apply a mutation that adds one. Make that change by
   hand in a clone.
+
+Things that bit Q20, the third part of the fifteenth batch:
+- A regex alternative that can match the same text two ways (a quoted value, or a bare value that may start with a
+  quote) backtracks exponentially on input that does not match. The plan check and every listed mutation missed it;
+  the reviewer found it by timing commands with many flags. Time a new pattern on long non-matching input.
+- A test for a pattern that can hang runs the pattern in a child process with a kill timeout, so the old code fails in
+  seconds instead of hanging the suite.
+- The orchestrator settled the file layout (a third test file) before the plan check, so the plan check built and
+  counted the right shape.

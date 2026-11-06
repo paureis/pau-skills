@@ -177,3 +177,17 @@
      gaps the Q18 review found (other question marks such as U+FF1F, and quote ornaments such as U+275B), and all 38
      descriptions pass it. A small item, Q19, does it.
    - Nothing comes after Q19 for now: the backlog stays empty until the owner adds an item.
+
+## Decisions taken (2026-11-06)
+
+22. **After a brainstorm on a subagent watchdog, and a report from another chat**, each as recommended:
+   - The watchdog direction is the waste detector and the orchestrator status together (Q21): a PreToolUse hook in
+     subagents flags a command repeated with no edit between and a long stretch of tool calls with no edit, nudges
+     first and then asks; a main-session hook shows each running subagent's minutes, tool calls and a "looks stuck"
+     flag. Hard limits: never cut off a healthy long run; stopping needs a yes (the owner's or the orchestrator's,
+     through TaskStop); a hook in `pau-skills-hooks` with no skill needed; it works in cloud sessions. Brief budgets
+     are the runner-up.
+   - Another chat reported that `verify-before-done` fired about ten times on edits a check had already covered. A
+     small item, Q20, fixes the false alarms first. A check that ran inside a subagent still does not count for the
+     orchestrator's edits: the orchestrator reruns the checks itself (`lean-subagent-dev`).
+   - The other chat also said the AskUserQuestion prompts worked well on the owner's phone.
