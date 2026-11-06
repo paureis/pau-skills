@@ -56,3 +56,13 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
     checked rule 1 against a hand-written decoder on every code point.
   - Did not: the orchestrator's own correction put the only bad skill last in the multi-skill case, so a rule that read
     only the last skill passed every test until the review; the test file is now 189 bytes under the size limit.
+- 2026-11-06: Q20 verify-before-done without false alarms, merged as
+  [pull request 69](https://github.com/paureis/pau-skills/pull/69), after another chat reported about ten false
+  alarms in one session (decision 22). One slice, a plan check that built it in a clone, one builder, a fresh reviewer,
+  one fix round and a second look. Only edits inside the project count; Monitor commands and six package-manager flags
+  count as checks; this repository names its own checks as `testCommands`. 1,543 tests (1,500 before);
+  `pau-skills-hooks` 0.4.1, so the owner updates the hooks plugin on each computer. With the roster:
+  - Worked: reproducing the report with the hook's own function before planning; settling the test file layout before
+    the plan check; a reviewer that ran the old and new hooks side by side as processes and timed long inputs.
+  - Did not: no plan check and no listed mutation caught the flag pattern's exponential time; only the reviewer's
+    timing did.

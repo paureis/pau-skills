@@ -159,6 +159,8 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
     decision 20.
 19. Done: the fifteenth batch's second part, Q19 descriptions in printable ASCII only (pull request 67); its scope was
     decision 21.
-20. **Next:** Q20 verify-before-done without false alarms, then Q21 a subagent watchdog; their scope is decision 22.
+20. Done: Q20 verify-before-done without false alarms (pull request 69); its scope was decision 22.
+21. **Next:** Q21 a subagent watchdog (decision 22). It starts with a small paid prototype run that needs the owner's
+    yes; the kickoff is in [backlog/kickoff.md](backlog/kickoff.md).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

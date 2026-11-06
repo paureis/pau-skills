@@ -2,17 +2,55 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The fifteenth batch is done: Q18 (pull request 65) turned four description rules into tests in
-`tests/description-rules.test.mjs`, and Q19 (pull request 67), the owner's answer on the Q18 decisions page (decision
-21), made rule 1 "printable ASCII only". No skill changed, so there were no zips.
+The fifteenth batch is done: Q18 (pull request 65), Q19 (pull request 67) and Q20 (pull request 69). After Q20 the
+owner updates the hooks plugin on each computer (`claude plugin marketplace update pau-skills`, then
+`claude plugin update pau-skills-hooks@pau-skills`). The next item is Q21, a subagent watchdog (decision 22,
+`docs/backlog/q21.md`). Read "Things that bit the fifteenth batch" (`docs/backlog/things-that-bit/batch-15.md`) first.
+The owner starts it with this message:
 
-**The backlog is empty.** The owner chose nothing next (decision 21). A new batch starts when the owner adds an item:
-write it as `docs/backlog/q<n>.md` with a Contents line in `docs/BACKLOG.md`, then start the batch with the template
-below, changing the item list and the decision paragraph.
+```text
+You are the orchestrator for Q21 in this repository: a subagent watchdog. Do not build it yourself; run the roster in
+.claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My choices are decision 22 in
+docs/backlog/decisions.md; build the direction it chooses (the waste detector and the orchestrator status, sharing one
+state file).
 
-Before planning, read "Things that bit the fifteenth batch" (`docs/backlog/things-that-bit/batch-15.md`). Note that
-`tests/description-rules.test.mjs` is 19,811 bytes: a change to it needs room first, for example by moving the fixtures
-of one rule into a file of their own.
+Before anything else, read these in full:
+1. CLAUDE.md and docs/ADDING-A-SKILL.md (step 5 covers hooks).
+2. docs/BACKLOG.md (the note at the top, "How to work an item", the Contents and "Order"), docs/backlog/q21.md,
+   docs/backlog/q20.md, decisions 7 to 22, docs/backlog/how-to-run-a-batch.md (all 10 steps and "With the roster"),
+   and every file in docs/backlog/things-that-bit/, batch-15.md first.
+3. skills/agent-orchestration/lean-subagent-dev/SKILL.md, its BRIEF-TEMPLATE.md and TRIAGE.md, the five agent files
+   in .claude/agents/, hooks/README.md, hooks/lib/config.mjs, hooks/agent-orchestration/no-idle.mjs and
+   hooks/verification/verify-before-done.mjs. Work that way for the whole session. The usage budget is generous: same
+   model for every agent, a read-only plan check of every brief that builds the slice in a clone and tries mutations
+   of its own (and times long inputs to any new pattern), and a fresh reviewer per slice.
+
+First, before any brief:
+- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
+  builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds.
+- Settle the two facts q21.md leaves open with one small headless prototype (a throwaway hook that logs its input,
+  one subagent with a few tool calls, empty HOME): what "ask" from a PreToolUse hook does in a headless run, and
+  whether a subagent's hooks see the parent's session_id. Give me the estimate first: it is a paid run and needs my
+  yes. Then propose the default thresholds and what counts as an edit, and ask me.
+- Commits carry the harness's two attribution trailers; say so once in the standing orders.
+
+Rules that matter most:
+- Hard limits from decision 22: never cut off a healthy long run; stopping needs a yes (mine or the orchestrator's,
+  through TaskStop); a hook in pau-skills-hooks that works with no skill installed; it works in cloud sessions.
+- A hook exits 0 on input it does not understand and checks hookEnabled(); Node standard library only; no em or en
+  dashes; plain English. No tracked file may pass 20,000 bytes.
+- Every new test must fail when the behaviour it covers breaks: prove each with mutate.sh after committing, and have
+  every run report its "# tests" line.
+- Builders commit and never push. You push the working branch and open the PR. When CI is green on Linux, macOS and
+  the validate job and every review is clean, merge it yourself and carry on. Bump pau-skills-hooks and give me the
+  update commands.
+- Give long briefs to agents as files they read, with a "Corrections after the plan check" section. Use absolute
+  paths and git -C from the orchestrator; never cd into an agent's worktree. Commit as the session's default author.
+
+When the PR is open, tell me in plain words what changed, what the reviews found, and anything I need to decide; if
+html-plan is installed, give me the decisions as an html-plan page published as a private artifact. After the merge,
+mark Q21 done in docs/backlog/ with what worked and what did not with the roster, and write the next kickoff here.
+```
 
 ## The fifth batch's kickoff, as a template
 
