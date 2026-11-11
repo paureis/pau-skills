@@ -1,5 +1,5 @@
 // The verify-before-done Stop hook counts a check script, the Lua tool commands and the checks a project declares in
-// .claude/review-rules.json.
+// .claude/review-rules.json, and says how to stop a false alarm.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -148,6 +148,19 @@ describe('verify-before-done: the review-rules file, as a hook', () => {
   test('the file is read from the project folder, not the cwd', () => {
     const P = project(), P2 = project('{"checks":["bin/gate --full"]}');
     blocks(hook(P, 'bin/gate --full', P2), 'file in the cwd only');
+  });
+});
+
+describe('verify-before-done: the block message', () => {
+  const reason = () => decide({ stop_hook_active: false }, { transcript: jsonl([user('fix it'), edit('src/main.go'), result()]) }).reason;
+  test('says how to name a check for this hook', () => {
+    const r = reason();
+    for (const s of ['main.go', 'testCommands', '.claude/pau-skills.json', 'checks', '.claude/review-rules.json',
+      '{"verify-before-done": {"testCommands": ["^bin/gate"]}}', '{"checks": ["bin/gate --full"]}']) assert.ok(r.includes(s), s);
+  });
+  test('the fixed text names no file the other tests look for', () => {
+    const r = reason();
+    for (const re of [/a\.ts/, /a\.js/, /b\.js/, /a\.rs/, /config\.json/]) assert.doesNotMatch(r, re);
   });
 });
 

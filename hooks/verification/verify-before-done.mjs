@@ -31,8 +31,9 @@
 //      The Lua tools, from the same starts: "lune run" with a path that has such a word in a folder or file name,
 //      "luau-lsp analyze", "selene", and "stylua" with --check among its arguments.
 //      A check inside a subagent does not count, because the main session reruns the checks itself (decision 22).
-//   4. None found: block the stop with a reason. If the agent has already been sent back once (stop_hook_active),
-//      it is allowed to stop, so this can never loop.
+//   4. None found: block the stop with a reason, which also says how to name a check this hook missed (testCommands,
+//      or checks in .claude/review-rules.json). If the agent has already been sent back once (stop_hook_active), it
+//      is allowed to stop, so this can never loop.
 //
 // Options in .claude/pau-skills.json:
 //   { "verify-before-done": {
@@ -247,7 +248,9 @@ export function decide(input, { transcript = '', options = {}, project, checks =
       `[verify-before-done] You changed ${names} since the user's last message, and no test, build, lint or type ` +
       "check ran after the last edit. Run the project's checks now and report the actual result. If there is nothing " +
       'that can be run, or running it is not possible here, say that plainly in your reply instead of implying the ' +
-      'change works.',
+      'change works. If a check did run and this is a false alarm, name it for this hook: a regular expression in ' +
+      'testCommands in .claude/pau-skills.json, for example {"verify-before-done": {"testCommands": ["^bin/gate"]}}, ' +
+      'or the command in checks in .claude/review-rules.json, for example {"checks": ["bin/gate --full"]}.',
   };
 }
 
