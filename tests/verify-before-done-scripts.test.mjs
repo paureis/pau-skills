@@ -62,6 +62,7 @@ describe('verify-before-done: check scripts and Lua tools', () => {
     'pwsh -File scripts/getLatest.ps1', 'pwsh -File scripts/GetContest.ps1', 'bash scripts/LATEST.sh', 'pwsh -File scripts/CONTEST.ps1',
     'bash tests/run.sh', win('bash tests/run.sh'), 'pythonx scripts/check.py', 'python.exex scripts/check.py',
     'lune run build', 'stylua src', 'cat selene.toml', 'grep -rn selene src', 'luau-lsp --version',
+    'pwsh -ExecutionPolicy x;cat tools/check.sh',
   ]) {
     test(`does not count: ${show(c)}`, () => assert.equal(ran(c), false, c));
   }
@@ -199,6 +200,7 @@ describe('verify-before-done: long commands that are not checks are read in unde
     ['many (bash -e', fill('(bash -e', 100000)], ['many ;bash -e', fill(';bash -e', 100000)], ['many (./a', fill('(./a', 100000)],
     ['many (timeout -k 5', fill('(timeout -k 5', 100000)], ['many (pwsh -ExecutionPolicy x', fill('(pwsh -ExecutionPolicy x', 100000)],
     ['many (stylua x', fill('(stylua x', 100000)],
+    ['many (pwsh -ExecutionPolicy x, 300,000 characters', fill('(pwsh -ExecutionPolicy x', 300000)],
     ['many (bin/gate --ful', fill('(bin/gate --ful', 100000), ['bin/gate --full']],
     ['200 checks', fill('bin/gate --step; ', 20000), Array.from({ length: 200 }, (_, i) => `bin/gate --step${i}`)],
   ]) {
