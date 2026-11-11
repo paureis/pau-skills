@@ -39,7 +39,8 @@ describe('verify-before-done: check scripts and Lua tools', () => {
     'timeout 2d bash tools/check.sh',
     'luau-lsp analyze src', 'selene src', 'stylua --check src', 'cd game && selene .', 'selene;echo x',
     'node scripts/build.mjs && bash tools/check.sh', 'bash tools/check.sh</dev/null', 'cd app;  bash tools/check.sh',
-    'pwsh  -File scripts/test.ps1', 'node scripts/v2check.mjs',
+    'pwsh  -File scripts/test.ps1', 'node scripts/v2check.mjs', 'bash -x tools/check.sh', 'bash -m tools/check.sh',
+    'node -c scripts/check.mjs',
   ]) {
     test(`counts: ${show(c)}`, () => assert.equal(ran(c), true, c));
   }
@@ -61,6 +62,10 @@ describe('verify-before-done: check scripts and Lua tools', () => {
     'lune run build', 'stylua src', 'cat selene.toml', 'grep -rn selene src', 'luau-lsp --version',
     'pwsh -ExecutionPolicy x;cat tools/check.sh', 'stylua x--check', 'selenex src', 'selene-toml src', 'luau-lsp analyzefoo',
     'pwsh -ExecutionPolicy scripts/test.ps1',
+    'pwsh -Command "Test-Path ./dist"', 'powershell -Command Test-Connection localhost', 'bash -c "test -f build/out.js && echo yes"',
+    'python -c "check()"', 'node -e test', 'python -m testfixtures', 'sh -c test', 'zsh -c lint', 'python3 -c "check()"',
+    'node -p test', 'node --eval test', 'node --print test', 'pwsh -c "Test-Path x"', 'pwsh -EncodedCommand testdata',
+    'powershell -command Test-Path x', 'PWSH -COMMAND Test-Path x', 'bash -e -c lint',
   ]) {
     test(`does not count: ${show(c)}`, () => assert.equal(ran(c), false, c));
   }

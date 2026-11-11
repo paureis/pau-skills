@@ -23,7 +23,9 @@
 //      --kill-after=<v>, --signal=<v>, --preserve-status, --foreground and -v, then a duration such as 600, 10m, 1.5h).
 //      - A check script: an interpreter (bash, sh, zsh, pwsh, powershell, node, python or python3, each with an
 //        optional .exe, in any case), its flags (only -ExecutionPolicy takes a value), then a script path; or a path
-//        run directly, ./x or .\x (in "& .\x", the PowerShell call operator & is a separator). The file name, after
+//        run directly, ./x or .\x (in "& .\x", the PowerShell call operator & is a separator). A flag for inline code
+//        or a module means there is no script: -c for bash, sh, zsh and python, -m for python, -e, -p, --eval and
+//        --print for node, -c, -Command and -EncodedCommand for pwsh and powershell, in any case. The file name, after
 //        the last / or \, is split into words at every character that is not an ASCII letter, between a lowercase
 //        letter and a capital, and between a capital and a capital followed by a lowercase letter (APITests is API
 //        and Tests). It is a check script when a word starts with check, test, verify or lint, or is ci, in any case.
@@ -96,11 +98,11 @@ const START = String.raw`(?:^|[;&|\n(])[ \t]*(?:timeout(?:[ \t]+(?:-[ks][ \t]+${
 const END = String.raw`(?=$|[\s;&|)<>])`;
 const squeeze = (s) => s.replace(/[ \t]+/g, ' ');
 
-// A check script or a Lua tool. Groups 1 and 2 hold a script path, group 3 the path given to lune run.
+// A check script or a Lua tool: an interpreter with its flags and a script, a script run directly, or a Lua tool.
 const SHAPES = new RegExp(START + '(?:' + [
-  String.raw`(?:bash|sh|zsh|pwsh|powershell|node|python3?)(?:\.exe)?(?:[ \t]+(?:-ExecutionPolicy[ \t]+[^-\s;&|()<>]${PART}*|-(?!ExecutionPolicy[ \t]+[^-\s;&|()<>])${PART}*))*[ \t]+([^-\s;&|()<>]${PART}*)`,
-  String.raw`(\.[/\\]${PART}*)`,
-  String.raw`lune[ \t]+run[ \t]+(${PART}+)`,
+  String.raw`(?<interp>bash|sh|zsh|pwsh|powershell|node|python3?)(?:\.exe)?(?<flags>(?:[ \t]+(?:-ExecutionPolicy[ \t]+[^-\s;&|()<>]${PART}*|-(?!ExecutionPolicy[ \t]+[^-\s;&|()<>])${PART}*))*)[ \t]+(?<script>[^-\s;&|()<>]${PART}*)`,
+  String.raw`(?<direct>\.[/\\]${PART}*)`,
+  String.raw`lune[ \t]+run[ \t]+(?<lune>${PART}+)`,
   String.raw`(?:luau-lsp[ \t]+analyze|selene)${END}`,
   String.raw`stylua[ \t][^;&|()\n]*?(?<=[ \t])--check${END}`,
 ].join('|') + ')', 'gi');
@@ -111,12 +113,23 @@ function checkWord(name) {
     .some((w) => /^(?:check|test|verify|lint)|^ci$/i.test(w));
 }
 
+// The flags after which an interpreter runs code or a module given inline, so what follows is not a script path.
+const CODE_FLAGS = new Map([['sh', ['-c']], ['python', ['-c', '-m']], ['node', ['-e', '-p', '--eval', '--print']],
+  ['pwsh', ['-c', '-command', '-encodedcommand']]]);
+const family = (name) => name.toLowerCase().replace(/^(?:ba|z)sh$/, 'sh').replace(/^python.*/, 'python').replace(/^powershell$/, 'pwsh');
+
+/** True when the flags of an interpreter make it run inline code or a module. */
+function inlineCode(interp, flags) {
+  const code = interp === undefined ? [] : CODE_FLAGS.get(family(interp)) ?? [];
+  return flags.trim().split(/[ \t]+/).some((f) => code.includes(f.toLowerCase()));
+}
+
 /** True when the command runs a check script or a Lua tool check. */
 function runsScript(cmd) {
-  for (const [, viaInterpreter, direct, lunePath] of cmd.matchAll(SHAPES)) {
-    const script = viaInterpreter ?? direct;
-    if (script !== undefined) { if (checkWord(script.split(/[/\\]/).pop())) return true; }
-    else if (lunePath === undefined || lunePath.split(/[/\\]/).some(checkWord)) return true;
+  for (const { groups: g } of cmd.matchAll(SHAPES)) {
+    const script = g.script ?? g.direct;
+    if (script !== undefined) { if (!inlineCode(g.interp, g.flags ?? '') && checkWord(script.split(/[/\\]/).pop())) return true; }
+    else if (g.lune === undefined || g.lune.split(/[/\\]/).some(checkWord)) return true;
   }
   return false;
 }
