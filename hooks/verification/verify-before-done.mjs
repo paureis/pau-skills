@@ -7,7 +7,12 @@
 // confident. This hook reads what actually happened in the transcript instead of trusting the summary.
 //
 // How it decides:
-//   1. Find the user's last real message in the transcript (tool results do not count).
+//   1. Find the user's last real message in the transcript (tool results do not count). A user entry whose
+//      origin.kind is task-notification, peer, coordinator, auto-continuation or channel was sent by the harness or
+//      another agent, never typed, so it does not count: a task notification that arrives while the session is idle
+//      starts a new turn, and must not hide the edits made before it. Every other entry keeps this rule: no origin,
+//      an origin that is not an object or has no kind, "human", and any other kind (Claude Code has more, such as
+//      suggestion, voice-call or remote, whose meaning is not verified; they must not add a block).
 //   2. After it, list file edits (Write, Edit, MultiEdit, NotebookEdit). Documentation and plain text files
 //      (.md, .mdx, .txt, .rst, .adoc, images) do not count. Only edits inside the project count ($CLAUDE_PROJECT_DIR,
 //      else the input's cwd), so an edit to a scratchpad or a temp folder does not. A relative path resolves against
@@ -174,9 +179,13 @@ export function parseTranscript(text) {
 
 const blocks = (entry) => (Array.isArray(entry?.message?.content) ? entry.message.content : []);
 
-/** A message the user typed (not a tool result, not a meta or sidechain entry). */
+// The origin kinds of a user entry sent by the harness or another agent.
+const NOT_TYPED = new Set(['task-notification', 'peer', 'coordinator', 'auto-continuation', 'channel']);
+
+/** A message the user typed (not a tool result, not a meta or sidechain entry, not sent by the harness). */
 export function isUserPrompt(entry) {
   if (!entry || entry.type !== 'user' || entry.isMeta || entry.isSidechain) return false;
+  if (entry.origin && typeof entry.origin === 'object' && NOT_TYPED.has(entry.origin.kind)) return false;
   const content = entry.message?.content;
   if (typeof content === 'string') return content.trim().length > 0;
   if (!Array.isArray(content)) return false;

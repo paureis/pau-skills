@@ -1,5 +1,5 @@
-// The verify-before-done Stop hook counts the checks a project declares in .claude/review-rules.json, and its block
-// message says how to stop a false alarm.
+// The verify-before-done Stop hook counts the checks a project declares in .claude/review-rules.json, its block
+// message says how to stop a false alarm, and a task notification does not hide the edits made before it.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -7,13 +7,15 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { repo, runNode, tempDir } from './helpers.mjs';
-import { decide, assess, toolCallsSinceLastPrompt } from '../hooks/verification/verify-before-done.mjs';
+import { decide, assess, toolCallsSinceLastPrompt, isUserPrompt } from '../hooks/verification/verify-before-done.mjs';
 
 const HOOK = repo('hooks', 'verification', 'verify-before-done.mjs');
 
 const user = (text) => ({ type: 'user', message: { role: 'user', content: text } });
+const human = (text) => ({ ...user(text), origin: { kind: 'human' } });
 const result = () => ({ type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 't', content: 'ok' }] } });
 const tool = (name, input) => ({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 't', name, input }] } });
+const say = (text) => ({ type: 'assistant', message: { content: [{ type: 'text', text }] } });
 const edit = (file_path) => tool('Edit', { file_path, old_string: 'a', new_string: 'b' });
 const bash = (command) => tool('Bash', { command });
 const jsonl = (entries) => entries.map((e) => JSON.stringify(e)).join('\n');
@@ -118,6 +120,47 @@ describe('verify-before-done: the block message', () => {
   test('the fixed text names no file the other tests look for', () => {
     const r = reason();
     for (const re of [/a\.ts/, /a\.js/, /b\.js/, /a\.rs/, /config\.json/]) assert.doesNotMatch(r, re);
+  });
+});
+
+describe('verify-before-done: a task notification is not the user', () => {
+  const note = (content) => ({ type: 'user', origin: { kind: 'task-notification', producer: 'session-task' }, promptSource: 'system',
+    turnOrigin: 'task_notification', message: { role: 'user', content } });
+  const NOTE = note('<task-notification>...</task-notification>');
+  const outcome = (...entries) => decide({ stop_hook_active: false }, { transcript: jsonl(entries) });
+  test('a notification with string content does not hide the edit', () => {
+    const out = outcome(human('go'), edit('src/main.js'), result(), NOTE, say('done'));
+    assert.equal(out?.decision, 'block');
+    assert.match(out.reason, /main\.js/);
+  });
+  test('a notification with text blocks does not hide the edit', () => {
+    const out = outcome(human('go'), edit('src/main.js'), result(), note([{ type: 'text', text: '<task-notification>...' }]), say('done'));
+    assert.equal(out?.decision, 'block');
+    assert.match(out.reason, /main\.js/);
+  });
+  test('isUserPrompt is false for the notification and for a peer message', () => {
+    assert.equal(isUserPrompt(NOTE), false);
+    assert.equal(isUserPrompt({ type: 'user', origin: { kind: 'peer' }, message: { role: 'user', content: 'hello' } }), false);
+  });
+  test('isUserPrompt is false for every kind sent by the harness or an agent', () => {
+    for (const kind of ['coordinator', 'channel', 'auto-continuation', 'peer', 'task-notification']) {
+      assert.equal(isUserPrompt({ ...user('hello'), origin: { kind } }), false, kind);
+    }
+  });
+  test('isUserPrompt is true for a human message and for other kinds', () => {
+    assert.equal(isUserPrompt(human('hello')), true);
+    assert.equal(isUserPrompt({ ...user('hello'), origin: { kind: 'suggestion' } }), true);
+    assert.equal(isUserPrompt({ ...user('hello'), origin: { kind: 'xyz' } }), true);
+    assert.equal(isUserPrompt({ ...user('hello'), origin: 'task-notification' }), true);
+  });
+  test('a new message from the user still moves the window', () => {
+    assert.equal(outcome(human('first'), edit('src/main.js'), result(), human('second')), null);
+    assert.equal(outcome(user('first'), edit('src/main.js'), result(), user('second')), null);
+    const empty = (text) => ({ ...user(text), origin: {} });
+    assert.equal(outcome(empty('first'), edit('src/main.js'), result(), empty('second')), null);
+  });
+  test('a check, then a notification: not blocked', () => {
+    assert.equal(outcome(human('go'), edit('src/main.js'), bash('npm test'), result(), NOTE), null);
   });
 });
 
