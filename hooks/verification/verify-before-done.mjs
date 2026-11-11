@@ -15,11 +15,21 @@
 //      counts.
 //   3. If there was at least one edit, look for a shell command (Bash, PowerShell, or the command of a Monitor call)
 //      after the LAST edit that runs a check: a test runner, a build, a linter or a type checker, in any common
-//      language (see VERIFY below), one of "testCommands", or one of the checks the project declares. Package-manager
+//      language (see VERIFY below), a check script, a Lua tool, one of "testCommands", or one of the checks the
+//      project declares. Package-manager
 //      flags between the tool and its script count (--prefix, --cwd, --filter, --workspace, -C, -w, each with its
 //      value), as in "npm --prefix web test". A declared check counts as a whole command: at the start, or after
 //      ; & | ( or a new line, optionally after a timeout prefix, and followed by the end, white space or ; & | ) < >.
 //      It is literal text, case-sensitive, and runs of spaces and tabs count as one space.
+//      A check script, which starts where a declared check may: an interpreter (bash, sh, zsh, pwsh, powershell, node,
+//      python, python3, each with an optional .exe, in any case), its flags (only -ExecutionPolicy takes a value),
+//      then a script path; or a script path run directly, ./x or .\x (the PowerShell call operator & is a separator).
+//      The file name, after the last / or \, is split into words at every character that is not an ASCII letter, at
+//      a lowercase letter followed by a capital, and before the last capital of a run followed by a lowercase letter
+//      (APITests is API and Tests). A word that starts with check, test, verify or lint, or the word ci, in any case,
+//      makes it a check script. A folder name does not: "bash tests/run.sh" is not a check.
+//      The Lua tools, from the same starts: "lune run" with a path that has such a word in a folder or file name,
+//      "luau-lsp analyze", "selene", and "stylua" with --check among its arguments.
 //      A check inside a subagent does not count, because the main session reruns the checks itself (decision 22).
 //   4. None found: block the stop with a reason. If the agent has already been sent back once (stop_hook_active),
 //      it is allowed to stop, so this can never loop.
@@ -81,6 +91,31 @@ const PART = String.raw`[^\s;&|()<>]`;
 const START = String.raw`(?:^|[;&|\n(])[ \t]*(?:timeout(?:[ \t]+(?:-[ks][ \t]+${PART}+|--(?:kill-after|signal)=${PART}+|--preserve-status|--foreground|-v))*[ \t]+\d+(?:\.\d+)?[smhd]?[ \t]+)?`;
 const END = String.raw`(?=$|[\s;&|)<>])`;
 const squeeze = (s) => s.replace(/[ \t]+/g, ' ');
+
+// A check script or a Lua tool. Groups 1 and 2 hold a script path, group 3 the path given to lune run.
+const SHAPES = new RegExp(START + '(?:' + [
+  String.raw`(?:bash|sh|zsh|pwsh|powershell|node|python3?)(?:\.exe)?(?:[ \t]+(?:-ExecutionPolicy[ \t]+[^-\s;&|()<>]${PART}*|-(?!ExecutionPolicy[ \t]+[^-\s;&|()<>])${PART}*))*[ \t]+([^-\s;&|()<>]${PART}*)`,
+  String.raw`(\.[/\\]${PART}*)`,
+  String.raw`lune[ \t]+run[ \t]+(${PART}+)`,
+  String.raw`(?:luau-lsp[ \t]+analyze|selene)${END}`,
+  String.raw`stylua[ \t][^;&|()\n]*?(?<=[ \t])--check${END}`,
+].join('|') + ')', 'gi');
+
+/** True when a file or folder name has a word that marks a check: check, test, verify or lint at its start, or ci. */
+function checkWord(name) {
+  return name.replace(/([a-z])(?=[A-Z])|([A-Z])(?=[A-Z][a-z])/g, '$1$2 ').split(/[^A-Za-z]+/)
+    .some((w) => /^(?:check|test|verify|lint)|^ci$/i.test(w));
+}
+
+/** True when the command runs a check script or a Lua tool check. */
+function runsScript(cmd) {
+  for (const [, viaInterpreter, direct, lunePath] of cmd.matchAll(SHAPES)) {
+    const script = viaInterpreter ?? direct;
+    if (script !== undefined) { if (checkWord(script.split(/[/\\]/).pop())) return true; }
+    else if (lunePath === undefined || lunePath.split(/[/\\]/).some(checkWord)) return true;
+  }
+  return false;
+}
 
 /** Each declared check as a pattern for a whole command; an entry that is not a string or is blank is skipped. */
 function checkPatterns(checks) {
@@ -195,7 +230,7 @@ export function assess(calls, options = {}, where = {}, checks = []) {
   const verified = calls.slice(lastEdit + 1).some((c) => {
     if (!SHELL_TOOLS.has(c.name) || typeof c.input.command !== 'string') return false;
     const cmd = c.input.command;
-    return VERIFY.test(cmd) || own.some((re) => re.test(squeeze(cmd))) || extra.some((re) => re.test(cmd));
+    return VERIFY.test(cmd) || runsScript(cmd) || own.some((re) => re.test(squeeze(cmd))) || extra.some((re) => re.test(cmd));
   });
   return { edited, verified };
 }

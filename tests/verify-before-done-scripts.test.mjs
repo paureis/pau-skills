@@ -1,4 +1,5 @@
-// The verify-before-done Stop hook counts the checks a project declares in .claude/review-rules.json.
+// The verify-before-done Stop hook counts a check script, the Lua tool commands and the checks a project declares in
+// .claude/review-rules.json.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -21,6 +22,47 @@ const win = (p) => p.split('/').join(String.fromCharCode(92)); // builds a Windo
 const show = (c) => c.replace(/\n/g, ' (new line) ').replace(/\t/g, ' (tab) ');
 const ran = (command) => assess(turn(edit('src/main.lua'), bash(command))).verified;
 const gate = (command, checks = ['bin/gate --full']) => assess(turn(edit('src/main.lua'), bash(command)), {}, {}, checks).verified;
+
+describe('verify-before-done: check scripts and Lua tools', () => {
+  for (const c of [
+    'bash tools/check.sh --quiet', 'bash tools/check.sh --quiet </dev/null; echo EXIT=$?',
+    'timeout 600 bash tools/check.sh --quiet </dev/null > out.txt 2>&1', 'lune run tests/run',
+    'sh tools/check.sh', 'zsh tools/check.sh', 'bash -e tools/check.sh', 'python -u scripts/run_tests.py', 'python3 scripts/check.py',
+    'node ./scripts/verify.mjs', 'node scripts/lint-all.mjs', 'pwsh scripts/lint.ps1', 'pwsh -NoProfile -File scripts/test.ps1',
+    win('powershell -ExecutionPolicy Bypass -File ./scripts/check.ps1'), win('python scripts/lint.py'),
+    win('powershell.exe -ExecutionPolicy Bypass -File ./scripts/check.ps1'), 'PowerShell -File scripts/test.ps1',
+    'python -V; bash tools/check.sh', './scripts/verify.mjs', win('./scripts/test.ps1'), win('& ./scripts/check.ps1'),
+    'bash tools/checks.sh', 'bash scripts/ci.sh', 'bash scripts/run-ci.sh', 'pwsh -File scripts/RunTests.ps1',
+    'node scripts/runChecks.mjs', 'pwsh -File scripts/APITests.ps1', 'pwsh -File scripts/RunUITests.ps1',
+    'pwsh -File scripts/RunCI.ps1', 'bash scripts/runCi.sh',
+    'cd app; bash tools/check.sh', 'cd app && bash tools/check.sh', 'false || bash tools/check.sh', 'echo y | bash tools/check.sh',
+    'sleep 1 & bash tools/check.sh', 'cd app\nbash tools/check.sh', '(bash tools/check.sh)',
+    'timeout -k 5 600 bash tools/check.sh', 'timeout 10m bash tools/check.sh', 'timeout --signal=KILL 600 bash tools/check.sh',
+    'timeout -s KILL 600 bash tools/check.sh', 'timeout --kill-after=5 600 bash tools/check.sh',
+    'timeout --preserve-status 600 bash tools/check.sh', 'timeout --foreground 600 bash tools/check.sh',
+    'timeout -v 600 bash tools/check.sh', 'timeout 30s bash tools/check.sh', 'timeout 1.5h bash tools/check.sh',
+    'timeout 2d bash tools/check.sh',
+    'luau-lsp analyze src', 'selene src', 'stylua --check src', 'cd game && selene .', 'selene;echo x',
+  ]) {
+    test(`counts: ${show(c)}`, () => assert.equal(ran(c), true, c));
+  }
+  test(`counts in a PowerShell call: ${win('./scripts/test.ps1')}`, () => {
+    assert.equal(assess(turn(edit('src/main.lua'), tool('PowerShell', { command: win('./scripts/test.ps1') }))).verified, true);
+  });
+  test('counts in a Monitor call: bash tools/check.sh', () => {
+    assert.equal(assess(turn(edit('src/main.lua'), tool('Monitor', { command: 'bash tools/check.sh' }))).verified, true);
+  });
+  for (const c of [
+    'cat tools/check.sh', 'grep -r check src', 'git add tools/check.sh', 'echo bash tools/check.sh', 'echo "bash tools/check.sh"',
+    'timeout 600 cat tools/check.sh', 'python latest.py', 'bash contest.sh', 'bash scripts/recheck.sh', 'bash scripts/unverify.sh',
+    'bash scripts/glint.sh', 'bash special.sh', 'node decide.mjs', 'bash scripts/city.sh', 'bash scripts/davinci.sh',
+    'pwsh -File scripts/getLatest.ps1', 'pwsh -File scripts/GetContest.ps1', 'bash scripts/LATEST.sh', 'pwsh -File scripts/CONTEST.ps1',
+    'bash tests/run.sh', win('bash tests/run.sh'), 'pythonx scripts/check.py', 'python.exex scripts/check.py',
+    'lune run build', 'stylua src', 'cat selene.toml', 'grep -rn selene src', 'luau-lsp --version',
+  ]) {
+    test(`does not count: ${show(c)}`, () => assert.equal(ran(c), false, c));
+  }
+});
 
 describe('verify-before-done: checks declared in .claude/review-rules.json', () => {
   for (const c of [
@@ -129,6 +171,18 @@ const fill = (s, n) => s.repeat(Math.ceil(n / s.length));
 
 describe('verify-before-done: long commands that are not checks are read in under 500 ms', () => {
   for (const [name, command, checks] of [
+    ["many '; '", fill('; ', 20000)], ['many (', fill('(', 20000)], ['many new lines', fill('\n', 20000)],
+    ['many flags, no script', 'bash' + fill(' -e', 20000) + ' cat'],
+    ['many -ExecutionPolicy pairs', 'powershell' + fill(' -ExecutionPolicy Bypass', 20000) + ' -File x.ps1'],
+    ['many timeout -k 5', 'timeout' + fill(' -k 5', 20000) + ' 600 cat tools/check.sh'],
+    ['many timeout -v', 'timeout' + fill(' -v', 20000) + ' 600 cat x'],
+    ['many timeout prefixes', fill('timeout 600 ', 20000) + 'cat x'],
+    ['a deep folder', 'bash ' + fill('a/', 20000) + 'run.sh'], ['a long name', 'bash ' + fill('a-', 20000) + 'x.sh'],
+    ['a long direct path', './' + fill('x', 20000)], ['a deep lune path', 'lune run ' + fill('a/', 20000) + 'build'],
+    ['many stylua arguments', 'stylua' + fill(' src', 20000)],
+    ['many (bash -e', fill('(bash -e', 100000)], ['many ;bash -e', fill(';bash -e', 100000)], ['many (./a', fill('(./a', 100000)],
+    ['many (timeout -k 5', fill('(timeout -k 5', 100000)], ['many (pwsh -ExecutionPolicy x', fill('(pwsh -ExecutionPolicy x', 100000)],
+    ['many (stylua x', fill('(stylua x', 100000)],
     ['many (bin/gate --ful', fill('(bin/gate --ful', 100000), ['bin/gate --full']],
     ['200 checks', fill('bin/gate --step; ', 20000), Array.from({ length: 200 }, (_, i) => `bin/gate --step${i}`)],
   ]) {
