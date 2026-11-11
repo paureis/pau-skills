@@ -67,7 +67,7 @@ under "Work items" below.
 - [How to run a batch](backlog/how-to-run-a-batch.md): the 10 steps and "With the roster".
 - [Kickoff for the next session](backlog/kickoff.md): the next session's kickoff, and the fifth batch's kickoff as a
   template.
-- [Decisions](backlog/decisions.md): decisions 1 to 23, taken from 2026-10-17 to 2026-11-06.
+- [Decisions](backlog/decisions.md): decisions 1 to 24, taken from 2026-10-17 to 2026-11-11.
 - [Context budget](backlog/context-budget.md): the facts and the policy since P0.5.
 - [Things that bit the first batch](backlog/things-that-bit/batch-1.md)
 - [Things that bit the second batch](backlog/things-that-bit/batch-2.md)
@@ -128,6 +128,7 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q19 descriptions in printable ASCII only](backlog/q19.md)
 - [Q20 verify-before-done without false alarms](backlog/q20.md)
 - [Q21 a subagent watchdog](backlog/q21.md)
+- [Q22 two hooks that get in the way](backlog/q22.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -160,7 +161,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 19. Done: the fifteenth batch's second part, Q19 descriptions in printable ASCII only (pull request 67); its scope was
     decision 21.
 20. Done: Q20 verify-before-done without false alarms (pull request 69); its scope was decision 22.
-21. **Next:** Q21 a subagent watchdog; its direction is decision 22 and its design decision 23. The kickoff is in
-    [backlog/kickoff.md](backlog/kickoff.md).
+21. **Next:** Q22 two hooks that get in the way (decision 24), left on a branch for the owner's review; then Q21 a
+    subagent watchdog (decisions 22 and 23). Both kickoffs are in [backlog/kickoff.md](backlog/kickoff.md).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
