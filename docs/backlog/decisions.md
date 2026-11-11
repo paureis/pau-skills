@@ -212,3 +212,9 @@
      own `agent_id` and `agent_type`; main-session events carry neither. In `-p`, "ask" from PreToolUse denies the
      call, the reason reaches the agent, and it went on with its task. A denied call has a PreToolUse and no
      PostToolUse.
+
+## Decisions taken (2026-11-11)
+
+24. **Q22 before Q21**, from an owner brief: `verify-before-done` misses check scripts and `no-idle`'s prompt rewrite
+   breaks auto mode (`pau-skills-hooks` 0.4.1). Q22 fixes both in 0.4.2 and is left on a branch for the owner's
+   review, not pushed. The examples stay generic: the project where it was seen is private.

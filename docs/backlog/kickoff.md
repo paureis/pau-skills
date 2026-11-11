@@ -2,11 +2,48 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The fifteenth batch is done: Q18 (pull request 65), Q19 (pull request 67) and Q20 (pull request 69). After Q20 the
-owner updates the hooks plugin on each computer (`claude plugin marketplace update pau-skills`, then
-`claude plugin update pau-skills-hooks@pau-skills`). The next item is Q21, a subagent watchdog (decision 22,
-`docs/backlog/q21.md`). Read "Things that bit the fifteenth batch" (`docs/backlog/things-that-bit/batch-15.md`) first.
-The owner starts it with this message:
+The fifteenth batch is done (Q18, Q19, Q20), and decision 23 settled the design of Q21. Two items are next, in this
+order: **Q22**, two hooks that get in the way (decision 24, `docs/backlog/q22.md`), and then **Q21**, the subagent
+watchdog. Read "Things that bit the fifteenth batch" (`docs/backlog/things-that-bit/batch-15.md`) first.
+
+The owner starts Q22 with this message:
+
+```text
+You are the orchestrator for Q22 in this repository: two hooks that get in the way (pau-skills-hooks 0.4.1). Do not
+build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My
+choices are decision 24 in docs/backlog/decisions.md; build what docs/backlog/q22.md asks, in its order of value.
+
+Before anything else, read these in full:
+1. CLAUDE.md and docs/ADDING-A-SKILL.md (step 5 covers hooks, step 8 the version bumps).
+2. docs/backlog/q22.md, docs/backlog/q20.md (the last change to verify-before-done), decisions 22 to 24,
+   docs/backlog/how-to-run-a-batch.md ("With the roster") and docs/backlog/things-that-bit/batch-15.md.
+3. hooks/verification/verify-before-done.mjs, hooks/agent-orchestration/no-idle.mjs, hooks/lib/config.mjs,
+   hooks/README.md, their tests, and skills/agent-orchestration/lean-subagent-dev/SKILL.md (its Configuration section
+   defines .claude/review-rules.json). Work the lean-subagent-dev way: a read-only plan check of every brief that
+   builds the slice in a clone, tries mutations of its own and times long inputs to any new pattern, and a fresh
+   reviewer per slice.
+
+First, before any brief:
+- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
+  builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds.
+- Review q22.md against the code and tell me anything you would change; record it in the item. Settle the two
+  "also check" points from real transcripts in this session's own transcript folder, not by guessing.
+- For no-idle, prove where SubagentStart fires (foreground, run_in_background, isolation "worktree", a fork) before
+  a builder changes the default. If that needs a headless run, give me the estimate first: a paid run needs my yes.
+- Commits carry the harness's two attribution trailers; say so once in the standing orders.
+
+Rules that matter most:
+- Keep every example generic: the project where this was seen is private. Never name or describe it.
+- A hook exits 0 on input it does not understand and checks hookEnabled(); Node standard library only; plain English,
+  no em or en dashes; no tracked file over 20,000 bytes. Time any new regex on long non-matching input.
+- Every new test fails on 0.4.1 and passes after; prove each with mutate.sh and report every "# tests" line.
+- Builders commit and never push. Do NOT push this work and do not open a pull request: merge the slices into a local
+  branch, run the four repository checks, and tell me the branch and its commits for my review. I say when to push.
+
+When it is ready, tell me in plain words what changed, what the reviews found, and anything I need to decide.
+```
+
+After the owner's review of Q22, the next session starts Q21 with this message:
 
 ```text
 You are the orchestrator for Q21 in this repository: a subagent watchdog. Do not build it yourself; run the roster in
