@@ -85,6 +85,7 @@ under "Work items" below.
 - [Things that bit the thirteenth batch](backlog/things-that-bit/batch-13.md)
 - [Things that bit the fourteenth batch](backlog/things-that-bit/batch-14.md)
 - [Things that bit the fifteenth batch](backlog/things-that-bit/batch-15.md)
+- [Things that bit the sixteenth batch](backlog/things-that-bit/batch-16.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not; the first six batches are in
   [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md), and the seventh to twelfth in
   [done-2026-10-20-to-25.md](backlog/done-2026-10-20-to-25.md).
@@ -161,7 +162,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 19. Done: the fifteenth batch's second part, Q19 descriptions in printable ASCII only (pull request 67); its scope was
     decision 21.
 20. Done: Q20 verify-before-done without false alarms (pull request 69); its scope was decision 22.
-21. **Next:** Q22 two hooks that get in the way (decision 24), left on a branch for the owner's review; then Q21 a
-    subagent watchdog (decisions 22 and 23). Both kickoffs are in [backlog/kickoff.md](backlog/kickoff.md).
+21. Built: the sixteenth batch, Q22 two hooks that get in the way (decision 24), on a local branch for the owner's
+    review, not pushed. **Next:** Q21 a subagent watchdog (decisions 22 and 23). Both kickoffs are in [backlog/kickoff.md](backlog/kickoff.md).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

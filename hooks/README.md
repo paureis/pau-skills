@@ -55,12 +55,12 @@ To remove every hook from one plugin, disable the plugin: `claude plugin disable
 | [`inline-backtick-guard`](guards/block-inline-backtick-payload.mjs) | guards | PreToolUse (Bash) | Denies `node -e`, `python -c` and similar when a backtick in the payload would be run by bash | Denies |
 | [`test-tamper-guard`](verification/test-tamper-guard.mjs) | verification | PreToolUse (Write, Edit, MultiEdit) | Asks before an edit to a test file adds a skip or focus marker or removes assertions, in 11 languages | Asks |
 | [`suppression-reason`](verification/suppression-reason.mjs) | verification | PreToolUse (Write, Edit, MultiEdit) | Tells the agent when an edit to a code file adds a lint or type-check suppression (`eslint-disable`, `@ts-ignore`, `# noqa`, `//nolint`, `#[allow(` and others) with no reason next to it | No |
-| [`verify-before-done`](verification/verify-before-done.mjs) | verification | Stop | Sends the agent back once when it edited code in the project since your last message and ran no test, build, lint or type check after the last edit | Once |
+| [`verify-before-done`](verification/verify-before-done.mjs) | verification | Stop | Sends the agent back once when it edited code in the project since your last message and ran no test, build, lint or type check after the last edit; a check script, a Lua tool check or a check listed in `.claude/review-rules.json` counts | Once |
 | [`roadmap`](session-discipline/roadmap.mjs) | session-discipline | SessionStart | Prints the current, next and blocked roadmap items and open questions | No |
 | [`branch-context`](session-discipline/branch-context.mjs) | session-discipline | SessionStart | Prints branch, ahead/behind, uncommitted files, stashes, an unfinished merge or rebase, and a warning on a protected branch | No |
 | [`compact-snapshot`](session-discipline/compact-snapshot.mjs) | session-discipline | PreCompact, SessionStart (compact) | Saves your last messages, edited files, recent commands and the todo list before a compaction, and prints them after | No |
 | [`skill-usage`](session-discipline/skill-usage.mjs) | session-discipline | PreToolUse (Skill), UserPromptSubmit | Records each skill start (time, name, typed or by the agent) for which-skill's usage report, and never the prompt | No |
-| [`no-idle`](agent-orchestration/no-idle.mjs) | agent-orchestration | PreToolUse (Agent, Task), SubagentStart | Adds "never end your turn waiting" to every subagent launch | No |
+| [`no-idle`](agent-orchestration/no-idle.mjs) | agent-orchestration | SubagentStart; PreToolUse (Agent, Task) only with `rewritePrompt` | Adds "never end your turn waiting" to every subagent as start-up context | No |
 
 ## Options per hook
 
@@ -141,10 +141,12 @@ suppressions stay quiet until someone adds another. Edits over 1 MB are skipped.
 
 | Option | Default | Meaning |
 |---|---|---|
-| `testCommands` | `[]` | Extra regular expressions for commands that count as verification, such as `"^./scripts/check"`. |
+| `testCommands` | `[]` | Extra regular expressions for commands that count as verification, such as `"^bin/gate"`. |
 | `ignorePaths` | `[]` | Globs of edited files that never need verification. Markdown, text and image files are always ignored. |
 
-It blocks at most once per stop: if the agent stops again right after being sent back, it is allowed to.
+It blocks at most once per stop: if the agent stops again right after being sent back, it is allowed to. After it has
+sent the agent back once, it judges only the edits made after that, so a later notification does not send the agent
+back again for the same edit.
 
 Only edits inside the project count: `$CLAUDE_PROJECT_DIR`, else the hook input's working folder. A relative path
 resolves against that folder, and an edit is inside if the path as written or its real path is inside, so a linked
@@ -152,6 +154,32 @@ project and macOS `/var` against `/private/var` both work; a path it cannot plac
 runs through Bash, PowerShell or the `command` of a Monitor call, and `npm`, `pnpm`, `yarn` and `bun` may carry
 `--prefix`, `--cwd`, `--filter`, `--workspace`, `-C` or `-w` with a value before the script, as in
 `npm --prefix web test`. A check that ran inside a subagent does not count: the main session reruns the checks itself.
+A check started in the background counts.
+
+The checks a project lists for other skills in `.claude/review-rules.json` count too, for example
+`{"checks": ["bin/gate --full"]}`. The file is read from the project folder. A missing or broken file, a value that is
+not an object, or a `checks` that is not a list counts as no checks; an entry that is not a string or is blank is
+skipped, and a leading byte order mark is ignored. A declared check counts as a whole command: literal and
+case-sensitive, runs of spaces and tabs count as one space, and it is followed by the end, white space or
+`; & | ) < >`.
+
+A check script counts too: `bash`, `sh`, `zsh`, `pwsh`, `powershell`, `node`, `python`, `python3` (or `python3.11` and
+the like) or `py`, in any case and optionally with `.exe`, then any flags (only `-ExecutionPolicy`, `-exec`, `-ep` and
+`-ex` take a value), then a script path; or a path run directly, `./x` or `.\x`. A flag for inline code or a module
+means there is no script: `-c` for bash, sh, zsh and python, `-m` for python, `-e`, `-p`, `--eval` and `--print` for
+node, and `-c`, `-Command` and `-EncodedCommand` for PowerShell. The file name is split into words at every character
+that is not a letter, between a lowercase letter and a capital, and before the last capital of a run followed by a
+lowercase letter (`APITests` is `API` + `Tests`). It is a check when a word starts with `check`, `test`, `verify` or
+`lint`, or is `ci`: `tools/check.sh`, `run_tests.py`, `RunTests.ps1` and `run-ci.sh` count, while `latest.py` and
+`bash tests/run.sh` do not. The Lua tools count too: `lune run` on a path with such a word, `luau-lsp analyze`,
+`selene` and `stylua --check`. Scripts, Lua tools and declared checks count at the start of the command or after `;`,
+`&`, `|`, `(` or a new line, and after a `timeout` prefix such as `timeout -k 5 600`. Text inside quotes is not
+parsed, so `echo "a; bash tools/check.sh"` counts.
+
+When it blocks, its message says how to name a check it missed (`testCommands`, or `checks` in
+`.claude/review-rules.json`). A message that the harness or another agent sends (origin kind `task-notification`,
+`peer`, `auto-continuation` or `channel`), such as a task notification that arrives while the session is idle, is not
+your message, so the edits made before it still need a check.
 
 ### branch-context
 
@@ -190,12 +218,21 @@ not start with `/` returns at once.
 `usage-report.mjs` in the `which-skill` skill reads the log: starts per skill, typed and by the agent, and the skills
 never started in the last 30 days.
 
-### roadmap, merge-guard, inline-backtick-guard, no-idle
+### no-idle
+
+| Option | Default | Meaning |
+|---|---|---|
+| `rewritePrompt` | `false` | Also append the rule to the prompt of every `Agent` or `Task` call (PreToolUse), returning the whole tool input with only the prompt changed. Only `true` turns it on. It is skipped for a call whose `permission_mode` is `"auto"`: auto mode can refuse a call whose input a hook changed after review. |
+
+By default the rule arrives only as start-up context (SubagentStart), which reaches launches in the foreground, in the
+background, in a worktree and as a fork. `NO_IDLE_RULE` replaces the rule text; see
+[agent-orchestration](../skills/agent-orchestration/README.md).
+
+### roadmap, merge-guard, inline-backtick-guard
 
 These keep their existing configuration: [session-discipline](../skills/session-discipline/README.md) (roadmap file
-and format), [guards](../skills/guards/README.md) (safe-merge settings), and
-[agent-orchestration](../skills/agent-orchestration/README.md) (`NO_IDLE_RULE`). All of them honour the `"hooks"`
-switch and `PAU_SKILLS_DISABLE`.
+and format) and [guards](../skills/guards/README.md) (safe-merge settings). All of them honour the `"hooks"` switch
+and `PAU_SKILLS_DISABLE`.
 
 ## Writing your own
 
