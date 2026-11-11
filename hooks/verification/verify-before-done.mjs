@@ -234,7 +234,8 @@ export function assess(calls, options = {}, where = {}, checks = []) {
   const verified = calls.slice(lastEdit + 1).some((c) => {
     if (!SHELL_TOOLS.has(c.name) || typeof c.input.command !== 'string') return false;
     const cmd = c.input.command;
-    return VERIFY.test(cmd) || runsScript(cmd) || own.some((re) => re.test(squeeze(cmd))) || extra.some((re) => re.test(cmd));
+    const flat = own.length ? squeeze(cmd) : ''; // once per call, not once per check
+    return VERIFY.test(cmd) || runsScript(cmd) || own.some((re) => re.test(flat)) || extra.some((re) => re.test(cmd));
   });
   return { edited, verified };
 }

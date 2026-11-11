@@ -143,6 +143,7 @@ describe('verify-before-done: long commands that are not checks are read in unde
   for (const [name, command, checks] of [
     ['many (bin/gate --ful', fill('(bin/gate --ful', 100000), ['bin/gate --full']],
     ['200 checks', fill('bin/gate --step; ', 20000), Array.from({ length: 200 }, (_, i) => `bin/gate --step${i}`)],
+    ['200 checks, 300,000 characters', fill('bin/gate --step; ', 300000), Array.from({ length: 200 }, (_, i) => `bin/gate --step${i}`)],
   ]) {
     test(`timing: ${name}`, (t) => t.diagnostic(`${timed(command, checks).toFixed(1)} ms`));
   }
