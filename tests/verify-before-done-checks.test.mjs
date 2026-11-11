@@ -26,7 +26,7 @@ describe('verify-before-done: checks declared in .claude/review-rules.json', () 
     'bin/gate --full', 'cd app && bin/gate --full', 'true; bin/gate --full', '(bin/gate --full)', 'cd app\nbin/gate --full',
     'timeout 600 bin/gate --full', 'bin/gate   --full', 'bin/gate --full > out.txt 2>&1', 'bin/gate --full; echo done',
     'bin/gate --full\necho done', 'bin/gate --full>out.txt', 'bin/gate --full</dev/null', 'bin/gate --full&& echo ok',
-    'bin/gate --full|tee log',
+    'bin/gate --full|tee log', 'bin/gate\t--full',
   ]) {
     test(`counts: ${show(c)}`, () => {
       assert.equal(gate(c, []), false, `without the check: ${c}`);

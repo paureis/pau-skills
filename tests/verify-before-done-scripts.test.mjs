@@ -38,6 +38,8 @@ describe('verify-before-done: check scripts and Lua tools', () => {
     'timeout -v 600 bash tools/check.sh', 'timeout 30s bash tools/check.sh', 'timeout 1.5h bash tools/check.sh',
     'timeout 2d bash tools/check.sh',
     'luau-lsp analyze src', 'selene src', 'stylua --check src', 'cd game && selene .', 'selene;echo x',
+    'node scripts/build.mjs && bash tools/check.sh', 'bash tools/check.sh</dev/null', 'cd app;  bash tools/check.sh',
+    'pwsh  -File scripts/test.ps1', 'node scripts/v2check.mjs',
   ]) {
     test(`counts: ${show(c)}`, () => assert.equal(ran(c), true, c));
   }
@@ -57,7 +59,8 @@ describe('verify-before-done: check scripts and Lua tools', () => {
     'pwsh -File scripts/getLatest.ps1', 'pwsh -File scripts/GetContest.ps1', 'bash scripts/LATEST.sh', 'pwsh -File scripts/CONTEST.ps1',
     'bash tests/run.sh', win('bash tests/run.sh'), 'pythonx scripts/check.py', 'python.exex scripts/check.py',
     'lune run build', 'stylua src', 'cat selene.toml', 'grep -rn selene src', 'luau-lsp --version',
-    'pwsh -ExecutionPolicy x;cat tools/check.sh',
+    'pwsh -ExecutionPolicy x;cat tools/check.sh', 'stylua x--check', 'selenex src', 'selene-toml src', 'luau-lsp analyzefoo',
+    'pwsh -ExecutionPolicy scripts/test.ps1',
   ]) {
     test(`does not count: ${show(c)}`, () => assert.equal(ran(c), false, c));
   }
