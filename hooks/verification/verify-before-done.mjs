@@ -21,8 +21,9 @@
 //      A check script, a Lua tool and a declared check start a command: at its start, or after ; & | ( or a new line
 //      (so after && || and $( too), with an optional timeout prefix (timeout, then any of -k <v>, -s <v>,
 //      --kill-after=<v>, --signal=<v>, --preserve-status, --foreground and -v, then a duration such as 600, 10m, 1.5h).
-//      - A check script: an interpreter (bash, sh, zsh, pwsh, powershell, node, python or python3, each with an
-//        optional .exe, in any case), its flags (only -ExecutionPolicy takes a value), then a script path; or a path
+//      - A check script: an interpreter (bash, sh, zsh, pwsh, powershell, node, python, python3, python3.11 and the
+//        like, or py, each with an optional .exe, in any case), its flags (only -ExecutionPolicy and its short forms
+//        -exec, -ep and -ex take a value), then a script path; or a path
 //        run directly, ./x or .\x (in "& .\x", the PowerShell call operator & is a separator). A flag for inline code
 //        or a module means there is no script: -c for bash, sh, zsh and python, -m for python, -e, -p, --eval and
 //        --print for node, -c, -Command and -EncodedCommand for pwsh and powershell, in any case. The file name, after
@@ -99,8 +100,10 @@ const END = String.raw`(?=$|[\s;&|)<>])`;
 const squeeze = (s) => s.replace(/[ \t]+/g, ' ');
 
 // A check script or a Lua tool: an interpreter with its flags and a script, a script run directly, or a Lua tool.
+// -ExecutionPolicy and its short forms take a value; the longer forms come first, so each is tried one way only.
+const EP = '(?:ExecutionPolicy|exec|ep|ex)';
 const SHAPES = new RegExp(START + '(?:' + [
-  String.raw`(?<interp>bash|sh|zsh|pwsh|powershell|node|python3?)(?:\.exe)?(?<flags>(?:[ \t]+(?:-ExecutionPolicy[ \t]+[^-\s;&|()<>]${PART}*|-(?!ExecutionPolicy[ \t]+[^-\s;&|()<>])${PART}*))*)[ \t]+(?<script>[^-\s;&|()<>]${PART}*)`,
+  String.raw`(?<interp>bash|sh|zsh|pwsh|powershell|node|python(?:3(?:\.\d+)?)?|py)(?:\.exe)?(?<flags>(?:[ \t]+(?:-${EP}[ \t]+[^-\s;&|()<>]${PART}*|-(?!${EP}[ \t]+[^-\s;&|()<>])${PART}*))*)[ \t]+(?<script>[^-\s;&|()<>]${PART}*)`,
   String.raw`(?<direct>\.[/\\]${PART}*)`,
   String.raw`lune[ \t]+run[ \t]+(?<lune>${PART}+)`,
   String.raw`(?:luau-lsp[ \t]+analyze|selene)${END}`,
@@ -116,7 +119,7 @@ function checkWord(name) {
 // The flags after which an interpreter runs code or a module given inline, so what follows is not a script path.
 const CODE_FLAGS = new Map([['sh', ['-c']], ['python', ['-c', '-m']], ['node', ['-e', '-p', '--eval', '--print']],
   ['pwsh', ['-c', '-command', '-encodedcommand']]]);
-const family = (name) => name.toLowerCase().replace(/^(?:ba|z)sh$/, 'sh').replace(/^python.*/, 'python').replace(/^powershell$/, 'pwsh');
+const family = (name) => name.toLowerCase().replace(/^(?:ba|z)sh$/, 'sh').replace(/^py(?:thon.*)?$/, 'python').replace(/^powershell$/, 'pwsh');
 
 /** True when the flags of an interpreter make it run inline code or a module. */
 function inlineCode(interp, flags) {

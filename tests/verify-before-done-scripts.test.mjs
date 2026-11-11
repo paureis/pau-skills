@@ -40,7 +40,9 @@ describe('verify-before-done: check scripts and Lua tools', () => {
     'luau-lsp analyze src', 'selene src', 'stylua --check src', 'cd game && selene .', 'selene;echo x',
     'node scripts/build.mjs && bash tools/check.sh', 'bash tools/check.sh</dev/null', 'cd app;  bash tools/check.sh',
     'pwsh  -File scripts/test.ps1', 'node scripts/v2check.mjs', 'bash -x tools/check.sh', 'bash -m tools/check.sh',
-    'node -c scripts/check.mjs',
+    'node -c scripts/check.mjs', win('powershell -ep Bypass -File ./scripts/check.ps1'),
+    'powershell -exec bypass -File scripts/test.ps1', 'powershell -ex Bypass -File scripts/test.ps1', win('py scripts/check.py'),
+    'python3.11 scripts/check.py', 'py.exe scripts/test.py',
   ]) {
     test(`counts: ${show(c)}`, () => assert.equal(ran(c), true, c));
   }
@@ -66,6 +68,7 @@ describe('verify-before-done: check scripts and Lua tools', () => {
     'python -c "check()"', 'node -e test', 'python -m testfixtures', 'sh -c test', 'zsh -c lint', 'python3 -c "check()"',
     'node -p test', 'node --eval test', 'node --print test', 'pwsh -c "Test-Path x"', 'pwsh -EncodedCommand testdata',
     'powershell -command Test-Path x', 'PWSH -COMMAND Test-Path x', 'bash -e -c lint',
+    'pyx scripts/check.py', 'pwsh -ep scripts/test.ps1', 'py -m testfixtures', 'python3.11 -c "check()"', 'python3.x scripts/check.py',
   ]) {
     test(`does not count: ${show(c)}`, () => assert.equal(ran(c), false, c));
   }
@@ -104,6 +107,11 @@ describe('verify-before-done: long commands that are not checks are read in unde
     ['many (timeout -k 5', fill('(timeout -k 5', 100000)], ['many (pwsh -ExecutionPolicy x', fill('(pwsh -ExecutionPolicy x', 100000)],
     ['many (stylua x', fill('(stylua x', 100000)],
     ['many (pwsh -ExecutionPolicy x, 300,000 characters', fill('(pwsh -ExecutionPolicy x', 300000)],
+    ['many (pwsh -ep x', fill('(pwsh -ep x', 100000)], ['many (pwsh -ep x, 300,000 characters', fill('(pwsh -ep x', 300000)],
+    ['many (pwsh -ex x', fill('(pwsh -ex x', 100000)], ['many (pwsh -ex x, 300,000 characters', fill('(pwsh -ex x', 300000)],
+    ['many (pwsh -exec x', fill('(pwsh -exec x', 100000)], ['many (pwsh -exec x, 300,000 characters', fill('(pwsh -exec x', 300000)],
+    ['many -ep pairs', 'powershell' + fill(' -ep Bypass', 100000) + ' -File x.ps1'],
+    ['many (python3.11 -u', fill('(python3.11 -u', 100000)], ['many (py -u', fill('(py -u', 300000)],
   ]) {
     test(`timing: ${name}`, (t) => t.diagnostic(`${timed(command, checks).toFixed(1)} ms`));
   }
