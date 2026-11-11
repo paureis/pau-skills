@@ -73,9 +73,9 @@ describe('verify-before-done: assessing the turn', () => {
     assert.equal(assess(toolCallsSinceLastPrompt([user('go'), edit('README.md'), edit('docs/x.mdx')])).verified, true);
   });
   test('testCommands and ignorePaths options', () => {
-    const calls = toolCallsSinceLastPrompt([user('go'), edit('src/a.c'), bash('./scripts/check-all')]);
+    const calls = toolCallsSinceLastPrompt([user('go'), edit('src/a.c'), bash('bin/gate --all')]);
     assert.equal(assess(calls).verified, false);
-    assert.equal(assess(calls, { testCommands: ['scripts/check-all'] }).verified, true);
+    assert.equal(assess(calls, { testCommands: ['bin/gate'] }).verified, true);
     assert.equal(assess(toolCallsSinceLastPrompt([user('go'), edit('yarn.lock')]), { ignorePaths: ['*.lock'] }).verified, true);
   });
   test('no edits: nothing to verify', () => {
