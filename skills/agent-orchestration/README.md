@@ -30,16 +30,17 @@ The rest of `.claude/review-rules.json` (must-fix list, risky paths, checks, and
 
 ## No-idle hook
 
-Every agent launched with the `Agent` tool gets this paragraph appended to its prompt (PreToolUse), and every
-subagent gets it again as start-up context (SubagentStart):
+Every subagent gets this paragraph as start-up context (SubagentStart), whether it is launched in the foreground, in
+the background, in a worktree or as a fork:
 
 > [no-idle] Rule: an agent that ends its turn waiting is not resumed by anything. You may start background processes,
 > but never end your turn waiting for a monitor, a task or a message. To wait, use a bounded loop in the foreground,
 > ten minutes at most per call, that prints the last observed state when it expires. If something does not finish in
 > time, deliver your report anyway and say what was left running and what was left undone.
 
-Each copy ends with `(via: prompt)` or `(via: start)`, so you can see which path reached the agent. The hook never
-approves or denies a launch, always exits 0, and stays silent on input it does not understand.
+The copy ends with `(via: start)`. With `rewritePrompt` on, the copy appended to the prompt ends with
+`(via: prompt)`, so you can see which path reached the agent. The hook never approves or denies a launch, always
+exits 0, and stays silent on input it does not understand.
 
 ### Configuration
 
@@ -49,13 +50,24 @@ Set `NO_IDLE_RULE` to replace the text, for example in the `env` block of your `
 { "env": { "NO_IDLE_RULE": "[no-idle] Never end your turn waiting; poll in a bounded loop of at most five minutes." } }
 ```
 
-To turn the hook off, disable the plugin.
+To also append the rule to the prompt of every `Agent` or `Task` call, set `rewritePrompt` in
+`.claude/pau-skills.json` (your user file or the project's):
+
+```json
+{ "no-idle": { "rewritePrompt": true } }
+```
+
+It is off by default, and only `true` turns it on. Even when it is on, it is skipped for a call made in auto mode,
+because auto mode can refuse a call whose input a hook changed after review and ask for it again.
+
+To turn the hook off, set `{ "hooks": { "no-idle": false } }` in `.claude/pau-skills.json` or run with
+`PAU_SKILLS_DISABLE=no-idle`.
 
 ### Known interaction
 
-The PreToolUse path returns the complete tool input with only `prompt` changed, because Claude Code validates
-`updatedInput` as a complete input. If another hook also rewrites `Agent` launches, hooks run in parallel and the last
-one to resolve wins.
+With `rewritePrompt` on, the PreToolUse path returns the complete tool input with only `prompt` changed, because
+Claude Code validates `updatedInput` as a complete input. If another hook also rewrites `Agent` launches, hooks run
+in parallel and the last one to resolve wins. In auto mode the hook does not rewrite.
 
 ## geppetto: the roster
 

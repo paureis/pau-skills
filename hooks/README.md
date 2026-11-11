@@ -60,7 +60,7 @@ To remove every hook from one plugin, disable the plugin: `claude plugin disable
 | [`branch-context`](session-discipline/branch-context.mjs) | session-discipline | SessionStart | Prints branch, ahead/behind, uncommitted files, stashes, an unfinished merge or rebase, and a warning on a protected branch | No |
 | [`compact-snapshot`](session-discipline/compact-snapshot.mjs) | session-discipline | PreCompact, SessionStart (compact) | Saves your last messages, edited files, recent commands and the todo list before a compaction, and prints them after | No |
 | [`skill-usage`](session-discipline/skill-usage.mjs) | session-discipline | PreToolUse (Skill), UserPromptSubmit | Records each skill start (time, name, typed or by the agent) for which-skill's usage report, and never the prompt | No |
-| [`no-idle`](agent-orchestration/no-idle.mjs) | agent-orchestration | PreToolUse (Agent, Task), SubagentStart | Adds "never end your turn waiting" to every subagent launch | No |
+| [`no-idle`](agent-orchestration/no-idle.mjs) | agent-orchestration | SubagentStart; PreToolUse (Agent, Task) only with `rewritePrompt` | Adds "never end your turn waiting" to every subagent as start-up context | No |
 
 ## Options per hook
 
@@ -190,12 +190,21 @@ not start with `/` returns at once.
 `usage-report.mjs` in the `which-skill` skill reads the log: starts per skill, typed and by the agent, and the skills
 never started in the last 30 days.
 
-### roadmap, merge-guard, inline-backtick-guard, no-idle
+### no-idle
+
+| Option | Default | Meaning |
+|---|---|---|
+| `rewritePrompt` | `false` | Also append the rule to the prompt of every `Agent` or `Task` call (PreToolUse), returning the whole tool input with only the prompt changed. Only `true` turns it on. It is skipped for a call whose `permission_mode` is `"auto"`: auto mode can refuse a call whose input a hook changed after review. |
+
+By default the rule arrives only as start-up context (SubagentStart), which reaches launches in the foreground, in the
+background, in a worktree and as a fork. `NO_IDLE_RULE` replaces the rule text; see
+[agent-orchestration](../skills/agent-orchestration/README.md).
+
+### roadmap, merge-guard, inline-backtick-guard
 
 These keep their existing configuration: [session-discipline](../skills/session-discipline/README.md) (roadmap file
-and format), [guards](../skills/guards/README.md) (safe-merge settings), and
-[agent-orchestration](../skills/agent-orchestration/README.md) (`NO_IDLE_RULE`). All of them honour the `"hooks"`
-switch and `PAU_SKILLS_DISABLE`.
+and format) and [guards](../skills/guards/README.md) (safe-merge settings). All of them honour the `"hooks"` switch
+and `PAU_SKILLS_DISABLE`.
 
 ## Writing your own
 
