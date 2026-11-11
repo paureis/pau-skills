@@ -11,7 +11,7 @@ and `skill-eval-blind.mjs`, `ISOLATION.md` and `JUDGE-BRIEF.md`, and the trigger
 `QUESTIONNAIRE.md`, `READINESS-TEMPLATE.md` and `PRODUCTION-RULES.md`, whose copies `project-setup`, `rule-to-hook` and `geppetto` carry). Hooks: `test-tamper-guard`, `suppression-reason` and `verify-before-done`.
 
 All three hooks are on when the plugin is installed. To turn one off or change how it behaves (for example, make
-`test-tamper-guard` refuse instead of ask, or tell `verify-before-done` about your project's own check script), see
+`test-tamper-guard` refuse instead of ask, or tell `verify-before-done` about a check it does not recognise), see
 [hooks/README.md](../../hooks/README.md).
 
 ## review-triage configuration

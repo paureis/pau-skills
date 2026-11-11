@@ -9,7 +9,7 @@
     {
       "name": "pau-skills",
       "description": "Everything in this marketplace as one plugin: every skill and every hook from session-discipline, verification, agent-orchestration, guards and planning. Install this or the individual plugins, not both.",
-      "version": "0.18.1",
+      "version": "0.18.2",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -193,7 +193,7 @@
     {
       "name": "pau-skills-hooks",
       "description": "Every hook in this marketplace and no skills: the guards against destructive commands, written secrets, skipped git hooks and weakened tests, the check that work was verified before it is called done, the session-start and compaction hooks, and a log of which skills start. Install it when your skills come from somewhere else, such as your claude.ai account. Do not install it next to pau-skills or the individual plugins, which carry the same hooks.",
-      "version": "0.4.1",
+      "version": "0.4.2",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -456,7 +456,7 @@
     {
       "name": "verification",
       "description": "Prove work is correct: a mutation harness that also checks a pure refactor keeps a test green, a hostile evaluator, test-driven development, flaky-test diagnosis, database migration review, a CI cost method, review triage that decides which findings are worth fixing, bug fixing from runtime evidence, a generated skill that proves changes in the running app, metric hill climbing on a harness proven sensitive, blind checks of whether a skill change changes behaviour and of which skill starts for which request, and hooks that stop tests being weakened and \"done\" being claimed without a check.",
-      "version": "0.14.1",
+      "version": "0.14.2",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -514,7 +514,7 @@
     {
       "name": "agent-orchestration",
       "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, a codebase oracle that grades the evidence for every answer, parallel work in separate git worktrees, a lean one-subagent-at-a-time way of working that adjusts to your usage budget, and an arena where a blind judge helps pick among several attempts.",
-      "version": "0.11.2",
+      "version": "0.11.3",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
