@@ -8,11 +8,12 @@
 //
 // How it decides:
 //   1. Find the user's last real message in the transcript (tool results do not count). A user entry whose
-//      origin.kind is task-notification, peer, coordinator, auto-continuation or channel was sent by the harness or
-//      another agent, never typed, so it does not count: a task notification that arrives while the session is idle
-//      starts a new turn, and must not hide the edits made before it. Every other entry keeps this rule: no origin,
-//      an origin that is not an object or has no kind, "human", and any other kind (Claude Code has more, such as
-//      suggestion, voice-call or remote, whose meaning is not verified; they must not add a block).
+//      origin.kind is task-notification, peer, auto-continuation or channel was sent by the harness or another
+//      agent, so it does not count: a task notification that arrives while the session is idle must not hide the
+//      edits made before it. Any other entry keeps this rule: no origin or no kind, "human", "coordinator" (a
+//      worker's prompt), and kinds whose meaning is not verified, such as suggestion. The window also starts after
+//      this hook's own feedback (a user entry whose text holds "[verify-before-done]"), so an edit it already sent
+//      the agent back for is not judged again on a later turn; an edit after the feedback still counts.
 //   2. After it, list file edits (Write, Edit, MultiEdit, NotebookEdit). Documentation and plain text files
 //      (.md, .mdx, .txt, .rst, .adoc, images) do not count. Only edits inside the project count ($CLAUDE_PROJECT_DIR,
 //      else the input's cwd), so an edit to a scratchpad or a temp folder does not. A relative path resolves against
@@ -180,7 +181,7 @@ export function parseTranscript(text) {
 const blocks = (entry) => (Array.isArray(entry?.message?.content) ? entry.message.content : []);
 
 // The origin kinds of a user entry sent by the harness or another agent.
-const NOT_TYPED = new Set(['task-notification', 'peer', 'coordinator', 'auto-continuation', 'channel']);
+const NOT_TYPED = new Set(['task-notification', 'peer', 'auto-continuation', 'channel']);
 
 /** A message the user typed (not a tool result, not a meta or sidechain entry, not sent by the harness). */
 export function isUserPrompt(entry) {
@@ -192,10 +193,17 @@ export function isUserPrompt(entry) {
   return content.some((b) => b?.type === 'text') && !content.some((b) => b?.type === 'tool_result');
 }
 
-/** The tool calls after the user's last message, in order, as { name, input }. */
+/** This hook's own feedback, which Claude Code stores as a user entry. */
+function ownFeedback(e) {
+  const c = e?.type === 'user' ? e.message?.content : undefined;
+  const texts = typeof c === 'string' ? [c] : Array.isArray(c) ? c.filter((b) => b?.type === 'text').map((b) => b.text) : [];
+  return texts.some((t) => typeof t === 'string' && t.includes(`[${NAME}]`));
+}
+
+/** The tool calls after the user's last message or this hook's last feedback, in order, as { name, input }. */
 export function toolCallsSinceLastPrompt(entries) {
   let start = 0;
-  entries.forEach((e, i) => { if (isUserPrompt(e)) start = i + 1; });
+  entries.forEach((e, i) => { if (isUserPrompt(e) || ownFeedback(e)) start = i + 1; });
   const calls = [];
   for (const e of entries.slice(start)) {
     if (e?.type !== 'assistant' || e.isSidechain) continue;

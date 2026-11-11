@@ -143,7 +143,7 @@ describe('verify-before-done: a task notification is not the user', () => {
     assert.equal(isUserPrompt({ type: 'user', origin: { kind: 'peer' }, message: { role: 'user', content: 'hello' } }), false);
   });
   test('isUserPrompt is false for every kind sent by the harness or an agent', () => {
-    for (const kind of ['coordinator', 'channel', 'auto-continuation', 'peer', 'task-notification']) {
+    for (const kind of ['channel', 'auto-continuation', 'peer', 'task-notification']) {
       assert.equal(isUserPrompt({ ...user('hello'), origin: { kind } }), false, kind);
     }
   });
@@ -151,6 +151,7 @@ describe('verify-before-done: a task notification is not the user', () => {
     assert.equal(isUserPrompt(human('hello')), true);
     assert.equal(isUserPrompt({ ...user('hello'), origin: { kind: 'suggestion' } }), true);
     assert.equal(isUserPrompt({ ...user('hello'), origin: { kind: 'xyz' } }), true);
+    assert.equal(isUserPrompt({ ...user('hello'), origin: { kind: 'coordinator' } }), true);
     assert.equal(isUserPrompt({ ...user('hello'), origin: 'task-notification' }), true);
   });
   test('a new message from the user still moves the window', () => {
@@ -158,6 +159,23 @@ describe('verify-before-done: a task notification is not the user', () => {
     assert.equal(outcome(user('first'), edit('src/main.js'), result(), user('second')), null);
     const empty = (text) => ({ ...user(text), origin: {} });
     assert.equal(outcome(empty('first'), edit('src/main.js'), result(), empty('second')), null);
+  });
+  const feedback = (content) => ({ type: 'user', isMeta: true, message: { role: 'user', content } });
+  const FEEDBACK = feedback('Stop hook feedback:\n[command hook]: [verify-before-done] You changed main.js since the last message.');
+  test('after the hook sent the agent back once, a notification does not block again for the same edit', () => {
+    assert.equal(outcome(human('go'), edit('src/main.js'), result(), FEEDBACK, say('I could not verify it.'), NOTE), null);
+    const blocks = feedback([{ type: 'text', text: 'Stop hook feedback:\n[verify-before-done] You changed main.js.' }]);
+    assert.equal(outcome(human('go'), edit('src/main.js'), result(), blocks, say('I could not verify it.'), NOTE), null);
+  });
+  test('an edit after the feedback still blocks, and only it is named', () => {
+    const out = outcome(human('go'), edit('src/main.js'), result(), FEEDBACK, say('ok'), edit('src/other.js'), result(), NOTE);
+    assert.equal(out?.decision, 'block');
+    assert.match(out.reason, /other\.js/);
+    assert.doesNotMatch(out.reason, /main\.js/);
+  });
+  test('the hook name in a tool result or in the agent text does not move the window', () => {
+    const tr = { type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 't', content: '[verify-before-done] x' }] } };
+    assert.equal(outcome(human('go'), edit('src/main.js'), tr, say('[verify-before-done] noted'), NOTE)?.decision, 'block');
   });
   test('a check, then a notification: not blocked', () => {
     assert.equal(outcome(human('go'), edit('src/main.js'), bash('npm test'), result(), NOTE), null);
