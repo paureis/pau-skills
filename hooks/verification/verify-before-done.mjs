@@ -15,17 +15,24 @@
 //      counts.
 //   3. If there was at least one edit, look for a shell command (Bash, PowerShell, or the command of a Monitor call)
 //      after the LAST edit that runs a check: a test runner, a build, a linter or a type checker, in any common
-//      language (see VERIFY below), or one of "testCommands". Package-manager flags between the tool and its script
-//      count (--prefix, --cwd, --filter, --workspace, -C, -w, each with its value), as in "npm --prefix web test".
+//      language (see VERIFY below), one of "testCommands", or one of the checks the project declares. Package-manager
+//      flags between the tool and its script count (--prefix, --cwd, --filter, --workspace, -C, -w, each with its
+//      value), as in "npm --prefix web test". A declared check counts as a whole command: at the start, or after
+//      ; & | ( or a new line, optionally after a timeout prefix, and followed by the end, white space or ; & | ) < >.
+//      It is literal text, case-sensitive, and runs of spaces and tabs count as one space.
 //      A check inside a subagent does not count, because the main session reruns the checks itself (decision 22).
 //   4. None found: block the stop with a reason. If the agent has already been sent back once (stop_hook_active),
 //      it is allowed to stop, so this can never loop.
 //
 // Options in .claude/pau-skills.json:
 //   { "verify-before-done": {
-//       "testCommands": ["./scripts/check", "just verify"],   (extra regexes that count as verification)
-//       "ignorePaths": ["*.lock", "docs/**"] } }              (globs of edits that never need verification)
+//       "testCommands": ["^bin/gate", "just verify"],   (extra regexes that count as verification)
+//       "ignorePaths": ["*.lock", "docs/**"] } }        (globs of edits that never need verification)
 // Turn it off with { "hooks": { "verify-before-done": false } }.
+// The checks a project lists for other skills in .claude/review-rules.json count too: { "checks": ["make test"] }.
+// It is read from the project folder. A file that is missing or not valid JSON, a value that is not an object, or a
+// "checks" that is not a list counts as no checks; an entry that is not a string or is blank is skipped. A leading
+// byte order mark is ignored.
 //
 // Writes {"decision":"block","reason":...} on stdout to block. Exits 0 always; silent on anything it cannot read.
 // An edit it cannot place inside or outside the project still counts.
@@ -66,6 +73,28 @@ export const VERIFY = new RegExp([
   String.raw`\b(?:just|task)\s+(?:test|check|lint|build|ci|verify)\b`,
   String.raw`\bshellcheck\b|\bterraform\s+(?:validate|plan)\b|\bhelm\s+lint\b`,
 ].join('|'), 'i');
+
+// Where a command starts: the start, or after ; & | ( or a new line (which covers && || and $( too), then an optional
+// timeout prefix: timeout, its options, a duration, the command. No part holds white space or ; & | ( ) < >, so each
+// piece of text can be read one way only, and a long command that does not match is read in linear time.
+const PART = String.raw`[^\s;&|()<>]`;
+const START = String.raw`(?:^|[;&|\n(])[ \t]*(?:timeout(?:[ \t]+(?:-[ks][ \t]+${PART}+|--(?:kill-after|signal)=${PART}+|--preserve-status|--foreground|-v))*[ \t]+\d+(?:\.\d+)?[smhd]?[ \t]+)?`;
+const END = String.raw`(?=$|[\s;&|)<>])`;
+const squeeze = (s) => s.replace(/[ \t]+/g, ' ');
+
+/** Each declared check as a pattern for a whole command; an entry that is not a string or is blank is skipped. */
+function checkPatterns(checks) {
+  return (Array.isArray(checks) ? checks : []).filter((c) => typeof c === 'string' && c.trim())
+    .map((c) => new RegExp(START + squeeze(c.trim()).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + END));
+}
+
+/** The "checks" list of <project>/.claude/review-rules.json, or [] when there is none. */
+function declaredChecks(project) {
+  try {
+    const value = JSON.parse(readFileSync(path.join(project, '.claude', 'review-rules.json'), 'utf8').replace(/^\uFEFF/, ''));
+    return Array.isArray(value?.checks) ? value.checks : [];
+  } catch { return []; }
+}
 
 function globToRegExp(glob) {
   let re = '';
@@ -148,7 +177,8 @@ export function insideProject(file, { project, cwd, api = path } = {}) {
 }
 
 /** Pure decision over the tool calls: { edited: string[], verified: boolean }. */
-export function assess(calls, options = {}, where = {}) {
+export function assess(calls, options = {}, where = {}, checks = []) {
+  const own = checkPatterns(checks);
   const extra = (Array.isArray(options.testCommands) ? options.testCommands : []).map((s) => { try { return new RegExp(s); } catch { return null; } }).filter(Boolean);
   const ignore = (Array.isArray(options.ignorePaths) ? options.ignorePaths : []).map(globToRegExp);
   let lastEdit = -1;
@@ -164,15 +194,16 @@ export function assess(calls, options = {}, where = {}) {
   if (lastEdit < 0) return { edited, verified: true };
   const verified = calls.slice(lastEdit + 1).some((c) => {
     if (!SHELL_TOOLS.has(c.name) || typeof c.input.command !== 'string') return false;
-    return VERIFY.test(c.input.command) || extra.some((re) => re.test(c.input.command));
+    const cmd = c.input.command;
+    return VERIFY.test(cmd) || own.some((re) => re.test(squeeze(cmd))) || extra.some((re) => re.test(cmd));
   });
   return { edited, verified };
 }
 
 /** The Stop hook output, or null to let the agent stop. */
-export function decide(input, { transcript = '', options = {}, project } = {}) {
+export function decide(input, { transcript = '', options = {}, project, checks = [] } = {}) {
   if (!input || input.stop_hook_active) return null;
-  const { edited, verified } = assess(toolCallsSinceLastPrompt(parseTranscript(transcript)), options, { project, cwd: input.cwd });
+  const { edited, verified } = assess(toolCallsSinceLastPrompt(parseTranscript(transcript)), options, { project, cwd: input.cwd }, checks);
   if (verified) return null;
   const names = edited.slice(0, 5).map((p) => path.basename(p)).join(', ') + (edited.length > 5 ? `, and ${edited.length - 5} more` : '');
   return {
@@ -194,7 +225,7 @@ if (isMain) {
     if (hookEnabled(NAME, config)) {
       let transcript = '';
       try { transcript = readFileSync(input.transcript_path, 'utf8'); } catch { transcript = ''; }
-      const out = decide(input, { transcript, options: hookOptions(NAME, config), project });
+      const out = decide(input, { transcript, options: hookOptions(NAME, config), project, checks: declaredChecks(project) });
       if (out) process.stdout.write(JSON.stringify(out) + '\n');
     }
   }
