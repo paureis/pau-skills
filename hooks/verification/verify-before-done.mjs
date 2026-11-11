@@ -15,21 +15,23 @@
 //      counts.
 //   3. If there was at least one edit, look for a shell command (Bash, PowerShell, or the command of a Monitor call)
 //      after the LAST edit that runs a check: a test runner, a build, a linter or a type checker, in any common
-//      language (see VERIFY below), a check script, a Lua tool, one of "testCommands", or one of the checks the
-//      project declares. Package-manager
-//      flags between the tool and its script count (--prefix, --cwd, --filter, --workspace, -C, -w, each with its
-//      value), as in "npm --prefix web test". A declared check counts as a whole command: at the start, or after
-//      ; & | ( or a new line, optionally after a timeout prefix, and followed by the end, white space or ; & | ) < >.
-//      It is literal text, case-sensitive, and runs of spaces and tabs count as one space.
-//      A check script, which starts where a declared check may: an interpreter (bash, sh, zsh, pwsh, powershell, node,
-//      python, python3, each with an optional .exe, in any case), its flags (only -ExecutionPolicy takes a value),
-//      then a script path; or a script path run directly, ./x or .\x (the PowerShell call operator & is a separator).
-//      The file name, after the last / or \, is split into words at every character that is not an ASCII letter, at
-//      a lowercase letter followed by a capital, and before the last capital of a run followed by a lowercase letter
-//      (APITests is API and Tests). A word that starts with check, test, verify or lint, or the word ci, in any case,
-//      makes it a check script. A folder name does not: "bash tests/run.sh" is not a check.
-//      The Lua tools, from the same starts: "lune run" with a path that has such a word in a folder or file name,
-//      "luau-lsp analyze", "selene", and "stylua" with --check among its arguments.
+//      language (see VERIFY below), a check script, a Lua tool, one of "testCommands", or a check the project
+//      declares. Package-manager flags between the tool and its script count (--prefix, --cwd, --filter,
+//      --workspace, -C, -w, each with its value), as in "npm --prefix web test".
+//      A check script, a Lua tool and a declared check start a command: at its start, or after ; & | ( or a new line
+//      (so after && || and $( too), with an optional timeout prefix (timeout, then any of -k <v>, -s <v>,
+//      --kill-after=<v>, --signal=<v>, --preserve-status, --foreground and -v, then a duration such as 600, 10m, 1.5h).
+//      - A check script: an interpreter (bash, sh, zsh, pwsh, powershell, node, python or python3, each with an
+//        optional .exe, in any case), its flags (only -ExecutionPolicy takes a value), then a script path; or a path
+//        run directly, ./x or .\x (in "& .\x", the PowerShell call operator & is a separator). The file name, after
+//        the last / or \, is split into words at every character that is not an ASCII letter, between a lowercase
+//        letter and a capital, and between a capital and a capital followed by a lowercase letter (APITests is API
+//        and Tests). It is a check script when a word starts with check, test, verify or lint, or is ci, in any case.
+//        A folder name does not count: "bash tests/run.sh" is not a check.
+//      - A Lua tool: "lune run" with a path in which a folder or file name has such a word, "luau-lsp analyze",
+//        "selene", or "stylua" with --check among its arguments.
+//      - A declared check (see below): literal text, case-sensitive, in which a run of spaces and tabs counts as one
+//        space, followed by the end, white space or ; & | ) < >.
 //      A check started in the background (run_in_background) counts like any other.
 //      A check inside a subagent does not count, because the main session reruns the checks itself (decision 22).
 //   4. None found: block the stop with a reason, which also says how to name a check this hook missed (testCommands,
