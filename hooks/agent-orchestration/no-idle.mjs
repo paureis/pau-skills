@@ -14,18 +14,20 @@
 //
 // The PreToolUse rewrite is off by default because of auto mode: the desktop app refused an Agent launch with "a hook
 // changed this call's input after auto mode reviewed it" and asked for the call again with the changed input, a round
-// trip on every launch. Turn it on with {"no-idle": {"rewritePrompt": true}} in .claude/pau-skills.json (the user
-// file or the project file); even then it is skipped when the call's permission_mode is "auto". When on, PreToolUse on
-// Agent|Task returns updatedInput with the WHOLE tool input as it arrived (every field, unknown ones too) and only the
-// prompt changed, with the block at the end. Observed in practice: Claude Code validates updatedInput as the complete
-// tool input, so an updatedInput carrying only `prompt` was rejected with "The required parameter `description` is
-// missing", even though the documentation says it may be partial. No permissionDecision: it neither approves nor
-// denies the launch. Each path signs its copy with a different suffix, so you can tell which one arrived; a repeated
-// block does no harm.
+// trip on every launch. In a headless auto-mode run on 2026-11-11 the 0.4.1 rewrite was accepted, so the refusal was
+// not reproduced headless; the change stands because SubagentStart reaches every kind of launch. Turn it on with
+// {"no-idle": {"rewritePrompt": true}} in .claude/pau-skills.json (the user file or the project file); even then it is
+// skipped when the call's permission_mode is "auto". When on, PreToolUse on Agent|Task returns updatedInput with the
+// WHOLE tool input as it arrived (every field, unknown ones too) and only the prompt changed, with the block at the
+// end. Observed in practice: Claude Code validates updatedInput as the complete tool input, so an updatedInput
+// carrying only `prompt` was rejected with "The required parameter `description` is missing", even though the
+// documentation says it may be partial. No permissionDecision: it neither approves nor denies the launch. Each path
+// signs its copy with a different suffix, so you can tell which one arrived; a repeated block does no harm.
 //
 // Reads the hook JSON on stdin and writes at most one single-line, ASCII-only JSON on stdout. Always exits 0 and never
 // writes to stderr: it informs, it does not guard; on input it does not understand it stays silent (a hook that failed
-// closed would leave every session without agents). No network, no processes, no files.
+// closed would leave every session without agents). It uses no network, starts no processes, reads only two files
+// (~/.claude/pau-skills.json and the project's .claude/pau-skills.json, through loadConfig) and writes no files.
 //
 // The rule text can be replaced with the NO_IDLE_RULE environment variable (for example in the "env" block of
 // settings.json). Exported for tests: decide(), DEFAULT_RULE, blocks(), toAscii().
