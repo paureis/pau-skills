@@ -30,6 +30,7 @@
 //      makes it a check script. A folder name does not: "bash tests/run.sh" is not a check.
 //      The Lua tools, from the same starts: "lune run" with a path that has such a word in a folder or file name,
 //      "luau-lsp analyze", "selene", and "stylua" with --check among its arguments.
+//      A check started in the background (run_in_background) counts like any other.
 //      A check inside a subagent does not count, because the main session reruns the checks itself (decision 22).
 //   4. None found: block the stop with a reason, which also says how to name a check this hook missed (testCommands,
 //      or checks in .claude/review-rules.json). If the agent has already been sent back once (stop_hook_active), it

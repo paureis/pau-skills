@@ -52,6 +52,9 @@ describe('verify-before-done: check scripts and Lua tools', () => {
   test('counts in a Monitor call: bash tools/check.sh', () => {
     assert.equal(assess(turn(edit('src/main.lua'), tool('Monitor', { command: 'bash tools/check.sh' }))).verified, true);
   });
+  test('counts: a check started in the background', () => {
+    assert.equal(assess(turn(edit('src/main.lua'), tool('Bash', { command: 'npm test', run_in_background: true }))).verified, true);
+  });
   for (const c of [
     'cat tools/check.sh', 'grep -r check src', 'git add tools/check.sh', 'echo bash tools/check.sh', 'echo "bash tools/check.sh"',
     'timeout 600 cat tools/check.sh', 'python latest.py', 'bash contest.sh', 'bash scripts/recheck.sh', 'bash scripts/unverify.sh',
