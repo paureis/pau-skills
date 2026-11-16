@@ -291,13 +291,14 @@ test('a symlink is skipped, even to a file with a marker',
     const outside = tempDir();
     git(dir, 'init', '-q');
     put(outside, 'target.py', '# shortcut: behind a symlink, never\n');
-    put(dir, 'a.py', 'x = 1\n');
+    put(dir, 'a.py', '# shortcut: the real file, x\n');
     symlinkSync(join(outside, 'target.py'), join(dir, 'link.py'));
+    symlinkSync(join(dir, 'a.py'), join(dir, 'same.py')); // inside the folder: the file is listed once, not twice
     git(dir, 'add', '.');
     const r = runNode(DEBT, { args: [dir] });
     assert.equal(r.stderr, '');
     assert.equal(r.code, 0);
-    assert.deepEqual(lines(r), ['No shortcut markers.']);
+    assert.deepEqual(lines(r), ['a.py:1: the real file, x', '1 marker, 0 with no trigger.']);
   });
 
 const POSIX = { skip: process.platform === 'win32' ? 'needs symlinks and newlines in file names' : false };
