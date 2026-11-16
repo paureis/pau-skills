@@ -148,8 +148,9 @@ Run the review round the budget table says, then triage every finding, your own 
 `${CLAUDE_SKILL_DIR}/TRIAGE.md`. If the `review-triage` skill is also installed, it is the same method; there is no
 need to load it as well.
 
-- Must fix and fix if cheap go back to the subagent in one fix round, test first, or are fixed inline when the budget
-  says so. If your Claude Code version can continue a finished subagent (for example by sending it a message), do
+- Must fix and fix if cheap go back to the subagent in one fix round, test first (except a fix that only deletes a
+  needless addition; see TRIAGE.md section 6), or are fixed inline when the budget says so. If your Claude Code
+  version can continue a finished subagent (for example by sending it a message), do
   that, so it keeps its context; otherwise brief a new one with the findings, the failing behaviour and the diff.
   Either way, paste the standing orders into the message.
 - Then run `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" fix --since <reviewed commit> --base <start commit>`, answer

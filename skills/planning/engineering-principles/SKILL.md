@@ -25,7 +25,7 @@ offer to run `improve-codebase-architecture` if it is installed. To sketch new c
 ## How to use it
 
 Read `${CLAUDE_SKILL_DIR}/PRINCIPLES.md` or `${CLAUDE_SKILL_DIR}/PRINCIPLES-2.md`, whichever holds the principle, with
-the Read tool. Reading the whole file is fine (215 lines and 160 lines); a command that cuts out one section may be refused,
+the Read tool. Reading the whole file is fine (215 lines and 166 lines); a command that cuts out one section may be refused,
 and a section read only in part does not count as read.
 
 1. **The user names a principle.** Match the name loosely (case, hyphens, a missing "the"). Read its section in
@@ -112,9 +112,11 @@ premise have failed, write the premise down and test it before a third fix.
 - **When it applies:** Sequencing an addition, a refactor or a rewrite, or judging the size of a diff, within the
   code the change touches.
 - **Rule:** In that code, remove what is dead, redundant or a stub first, then make the smallest change that reaches
-  the target shape; a bug fix carries no unrelated deletions.
-- **Sign you skipped it:** The change adds a layer, an option or a check beside code it left unused, or the diff is
-  larger than the problem.
+  the target shape; use what the codebase, the standard library or an installed dependency already does before you
+  write new code, and add no dependency for what a few lines do; a bug fix carries no unrelated deletions.
+- **Sign you skipped it:** The change adds a layer, an option or a check beside code it left unused, new code does
+  what the codebase, the standard library or an installed dependency already does, or the diff is larger than the
+  problem.
 
 ### Migrate callers then delete
 - **When it applies:** Replacing an internal interface while old callers exist, and every caller can be changed in

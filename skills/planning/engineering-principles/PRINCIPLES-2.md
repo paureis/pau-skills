@@ -53,11 +53,16 @@ smaller interface.
   remove references to nothing before you introduce the new shape.
 - Cut before you polish: get to the minimum before you spend effort on quality.
 - Design for the usage you have seen, not for edge cases you imagine. Add no validator, parser or guard beyond what
-  the spec demands.
+  the spec demands; validation where outside data comes in is never beyond it, and neither is parsing outside data
+  at the seam where it enters.
 - Prefer deletion when asked to refactor or improve something: look for what can go before what can come.
 - Make one decision in one place. Do not repeat the same choice in several places; put it behind one source of truth
   and pass the result along.
 - Make the smallest change that reaches the target shape. Fewer lines beat elegant boilerplate.
+- Use what already exists before you write new code: what this codebase already does, then the standard library or
+  the platform, then a dependency the project already installs. Never add a dependency for what a few lines do.
+  Reading the rest of the codebase to find what exists is allowed; subtracting stays within the code the change
+  touches.
 - If a task asks you to thread a new value through several layers (types, schemas, pipelines), stop and look for a
   more direct path first.
 - The same goes for prompts and instructions: remove repeated instructions and oversized templates, and delete a
@@ -71,7 +76,8 @@ When sketching new code, see `architect` if it is installed: its grounding step 
 the job before anything new is designed.
 
 **Sign you skipped it.** The change adds a layer, an option or a check next to code it has made unused; the diff is
-larger than the problem; or the same choice is made in two places.
+larger than the problem; the same choice is made in two places; or new code does what the codebase, the standard
+library or an installed dependency already does.
 
 ## Migrate callers then delete
 
