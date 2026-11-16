@@ -60,6 +60,7 @@ To remove every hook from one plugin, disable the plugin: `claude plugin disable
 | [`branch-context`](session-discipline/branch-context.mjs) | session-discipline | SessionStart | Prints branch, ahead/behind, uncommitted files, stashes, an unfinished merge or rebase, and a warning on a protected branch | No |
 | [`compact-snapshot`](session-discipline/compact-snapshot.mjs) | session-discipline | PreCompact, SessionStart (compact) | Saves your last messages, edited files, recent commands and the todo list before a compaction, and prints them after | No |
 | [`skill-usage`](session-discipline/skill-usage.mjs) | session-discipline | PreToolUse (Skill), UserPromptSubmit | Records each skill start (time, name, typed or by the agent) for which-skill's usage report, and never the prompt | No |
+| [`lazy-senior`](planning/lazy-senior.mjs) | planning | SessionStart (startup, resume, clear, compact), SubagentStart | Adds the lazy-senior ruleset (the smallest complete change; never cut validation, error handling, security or accessibility; the project's instructions come first) to every session and every subagent as start-up context | No |
 | [`no-idle`](agent-orchestration/no-idle.mjs) | agent-orchestration | SubagentStart; PreToolUse (Agent, Task) only with `rewritePrompt` | Adds "never end your turn waiting" to every subagent as start-up context | No |
 
 ## Options per hook
@@ -227,6 +228,13 @@ never started in the last 30 days.
 By default the rule arrives only as start-up context (SubagentStart), which reaches launches in the foreground, in the
 background, in a worktree and as a fork. `NO_IDLE_RULE` replaces the rule text; see
 [agent-orchestration](../skills/agent-orchestration/README.md).
+
+### lazy-senior
+
+No options. On by default: installing the `planning` plugin, `pau-skills-hooks` or the bundle turns it on. Turn it
+off with `"hooks": {"lazy-senior": false}` in `.claude/pau-skills.json` (the user file or the project file), or for one
+session with `PAU_SKILLS_DISABLE=lazy-senior`. It adds about 1,500 characters to every session start and every
+subagent start. The text is the `lazy-senior` skill's `RULES.md`; a test keeps the two copies the same.
 
 ### roadmap, merge-guard, inline-backtick-guard
 

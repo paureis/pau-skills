@@ -3,7 +3,7 @@ name: lean-subagent-dev
 description: "Run the session as orchestrator: one subagent at a time builds each change from a written brief, you check its work and keep every push and merge, delegating to fit the usage budget. Use when the user says 'work lean', 'lean subagent', 'delegate this to a subagent', 'brief a subagent', wants subagents to build while they keep control, asks how much to delegate, or says usage is low."
 argument-hint: "[the work for this session, or a path to a plan]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
-license: MIT (adapted from cursor/plugins pstack; see NOTICE)
+license: MIT (adapted from cursor/plugins pstack and DietrichGebert/ponytail; see NOTICE)
 metadata:
   upstream: https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode
 ---

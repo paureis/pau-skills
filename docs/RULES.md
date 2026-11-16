@@ -78,6 +78,9 @@ with the owner and record it.
 
 ## Dependencies
 
+- **Never add a dependency for a few lines.** Use the codebase, the standard library or what is installed first,
+  and ask before adding one. *Enforced by:* the `planning` plugin's `lazy-senior` hook, which adds the rule to every
+  session and subagent (a reminder, not a block).
 - Install packages through a supply-chain scanner where one is available (for example `socket npm install`, which
   needs Socket's CLI); install from a lockfile with `npm ci`.
 - When the scanner blocks on a **transitive** dependency's CVE that has a patched version, add an npm `overrides`

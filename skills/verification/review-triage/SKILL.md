@@ -3,7 +3,7 @@ name: review-triage
 description: "Decide which review findings are worth fixing, fix those with a test each, and end the review and fix loop after one round. Use when the user pastes review findings or says 'triage these review comments', 'is this worth fixing', 'the review keeps finding things', 'what blocks the merge'. Sorts a review that exists."
 argument-hint: "[the findings: a pull request, a review file, or pasted comments]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
-license: MIT (adapted from cursor/plugins pstack; see NOTICE)
+license: MIT (adapted from cursor/plugins pstack and DietrichGebert/ponytail; see NOTICE)
 metadata:
   upstream: https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/references/bugbot-triage.md
 ---

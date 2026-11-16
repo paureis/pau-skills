@@ -137,6 +137,11 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   revert commits, this project's transcripts and instruction files for the mistakes agents repeat, and proposes a fix
   for each at the highest layer (architecture, types, lint, test, prose), proven on a past instance; `mine.mjs` does
   the read-only mining, with redaction. Writes nothing without your yes.
+- **[lazy-senior](../skills/planning/lazy-senior/SKILL.md)** (adapted): Writes the smallest complete change by a
+  six-rung ladder (does it need to exist, the codebase, the standard library, an installed dependency, one clear line,
+  the least code), reviews a change or a repository in the order correct, safe, holds under load, tested, fast, lean,
+  and lists `shortcut:` comments with `debt.mjs`. Hook: [`lazy-senior`](../hooks/planning/lazy-senior.mjs), which adds
+  the ruleset to every session and subagent.
 - **[engineering-principles](../skills/planning/engineering-principles/SKILL.md)** (adapted): An index of eleven named
   engineering principles (build the lever, model the domain, subtract before you add and more), each with when it
   applies, its rule and the sign you skipped it, and a reference file with the detail; steer with a name, and a

@@ -104,6 +104,7 @@ All four are adapted from [mattpocock/skills](https://github.com/mattpocock/skil
 - [brainstorm](origins/planning/brainstorm.md): Original
 - [sharpen](origins/planning/sharpen.md): Adapted from [pstack `sharpen`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/sharpen)
 - [agent-friendly-audit and `mine.mjs`](origins/planning/agent-friendly-audit.md): Adapted from [pstack `correct`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/correct)
+- [lazy-senior and the `lazy-senior` hook](origins/planning/lazy-senior.md): Adapted from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail/tree/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846) `ponytail`, `ponytail-review`, `ponytail-audit`, `ponytail-debt` and `hooks/ponytail-subagent.js`
 - [engineering-principles](origins/planning/engineering-principles.md): Adapted from pstack [`poteto-mode`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode) "Principles", the `principle-*` skills and `docs/guide/08-principles.md`
 
 ---

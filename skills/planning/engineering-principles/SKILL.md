@@ -3,7 +3,7 @@ name: engineering-principles
 description: "Named engineering principles to steer a design or code decision by: build the lever, model the domain, subtract before you add and more. Use when the user says 'apply build the lever' or 'which principle applies here', or before choosing a data shape, a new flag or type, or how to change many files. Not a code review or a design sketch."
 argument-hint: "[a principle name, or the decision to steer]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
-license: MIT (adapted from cursor/plugins pstack; see NOTICE)
+license: MIT (adapted from cursor/plugins pstack and DietrichGebert/ponytail; see NOTICE)
 metadata:
   upstream: https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode
 ---
