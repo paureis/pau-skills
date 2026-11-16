@@ -48,6 +48,36 @@ reason you expect, not for a typo or a missing import. Then write the least code
 and tidy up with the tests green. A change with no behaviour, such as a doc or a version string, needs no new test;
 say so in the report. Use the `tdd` skill if it is installed; these steps are enough without it.
 
+## The smallest complete change
+
+Before you write code, stop at the first of these that does the whole job:
+
+1. It does not need to exist: leave out what nobody asked for, and say in one line what you left out.
+2. This codebase already does it: use that, the way the code around it does.
+3. The standard library or the platform does it, unless the project has its own.
+4. An installed dependency does it. Never add a dependency for a few lines.
+5. One line that a reader understands at a glance.
+6. Otherwise, the least code that works.
+
+Be lazy about the solution, never about the change: read the code it touches, list every caller, test, fixture,
+config and export it must reach, and finish all of them.
+
+On a bug fix, before you edit, search for every caller of the function you touch, then fix the cause once in the
+shared code.
+
+Never cut validation at a trust boundary, error handling that prevents data loss, security, accessibility, the
+calibration real hardware needs, or anything the user asked for.
+
+The brief's file list still holds. You may call code in any file, but you change only the files the brief lists. When
+finishing the change needs another file (a caller, a test, a fixture, a config, an export, or the shared code a bug
+fix belongs in), stop and report which file and why. The ladder chooses the code that makes a failing test pass; it
+never leaves out the test that Test first asks for. Say what you left out in the report's `Left out on purpose` line,
+or under `Unsure about` when the brief's format has no such line.
+
+A known limit gets a comment `shortcut: <the limit>, <when to upgrade>` in the language's comment syntax. In a file
+with no comment syntax, name the limit in the report instead. A shortcut never covers anything the never-cut line
+names.
+
 ## Commit, never push
 
 Commit in small steps, each message saying what changed and why, in the form the brief or the project asks for. At
@@ -69,6 +99,7 @@ Branch: [branch]   Harness branch to delete after the merge: [name]   Worktree: 
 Base: [commit]   Last: [commit] [subject]
 Commits: [n]
 What changed: [one line per file or group of files]
+Left out on purpose: [what the brief did not ask for and you did not build, or "none"]
 Commands run: [each command, its exit code, and the lines of output that show the result]
 Project facts (verified, for someone else to record): [how to run the checks, setup steps, traps you hit, or "none"]
 Outside my scope, not done: [file: what and why, or "none"]
@@ -104,7 +135,7 @@ change, report a break of one as a defect, with `file:line`.
    rotate it at the provider, then remove it.
 <!-- production rules end -->
 
-<!-- covenant start: geppetto roster 4 -->
+<!-- covenant start: geppetto roster 5 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.
