@@ -60,6 +60,16 @@
                 "timeout": 10
               }
             ]
+          },
+          {
+            "matcher": "startup|resume|clear|compact",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/planning/lazy-senior.mjs\"",
+                "timeout": 5
+              }
+            ]
           }
         ],
         "PreCompact": [
@@ -183,6 +193,15 @@
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/no-idle.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/planning/lazy-senior.mjs\"",
                 "timeout": 5
               }
             ]
@@ -235,6 +254,16 @@
                 "timeout": 10
               }
             ]
+          },
+          {
+            "matcher": "startup|resume|clear|compact",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/planning/lazy-senior.mjs\"",
+                "timeout": 5
+              }
+            ]
           }
         ],
         "PreCompact": [
@@ -358,6 +387,15 @@
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/no-idle.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/planning/lazy-senior.mjs\"",
                 "timeout": 5
               }
             ]
@@ -657,7 +695,32 @@
       "strict": false,
       "skills": [
         "./skills/planning/"
-      ]
+      ],
+      "hooks": {
+        "SessionStart": [
+          {
+            "matcher": "startup|resume|clear|compact",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/planning/lazy-senior.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "SubagentStart": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/planning/lazy-senior.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

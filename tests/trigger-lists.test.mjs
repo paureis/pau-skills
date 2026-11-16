@@ -7,7 +7,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT } from './helpers.mjs';
 
-const SKILL_COUNT = 38;
+const SKILL_COUNT = 39;
 const REQUESTS_DIR = join(ROOT, 'evals', 'triggers', 'requests');
 
 // A quote right after a letter or digit cannot open a phrase, one right before cannot close it, so "the user's" holds
@@ -175,7 +175,7 @@ const REPO_SKILLS = readSkills();
 const REPO = checkLists(readLists(), REPO_SKILLS);
 const only = (...checks) => REPO.filter((p) => checks.some((n) => p.includes(`: check ${n}: `)));
 
-test('there are 38 skills and every description is read, with its request-1 phrase', () => {
+test('there are 39 skills and every description is read, with its request-1 phrase', () => {
   assert.equal(REPO_SKILLS.length, SKILL_COUNT);
   assert.deepEqual(only(9), []);
 });

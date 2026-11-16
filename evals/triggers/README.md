@@ -6,7 +6,7 @@ requests 2 and 3 and the near misses were written by an agent that never saw a d
 the README's problem lists, so they cannot copy the description's wording. `tests/trigger-lists.test.mjs` checks their
 shape on every `npm test`; CI never runs a model.
 
-A round runs each request as a one-turn headless `claude -p` with all 38 skills installed, through `skill-eval`'s
+A round runs each request as a one-turn headless `claude -p` with all 39 skills installed, through `skill-eval`'s
 trigger mode (see `skills/verification/skill-eval/TRIGGERS.md`). Run it from the repository root with `TMPDIR` set to a folder
 outside every repository, so no run reads this repository's `CLAUDE.md` (the mode refuses a run root inside a git work
 tree):
