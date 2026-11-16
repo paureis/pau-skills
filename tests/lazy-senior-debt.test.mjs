@@ -167,7 +167,8 @@ function fixture() {
   put(dir, 'win.cs', '// shortcut: no retries, add them when the network fails\r\nint x;\r\n/* shortcut: sync only, go async under load */\r\n// shortcut: one tenant\r\n');
   put(dir, 'bom.py', `${BOM}# shortcut: a byte order mark first, still line 1\n`);
   put(dir, 'empty.sh', '# shortcut:\n');
-  writeFileSync(join(dir, 'blob.bin'), Buffer.from('\0\0# shortcut: in a binary file, never\n'));
+  // The NUL bytes sit on a line of their own, so only the NUL check keeps the marker on line 2 out.
+  writeFileSync(join(dir, 'blob.bin'), Buffer.from('\0\0\n# shortcut: in a binary file, never\n'));
   put(dir, 'gone.py', '# shortcut: deleted from disk, never\n');
   const sub = join(dir, 'vendor', 'lib');
   mkdirSync(sub, { recursive: true });
