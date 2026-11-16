@@ -95,7 +95,7 @@ describe('the two-turn lists', () => {
     const r = trig(['--skills', repo('skills'), '--requests', TWO_TURN, '--model', 'some-model', '--max-turns', '2', '--repeats', '1',
       '--usd-per-run', '0.12', '--max-usd', '7', '--plan'], { lab });
     assert.equal(r.code, 0, r.stderr);
-    assert.match(r.stdout, /^Skills under test: 38 \(16 with a list\): /m);
+    assert.match(r.stdout, /^Skills under test: 39 \(16 with a list\): /m);
     assert.match(r.stdout, /^Requests: 41 \(41 should, 0 near misses\) in 16 lists$/m);
     assert.match(r.stdout, /^Runs: 41 requests x 1 = 41$/m);
     assert.match(r.stdout, /^Max turns: 2$/m);

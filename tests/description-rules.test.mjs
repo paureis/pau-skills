@@ -25,7 +25,7 @@ const DESCRIPTION_LINE = /^description: "([^"\\]*)"$/;
 const USE = /\bUse (whenever|when|before|for|after)\b/;
 const QUOTED = /(?<![\p{L}\p{N}])'([^']+)'(?![\p{L}\p{N}])/gu;
 
-const SKILL_COUNT = 38;
+const SKILL_COUNT = 39;
 
 // Rule 1: the first and last printable ASCII characters (the space and the tilde).
 const FIRST = 0x20;
