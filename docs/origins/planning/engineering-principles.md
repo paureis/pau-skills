@@ -56,3 +56,9 @@ process id, `CREATE TABLE IF NOT EXISTS` as convergent, a temporary file in anot
 for the rest of the session, and a lever and a subtraction with no scope; all fixed. A cold run of 14 headless
 sessions holding every skill here found no collisions with `architect`, `improve-codebase-architecture` or
 `brainstorm`, and the skill started on a named principle but not on its own for a design question.
+
+**Q23 (ponytail).** "Subtract before you add" also takes from ponytail (`skills/ponytail/SKILL.md` at
+[96608e0](https://github.com/DietrichGebert/ponytail/tree/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846), MIT): use what this
+codebase, then the standard library or the platform, then an installed dependency already does before writing new
+code, and add no dependency for a few lines; validation and parsing where outside data enters are never beyond the
+spec, from its never-cut line.

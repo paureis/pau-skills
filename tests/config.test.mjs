@@ -129,6 +129,11 @@ const OFF_SWITCH = [
     acts: (r) => { assert.equal(r.code, 0); assert.ok(additionalContext(r)); },
   },
   {
+    name: 'lazy-senior', script: ['planning', 'lazy-senior.mjs'],
+    input: (p) => ({ hook_event_name: 'SubagentStart', cwd: p }),
+    acts: (r) => { assert.equal(r.code, 0); assert.ok(additionalContext(r).startsWith('When you write or change code')); },
+  },
+  {
     name: 'branch-context', script: ['session-discipline', 'branch-context.mjs'],
     setup: (p) => execFileSync('git', ['init', '-q'], { cwd: p, stdio: 'ignore' }),
     input: (p) => ({ hook_event_name: 'SessionStart', source: 'startup', cwd: p }),

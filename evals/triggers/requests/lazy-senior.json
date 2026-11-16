@@ -1,0 +1,18 @@
+{
+  "skill": "lazy-senior",
+  "should": [
+    "write the simplest version",
+    "Add a dark mode toggle to our settings page with only what the codebase already has, no new packages, and tell me what you left out",
+    "Go through this pull request and tell me which of the new helper classes, wrappers and config flags we could drop without losing anything"
+  ],
+  "nearMisses": [
+    {
+      "request": "Plan a larger restructuring of our Rails app so the billing and shipping modules stop reaching into each other's tables",
+      "expect": "improve-codebase-architecture"
+    },
+    {
+      "request": "Before I add a new config flag to the scheduler, which of our named principles says what to do about it",
+      "expect": "engineering-principles"
+    }
+  ]
+}

@@ -110,6 +110,17 @@ test('every principle in the index has a section of the same name in PRINCIPLES.
   assert.ok(parseIndex(skill).length >= 10, 'the index lists the principles');
 });
 
+// SKILL.md tells the agent that reading each detail file whole is fine and gives their sizes, in DETAIL_FILES order.
+// The counts are lines as `wc -l` counts them: newline characters.
+const STATED_COUNTS = /\((\d+) lines and (\d+) lines\)/;
+test('the line counts SKILL.md states for the detail files match the files', () => {
+  const skill = readFileSync(`${DIR}/SKILL.md`, 'utf8');
+  const m = STATED_COUNTS.exec(skill.replace(/\s+/g, ' '));
+  assert.ok(m, 'SKILL.md states no "(N lines and M lines)"');
+  const actual = DETAIL_FILES.map((f) => readFileSync(`${DIR}/${f}`, 'utf8').split('\n').length - 1);
+  assert.deepEqual([Number(m[1]), Number(m[2])], actual, `SKILL.md states ${m[1]} and ${m[2]} lines for ${DETAIL_FILES.join(' and ')}`);
+});
+
 test('the check catches a missing part, a renamed section, a reordering, an empty section and a missing paragraph', () => {
   const entry = (name, parts = PARTS) => [`### ${name}`, ...parts.map((p) => `- **${p}:** text for ${p}.`), ''].join('\n');
   const skill = ['# X', '', '## Index', '', entry('Alpha'), entry('Beta'), '## After', '', '### Not an entry', ''].join('\n');

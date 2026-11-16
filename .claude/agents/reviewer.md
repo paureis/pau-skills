@@ -49,6 +49,20 @@ looked.
    list of entries, the code path that rejects it. Not having seen a case is not evidence.
 8. Read the diff against the production rules below. A break of one is a defect, with `file:line`, whether or not a
    claim covers it.
+9. Last, after every claim is graded, check whether the change is bigger than it needs to be. Look for a layer,
+   wrapper, option, config or dependency that the change itself added and nothing needs, and for new code that this
+   codebase, the standard library, the platform or an installed dependency already does.
+   - Report one only with a concrete case and `file:line`: the single caller of a new interface, an option no caller
+     sets, the standard library call that does the same. No case, no finding.
+   - Show the search over every file that proves one caller or no caller (step 7). For code that already exists, name
+     the existing function with its `file:line`, or the standard library or platform call by name.
+   - A caller outside the repository counts: a CLI flag, a config key a user sets, a published API.
+   - Never report what the contract asks for, validation at a trust boundary, error handling that prevents data loss,
+     security, accessibility, the calibration real hardware needs, or what a production rule below requires.
+   - Inside this check, a `shortcut:` comment that names its limit is a decision, not a finding, unless the expected
+     load already crosses it (the contract's, or else the README or deploy config's; say which you assumed). It never
+     excuses a failed claim or a defect under step 8.
+   - A finding here changes no claim's verdict: size comes after correct, safe and tested.
 
 ## Report
 
@@ -57,6 +71,7 @@ Change: [branch at commit, path]
 | Claim | Verdict | Evidence (command, exit code, the output that decides it) |
 Defects outside the claims: [file:line, what breaks, how to see it, or "none"]
 Tests that cannot fail: [test, the edit that left it green, or "none"]
+Bigger than needed: [file:line, what to delete or reuse, the concrete case, or "none"]
 Scope: [files changed outside the contract, uncommitted changes, or "clean"]
 Tree left as found: [git status --short before and after]   Scratch folder: [path, removed]
 ```
@@ -90,7 +105,7 @@ change, report a break of one as a defect, with `file:line`.
    rotate it at the provider, then remove it.
 <!-- production rules end -->
 
-<!-- covenant start: geppetto roster 4 -->
+<!-- covenant start: geppetto roster 5 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.

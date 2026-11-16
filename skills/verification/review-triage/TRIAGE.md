@@ -13,7 +13,8 @@ there are.
 For each finding, write down the failure it claims: this input or state, this wrong result. For example: "with an
 empty cart, `total()` returns None and the page shows 'None items'".
 
-- A finding that names no failure is a **preference**. It goes to Leave, and the change does not wait for it.
+- A finding that names no failure is a **preference** (one exception: a needless addition by this change, below). It
+  goes to Leave, and the change does not wait for it.
 - **"I would have done it differently"** is the most common false positive in review: another structure, another
   library, another pattern, a refactor. It names no failure until it shows a concrete problem with the approach the
   change took, such as an input that breaks it or a requirement it misses. Without one it is a preference: leave it,
@@ -21,6 +22,20 @@ empty cart, `total()` returns None and the page shows 'None items'".
   is the finding; check and rate it like any other. A security concern dressed as an alternative (for example "use a
   parameterized query instead of string formatting") is a security finding: it goes by the security rule below, never
   by this one.
+- **Bigger than needed.** A layer, wrapper, option or dependency that the change itself added and nothing needs is
+  not a preference when the finding names the concrete case. For such a finding, the concrete case is the failure to
+  write down: the single caller, the option no caller sets, or what already does the same, by its file:line or as the
+  standard library or platform call by name (such as a few lines of the standard library in place of a new
+  dependency). A caller outside the repository counts: a CLI flag, a config key a user sets, a published API. It is
+  never such a finding when it is what the contract or the user asked for, validation at a trust boundary, error
+  handling that prevents data loss, security, accessibility, the calibration real hardware needs, or what a
+  production rule requires. This exception to the preference rule holds only for code this change added. Its cost is
+  code to read, test and keep. With the case named, it goes to fix if cheap, and the fix is to delete it or use what
+  exists. The same in code the change did not add is outside the change: Leave.
+- A `shortcut:` comment that names its limit records a decision. A finding about that limit goes to Leave as "a
+  decision, not a failure", unless the expected load (from the contract, the README or the deploy config) already
+  crosses the limit. A `shortcut:` comment never covers a finding on the must-fix list or a security finding; those
+  go by their own rules.
 - A failing test, build, typecheck or lint is a failure in itself.
 - A **security finding** that describes a risk but shows no failure yet is not dropped. Trace it (step 2). If you
   cannot settle it either way, it goes to the maintainer.
@@ -34,6 +49,9 @@ Reproduce the failure, or trace a real path to it from a real caller or input. R
 finding's description of it.
 
 - Reproduced or traced: rate it (step 3).
+- A needless addition (section 1) cannot be run. Its reproduction is the search over every file that shows the
+  single caller or no caller, with the callers outside the repository checked too. With that search shown it counts
+  as traced, never as "could not reproduce".
 - Not reproduced and not traced: say so in the table. A claimed must-fix goes to the maintainer with what you tried.
   Anything else goes to Leave as "could not reproduce".
 
@@ -62,10 +80,11 @@ is fixed whatever the effort. When its fix is risky, it gets a control and a clo
 A control is a run that would fail if the fix were wrong, and does: the old code fails the new test, or the wrong
 input is rejected while the right one passes.
 
-**Fix if cheap**: a real failure that is not on the list, with low effort and low fix risk. Typical cases: a false
-positive, a wrong or misleading message, new behaviour without a test, a doc the change made untrue. Fix it in this
-change when the fix is small and stays in the files the change already touches. Otherwise open an issue. A fix that
-needs a new file, other than a test, is not small.
+**Fix if cheap**: a real failure that is not on the list, or a needless addition this change made with its case named
+(section 1), with low effort and low fix risk. Typical cases: a false positive, a wrong or misleading message, new
+behaviour without a test, a doc the change made untrue, and a layer, wrapper, option or dependency this change added
+that nothing needs. Fix it in this change when the fix is small and stays in the files the change already touches.
+Otherwise open an issue. A fix that needs a new file, other than a test, is not small.
 
 **Leave**: preferences (style, naming, a refactor someone would like), checks for states shown to be impossible, and
 anything outside the change. A real bug outside the change gets its own issue, not a fix here.
@@ -98,6 +117,8 @@ One line per finding, including the ones left, so the decision can be seen and i
 | 3 | src/sync.py:12 | retry on 409 could double-write | high | medium | high | must fix | fixed in <commit>, control run |
 | 4 | src/cli.py:200 | wrong exit code on --help, outside this change | low | low | low | leave | issue to open |
 | 5 | src/api.py:30 | none (would split it into a class) | | | | leave | another approach, no failure shown |
+| 6 | src/export.py:14 | new `Exporter` interface, one caller (src/report.py:90) | low | low | low | fix if cheap | deleted in <commit> |
+| 7 | src/cache.py:22 | stale with two workers; `shortcut:` says one, README runs one | | | | leave | a decision, not a failure |
 ```
 
 When a learned pattern (section 9) decided a finding, name it in the Action column.
@@ -109,11 +130,16 @@ Put the table in the pull request description, or in the session when there is n
 1. **Commit the reviewed state first.** The commit the review looked at is where the fix round starts. Write its
    hash down.
 2. **Test first.** Each fix comes with a test that fails without it. Write the test, run it, and watch it fail for
-   the reason the finding names. Then fix, and watch it pass. A fix to documentation needs no test.
+   the reason the finding names. Then fix, and watch it pass. A fix to documentation needs no test. A fix that only
+   deletes a needless addition needs no new test when the existing tests pass before and after it: run them both
+   times and say so. A fix that replaces code with what already exists (the standard library, an existing helper) can
+   change behaviour on some edge, so it keeps the rule: a test that fails without it, unless an existing test already
+   covers that behaviour, which you name.
 3. **Check the fix's scope** with the `fix` command of `review-scope.mjs` (SKILL.md has the full command):
    `fix --since <reviewed commit>`, plus `--base <the commit the change started from>` when the work is committed on
    the base branch itself. Answer each flag before the second look:
-   - `NO_TEST`: add the missing test.
+   - `NO_TEST`: add the missing test, or name the existing test that covers a replacement (step 2). A fix that only
+     deletes a needless addition answers it with the existing tests' runs before and after, both passing.
    - `RISKY`: confirm the fix is for a must-fix. If it is not, revert it and open an issue.
    - `OUTSIDE`: revert that code and open an issue, unless it is part of a must-fix. A new file counts as outside.
 4. **The second look covers only the fix**: the diff the script prints, plus any new files it lists, read against
@@ -201,7 +227,13 @@ For every finding, give:
 - the input or state that triggers it
 - the wrong result it produces
 - how you know: ran it, traced it in the code, or suspect it
-A finding without a wrong result is a preference: label it "preference" and keep it short.
+A finding without a wrong result is a preference: label it "preference" and keep it short. The one exception is a
+layer, wrapper, option or dependency the change added that nothing needs: report each one, with the single caller,
+the option no caller sets, or what already does the same (its file:line, or the standard library or platform call
+by name). A caller outside the repository counts: a CLI flag, a config key a user sets, a published API. It is never
+such a finding when it is what the contract or the user asked for, validation at a trust boundary, error handling
+that prevents data loss, security, accessibility, the calibration real hardware needs, or what a production rule
+requires.
 If you find nothing serious, say so. Do not fill the list with nits.
 Review only the change, not the code around it, unless the change breaks that code.
 End with anything you were unsure about.

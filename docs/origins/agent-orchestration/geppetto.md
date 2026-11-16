@@ -44,3 +44,11 @@ Here it works on a design system in code, because the Figma connector failed in 
 system section with paths only and lists every value it had to invent. The production rules block (Q8) comes from
 `launch-readiness`'s `PRODUCTION-RULES.md`; `builder` follows it and `reviewer` checks against it. The roster went
 to version 3.
+
+**Roster 5 (Q23, ponytail).** `builder` carries ponytail's smallest-complete-change ladder, the finish-the-change,
+bug-fix-callers and never-cut lines and the `shortcut:` comment form (`skills/ponytail/SKILL.md` at
+[96608e0](https://github.com/DietrichGebert/ponytail/tree/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846), MIT), held to the
+brief's file list and test first. `reviewer` step 9 is `ponytail-review`'s lean check: a concrete case with
+file:line and a search, contract items and the never-cut list never reported, a shortcut a decision, size after
+correct, safe and tested, and no claim's verdict changed. `eng-lead` sends such a finding with its case to the fix
+round and drops one without.

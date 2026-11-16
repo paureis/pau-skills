@@ -3,7 +3,7 @@ name: lean-subagent-dev
 description: "Run the session as orchestrator: one subagent at a time builds each change from a written brief, you check its work and keep every push and merge, delegating to fit the usage budget. Use when the user says 'work lean', 'lean subagent', 'delegate this to a subagent', 'brief a subagent', wants subagents to build while they keep control, asks how much to delegate, or says usage is low."
 argument-hint: "[the work for this session, or a path to a plan]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
-license: MIT (adapted from cursor/plugins pstack; see NOTICE)
+license: MIT (adapted from cursor/plugins pstack and DietrichGebert/ponytail; see NOTICE)
 metadata:
   upstream: https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode
 ---
@@ -148,8 +148,9 @@ Run the review round the budget table says, then triage every finding, your own 
 `${CLAUDE_SKILL_DIR}/TRIAGE.md`. If the `review-triage` skill is also installed, it is the same method; there is no
 need to load it as well.
 
-- Must fix and fix if cheap go back to the subagent in one fix round, test first, or are fixed inline when the budget
-  says so. If your Claude Code version can continue a finished subagent (for example by sending it a message), do
+- Must fix and fix if cheap go back to the subagent in one fix round, test first (except a fix that only deletes a
+  needless addition; see TRIAGE.md section 6), or are fixed inline when the budget says so. If your Claude Code
+  version can continue a finished subagent (for example by sending it a message), do
   that, so it keeps its context; otherwise brief a new one with the findings, the failing behaviour and the diff.
   Either way, paste the standing orders into the message.
 - Then run `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" fix --since <reviewed commit> --base <start commit>`, answer

@@ -3,7 +3,7 @@ name: review-triage
 description: "Decide which review findings are worth fixing, fix those with a test each, and end the review and fix loop after one round. Use when the user pastes review findings or says 'triage these review comments', 'is this worth fixing', 'the review keeps finding things', 'what blocks the merge'. Sorts a review that exists."
 argument-hint: "[the findings: a pull request, a review file, or pasted comments]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
-license: MIT (adapted from cursor/plugins pstack; see NOTICE)
+license: MIT (adapted from cursor/plugins pstack and DietrichGebert/ponytail; see NOTICE)
 metadata:
   upstream: https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/references/bugbot-triage.md
 ---
@@ -43,7 +43,8 @@ the files a change touches, and the flags for a fix round.
    back, propose a learned pattern (section 9): you may add a candidate, but ask before creating the patterns file; a
    move to recurring or strong waits for a yes.
 
-5. **Fix round**, section 6: commit the reviewed state, write a failing test for each fix first, fix, then run
+5. **Fix round**, section 6: commit the reviewed state, write a failing test for each fix first (one exception, a
+   fix that only deletes a needless addition: TRIAGE.md section 6), fix, then run
    `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" fix --since <reviewed commit>` (add `--base <start commit>` when the
    work is on the base branch itself) and answer every flag.
 

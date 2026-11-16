@@ -55,3 +55,11 @@ none. What this version changes:
 
 The review of this change found that a learned pattern could send a reproduced failure to Leave; the rule above is the
 fix.
+
+**Q23 (ponytail).** From `ponytail-review` (`skills/ponytail-review/SKILL.md` at
+[96608e0](https://github.com/DietrichGebert/ponytail/tree/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846), MIT): a needless
+layer, wrapper, option or dependency the change added is fix if cheap when the finding names the concrete case, and a
+`shortcut:` comment that names its limit is a decision unless the expected load crosses it. This version keeps both
+inside the failure-first method: the case is the failure written down, only for code the change added; the never-cut
+list (from ponytail's "Never cut" line) bounds it; the caller search is the reproduction; a shortcut never covers a
+must-fix or security finding; only a pure deletion skips the new test.

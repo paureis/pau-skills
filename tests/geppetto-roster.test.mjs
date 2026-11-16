@@ -84,3 +84,15 @@ test('this repository runs with the roster: every bundled agent has an installed
   const r = audit({ project: ROOT, user: tempDir('geppetto-empty-user-') });
   assert.deepEqual(errors(r), []);
 });
+
+// The covenant check above compares only the covenant block. CLAUDE.md says a roster agent changes in roster/ first
+// and the installed copy follows, so the whole file must match, byte for byte.
+test('every installed agent with a roster file of the same name is byte-identical to it', () => {
+  const installed = join(ROOT, '.claude', 'agents');
+  const names = new Set(rosterFiles());
+  const shared = readdirSync(installed).filter((f) => names.has(f));
+  assert.ok(shared.length > 0, 'no installed agent shares a name with a roster file');
+  for (const f of shared) {
+    assert.ok(readFileSync(join(installed, f)).equals(readFileSync(join(ROSTER, f))), `.claude/agents/${f} differs from roster/${f}: copy it again`);
+  }
+});

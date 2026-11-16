@@ -1,8 +1,8 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 38](https://img.shields.io/badge/skills-38-informational)
-![Hooks: 14](https://img.shields.io/badge/hooks-14-informational)
+![Skills: 39](https://img.shields.io/badge/skills-39-informational)
+![Hooks: 15](https://img.shields.io/badge/hooks-15-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
 The Claude Code skills, hooks and scripts I use every day, packaged as a plugin marketplace. I am Alvaro "Pau" Reis,
@@ -139,6 +139,10 @@ context was compacted.
   against the one that survives the red flags.
 - `engineering-principles` gives a name to each rule a design or code decision is made by ("apply build the lever"),
   so one phrase steers the work and every citation says which decision it changed.
+- `lazy-senior` writes the smallest complete change: first whether it needs to exist, then the codebase, the
+  standard library and the installed dependencies, without ever cutting validation, security or a needed test. It
+  reviews a change or a whole repository with bugs first and bloat last, and lists the `shortcut:` comments that mark
+  a known limit. Its hook, on by default, adds the rules to every session and subagent. Adapted from ponytail.
 
 ### 6. Several agents in one repository
 
@@ -156,7 +160,8 @@ context was compacted.
   reviewer audit the log against the transcript before you read the summary.
 - `geppetto` designs, installs and audits a project's agent files, with a starter roster (`eng-lead` plans and
   dispatches without writing code, `builder`, `reviewer`, `writer`, `sweeper`; `builder` and `reviewer` follow five
-  production rules), a `designer` that Create makes from your design system in code (it extends one finished screen
+  production rules; `builder` works by the smallest complete change, and `reviewer` ends with a bigger-than-needed check
+  that needs a concrete case), a `designer` that Create makes from your design system in code (it extends one finished screen
   with only your tokens and lists every value it had to invent), and a check for the mistakes that make Claude Code
   skip an agent or quietly change its tools.
 - `no-idle` (hook) stops subagents from ending their turn waiting for something that will never wake them.
@@ -166,7 +171,7 @@ context was compacted.
 An AI review can always find one more thing, and each fix can bring a new bug, so the review and fix loop does not stop
 by itself. Half the findings are preferences, and the fix for a minor one lands in the code where a mistake costs most.
 
-- `review-triage` keeps only findings that name a failure, weighs the risk of each fix as well as the problem, and
+- `review-triage` keeps only findings that name a failure (or a needless addition the change made, with its case), weighs the risk of each fix as well as the problem, and
   sorts them into must fix, fix if cheap, or leave. Every fix gets a test that fails without it, the second look covers
   only the fix, and there is one review round and one fix round. It works for any review, human or AI. When a review
   is only nits, it says the change is probably fine instead of asking for another round.

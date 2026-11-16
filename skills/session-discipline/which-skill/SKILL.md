@@ -95,6 +95,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | "The code is getting messy", hard-to-test modules | `improve-codebase-architecture` (planning) | `grill-me` on the candidate picked |
 | A task about to start, "make sure you understand this", "restate this first", a vague or over-constrained request | `sharpen` (planning) | the skill that fits the task |
 | "Make it faster", "make it smaller", improve a number (run time, bundle size, memory, a score) over many attempts with proof for each step | `hillclimb` (verification) | `bug-fix` if a step uncovers a bug |
+| "Write the simplest version", "this is over-engineered", "review for bloat", "what can I delete", a list of the `shortcut:` comments | `lazy-senior` (planning): build for new code, review for a change, audit for a folder or the repository, debt for the comment list | `engineering-principles` to name the principle behind one decision, `improve-codebase-architecture` for a deeper refactor of existing modules |
 | "Apply build the lever", "which principle applies here", a design choice such as a second flag, a new type or one edit across many files | `engineering-principles` (planning) | `architect` for new code, `improve-codebase-architecture` for existing code |
 | "Run this overnight", "keep going while I sleep", work to leave running while the user is away | `overnight-run` (agent-orchestration): trust checks first, a finish condition a script checks, a decision log and a morning audit | `hillclimb` when the goal is one number; the built-in `/loop` and `/schedule` only wake a session |
 | "Create an agent", "install the agent roster", "audit my agents", "make a designer agent", agents that overlap or carry leftover tools, a starter team to plan, build and review, a design system in code to extend into more screens | `geppetto` (agent-orchestration): Create (a designer from its template), Install (eng-lead, builder, reviewer, writer, sweeper), Audit, Update; asks before every write | `lean-subagent-dev` for one subagent at a time |
@@ -160,6 +161,7 @@ Hooks act on every session where their plugin is installed. Each can be turned o
 | `suppression-reason` | Tells the agent when an edit adds a lint or type-check suppression with no reason |
 | `verify-before-done` | Sends the agent back once if it changed code and ran no checks |
 | `no-idle` | Tells every subagent never to end its turn waiting |
+| `lazy-senior` | Adds the smallest-complete-change rules to every session and subagent |
 
 ## Which skills do I actually use?
 

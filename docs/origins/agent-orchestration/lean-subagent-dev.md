@@ -52,3 +52,7 @@ adapted text is in `TRIAGE.md`, the identical copy of [review-triage's](../verif
 
 This batch was run with the new version: every brief had a read-only plan check, every item a fresh reviewer and one
 fix round, and the triage of every review used the new `TRIAGE.md`.
+
+**Q23 (ponytail).** `TRIAGE.md` is a copy of review-triage's and carries the same rules taken from
+[ponytail](https://github.com/DietrichGebert/ponytail/tree/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846) (MIT); see
+`docs/origins/verification/review-triage.md`. The fix-round line names the one test exception, for a pure deletion.
