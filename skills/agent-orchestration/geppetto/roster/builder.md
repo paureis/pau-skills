@@ -66,7 +66,8 @@ On a bug fix, before you edit, search for every caller of the function you touch
 shared code.
 
 Never cut validation at a trust boundary, error handling that prevents data loss, security, accessibility, the
-calibration real hardware needs, or anything the user asked for.
+calibration real hardware needs, or anything the user asked for. Never cut what a production rule below requires
+either.
 
 The brief's file list still holds. You may call code in any file, but you change only the files the brief lists. When
 finishing the change needs another file (a caller, a test, a fixture, a config, an export, or the shared code a bug
@@ -76,7 +77,7 @@ or under `Unsure about` when the brief's format has no such line.
 
 A known limit gets a comment `shortcut: <the limit>, <when to upgrade>` in the language's comment syntax. In a file
 with no comment syntax, name the limit in the report instead. A shortcut never covers anything the never-cut line
-names.
+or a production rule names.
 
 ## Commit, never push
 

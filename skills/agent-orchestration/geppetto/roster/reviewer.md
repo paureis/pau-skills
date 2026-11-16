@@ -55,10 +55,10 @@ looked.
    - Report one only with a concrete case and `file:line`: the single caller of a new interface, an option no caller
      sets, the standard library call that does the same. No case, no finding.
    - Show the search over every file that proves one caller or no caller (step 7). For code that already exists, name
-     the existing function with its `file:line`.
+     the existing function with its `file:line`, or the standard library or platform call by name.
    - A caller outside the repository counts: a CLI flag, a config key a user sets, a published API.
    - Never report what the contract asks for, validation at a trust boundary, error handling that prevents data loss,
-     security, accessibility, or what a production rule below requires.
+     security, accessibility, the calibration real hardware needs, or what a production rule below requires.
    - Inside this check, a `shortcut:` comment that names its limit is a decision, not a finding, unless the expected
      load already crosses it (the contract's, or else the README or deploy config's; say which you assumed). It never
      excuses a failed claim or a defect under step 8.

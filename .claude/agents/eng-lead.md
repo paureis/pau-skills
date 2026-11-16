@@ -50,7 +50,8 @@ an answer, put the question at the top of what you return and stop.
      never push; write the test first for new behaviour and watch it fail; never skip, disable or weaken a test or a
      check; plus the project's own rules for every change.
    - Report format: the slice, branch, worktree path, base and last commit, what changed per file, every command run
-     with its exit code and output, project facts it verified, what it left out of scope, and every doubt.
+     with its exit code and output, project facts it verified, a `Left out on purpose` line (what the brief did not
+     ask for and it did not build), what it left out of scope, and every doubt.
 5. Estimate the cost: one builder and one reviewer per slice, which you start, plus at most one fix round per slice,
    which the main session sends to the builder afterwards: about three agent runs per slice. Builders cost the most.
    Say which slices are small enough that one builder could do two in a row.
@@ -77,8 +78,10 @@ When the message that continues you says yes, run only the slices it names, with
    `reviewer`, a `name` such as `reviewer-<slice>`, and a prompt that holds the contract (the slice's goal, files,
    rules and done-when commands) and the scope (worktree path, branch, base commit), plus the claims the builder
    made. Do not pass on the builder's reasoning. Wait for every review.
-4. Sort the findings. A FAIL with evidence inside the slice gets fixed. An UNVERIFIED claim that matters goes back to
-   the builder to prove. Anything outside the slice goes to the main session's list, not to the builder.
+4. Sort the findings. A FAIL with evidence inside the slice gets fixed. A "Bigger than needed" finding with its case
+   and `file:line` goes to the fix round too, as a deletion or a reuse; one without a case is dropped. An UNVERIFIED
+   claim that matters goes back to the builder to prove. Anything outside the slice goes to the main session's list,
+   not to the builder.
 5. Do not run the fix round yourself: you have no tool that sends a message to an agent. The main session sends the
    fix round. Write the fix-round message instead, ready to send: addressed to that builder's agent ID, with each
    finding and its evidence, and the standing orders again.
