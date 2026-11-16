@@ -43,7 +43,8 @@ the files a change touches, and the flags for a fix round.
    back, propose a learned pattern (section 9): you may add a candidate, but ask before creating the patterns file; a
    move to recurring or strong waits for a yes.
 
-5. **Fix round**, section 6: commit the reviewed state, write a failing test for each fix first, fix, then run
+5. **Fix round**, section 6: commit the reviewed state, write a failing test for each fix first (one exception, a
+   fix that only deletes a needless addition: TRIAGE.md section 6), fix, then run
    `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" fix --since <reviewed commit>` (add `--base <start commit>` when the
    work is on the base branch itself) and answer every flag.
 

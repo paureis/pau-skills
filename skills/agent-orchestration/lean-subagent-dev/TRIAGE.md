@@ -24,11 +24,14 @@ empty cart, `total()` returns None and the page shows 'None items'".
   by this one.
 - **Bigger than needed.** A layer, wrapper, option or dependency that the change itself added and nothing needs is
   not a preference when the finding names the concrete case. For such a finding, the concrete case is the failure to
-  write down: the single caller, the option no caller sets, or what already does the same (such as a few lines of the
-  standard library in place of a new dependency), with its file:line. It is the one exception to the two bullets
-  above, and only for code this change added. Its cost is code to read, test and keep. With the case named, it goes
-  to fix if cheap, and the fix is to delete it or use what exists. The same in code the change did not add is
-  outside the change: Leave.
+  write down: the single caller, the option no caller sets, or what already does the same, by its file:line or as the
+  standard library or platform call by name (such as a few lines of the standard library in place of a new
+  dependency). A caller outside the repository counts: a CLI flag, a config key a user sets, a published API. It is
+  never such a finding when it is what the contract or the user asked for, validation at a trust boundary, error
+  handling that prevents data loss, security, accessibility, the calibration real hardware needs, or what a
+  production rule requires. This exception to the preference rule holds only for code this change added. Its cost is
+  code to read, test and keep. With the case named, it goes to fix if cheap, and the fix is to delete it or use what
+  exists. The same in code the change did not add is outside the change: Leave.
 - A `shortcut:` comment that names its limit records a decision. A finding about that limit goes to Leave as "a
   decision, not a failure", unless the expected load (from the contract, the README or the deploy config) already
   crosses the limit. A `shortcut:` comment never covers a finding on the must-fix list or a security finding; those
@@ -46,6 +49,9 @@ Reproduce the failure, or trace a real path to it from a real caller or input. R
 finding's description of it.
 
 - Reproduced or traced: rate it (step 3).
+- A needless addition (section 1) cannot be run. Its reproduction is the search over every file that shows the
+  single caller or no caller, with the callers outside the repository checked too. With that search shown it counts
+  as traced, never as "could not reproduce".
 - Not reproduced and not traced: say so in the table. A claimed must-fix goes to the maintainer with what you tried.
   Anything else goes to Leave as "could not reproduce".
 
@@ -76,8 +82,8 @@ input is rejected while the right one passes.
 
 **Fix if cheap**: a real failure that is not on the list, or a needless addition this change made with its case named
 (section 1), with low effort and low fix risk. Typical cases: a false positive, a wrong or misleading message, new
-behaviour without a test, a doc the change made untrue, and a layer, option or dependency this change added that
-nothing needs. Fix it in this change when the fix is small and stays in the files the change already touches.
+behaviour without a test, a doc the change made untrue, and a layer, wrapper, option or dependency this change added
+that nothing needs. Fix it in this change when the fix is small and stays in the files the change already touches.
 Otherwise open an issue. A fix that needs a new file, other than a test, is not small.
 
 **Leave**: preferences (style, naming, a refactor someone would like), checks for states shown to be impossible, and
@@ -125,12 +131,15 @@ Put the table in the pull request description, or in the session when there is n
    hash down.
 2. **Test first.** Each fix comes with a test that fails without it. Write the test, run it, and watch it fail for
    the reason the finding names. Then fix, and watch it pass. A fix to documentation needs no test. A fix that only
-   deletes a needless addition, or replaces it with what already exists, needs no new test: the existing tests pass
-   before and after. Answer `NO_TEST` with that.
+   deletes a needless addition needs no new test when the existing tests pass before and after it: run them both
+   times and say so. A fix that replaces code with what already exists (the standard library, an existing helper) can
+   change behaviour on some edge, so it keeps the rule: a test that fails without it, unless an existing test already
+   covers that behaviour, which you name.
 3. **Check the fix's scope** with the `fix` command of `review-scope.mjs` (SKILL.md has the full command):
    `fix --since <reviewed commit>`, plus `--base <the commit the change started from>` when the work is committed on
    the base branch itself. Answer each flag before the second look:
-   - `NO_TEST`: add the missing test.
+   - `NO_TEST`: add the missing test, or name the existing test that covers a replacement (step 2). A fix that only
+     deletes a needless addition answers it with the existing tests' runs before and after, both passing.
    - `RISKY`: confirm the fix is for a must-fix. If it is not, revert it and open an issue.
    - `OUTSIDE`: revert that code and open an issue, unless it is part of a must-fix. A new file counts as outside.
 4. **The second look covers only the fix**: the diff the script prints, plus any new files it lists, read against
@@ -218,10 +227,13 @@ For every finding, give:
 - the input or state that triggers it
 - the wrong result it produces
 - how you know: ran it, traced it in the code, or suspect it
-Report every layer, wrapper, option or dependency the change added that nothing needs, with its case.
-A finding without a wrong result is a preference, unless it is a layer, option or dependency the change added that
-nothing needs: then name the single caller, the option no caller sets, or what already does the same. Label any
-other preference "preference" and keep it short.
+A finding without a wrong result is a preference: label it "preference" and keep it short. The one exception is a
+layer, wrapper, option or dependency the change added that nothing needs: report each one, with the single caller,
+the option no caller sets, or what already does the same (its file:line, or the standard library or platform call
+by name). A caller outside the repository counts: a CLI flag, a config key a user sets, a published API. It is never
+such a finding when it is what the contract or the user asked for, validation at a trust boundary, error handling
+that prevents data loss, security, accessibility, the calibration real hardware needs, or what a production rule
+requires.
 If you find nothing serious, say so. Do not fill the list with nits.
 Review only the change, not the code around it, unless the change breaks that code.
 End with anything you were unsure about.
