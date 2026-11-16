@@ -7,7 +7,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, rmSync, symlinkSync, realpathSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
-import { findMarker, hasTrigger, scanText } from '../skills/planning/lazy-senior/debt.mjs';
+import { findMarker, hasTrigger, scanText, ledger, MAX_BYTES } from '../skills/planning/lazy-senior/debt.mjs';
 
 const DEBT = repo('skills', 'planning', 'lazy-senior', 'debt.mjs');
 const BOM = String.fromCharCode(0xfeff);
@@ -100,15 +100,29 @@ test('hasTrigger: a second part after the first comma or semicolon, not a comma 
   assert.equal(hasTrigger('trailing comma,'), false);
   assert.equal(hasTrigger('only punctuation after it, ...'), false);
   assert.equal(hasTrigger(''), false);
+  assert.equal(hasTrigger('max 100, page past that'), true);
+  assert.equal(hasTrigger('small pool, 64'), true);
+});
+
+test('findMarker: a closer is cut only after the opener it belongs to', () => {
+  assert.equal(findMarker('# shortcut: arr[i[j]], fix when x'), 'arr[i[j]], fix when x');
+  assert.equal(findMarker('% shortcut: 50%> budget, revisit'), '50%> budget, revisit');
+  assert.equal(findMarker('// shortcut: a */ b, c'), 'a */ b, c');
+  assert.equal(findMarker('-- shortcut: x -}, y =# #}'), 'x -}, y =# #}');
+  assert.equal(findMarker(' * shortcut: a, b */'), 'a, b');
+  assert.equal(findMarker('{{!-- shortcut: a, b --}}'), 'a, b');
 });
 
 test('scanText: line numbers survive CRLF and a byte order mark, and no carriage return is kept', () => {
   assert.deepEqual(scanText(`${BOM}# shortcut: a, b\r\nx\r\n/* shortcut: c */\r\n`, 'f.py'),
     [{ line: 1, text: 'a, b' }, { line: 3, text: 'c' }]);
   assert.deepEqual(scanText('<!-- shortcut: a, b -->\n# shortcut: c\n', 'README.md'), [{ line: 1, text: 'a, b' }]);
-  for (const ext of ['md', 'markdown', 'mdx', 'rst', 'txt', 'adoc', 'MD']) {
+  for (const ext of ['md', 'markdown', 'mdx', 'rst', 'adoc', 'MD']) {
     assert.deepEqual(scanText('# shortcut: c\n', `notes.${ext}`), [], ext);
   }
+  assert.deepEqual(scanText('# shortcut: c\n', 'requirements.txt'), [{ line: 1, text: 'c' }]);
+  assert.deepEqual(scanText('x\r# shortcut: a, b\r\ry\r# shortcut: c\r', 'old.py'),
+    [{ line: 2, text: 'a, b' }, { line: 5, text: 'c' }]);
 });
 
 // The main fixture: every opener style across many languages, the cases that must not count, ignored files, an
@@ -163,7 +177,8 @@ function fixture() {
     'Shortcut: capital S is not a marker.',
     '',
   ].join('\n'));
-  put(dir, 'notes.txt', '# shortcut: in a text file, only HTML comments count\n');
+  put(dir, 'requirements.txt', 'requests==2.32.3  # shortcut: pinned, unpin when the API settles\n');
+  put(dir, 'mac.py', '# shortcut: old Mac line ends, x\rx = 1\r# shortcut: line 3\r');
   put(dir, 'win.cs', '// shortcut: no retries, add them when the network fails\r\nint x;\r\n/* shortcut: sync only, go async under load */\r\n// shortcut: one tenant\r\n');
   put(dir, 'bom.py', `${BOM}# shortcut: a byte order mark first, still line 1\n`);
   put(dir, 'empty.sh', '# shortcut:\n');
@@ -200,6 +215,8 @@ const EXPECTED = [
   'later.rb:1: untracked, listed while no ignore rule matches it',
   'lib.c:1: fixed 64-byte buffer, grow it when names get longer',
   'lib.c:3: single thread, add a lock before a second worker',
+  'mac.py:1: old Mac line ends, x',
+  'mac.py:3: line 3 [no-trigger]',
   'main.js:1: in-memory cache, move it to a shared store when we run two servers',
   'main.js:6: no retry; add one if the API starts to fail',
   'page.html:2: inline styles, move them to a stylesheet when a second page needs them',
@@ -207,6 +224,7 @@ const EXPECTED = [
   'paper.tex:1: one column, two when the venue asks',
   'query.sql:1: no index, add one when the table is big',
   'query.sql:2: 1,000 rows max [no-trigger]',
+  'requirements.txt:1: pinned, unpin when the API settles',
   'show.erb:1: one query per row, preload when lists get long',
   'solve.jl:1: dense matrix, go sparse past 10,000 rows',
   'src/lib.rs:1: linear search, use a map past 1,000 items',
@@ -215,7 +233,7 @@ const EXPECTED = [
   'win.cs:1: no retries, add them when the network fails',
   'win.cs:3: sync only, go async under load',
   'win.cs:4: one tenant [no-trigger]',
-  '32 markers, 6 with no trigger.',
+  '35 markers, 7 with no trigger.',
 ];
 
 test('the ledger of a fixture repository: every row, sorted by path and line, and the summary', () => {
@@ -281,6 +299,57 @@ test('a symlink is skipped, even to a file with a marker',
     assert.equal(r.code, 0);
     assert.deepEqual(lines(r), ['No shortcut markers.']);
   });
+
+const POSIX = { skip: process.platform === 'win32' ? 'needs symlinks and newlines in file names' : false };
+
+test('a tracked file whose parent folder became a symlink is not read from outside the folder', POSIX, () => {
+  const dir = tempDir();
+  const outside = tempDir();
+  git(dir, 'init', '-q');
+  put(dir, 'sub/a.py', 'x = 1\n');
+  git(dir, 'add', '.');
+  rmSync(join(dir, 'sub'), { recursive: true });
+  put(outside, 'a.py', '# shortcut: outside the work tree, never\n');
+  symlinkSync(outside, join(dir, 'sub'));
+  const r = runNode(DEBT, { args: [dir] });
+  assert.equal(r.code, 0);
+  assert.deepEqual(lines(r), ['No shortcut markers.']);
+});
+
+test('control characters in a path or a marker are escaped, so a file name cannot forge a row', POSIX, () => {
+  const dir = tempDir();
+  const ESC = String.fromCharCode(27);
+  git(dir, 'init', '-q');
+  put(dir, 'a\nb.py:9: forged.py', `# shortcut: ${ESC}[31mred${ESC}[0m,\tlater\n`);
+  git(dir, 'add', '.');
+  const r = runNode(DEBT, { args: [dir] });
+  assert.equal(r.code, 0);
+  assert.deepEqual(lines(r), ['a\\nb.py:9: forged.py:1: \\x1b[31mred\\x1b[0m,\\tlater', '1 marker, 0 with no trigger.']);
+});
+
+test('a file over the size limit is skipped with one warning, and the rest is still listed', () => {
+  assert.equal(MAX_BYTES, 64 * 1024 * 1024);
+  const dir = tempDir();
+  git(dir, 'init', '-q');
+  put(dir, 'big.py', '# shortcut: in a file over the limit, never\n');
+  put(dir, 'small.py', '# shortcut: a, b\n');
+  git(dir, 'add', '.');
+  const { rows, warnings } = ledger(dir, undefined, { maxBytes: 20 });
+  assert.deepEqual(rows.map((r) => `${r.file}:${r.line}`), ['small.py:1']);
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /^debt\.mjs: big\.py is over 20 bytes, skipped\.$/);
+});
+
+test('timing: a marker with a 300,000-character text is listed in time', () => {
+  const dir = tempDir();
+  git(dir, 'init', '-q');
+  writeFileSync(join(dir, 'long.py'), '# shortcut: ' + 'x'.repeat(300000) + '\n');
+  git(dir, 'add', '.');
+  const r = spawnSync(process.execPath, [DEBT, dir], { encoding: 'utf8', timeout: 5000 });
+  assert.equal(r.error, undefined, 'killed by the timeout');
+  assert.equal(r.status, 0);
+  assert.equal(r.stdout.split('\n').at(-2), '1 marker, 1 with no trigger.');
+});
 
 test('outside a git work tree: one line on stderr, nothing on stdout, exit 2', () => {
   const d = tempDir();
