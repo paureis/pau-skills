@@ -19,6 +19,8 @@
 // On by default. Turn it off with "hooks": {"lazy-senior": false} in .claude/pau-skills.json (the user file or the
 // project file), or PAU_SKILLS_DISABLE=lazy-senior for one session. The skill's RULES.md holds the same text as
 // RULESET (a test compares them). Exported for tests: RULESET, SIGNATURE, decide().
+//
+// Adapted from DietrichGebert/ponytail (MIT); see NOTICE.
 
 import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -40,8 +42,10 @@ export const RULESET = [
   'Never cut validation at a trust boundary, error handling that prevents data loss, security, accessibility, the ' +
     'calibration real hardware needs, or anything the user asked for.',
   'Add no layer, wrapper, option or config nobody asked for; deleting beats adding.',
-  'Non-trivial new logic leaves one small test. A known limit gets a comment: shortcut: <the limit>, <when to upgrade>.',
+  'Non-trivial logic and every bug fix leave a small test of the edge cases they turn on.',
+  'Comment a known limit as shortcut: <the limit>, <when to upgrade>.',
   'End with what you skipped or did not check, and any risk.',
+  "The project's instructions and the task's output format come first.",
 ].join('\n');
 
 export const SIGNATURE =

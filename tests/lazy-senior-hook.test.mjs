@@ -97,11 +97,24 @@ test('the ruleset opens for code work, holds the fixed block, and keeps to its s
       'calibration real hardware needs, or anything the user asked for.',
   ].join('\n');
   assert.ok(RULESET.includes(block), 'the fixed block, word for word');
-  assert.ok(RULESET.length <= 1300, `RULESET is ${RULESET.length} characters`);
-  assert.ok(CONTEXT.length <= 1450, `additionalContext is ${CONTEXT.length} characters`);
+  assert.ok(RULESET.length <= 1400, `RULESET is ${RULESET.length} characters`);
+  assert.ok(CONTEXT.length <= 1550, `additionalContext is ${CONTEXT.length} characters`);
   assert.match(RULESET, /^[\x20-\x7e\n]+$/);
   assert.match(SIGNATURE, /^[\x20-\x7e]+$/);
-  assert.match(SIGNATURE, /lazy-senior/);
+});
+
+test('the ruleset asks for a test of the edge cases on new logic and on every bug fix, and yields to the project', () => {
+  const lines = RULESET.split('\n');
+  const testLine = lines.find((l) => /small test/.test(l));
+  assert.ok(testLine, 'a line asks for a small test');
+  assert.match(testLine, /^Non-trivial logic and every bug fix /);
+  assert.match(testLine, /edge cases they turn on/);
+  assert.equal(lines.at(-1), "The project's instructions and the task's output format come first.");
+});
+
+test('the signing line names both off switches exactly', () => {
+  assert.equal(SIGNATURE, '(lazy-senior hook. Turn it off with "hooks": {"lazy-senior": false} in .claude/pau-skills.json, ' +
+    'or PAU_SKILLS_DISABLE=lazy-senior.)');
 });
 
 test('hooks.json registers the hook for SessionStart (four sources) and SubagentStart, and nothing else', () => {

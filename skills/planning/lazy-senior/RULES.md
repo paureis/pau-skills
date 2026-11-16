@@ -10,5 +10,7 @@ Be lazy about the solution, never about the change: read the code it touches, li
 On a bug fix, before you edit, search for every caller of the function you touch, then fix the cause once in the shared code.
 Never cut validation at a trust boundary, error handling that prevents data loss, security, accessibility, the calibration real hardware needs, or anything the user asked for.
 Add no layer, wrapper, option or config nobody asked for; deleting beats adding.
-Non-trivial new logic leaves one small test. A known limit gets a comment: shortcut: <the limit>, <when to upgrade>.
+Non-trivial logic and every bug fix leave a small test of the edge cases they turn on.
+Comment a known limit as shortcut: <the limit>, <when to upgrade>.
 End with what you skipped or did not check, and any risk.
+The project's instructions and the task's output format come first.
