@@ -130,6 +130,7 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q20 verify-before-done without false alarms](backlog/q20.md)
 - [Q21 a subagent watchdog](backlog/q21.md)
 - [Q22 two hooks that get in the way](backlog/q22.md)
+- [Q23 the lazy senior developer, adapted from ponytail](backlog/q23.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -163,6 +164,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
     decision 21.
 20. Done: Q20 verify-before-done without false alarms (pull request 69); its scope was decision 22.
 21. Built: the sixteenth batch, Q22 two hooks that get in the way (decision 24), on a local branch for the owner's
-    review, not pushed. **Next:** Q21 a subagent watchdog (decisions 22 and 23). Both kickoffs are in [backlog/kickoff.md](backlog/kickoff.md).
+    review, not pushed. **Next:** Q23 the lazy senior developer (decision 25),
+    then Q21 a subagent watchdog (decisions 22 and 23). Both kickoffs are in [backlog/kickoff.md](backlog/kickoff.md).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

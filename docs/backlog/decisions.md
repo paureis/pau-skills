@@ -218,3 +218,13 @@
 24. **Q22 before Q21**, from an owner brief: `verify-before-done` misses check scripts and `no-idle`'s prompt rewrite
    breaks auto mode (`pau-skills-hooks` 0.4.1). Q22 fixes both in 0.4.2 and is left on a branch for the owner's
    review, not pushed. The examples stay generic: the project where it was seen is private.
+
+## Decisions taken (2026-11-16)
+
+25. **Q23, the lazy senior developer, adapted from ponytail (MIT)**, from an owner brief and four answers, each as
+   recommended except the hook default: one new skill `lazy-senior` with build, review and audit modes and a
+   `shortcut:` debt ledger; a `lazy-senior` hook that adds a short ruleset at session start and to every subagent, on
+   by default (the owner's choice; it becomes off by default if the measurement shows harm); the builder and reviewer
+   agents, `review-triage` and `engineering-principles` carry the same rules, so every agent works the same way; the
+   review in ponytail 5's order, lean last; a small paid `skill-eval` measurement before it ships, estimate first.
+   The method is taken, not its numbers or its examples. `docs/backlog/q23.md` holds the plan.
