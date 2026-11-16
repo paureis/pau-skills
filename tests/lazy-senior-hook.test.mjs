@@ -1,0 +1,115 @@
+// The lazy-senior hook adds the lazy-senior ruleset as additionalContext at every SessionStart (startup, resume, clear,
+// compact) and every SubagentStart, and stays silent on every other event and on input it does not understand. The
+// skill's RULES.md holds the same text as the hook's RULESET, so the two copies never drift apart.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { repo, runNode, tempDir } from './helpers.mjs';
+import { decide, RULESET, SIGNATURE } from '../hooks/planning/lazy-senior.mjs';
+
+const HOOK = repo('hooks', 'planning', 'lazy-senior.mjs');
+const BOM = String.fromCharCode(0xfeff);
+// The hook reads the user and project config and PAU_SKILLS_DISABLE; this env keeps the caller's own out of the result.
+const isolated = () => ({ PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: tempDir(), PAU_SKILLS_DISABLE: '' });
+const run = (input) => runNode(HOOK, { input, env: isolated() });
+const CONTEXT = RULESET + '\n' + SIGNATURE;
+
+// One JSON line on stdout with the given event name and the whole context, exit 0, nothing on stderr.
+const speaks = (r, event) => {
+  assert.equal(r.code, 0);
+  assert.equal(r.stderr, '');
+  assert.match(r.stdout, /^[^\n]+\n$/, 'one line');
+  const out = JSON.parse(r.stdout);
+  assert.deepEqual(Object.keys(out), ['hookSpecificOutput']);
+  assert.equal(out.hookSpecificOutput.hookEventName, event);
+  assert.ok(out.hookSpecificOutput.additionalContext.startsWith(RULESET));
+  assert.equal(out.hookSpecificOutput.additionalContext, CONTEXT);
+};
+const silent = (r, why) => {
+  assert.equal(r.code, 0, why);
+  assert.equal(r.stdout, '', why);
+  assert.equal(r.stderr, '', why);
+};
+
+for (const source of ['startup', 'resume', 'clear', 'compact']) {
+  test(`SessionStart with source ${source}: the ruleset as additionalContext`, () => {
+    speaks(run(JSON.stringify({ hook_event_name: 'SessionStart', source })), 'SessionStart');
+  });
+}
+
+test('SubagentStart, with and without agent_type: the ruleset as additionalContext', () => {
+  speaks(run(JSON.stringify({ hook_event_name: 'SubagentStart', agent_type: 'general-purpose' })), 'SubagentStart');
+  speaks(run(JSON.stringify({ hook_event_name: 'SubagentStart' })), 'SubagentStart');
+});
+
+test('a byte order mark before valid JSON is honoured', () => {
+  speaks(run(BOM + JSON.stringify({ hook_event_name: 'SubagentStart' })), 'SubagentStart');
+});
+
+test('every other event and every input it does not understand: silent, exit 0', () => {
+  const inputs = [
+    JSON.stringify({ hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command: 'ls' } }),
+    JSON.stringify({ hook_event_name: 'Stop' }),
+    JSON.stringify({ hook_event_name: 'UserPromptSubmit', prompt: 'hi' }),
+    JSON.stringify({ hook_event_name: 'constructor' }),
+    JSON.stringify({ hook_event_name: 'toString' }),
+    JSON.stringify({ hook_event_name: '__proto__' }),
+    JSON.stringify({ source: 'startup' }),
+    JSON.stringify([{ hook_event_name: 'SessionStart' }]),
+    '5',
+    'null',
+    '{ not json',
+    '',
+  ];
+  for (const input of inputs) silent(run(input), input);
+});
+
+test('decide: an output object for the two start events, null for the rest', () => {
+  assert.deepEqual(decide({ hook_event_name: 'SessionStart', source: 'compact' }),
+    { hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: CONTEXT } });
+  assert.deepEqual(decide({ hook_event_name: 'SubagentStart' }),
+    { hookSpecificOutput: { hookEventName: 'SubagentStart', additionalContext: CONTEXT } });
+  for (const x of [null, 5, 'SessionStart', [], {}, { hook_event_name: 'Stop' }, { hook_event_name: 'constructor' },
+    { hook_event_name: 'hasOwnProperty' }, { hook_event_name: 'sessionstart' }]) {
+    assert.equal(decide(x), null, JSON.stringify(x));
+  }
+});
+
+test("RULES.md is the hook's RULESET plus one final newline", () => {
+  assert.equal(readFileSync(repo('skills', 'planning', 'lazy-senior', 'RULES.md'), 'utf8'), RULESET + '\n');
+});
+
+test('the ruleset opens for code work, holds the fixed block, and keeps to its size and characters', () => {
+  assert.ok(RULESET.startsWith('When you write or change code'));
+  const block = [
+    'Before you write code, stop at the first of these that does the whole job:',
+    '1. It does not need to exist: leave out what nobody asked for, and say in one line what you left out.',
+    '2. This codebase already does it: use that, the way the code around it does.',
+    '3. The standard library or the platform does it, unless the project has its own.',
+    '4. An installed dependency does it. Never add a dependency for a few lines.',
+    '5. One line that a reader understands at a glance.',
+    '6. Otherwise, the least code that works.',
+    'Be lazy about the solution, never about the change: read the code it touches, list every caller, test, fixture, ' +
+      'config and export it must reach, and finish all of them.',
+    'On a bug fix, before you edit, search for every caller of the function you touch, then fix the cause once in the ' +
+      'shared code.',
+    'Never cut validation at a trust boundary, error handling that prevents data loss, security, accessibility, the ' +
+      'calibration real hardware needs, or anything the user asked for.',
+  ].join('\n');
+  assert.ok(RULESET.includes(block), 'the fixed block, word for word');
+  assert.ok(RULESET.length <= 1300, `RULESET is ${RULESET.length} characters`);
+  assert.ok(CONTEXT.length <= 1450, `additionalContext is ${CONTEXT.length} characters`);
+  assert.match(RULESET, /^[\x20-\x7e\n]+$/);
+  assert.match(SIGNATURE, /^[\x20-\x7e]+$/);
+  assert.match(SIGNATURE, /lazy-senior/);
+});
+
+test('hooks.json registers the hook for SessionStart (four sources) and SubagentStart, and nothing else', () => {
+  const hook = { type: 'command', command: 'node "${CLAUDE_PLUGIN_ROOT}/hooks/planning/lazy-senior.mjs"', timeout: 5 };
+  assert.deepEqual(JSON.parse(readFileSync(repo('hooks', 'planning', 'hooks.json'), 'utf8')), {
+    hooks: {
+      SessionStart: [{ matcher: 'startup|resume|clear|compact', hooks: [hook] }],
+      SubagentStart: [{ hooks: [hook] }],
+    },
+  });
+});
