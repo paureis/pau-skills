@@ -16,12 +16,12 @@ Solve the whole problem with the least new code, and review code the same way: b
 from the request. A request to write, fix or refactor code is build; a request about code that exists is review (a
 change) or audit (a folder or the whole repository); a request for the list of known limits is debt.
 
-| Mode | When | Read |
+| Mode | When | Then |
 |---|---|---|
-| Build | the user asks for code: a feature, a fix, a refactor, "the simplest version" | `${CLAUDE_SKILL_DIR}/RULES.md`, then `${CLAUDE_SKILL_DIR}/BUILD.md` |
-| Review | a diff, a branch, a pull request or named files; "is this over-engineered" | `${CLAUDE_SKILL_DIR}/REVIEW.md` |
-| Audit | a folder or the whole repository; "what can I delete", "review for bloat" | `${CLAUDE_SKILL_DIR}/REVIEW.md` |
-| Debt | the user wants the list of `shortcut:` comments, the known limits left in the code | `${CLAUDE_SKILL_DIR}/debt.mjs` |
+| Build | the user asks for code: a feature, a fix, a refactor, "the simplest version" | Read `${CLAUDE_SKILL_DIR}/RULES.md`, then `${CLAUDE_SKILL_DIR}/BUILD.md` |
+| Review | a diff, a branch, a pull request or named files; "is this over-engineered" | Read `${CLAUDE_SKILL_DIR}/REVIEW.md` |
+| Audit | a folder or the whole repository; "what can I delete", "review for bloat" | Read `${CLAUDE_SKILL_DIR}/REVIEW.md` |
+| Debt | the user wants the list of `shortcut:` comments, the known limits left in the code | Run `${CLAUDE_SKILL_DIR}/debt.mjs` |
 
 ## Build
 
@@ -39,7 +39,8 @@ folder or the whole repository; with nothing named, the whole repository. Both w
 
 1. Run `node "${CLAUDE_SKILL_DIR}/debt.mjs" [folder]` (Node 20 or later; the folder defaults to the current one). It
    reads the files git lists, tracked and untracked but not ignored, and prints one row per marker, then a count.
-   Without Node, run `git grep -n "shortcut:"` and keep only the hits that sit in a comment.
+   Without Node, run `git grep --untracked -n "shortcut:"` (tracked and untracked files, not ignored ones) and keep
+   only the hits that sit in a comment.
 2. Read the rows, the ones tagged `[no-trigger]` first: they name a limit but no point at which to revisit it, so
    nobody ever will. For each, say what the limit is and propose a trigger, or say that the limit no longer holds.
 3. Write a ledger file only when the user asks for one.
@@ -47,15 +48,20 @@ folder or the whole repository; with nothing named, the whole repository. Both w
 The marker form is `shortcut: <the limit>, <when to upgrade>`, in the language's own comment syntax: `# shortcut:` in
 Python, Ruby or shell, `// shortcut:` in Go, Rust, Java or TypeScript, `-- shortcut:` in SQL or Lua, and
 `<!-- shortcut: ... -->` in HTML or Markdown. The script counts a marker only right after a comment opener, so prose
-and inline code that mention the convention stay out. Known limit: a string that holds a space and then an opener,
-such as `'a -- shortcut: b'`, is counted.
+and inline code that mention the convention stay out. Known limits:
+
+- A string that holds a space and then an opener, such as `'a -- shortcut: b'`, is counted, and so is a heredoc or a
+  triple-quoted string with a comment opener inside.
+- UTF-16 files (their ASCII characters carry NUL bytes) and file names that are not valid UTF-8 are skipped.
+- A file over 64 MiB is skipped, with one warning line on stderr.
 
 For another marker word, such as TODO or HACK, search by hand with the project's search tool (`git grep -n`, or
 `rg -n`, which skips ignored files), and leave out what git ignores.
 
 ## The hook
 
-If the pau-skills hooks are installed, the `lazy-senior` hook adds the text of `RULES.md` to every session and every
+The `lazy-senior` hook comes with the planning plugin and with pau-skills-hooks (and the pau-skills bundle), not with
+this skill installed on its own. When it is installed, it adds the text of `RULES.md` to every session and every
 subagent, so the build rules apply without starting this skill. Turn it off with `"hooks": {"lazy-senior": false}` in
 `.claude/pau-skills.json`. The skill works the same without the hook.
 

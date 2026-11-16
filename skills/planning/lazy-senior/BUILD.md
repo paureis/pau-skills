@@ -51,7 +51,9 @@ Be lazy about the solution, never about the change.
   and hides the cause; fix it once, in the shared code.
 - Add no layer, wrapper, option or config that nobody asked for: an interface with one implementation, a wrapper that
   only passes calls through, a config key no caller sets. When the change leaves code unused, delete it in the same
-  change, after searching the whole tree for it.
+  change, after searching the whole tree for it, tests, fixtures, config and string references included. An exported
+  API, a command-line flag or a config key may have callers outside the repository: leave a public interface alone
+  unless the user asks to remove it.
 - The ladder never removes a guard. Checks on input that crosses a trust boundary (a request, an upload, a file, a
   message from another service), error handling that keeps data from being lost, security, accessibility, the
   calibration real hardware needs, and every part the user asked for all stay, even when they are most of the code.
@@ -61,9 +63,11 @@ that is already tangled. Without it, remove what the change makes unused before 
 
 ## Tests
 
-New logic that is not trivial leaves one small test, or an assert-based self-check where the project has no test
-setup: a branch, a loop, a parser, money, security, or a whole new script. A trivial change (a label, a constant, a
-config value) needs none. One test that fails when the logic breaks is enough; this is not about coverage.
+Logic that is not trivial leaves one small test, or an assert-based self-check where the project has no test setup:
+a branch, a loop, a parser, money, security, or a whole new script. Every bug fix leaves a regression test that fails
+before the fix and passes after it. The test covers the edge cases the change turns on, not only the easy case: a
+date fix is tested on both sides of the daylight saving change, a limit at the limit and one past it. A trivial change
+(a label, a constant, a config value) needs none. This is not about coverage.
 
 ## Shortcut comments
 
@@ -74,7 +78,8 @@ A known limit gets a comment, in the language's own comment syntax, that names t
 - `-- shortcut: no index on email, add one when the table passes a million rows` (SQL, Lua, Haskell)
 - `<!-- shortcut: English only, translate when a second locale ships -->` (HTML, Markdown, XML)
 
-Without the part after the comma, nobody knows when to come back to it; the debt mode lists those first.
+Without the part after the comma, nobody knows when to come back to it. The debt mode tags those rows
+`[no-trigger]`, and the reader goes through them first.
 
 ## The reply
 

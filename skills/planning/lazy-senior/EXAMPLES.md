@@ -68,8 +68,10 @@ func uniqueTags(tags []string) []string {
 }
 ```
 
-Rung 3. Same result for every input, including an empty or nil slice, and no quadratic sort. Left out: folding case,
-so "Go" and "go" stay two tags; nobody asked for that.
+Rung 3. The same tags in the same order for every input, and no quadratic sort. One difference: for an empty slice
+that is not nil, the old version returned nil and this one returns an empty slice. `len`, `range` and `append` treat
+the two the same; a check against nil, or JSON encoding (`null` against `[]`), does not, so search the callers for
+those first. Left out: folding case, so "Go" and "go" stay two tags; nobody asked for that.
 
 ## 3. An installed dependency: retries on a flaky service (Python)
 
@@ -103,9 +105,12 @@ def make_session():
         backoff_factor=0.5,  # a longer wait after each failed try
         status_forcelist=[502, 503, 504],
         allowed_methods=["GET", "HEAD"],  # never a POST: a retried charge could charge twice
+        respect_retry_after_header=False,  # a Retry-After of an hour would hold the call for an hour
     )
+    adapter = HTTPAdapter(max_retries=retry)
     session = requests.Session()
-    session.mount("https://", HTTPAdapter(max_retries=retry))
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
     return session
 
 
@@ -115,9 +120,10 @@ def fetch_invoice(session, base_url, invoice_id):
     return response.json()
 ```
 
-Rung 4. Retries only requests that are safe to repeat, with a cap and a growing wait, and a 4xx now raises instead of
-passing as data. Left out: retrying a POST, which needs an idempotency key the service would have to support first,
-and a circuit breaker.
+Rung 4. Retries only requests that are safe to repeat, with a cap and a growing wait, over both http and https, and a
+4xx now raises instead of passing as data. It ignores a server's Retry-After header on purpose, so the wait stays
+bounded by the backoff; if the service asks for real pauses, cap that header instead. Left out: retrying a POST, which
+needs an idempotency key the service would have to support first, and a circuit breaker.
 
 ## 4. A deletion: an interface and a factory with one implementation (TypeScript)
 
@@ -149,8 +155,8 @@ After: one function.
 ```ts
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export function isExpired(createdAt: Date, now: Date, days = 30): boolean {
-  return now.getTime() - createdAt.getTime() > days * DAY_MS;
+export function isExpired(createdAt: Date, now: Date, days?: number | null): boolean {
+  return now.getTime() - createdAt.getTime() > (days ?? 30) * DAY_MS; // ?? as before: null means the default too
 }
 
 // cleanup.ts
@@ -160,8 +166,9 @@ const expired = uploads.filter((u) => isExpired(u.createdAt, now));
 
 Rung 1: the interface, the class and the `kind` option did not need to exist. This is safe only because the code is
 internal and the search came first: one implementation, no test double or mock implements `RetentionPolicy`, the
-package does not export it, no caller passes `kind`, and one test passes `days`, so `days` stays a parameter. Left
-out: a second kind of policy, until one is asked for.
+package does not export it, no caller passes `kind`, and one test passes `days`, so `days` stays a parameter. It keeps
+`??`, so a `days` of null read from a config file still means 30 days; a default parameter (`days = 30`) would let
+null through and expire everything. Left out: a second kind of policy, until one is asked for.
 
 ## 5. A guard kept: a port from the environment (Rust)
 
