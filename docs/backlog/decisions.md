@@ -228,3 +228,10 @@
    agents, `review-triage` and `engineering-principles` carry the same rules, so every agent works the same way; the
    review in ponytail 5's order, lean last; a small paid `skill-eval` measurement before it ships, estimate first.
    The method is taken, not its numbers or its examples. `docs/backlog/q23.md` holds the plan.
+
+## Decisions taken (2026-11-17)
+
+26. **Q24, verification ideas from the Claude Code team's article**, as recommended: a diff-triggered checklist in
+   `.claude/review-rules.json`, checks a change cannot edit (rules read from the base commit, an optional per-folder
+   REVIEW.md), and property and differential tests taught in `tdd` and pointed to from the rest. The commit gate is
+   skipped; its observe-mode idea goes into `rule-to-hook`. Q24 runs before Q21. `docs/backlog/q24.md` holds the plan.
