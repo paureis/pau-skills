@@ -1,6 +1,7 @@
 ---
 name: tdd
 description: "Test-driven development: build or fix code one behaviour at a time in a red-green-refactor loop. Use when the user says 'test first', 'TDD', 'test-driven', 'red green refactor', 'write tests', 'build this with tests', 'add test coverage', 'make sure this is tested'. Writes and runs the tests, not a test plan."
+allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from mattpocock/skills and cursor/plugins pstack; see NOTICE)
 metadata:
   upstream: https://github.com/mattpocock/skills/tree/main/skills/engineering/tdd
@@ -19,7 +20,7 @@ metadata:
 
 State a caller can read back is behavior, not implementation. When the promise is "saving an order stores it", reading the stored row back (through the interface, or straight from the database when that row is what other code reads) checks the promise. What makes a check bad is depending on what nobody outside the code relies on, not where the check looks.
 
-See tests.md for examples and mocking.md for mocking guidelines.
+See tests.md for examples, mocking.md for mocking guidelines, and `${CLAUDE_SKILL_DIR}/PROPERTIES.md` for property tests and differential tests (old and new code on the same inputs).
 
 ## Anti-Pattern: Horizontal Slices
 
@@ -62,6 +63,7 @@ Then loop. Pick the next behavior, write the next test.
 - **Test behavior, not implementation.** "When I do X, Y happens," not "function Z calls function W."
 - **Test edge cases through the same interface.** Empty inputs, error conditions, boundary values: all through the public API.
 - **Test error paths.** What happens when the input is invalid? When the dependency is unavailable? These are behaviors too.
+- **Use a property where examples miss edge cases.** For a parser, a serializer, money, a data write or a rewrite, state a rule that holds for every input (round trip, invariant, idempotency, a naive version as the oracle), run it seeded, and keep the shrunk failing case as an example test. See `${CLAUDE_SKILL_DIR}/PROPERTIES.md`.
 - **Take the expected value from the requirement**, not from a run of the code. An expected value copied from the output of the code under test passes whether that output is right or wrong.
 - **Assert what callers rely on.** An exact error message pins wording no caller reads; assert the error type or code callers branch on, unless the message itself is the promise (text shown to a user, for example).
 
