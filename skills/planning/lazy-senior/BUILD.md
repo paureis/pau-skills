@@ -69,6 +69,13 @@ before the fix and passes after it. The test covers the edge cases the change tu
 date fix is tested on both sides of the daylight saving change, a limit at the limit and one past it. A trivial change
 (a label, a constant, a config value) needs none. This is not about coverage.
 
+For a parser, money or a data write, a property test finds the edge cases people miss: one rule checked on many
+generated inputs (a round trip, an invariant such as totals kept, applying twice equals once, or the same result as a
+slow obvious version). Use the project's property library if it has one; without one, a seeded loop with the standard
+library, and ask before adding a library. Print the seed so a failure can be replayed, and keep the smallest failing
+case as an example test. Use `tdd`'s PROPERTIES.md for the details if `tdd` is installed; without it, these lines are
+the rule.
+
 ## Shortcut comments
 
 A known limit gets a comment, in the language's own comment syntax, that names the limit and when to upgrade:
