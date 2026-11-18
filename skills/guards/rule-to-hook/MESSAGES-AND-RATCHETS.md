@@ -68,8 +68,10 @@ commands and the step 1 near-misses may not cover them all, start the hook in ob
 usual; where it would block, the hook appends one line to a git-ignored log (for example
 `.claude/hooks/<rule-id>.log`) with the time, the input fields the rule reads (the command, the file path) and the
 reason, then exits 0. It prints no decision and never `allow`, so the normal permission prompts still apply. The
-mode comes from a setting the user controls, such as an environment variable in `.claude/settings.local.json`: in
-your copy of the template, read it where the `MODE = 'deny'` constant is set. Leaving observe mode is the user
+mode comes from a setting the user controls, such as an environment variable in `.claude/settings.local.json`. In
+your copy of the Node template, read it where the `MODE = 'deny'` constant is set, and observe in `decide()` before
+it returns exit 2; the Python template has no mode, so add the check in `main()` where it writes the reason and
+returns 2. Leaving observe mode is the user
 changing that setting (or choosing `ask`, where the user decides each call), never an edit of the hook and never a
 marker the agent could type into a command.
 - Tests run at enforce, plus one observe case that expects exit 0 and exactly one log line.

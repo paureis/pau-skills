@@ -149,6 +149,10 @@ Put the table in the pull request description, or in the session when there is n
    - `OUTSIDE`: revert that code and open an issue, unless it is part of a must-fix. A new file counts as outside.
    - `RULES`: the fix edits what judges it: the rules file, a REVIEW.md, or a file the rules name. Revert it unless
      a finding asked for it, and say so. For a test the rules name, show that the edit adds cases and loosens none.
+     RULES does not see a check reached through another file (a `package.json` script, a Makefile target, a
+     conftest), a folder or glob in a command, or another spelling of a path (`tests//a.py`, `../repo/tests/a.py`,
+     a backslash path, `tests/a.py:40`). To watch one, name the file the command runs, such as the Makefile, in
+     `riskyPaths` or in `checks`.
 4. **The second look covers only the fix**: the diff the script prints, plus any new files it lists, read against
    the finding it fixes. It does
    not review the whole change again. It asks two things: does the fix remove the named failure (the new test failed

@@ -34,7 +34,7 @@ the files a change touches, and the flags for a fix round.
    `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" change --base <base branch>`
    It lists every file the change touches, which of them are risky, and whether any test changed, plus the checklist
    entries the diff triggered. When the work is committed on the base branch itself, pass the commit it started from
-   as `--base`. It lists the REVIEW.md files above each changed file, as they were at that commit, each with the
+   as `--base`. It lists the REVIEW.md files above each changed file, as they were at the merge base, each with the
    `git show` command that prints it, and flags `RULES` when the change edits the rules file, a REVIEW.md or a file
    the rules name: those edits are part of the change under review, judged by the old rules.
 
@@ -89,7 +89,8 @@ the change started from, and without it there they print `Rules: the defaults`.
 
 An optional `REVIEW.md` can sit in any folder. It says what a reviewer of the code under that folder must check.
 `change` lists the ones above each changed file, nearest folder first, read from the same commit. A `REVIEW.md` next
-to a `SKILL.md` is that skill's own file and is skipped.
+to a `SKILL.md` is that skill's own file and is skipped. Commit it as a regular file: `git show` prints a symlink's
+target, not the file. What the `RULES` flag does not see, and how to watch it: `TRIAGE.md` section 6.
 
 ## Report
 
