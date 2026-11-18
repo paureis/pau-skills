@@ -65,8 +65,9 @@ libraries, hash seeds such as `PYTHONHASHSEED`). Log the seed of each run. Re-ru
 the same failure every time.
 
 **Right fix.** Seed the generator per test and print the seed on failure, so any failure can be replayed. For
-property-based tools, record the failing example (Hypothesis keeps a database, fast-check and proptest print a seed
-and a shrunk case) and add it as an explicit regression case. For generated data, make uniqueness guaranteed (a
+property-based tools, record the failing example (Hypothesis keeps a database, fast-check prints a seed and a shrunk
+case, proptest prints a shrunk case, a `cc <seed>` line and the path of the `proptest-regressions` file it saves the
+line to) and add it as an explicit regression case. For generated data, make uniqueness guaranteed (a
 counter or sequence), not probable. If the random input exposed a real bug, fix the bug.
 
 **Wrong fix.** Fixing one seed that happens to pass and never varying it again, or narrowing the generator's range

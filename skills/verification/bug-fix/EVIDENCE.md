@@ -115,3 +115,24 @@ outlive the fix:
 Go's `testing`, JUnit, xUnit and NUnit have no marker of this kind. Do not use a skip in its place: a skipped test
 stays green after the fix and proves nothing. For those, commit the test red if the project allows it; if it does
 not, say in the report that the test and the fix landed in one commit, and show the test failing with the fix undone.
+
+## Differential check for a rewrite
+
+For step 8 item 4, and only when the smallest fix the evidence justifies still rewrites a function instead of
+changing one decision. A rewrite can change what the function does for inputs the bug never reached, and the new test
+covers only the bug.
+
+1. Write the bug's trigger as a condition on the input, from the confirmed hypothesis: "the list is empty", "the
+   amount has three decimal places".
+2. Keep the old version runnable: the commit before the fix checked out in a worktree outside the repository
+   (`git worktree add <dir> <commit>`), or a frozen copy of the old function in a scratch folder outside it.
+3. Run old and new on the same inputs: seeded random ones (print the seed), plus the inputs of the existing tests and
+   the repro. Normalize only what does not matter (timestamps, generated IDs, the order of unordered output), never
+   money.
+4. Sort every difference. Where the trigger holds, it is the fix. Every other difference is a blast-radius finding for
+   step 8 item 4: explain it, or treat the fix as not safe, as step 8 says.
+5. Delete the harness and the worktree when you are done. Never commit recorded inputs that hold personal data.
+
+The differential section of `tdd`'s PROPERTIES.md has more on inputs and normalizing, if `tdd` is installed; without
+it, generate the inputs with the standard library's seeded random generator, or a small seeded generator of a few
+lines where the standard library has none.

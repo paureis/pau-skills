@@ -176,6 +176,7 @@ and `mutation-test` (if it is installed) refuses a dirty tree.
    Look where a text search stops: data already stored in the old shape, a wire format or file another program
    reads, another language reading the same bytes, a feature flag, a caller three hops away. Note what the change
    leaves as it was (other bad inputs that behaved wrongly before and still do) under "Not done".
+   A fix that rewrites a function also gets the differential check for a rewrite in `EVIDENCE.md`.
 
 If the fix fails 1, 2 or 3, revert the fix commit (`git revert`; it was a refuted hypothesis) and go back to step 3,
 or to step 5 when it is the second failed fix that rests on the same premise. If the blast radius check in 4 shows
