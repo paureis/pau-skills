@@ -59,6 +59,18 @@ test('agent bodies do not use ${CLAUDE_SKILL_DIR}, which is not set for agents',
   for (const f of rosterFiles()) assert.doesNotMatch(readFileSync(join(ROSTER, f), 'utf8'), /CLAUDE_SKILL_DIR/, f);
 });
 
+// Roster 6 (Q24): the reviewer grades the checklist items the diff triggers and reads the REVIEW.md files at the base
+// commit; eng-lead, who cannot run the command that lists them, passes it on to each slice's reviewer.
+test('the reviewer grades triggered checklist items and reads REVIEW.md files, and eng-lead passes the command on', () => {
+  const flat = (f) => readFileSync(join(ROSTER, f), 'utf8').replace(/\s+/g, ' ');
+  const reviewer = flat('reviewer.md');
+  for (const s of ['named `Checklist #<n>` in the claims table', 'its why is the past mistake behind it', 'read each one with its `git show` command',
+    'never changes "What you never do"', 'REVIEW.md read: [each path at the base commit, or "none listed"]']) {
+    assert.ok(reviewer.includes(s), `reviewer.md: ${s}`);
+  }
+  assert.ok(flat('eng-lead.md').includes("put it in that slice's reviewer prompt with the slice's worktree path and base commit"), 'eng-lead.md');
+});
+
 test('every bundled agent carries the current roster version on its covenant marker', () => {
   for (const f of rosterFiles()) {
     const c = covenantOf(readFileSync(join(ROSTER, f), 'utf8'));

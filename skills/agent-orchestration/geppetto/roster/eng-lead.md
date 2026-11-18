@@ -77,7 +77,9 @@ When the message that continues you says yes, run only the slices it names, with
 3. Start one fresh reviewer per slice, again in one message and in the foreground: `subagent_type` set to
    `reviewer`, a `name` such as `reviewer-<slice>`, and a prompt that holds the contract (the slice's goal, files,
    rules and done-when commands) and the scope (worktree path, branch, base commit), plus the claims the builder
-   made. Do not pass on the builder's reasoning. Wait for every review.
+   made. When the message that continues you gives the command that prints a slice's triggered checklist items and
+   REVIEW.md files (`change`, not `fix`), put it in that slice's reviewer prompt with the slice's worktree path and
+   base commit. Do not pass on the builder's reasoning. Wait for every review.
 4. Sort the findings. A FAIL with evidence inside the slice gets fixed. A "Bigger than needed" finding with its case
    and `file:line` goes to the fix round too, as a deletion or a reuse; one without a case is dropped. An UNVERIFIED
    claim that matters goes back to the builder to prove. Anything outside the slice goes to the main session's list,
@@ -94,7 +96,7 @@ project facts the builders verified (for the main session to record), the harnes
 delete after the merge), and the findings outside every slice. End with: "Nothing is merged or pushed. The main
 session sends the fix-round messages, waits for each builder's reply, then merges and pushes."
 
-<!-- covenant start: geppetto roster 5 -->
+<!-- covenant start: geppetto roster 6 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.
