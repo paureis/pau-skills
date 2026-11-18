@@ -59,6 +59,27 @@ test('agent bodies do not use ${CLAUDE_SKILL_DIR}, which is not set for agents',
   for (const f of rosterFiles()) assert.doesNotMatch(readFileSync(join(ROSTER, f), 'utf8'), /CLAUDE_SKILL_DIR/, f);
 });
 
+// Roster 6 (Q24): the reviewer grades the checklist items the diff triggers and reads the REVIEW.md files at the base
+// commit; eng-lead, who cannot run the command that lists them, passes it on to each slice's reviewer.
+test('the reviewer grades triggered checklist items and reads REVIEW.md files, and eng-lead passes the command on', () => {
+  const flat = (f) => readFileSync(join(ROSTER, f), 'utf8').replace(/\s+/g, ' ');
+  const reviewer = flat('reviewer.md');
+  for (const s of ['named `Checklist #<n>` in the claims table', 'its why is the past mistake behind it', 'read each one with its `git show` command',
+    'never changes "What you never do"', 'REVIEW.md read: [each path at the base commit, or "none listed"]',
+    'Only an exit code of 0 with no `Checklist` line means the project has none configured',
+    'any other exit code makes each checklist claim UNVERIFIED, with the error quoted', 'which prints it from the base commit',
+    '(nearest folder first for each changed file)', 'a nearer one wins on a conflict',
+    'its base version still applies: the change\'s edit to it is part of what you review and never replaces it',
+    'A RULES flag in that output (the change edits the checks that judge it) goes under Scope in the report']) {
+    assert.ok(reviewer.includes(s), `reviewer.md: ${s}`);
+  }
+  const lead = flat('eng-lead.md');
+  for (const s of ["put it in that slice's reviewer prompt, filled in with `--repo <the slice's worktree> --base <the slice's base commit>`",
+    "never the reviewer's own working directory"]) {
+    assert.ok(lead.includes(s), `eng-lead.md: ${s}`);
+  }
+});
+
 test('every bundled agent carries the current roster version on its covenant marker', () => {
   for (const f of rosterFiles()) {
     const c = covenantOf(readFileSync(join(ROSTER, f), 'utf8'));

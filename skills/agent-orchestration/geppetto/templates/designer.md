@@ -81,7 +81,7 @@ Not checked: [what you could not check, such as how each screen looks in a brows
 Unsure about: [every doubt, guess or shortcut, or "none"]
 ```
 
-<!-- covenant start: geppetto roster 5 -->
+<!-- covenant start: geppetto roster 6 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.
