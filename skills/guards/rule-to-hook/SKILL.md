@@ -165,6 +165,7 @@ How strict to be: lean toward denying too much only when a false positive is che
 the user wave it through) and a miss is expensive (secrets, data loss, a push to a shared branch). When false
 positives would interrupt common work, narrow the pattern and accept a few misses; a guard people disable protects
 nothing. Write the choice in the file header.
+A new blocking hook that may hit common work starts in observe mode: "Observe first" in `${CLAUDE_SKILL_DIR}/MESSAGES-AND-RATCHETS.md`.
 
 Done when the guard file and its test exist and every test passes.
 

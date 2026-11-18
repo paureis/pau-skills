@@ -36,3 +36,16 @@ export function setup(rules = { riskyPaths: ['core/**'] }) {
   const reviewed = commit(dir, 'feature');
   return { dir, reviewed };
 }
+
+/** A repository whose base commit on `main` holds `files` (path to text), checked out on a new branch `feature`. */
+export function repoWith(files) {
+  const dir = tempDir('review-scope-');
+  g(dir, 'init', '-q', '-b', 'main');
+  for (const [path, text] of Object.entries(files)) put(dir, path, text);
+  const base = commit(dir, 'base');
+  g(dir, 'switch', '-q', '-c', 'feature');
+  return { dir, base };
+}
+
+/** The parsed JSON output of a run, after checking that it was not killed by the timeout. */
+export const json = (r) => { if (r.error) throw r.error; return JSON.parse(r.stdout); };

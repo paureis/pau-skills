@@ -26,17 +26,21 @@ the files a change touches, and the flags for a fix round.
    `.claude/review-rules.json` the defaults apply. If the project has an obvious core where a small mistake is
    expensive (money, credentials, deletion, the code that decides what runs where) and no file names it, offer to
    write one: show it, and write it only on a yes. If the project keeps learned review patterns (section 9 of
-   `TRIAGE.md`, for example in `.claude/review-patterns.md`), read them too.
+   `TRIAGE.md`, for example in `.claude/review-patterns.md`), read them too. `config` shows the working tree's
+   rules; `change` and `fix` read them as committed at the commit the change started from, so a change cannot
+   loosen the rules that judge it, and an uncommitted rules file does not count.
 
 2. **Scope the change.**
    `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" change --base <base branch>`
    It lists every file the change touches, which of them are risky, and whether any test changed, plus the checklist
    entries the diff triggered. When the work is committed on the base branch itself, pass the commit it started from
-   as `--base`.
+   as `--base`. It lists the REVIEW.md files above each changed file, as they were at the merge base, each with the
+   `git show` command that prints it, and flags `RULES` when the change edits the rules file, a REVIEW.md or a file
+   the rules name: those edits are part of the change under review, judged by the old rules.
 
 3. **Collect the findings.** From the arguments, the pull request's review comments, or a review file. If there are
    none and the user wants a review, run one first, and give the reviewer the prompt at the end of `TRIAGE.md`,
-   with the triggered checklist entries from step 2 as claims to grade.
+   with the triggered checklist entries from step 2 as claims to grade and the REVIEW.md commands from step 2.
 
 4. **Triage every finding** with sections 1 to 4 of `TRIAGE.md`: name the failure, check the claim, rate it, pick the
    bucket. Then write the table from section 5, and decide whether nitpick gravity (section 4) applies to the whole
@@ -48,7 +52,7 @@ the files a change touches, and the flags for a fix round.
 5. **Fix round**, section 6: commit the reviewed state, write a failing test for each fix first (one exception, a
    fix that only deletes a needless addition: TRIAGE.md section 6), fix, then run
    `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" fix --since <reviewed commit>` (add `--base <start commit>` when the
-   work is on the base branch itself) and answer every flag.
+   work is on the base branch itself) and answer every flag, `RULES` with the others.
 
 6. **Second look on the fix only**, with the `git diff` command the script prints and any new files it lists. Then
    stop, by section 7.
@@ -80,7 +84,13 @@ Each `checklist` entry is something a reviewer checks only when the diff shows i
 file matches a glob; `added`, a regular expression in JavaScript syntax (add `"flags": "i"` to ignore case), when an
 added line matches, such as `DELETE FROM` in a `.sql` file or `os.system(` in a `.py` file. Paths and a regex together
 mean both: a matching line in a matching file. An invalid glob or regex is an error. A regex that runs past the time
-limit prints its entry as triggered, to check by hand.
+limit prints its entry as triggered, to check by hand. Commit the file: `change` and `fix` read it from the commit
+the change started from, and without it there they print `Rules: the defaults`.
+
+An optional `REVIEW.md` can sit in any folder. It says what a reviewer of the code under that folder must check.
+`change` lists the ones above each changed file, nearest folder first, read from the same commit. A `REVIEW.md` next
+to a `SKILL.md` is that skill's own file and is skipped. Commit it as a regular file: `git show` prints a symlink's
+target, not the file. What the `RULES` flag does not see, and how to watch it: `TRIAGE.md` section 6.
 
 ## Report
 

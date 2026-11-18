@@ -1,4 +1,5 @@
-// The constants and pure functions of review-scope.mjs: configuration, globs, classifying files, fix flags, formatting.
+// The constants and pure functions of review-scope.mjs: configuration, globs, classifying files, fix flags, the RULES
+// flag and the REVIEW.md listing, formatting.
 // It compiles a checklist regex to validate it, and never runs one: review-scope-checklist.mjs does, with a time limit.
 // It imports nothing and touches neither git nor the file system.
 
@@ -212,6 +213,91 @@ export function fixFlags(fix, reviewed) {
 
 const shQuote = (s) => (/^[A-Za-z0-9._\/@:=+-]+$/.test(s) ? s : `'${String(s).replace(/'/g, `'\\''`)}'`);
 
+// What judges a change: the rules file, a folder's REVIEW.md, and the files the rules name.
+export const REVIEW_FILE = 'REVIEW.md';
+export const RULES_MESSAGES = {
+  change: 'the change edits what judges it. The rules shown come from the merge base, and these edits are part of the change under review.',
+  fix: 'the fix edits what judges it. Revert it unless a finding asked for it, and say so.',
+};
+
+/** The folder of a repository path, '' for the root; a file name in a folder; whether a path is a REVIEW.md. */
+export const folderOf = (p) => p.slice(0, Math.max(p.lastIndexOf('/'), 0));
+export const inFolder = (d, name) => (d ? `${d}/${name}` : name);
+export const isReviewFile = (p) => p === REVIEW_FILE || p.endsWith(`/${REVIEW_FILE}`);
+
+/** The folders from a path's own up to the root, nearest first. */
+export function foldersUp(p) {
+  const out = [];
+  for (let d = folderOf(p); d; d = folderOf(d)) out.push(d);
+  return [...out, ''];
+}
+
+/** True for a `git cat-file --batch-check` answer `<oid> blob <size>`, never for `<commit>:<path> missing`. */
+export const isBlobLine = (line) => /^[0-9a-f]{40,64} blob \d+$/.test(line);
+
+/** The pieces of a command that can name a path, word for word: the text split on whitespace and ' " ` = ( ) [ ] , ;,
+ * each cut at a pytest `::`, without a leading ./ or a trailing . or :. A glob, a folder or a quoted path with a space
+ * names no file. */
+export function namedPaths(text) {
+  const out = new Set();
+  for (const piece of String(text).split(/[\s'"`=()[\],;]+/)) {
+    const cut = piece.indexOf('::');
+    const p = cut < 0 ? piece : piece.slice(0, cut);
+    let start = 0;
+    while (p.startsWith('./', start)) start += 2;
+    let end = p.length;
+    while (end > start && (p[end - 1] === '.' || p[end - 1] === ':')) end--;
+    if (end > start) out.add(p.slice(start, end));
+  }
+  return out;
+}
+
+/** The RULES flag for changed `files`: the rules file, a REVIEW.md whose folder is not in `skillDirs` (a skill's own
+ * file), and a path a `checks` command or checklist `check` of `config` names word for word. Each path has a reason. */
+export function rulesFlag(files, config, skillDirs, message) {
+  const texts = [...config.checks.map((c) => [c, '(named in checks)']), ...config.checklist.map((e, i) => [e.check, `(named in checklist #${i + 1})`])]
+    .map(([text, reason]) => ({ named: namedPaths(text), reason }));
+  const why = (path) => (path === CONFIG_FILE ? '(the review rules)'
+    : isReviewFile(path) && !skillDirs.has(folderOf(path)) ? '(a REVIEW.md)'
+      : texts.find((t) => t.named.has(path))?.reason);
+  const hit = files.map((f) => [f.path, why(f.path)]).filter(([, reason]) => reason);
+  return hit.length ? [{ id: 'RULES', paths: hit.map(([p]) => p), reasons: hit.map(([, r]) => r), message }] : [];
+}
+
+/** The REVIEW.md files above each path, nearest folder first: [{ path, show, for }] in order of first use. `atBase`
+ * maps a folder to { review, skill }, true for a blob at `commit`; one beside a SKILL.md is the skill's own. */
+export function reviewFiles(paths, atBase, repo, commit) {
+  const found = new Map();
+  for (const p of paths) {
+    for (const d of foldersUp(p)) {
+      const at = atBase.get(d);
+      if (!at || !at.review || at.skill) continue;
+      const path = inFolder(d, REVIEW_FILE);
+      if (!found.has(path)) found.set(path, { path, show: `git -C ${shQuote(repo)} show ${shQuote(`${commit.slice(0, 12)}:${path}`)}`, for: [] });
+      found.get(path).for.push(p);
+    }
+  }
+  return [...found.values()];
+}
+
+const rulesLine = ({ commit, file }) => `Rules: ${file ? `${file} at ${commit.slice(0, 12)}` : `the defaults (no ${CONFIG_FILE} at ${commit.slice(0, 12)})`}`;
+
+const flagLines = (flags) => flags.map((fl) => `  ${fl.id}: ${fl.paths.map((p, i) => (fl.reasons ? `${p} ${fl.reasons[i]}` : p)).join(', ')}: ${fl.message}`);
+
+/** The REVIEW.md listing of `change`: a line per changed file with a REVIEW.md above it, then one command per file. */
+function reviewLines(r) {
+  const at = r.mergeBase.slice(0, 12);
+  if (!r.reviewFiles.length) return [`REVIEW.md at ${at}: none above the changed files`];
+  const listed = new Set(r.reviewFiles.map((x) => x.path));
+  const lines = [`REVIEW.md at ${at}, nearest folder first:`];
+  for (const f of r.files) {
+    const above = foldersUp(f.path).map((d) => inFolder(d, REVIEW_FILE)).filter((p) => listed.has(p));
+    if (above.length) lines.push(`  ${shQuote(f.path)}: ${above.map(shQuote).join(', ')}`);
+  }
+  r.reviewFiles.forEach((x, i) => lines.push(`${i ? ' '.repeat(16) : 'Read each with: '}${x.show}`));
+  return lines;
+}
+
 function fileLine(f) {
   const tags = [f.risky ? 'RISKY' : '', f.test ? 'test' : '', f.doc ? 'doc' : ''].filter(Boolean).join(', ');
   return `  ${f.path}  +${f.added} -${f.removed}${tags ? `  (${tags})` : ''}`;
@@ -232,10 +318,13 @@ function checklistLines(c) {
 export function formatChange(r) {
   const s = r.summary;
   const lines = [`Change since ${r.base} (merge base ${r.mergeBase.slice(0, 12)}): ${s.files} file(s), +${s.added} -${s.removed}`];
+  if (r.rules) lines.push(rulesLine(r.rules));
   for (const f of r.files) lines.push(fileLine(f));
+  if (r.flags && r.flags.length) lines.push('Flags:', ...flagLines(r.flags));
   lines.push(`Risky files: ${s.risky.length ? s.risky.join(', ') : 'none'}${r.riskyConfigured ? '' : ` (no riskyPaths in ${CONFIG_FILE})`}`);
   lines.push(`Code files: ${s.code.length}; test files: ${s.tests.length}; doc files: ${s.docs.length}`);
   lines.push(...checklistLines(r.checklist));
+  if (r.reviewFiles) lines.push(...reviewLines(r));
   if (s.code.length && !s.tests.length) lines.push('Note: code changed and no test did. New behaviour without a test is a "fix if cheap" finding.');
   return lines.join('\n');
 }
@@ -244,11 +333,9 @@ export function formatFix(r) {
   if (r.files.length === 0) return `Fix since ${r.since.slice(0, 12)}: nothing changed. There is no fix to look at.`;
   const s = summarizeChange(r.files);
   const lines = [`Fix since ${r.since.slice(0, 12)}: ${s.files} file(s), +${s.added} -${s.removed}`];
+  if (r.rules) lines.push(rulesLine(r.rules));
   for (const f of r.files) lines.push(fileLine(f));
-  if (r.flags.length) {
-    lines.push('Flags:');
-    for (const fl of r.flags) lines.push(`  ${fl.id}: ${fl.paths.join(', ')}: ${fl.message}`);
-  } else lines.push('Flags: none');
+  lines.push(...(r.flags.length ? ['Flags:', ...flagLines(r.flags)] : ['Flags: none']));
   lines.push(...checklistLines(r.checklist));
   const tracked = r.files.filter((f) => !f.untracked).map((f) => shQuote(f.path));
   const untracked = r.files.filter((f) => f.untracked).map((f) => f.path);

@@ -147,6 +147,12 @@ Put the table in the pull request description, or in the session when there is n
      deletes a needless addition answers it with the existing tests' runs before and after, both passing.
    - `RISKY`: confirm the fix is for a must-fix. If it is not, revert it and open an issue.
    - `OUTSIDE`: revert that code and open an issue, unless it is part of a must-fix. A new file counts as outside.
+   - `RULES`: the fix edits what judges it: the rules file, a REVIEW.md, or a file the rules name. Revert it unless
+     a finding asked for it, and say so. For a test the rules name, show that the edit adds cases and loosens none.
+     RULES does not see a check reached through another file (a `package.json` script, a Makefile target, a
+     conftest), a folder or glob in a command, or another spelling of a path (`tests//a.py`, `../repo/tests/a.py`,
+     a backslash path, `tests/a.py:40`). To watch one, name the file the command runs, such as the Makefile, in
+     `riskyPaths` or in `checks`.
 4. **The second look covers only the fix**: the diff the script prints, plus any new files it lists, read against
    the finding it fixes. It does
    not review the whole change again. It asks two things: does the fix remove the named failure (the new test failed
@@ -241,6 +247,9 @@ that prevents data loss, security, accessibility, the calibration real hardware 
 requires.
 If you find nothing serious, say so. Do not fill the list with nits.
 Review only the change, not the code around it, unless the change breaks that code.
+First read the REVIEW.md files listed below, from the base commit with the commands given, nearest folder first.
+They say what a reviewer of that code must check; for a finding that breaks one, name the REVIEW.md and its line.
+A change that edits the rules, a REVIEW.md or a file the rules name is judged by the base's version.
 Grade each checklist entry listed below: passed, failed (with the input and the wrong result) or not settled, and how
 you know.
 End with anything you were unsure about.
