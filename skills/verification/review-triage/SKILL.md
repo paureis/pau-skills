@@ -30,11 +30,13 @@ the files a change touches, and the flags for a fix round.
 
 2. **Scope the change.**
    `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" change --base <base branch>`
-   It lists every file the change touches, which of them are risky, and whether any test changed. When the work is
-   committed on the base branch itself, pass the commit it started from as `--base`.
+   It lists every file the change touches, which of them are risky, and whether any test changed, plus the checklist
+   entries the diff triggered. When the work is committed on the base branch itself, pass the commit it started from
+   as `--base`.
 
 3. **Collect the findings.** From the arguments, the pull request's review comments, or a review file. If there are
-   none and the user wants a review, run one first, and give the reviewer the prompt at the end of `TRIAGE.md`.
+   none and the user wants a review, run one first, and give the reviewer the prompt at the end of `TRIAGE.md`,
+   with the triggered checklist entries from step 2 as claims to grade.
 
 4. **Triage every finding** with sections 1 to 4 of `TRIAGE.md`: name the failure, check the claim, rate it, pick the
    bucket. Then write the table from section 5, and decide whether nitpick gravity (section 4) applies to the whole
@@ -61,13 +63,24 @@ Optional `.claude/review-rules.json` in the repository. Every key is optional:
   "riskyPaths": ["src/core/decide/**", "migrations/"],
   "checks": ["make test", "make lint"],
   "testPaths": ["checks/**"],
-  "docPaths": ["handbook/**"]
+  "docPaths": ["handbook/**"],
+  "checklist": [{
+    "trigger": { "paths": ["migrations/**"], "added": "DROP\\s+(TABLE|COLUMN)" },
+    "check": "The migration keeps the old column until every reader has moved, or the change says why not.",
+    "why": "A dropped column broke the nightly export (PR 412)."
+  }]
 }
 ```
 
 `mustFix` is added to the defaults. `testPaths` and `docPaths` replace the defaults, which cover the common layouts
 of most ecosystems (run `config` to see them). Paths are globs relative to the repository root. An unknown key is an
 error, so a typo cannot switch a rule off without anyone noticing.
+
+Each `checklist` entry is something a reviewer checks only when the diff shows it. `paths` triggers it when a changed
+file matches a glob; `added`, a regular expression in JavaScript syntax (add `"flags": "i"` to ignore case), when an
+added line matches, such as `DELETE FROM` in a `.sql` file or `os.system(` in a `.py` file. Paths and a regex together
+mean both: a matching line in a matching file. An invalid glob or regex is an error. A regex that runs past the time
+limit prints its entry as triggered, to check by hand.
 
 ## Report
 
@@ -77,6 +90,7 @@ Findings: <n> (must fix <a>, fix if cheap <b>, leave <c>)
 <the table from TRIAGE.md section 5>
 Nitpick gravity: <applied: every finding was a preference or a low-value nit, the change is probably fine | not applied>
 Learned patterns: <used: names | added as candidate: names | waiting on a yes: names | none>
+Checklist: <each triggered entry: passed, failed or not settled | none configured>
 Fix round: <commits>; fix check flags: <none | each flag and how it was answered>
 Second look: <clean | what it found, and where it went: maintainer or issue>
 Issues to open: <list, or none>

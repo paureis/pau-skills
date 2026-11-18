@@ -22,12 +22,16 @@ Confidence of the plan: <high | medium | low>, because <which source was missing
 | # | Class | Instances (per source) | Confidence | Layer | Proposed fix | Proof |
 |---|---|---|---|---|---|---|
 | 1 | <the mistake> | <reviews 2, commits 3> | high | lint | <the check; its error says what to use instead> | <command: fails on <sha>^, passes now> |
+| 2 | <the mistake> | <reviews 3> | medium | checklist | <the entry: trigger, check, why> | <triggers on <sha>, not on HEAD> |
 
 For each class:
 - **Evidence**: <pointers, a few words each>
 - **Why not a higher layer**: <one line per layer above the chosen one>
 - **Live copies**: <none | n, where>
 - **Ratchet**: <none | current count n, fail when a change adds more>
+- **Checklist entry** (layer `checklist`: prose a reviewer is shown only when a diff matches, for a mistake a diff
+  shows and no check can judge): <none | trigger (paths, a regex on added lines, or both), check, why (the past
+  commit or pull request)>. Proof: it triggers on a past instance's commit and not on the current code.
 - **Open question answered by prototype**: <none | what was tried, and the result>
 
 ## Rule table (for the instruction file)

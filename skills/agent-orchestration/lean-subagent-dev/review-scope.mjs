@@ -25,8 +25,17 @@
  *     "testPaths":  ["globs that mark a file as a test"],                                 replaces the defaults
  *     "docPaths":   ["globs that mark a file as documentation"],                        replaces the defaults
  *     "checks":     ["the commands that prove the project still works, e.g. npm test"],
- *     "delegation": { "budget": "tight | normal | generous", "minFiles": 3, "log": "docs/delegation-log.md" }
+ *     "delegation": { "budget": "tight | normal | generous", "minFiles": 3, "log": "docs/delegation-log.md" },
+ *     "checklist":  [{ "trigger": { "paths": ["migrations/**"], "added": "DROP\\s+TABLE", "flags": "i" },
+ *                      "check": "what the reviewer verifies", "why": "the incident, pull request or commit behind it" }]
  *   }
+ *
+ * Checklist: `change` and `fix` print only the entries the diff triggers. A trigger with `paths` matches any changed
+ * file; one with `added`, a regex in JavaScript syntax with no flags unless `flags` is "i", is tested on each added
+ * line (the lines of untracked text files count whole); both together means a matching line in a matching file. The
+ * rules file never triggers an entry. A regex that runs past the time limit or fails, or a diff over 64 MiB, prints
+ * the entry as triggered. A file git treats as binary (a real binary, `-diff` or `binary` in .gitattributes, or
+ * `diff.<driver>.binary`) has no added lines, so only `paths` can match it; `diff.submodule` output is not read.
  *
  * Glob syntax, relative to the repository root with forward slashes: `*` and `?` stay inside one path segment, `**`
  * crosses segments, `{a,b}` is a choice, a trailing `/` means everything under that folder, and a path without glob
@@ -36,19 +45,24 @@
  * command failed. Needs Node 20+ and git on PATH.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, realpathSync, existsSync } from 'node:fs';
+import { readFileSync, realpathSync, existsSync, lstatSync, readlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs as nodeParseArgs } from 'node:util';
 import { CONFIG_FILE, resolveConfig, parseNumstat, classify, summarizeChange, fixFlags, formatChange, formatFix, formatConfig } from './review-scope-rules.mjs';
+import { parseAddedLines, splitLines, matchChecklist } from './review-scope-checklist.mjs';
 export * from './review-scope-rules.mjs';
+export * from './review-scope-checklist.mjs';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Git and the file system
 // ---------------------------------------------------------------------------------------------------------------
 
-function git(repo, args) {
-  return execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 });
+/** The most output read from one git command, the diff of the added lines included. */
+export const DIFF_MAX_BYTES = 64 * 1024 * 1024;
+
+function git(repo, args, env = process.env, maxBuffer = DIFF_MAX_BYTES) {
+  return execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'], maxBuffer });
 }
 
 function tryGit(repo, args) {
@@ -116,21 +130,65 @@ export function changedSince(repo, ref) {
   return files.sort((a, b) => a.path.localeCompare(b.path));
 }
 
-export function collectChange(repo, base, config) {
+/** The text lines of an untracked file, or null for a binary file or one that cannot be read (a nested repository).
+ * A symlink is not followed: its one line is its target path, which is what git shows once the link is committed. */
+function textLines(path) {
+  try {
+    if (lstatSync(path).isSymbolicLink()) return [readlinkSync(path)];
+    const buf = readFileSync(path);
+    if (buf.includes(0)) return null;
+    return splitLines(buf.toString('utf8'));
+  } catch { return null; }
+}
+
+// The repository's own settings must not change what a checklist regex sees: no prefixes of its choosing, no colour,
+// no external diff, no textconv, no context. GIT_DIFF_OPTS would override -U0.
+const DIFF_ARGS = ['diff', '-U0', '--inter-hunk-context=0', '--no-ext-diff', '--no-color', '--no-textconv', '--no-renames', '--src-prefix=a/', '--dst-prefix=b/'];
+
+/** The added lines since `ref` in the working tree (committed, staged and unstaged), plus the whole text of every
+ * untracked file in `files`: a Map from path to [{ line, text }]. Null when the diff is over `maxBytes`. */
+export function addedLinesSince(repo, ref, files, maxBytes = DIFF_MAX_BYTES) {
+  const { GIT_DIFF_OPTS, ...env } = process.env;
+  let diff;
+  try { diff = git(repo, [...DIFF_ARGS, ref, '--'], env, maxBytes); } catch (e) { if (e.code === 'ENOBUFS') return null; throw e; }
+  const added = parseAddedLines(diff);
+  for (const f of files.filter((x) => x.untracked)) {
+    const lines = textLines(join(repo, f.path));
+    if (lines) added.set(f.path, lines.map((text, i) => ({ line: i + 1, text })));
+  }
+  return added;
+}
+
+const sizeText = (n) => (n % 1048576 === 0 ? `${n / 1048576} MiB` : `${n} bytes`);
+
+/** The checklist result for files changed since `ref`. The diff is read only when some entry has a regex. A diff over
+ * `maxDiffBytes` is not read, and every regex entry is printed as triggered instead. */
+function checklistSince(repo, ref, files, config, { maxDiffBytes = DIFF_MAX_BYTES } = {}) {
+  const entries = config.checklist;
+  const added = entries.some((e) => e.trigger.added) ? addedLinesSince(repo, ref, files, maxDiffBytes) : new Map();
+  const unread = added ? null : `the diff was too large to read (over ${sizeText(maxDiffBytes)})`;
+  return { entries: entries.length, triggered: matchChecklist(entries, files, added || new Map(), unread) };
+}
+
+/** `options.maxDiffBytes` caps the diff read for the checklist (default DIFF_MAX_BYTES). */
+export function collectChange(repo, base, config, options = {}) {
   const b = resolveBase(repo, base);
   const mergeBase = startOf(repo, b, !!base, 'HEAD');
   const files = classify(changedSince(repo, mergeBase), config);
-  return { base: b, mergeBase, files, summary: summarizeChange(files), riskyConfigured: config.riskyPaths.length > 0 };
+  return {
+    base: b, mergeBase, files, summary: summarizeChange(files), riskyConfigured: config.riskyPaths.length > 0,
+    checklist: checklistSince(repo, mergeBase, files, config, options),
+  };
 }
 
-export function collectFix(repo, since, base, config) {
+export function collectFix(repo, since, base, config, options = {}) {
   const sinceSha = tryGit(repo, ['rev-parse', '--verify', '--quiet', `${since}^{commit}`]);
   if (!sinceSha) throw new Error(`not a commit: ${since}`);
   const b = resolveBase(repo, base);
   const mergeBase = startOf(repo, b, !!base, sinceSha);
   const reviewed = git(repo, ['diff', '--name-only', '-z', '--no-renames', mergeBase, sinceSha]).split('\0').filter(Boolean);
   const files = classify(changedSince(repo, sinceSha), config);
-  return { repo, since: sinceSha, base: b, reviewed, files, flags: fixFlags(files, reviewed) };
+  return { repo, since: sinceSha, base: b, reviewed, files, flags: fixFlags(files, reviewed), checklist: checklistSince(repo, sinceSha, files, config, options) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------

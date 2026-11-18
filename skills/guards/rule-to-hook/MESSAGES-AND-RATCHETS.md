@@ -49,6 +49,20 @@ second still holds the first one's number; the fix is one more `--update`. ESLin
 same way. When the project has no CI, add the check to the command it already runs (its test or lint script), and
 tell the user that nothing enforces the rule on merge.
 
+**A review checklist entry, below a test and above prose.** Some mistakes are readable from a diff but no script
+can judge them: a `DROP COLUMN` in a migration is fine once every reader has moved, an `UPDATE` without a `WHERE` in
+a SQL file may be a deliberate backfill. For those, a project that uses `.claude/review-rules.json` can hold a
+`checklist` entry there, shown to the reviewer only when a change triggers it:
+`{ "trigger": { "paths": ["migrations/**"], "added": "DROP\\s+COLUMN" }, "check": "...", "why": "..." }`.
+- **Trigger:** as narrow as the step 1 violations allow: path globs, a regex on the added lines, or both (both means
+  a matching line in a matching file). The regex is in JavaScript syntax, whatever the project's language. Every
+  violation must trigger it and no step 1 near-miss may.
+- **Check:** one or two sentences the reviewer can answer passed or failed.
+- **Why:** the past mistake it comes from, by commit or pull request.
+
+Nothing fails when the reviewer skips the entry, so it holds only what layers 1 to 4 cannot. MUTATION.md says how to
+prove one.
+
 **Exceptions go on the offending line**, with a reason, an expiry date and who approved it:
 `<comment marker> <check id>: allowed until <date>, <reason>, approved by <role or handle>`, for example
 `# no-env-read: allowed until 2026-12-31, read before the config loader exists, approved by @org/platform-owners`.
