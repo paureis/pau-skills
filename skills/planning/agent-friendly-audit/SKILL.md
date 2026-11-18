@@ -170,6 +170,7 @@ above the chosen one did not work.
    fails when only the internals change.
 5. **Prose, last, and only for judgment calls**: a line in the instruction file, a comment at the spot, a skill.
    Nothing fails when an agent skips it.
+   Narrowest prose: a review checklist entry, shown only when a diff matches (`${CLAUDE_SKILL_DIR}/PLAN-TEMPLATE.md`).
 
 Exceptions to a check go on the offending line, with a reason, an expiry date, and who approved it, recorded the
 way the project records approvals (a role or a handle, such as a code owner team), not a person's name. A proposed

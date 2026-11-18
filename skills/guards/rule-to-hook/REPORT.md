@@ -4,9 +4,10 @@ Names and `${CLAUDE_SKILL_DIR}` mean what SKILL.md says: `${CLAUDE_SKILL_DIR}` i
 
 ```
 Rule:        <precise one-sentence rule>   (from <file:line>)
-Layer:       <architecture | types | lint or CI check | test | hook | prose>
+Layer:       <architecture | types | lint or CI check | test | hook | checklist | prose>
              Higher layers: <why each layer above did not work, one line each>
-Mechanism:   <hook event + matcher | git hook | linter rule | CI check | test>, output <exit 2 | ask | context>
+Mechanism:   <hook event + matcher | git hook | linter rule | CI check | test | checklist entry in
+             .claude/review-rules.json>, output <exit 2 | ask | context | shown to the reviewer>
              Ratchet: <none | baseline n in <file>>   Why: <one line>
 Files:       <guard path>, <test path>, <settings or config path>
 Tests:       <n> DENY, <n> PASS, subprocess checks | ratchet: <n> counted, <n> not, baseline cases | the case that

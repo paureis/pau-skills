@@ -83,6 +83,7 @@ each layer above the chosen one did not work; the report asks for it.
 3. **A lint or CI check whose error names what to use instead.** If the pattern is already common, make it a
    ratchet. Both are described in `${CLAUDE_SKILL_DIR}/MESSAGES-AND-RATCHETS.md`.
 4. **A test of the behaviour.** The rule is really a requirement.
+   Below a test, a diff-triggered review checklist entry: `${CLAUDE_SKILL_DIR}/MESSAGES-AND-RATCHETS.md`.
 5. **Prose, last, and only for judgment calls.** Nothing fails when an agent skips it.
 
 If the rule is one of the five in `PRODUCTION-RULES.md`, or the user asks to enforce the "Production rules" section

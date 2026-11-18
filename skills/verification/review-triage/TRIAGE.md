@@ -37,6 +37,9 @@ empty cart, `total()` returns None and the page shows 'None items'".
   crosses the limit. A `shortcut:` comment never covers a finding on the must-fix list or a security finding; those
   go by their own rules.
 - A failing test, build, typecheck or lint is a failure in itself.
+- A triggered **checklist entry** (`review-scope.mjs` prints the entries of the project's `checklist` that the diff
+  triggers) is a claim to check, not yet a finding. A failed entry is a finding whose failure is what its check names,
+  triaged like any other. An entry printed as "its regex timed out" was not matched: check it by hand.
 - A **security finding** that describes a risk but shows no failure yet is not dropped. Trace it (step 2). If you
   cannot settle it either way, it goes to the maintainer.
 
@@ -236,5 +239,7 @@ that prevents data loss, security, accessibility, the calibration real hardware 
 requires.
 If you find nothing serious, say so. Do not fill the list with nits.
 Review only the change, not the code around it, unless the change breaks that code.
+Grade each checklist entry listed below: passed, failed (with the input and the wrong result) or not settled, and how
+you know.
 End with anything you were unsure about.
 ```
