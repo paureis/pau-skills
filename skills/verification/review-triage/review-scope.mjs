@@ -33,7 +33,9 @@
  * Checklist: `change` and `fix` print only the entries the diff triggers. A trigger with `paths` matches any changed
  * file; one with `added`, a regex in JavaScript syntax with no flags unless `flags` is "i", is tested on each added
  * line (the lines of untracked text files count whole); both together means a matching line in a matching file. The
- * rules file never triggers an entry. A regex that runs past the time limit prints its entry as triggered.
+ * rules file never triggers an entry. A regex that runs past the time limit or fails, or a diff over 64 MiB, prints
+ * the entry as triggered. A file git treats as binary (a real binary, `-diff` or `binary` in .gitattributes, or
+ * `diff.<driver>.binary`) has no added lines, so only `paths` can match it; `diff.submodule` output is not read.
  *
  * Glob syntax, relative to the repository root with forward slashes: `*` and `?` stay inside one path segment, `**`
  * crosses segments, `{a,b}` is a choice, a trailing `/` means everything under that folder, and a path without glob

@@ -18,7 +18,8 @@ full. Change no code.
 - For a change, find the project's checklist entries the diff triggers (`checklist` in
   `.claude/review-rules.json`). If `review-triage` or `lean-subagent-dev` is installed, run its `review-scope.mjs`
   (the copy in that skill's folder): `node review-scope.mjs change --base <base>` prints them. Otherwise match them by
-  hand: a `paths` glob against the changed files; an `added` regex against the added lines of `git diff -U0 <base>`
+  hand: a `paths` glob against the changed files; an `added` regex against the added lines of
+  `git diff -U0 $(git merge-base <base> HEAD)` (the merge base, so lines the base branch removed since do not count)
   and the whole text of untracked files; an entry with both triggers only on a matching line in a matching file.
 - Find the expected load (README, deploy config, job schedules): one person running a script, or many users and
   processes at once. Judge scale against it, and say which load you assumed.

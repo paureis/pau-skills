@@ -39,7 +39,9 @@ empty cart, `total()` returns None and the page shows 'None items'".
 - A failing test, build, typecheck or lint is a failure in itself.
 - A triggered **checklist entry** (`review-scope.mjs` prints the entries of the project's `checklist` that the diff
   triggers) is a claim to check, not yet a finding. A failed entry is a finding whose failure is what its check names,
-  triaged like any other. An entry printed as "its regex timed out" was not matched: check it by hand.
+  triaged like any other. An entry printed as "its regex timed out", "its regex failed" or "the diff was too large"
+  was not matched: check it by hand. A file git treats as binary (`-diff` or `binary` in .gitattributes included)
+  has no added lines, so only a `paths` trigger sees it; nor is `diff.submodule` output read.
 - A **security finding** that describes a risk but shows no failure yet is not dropped. Trace it (step 2). If you
   cannot settle it either way, it goes to the maintainer.
 
