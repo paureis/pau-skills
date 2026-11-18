@@ -124,8 +124,8 @@ covers only the bug.
 
 1. Write the bug's trigger as a condition on the input, from the confirmed hypothesis: "the list is empty", "the
    amount has three decimal places".
-2. Keep the old version runnable: the commit before the fix checked out in a separate worktree
-   (`git worktree add <dir> <commit>`), or a frozen copy of the old function in a scratch folder.
+2. Keep the old version runnable: the commit before the fix checked out in a worktree outside the repository
+   (`git worktree add <dir> <commit>`), or a frozen copy of the old function in a scratch folder outside it.
 3. Run old and new on the same inputs: seeded random ones (print the seed), plus the inputs of the existing tests and
    the repro. Normalize only what does not matter (timestamps, generated IDs, the order of unordered output), never
    money.
@@ -134,4 +134,5 @@ covers only the bug.
 5. Delete the harness and the worktree when you are done. Never commit recorded inputs that hold personal data.
 
 The differential section of `tdd`'s PROPERTIES.md has more on inputs and normalizing, if `tdd` is installed; without
-it, generate the inputs with the standard library's seeded random generator.
+it, generate the inputs with the standard library's seeded random generator, or a small seeded generator of a few
+lines where the standard library has none.

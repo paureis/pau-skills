@@ -107,7 +107,7 @@ check out HEAD in a folder outside the repository (`git worktree add <dir> HEAD`
 both on the same seeded inputs and compare the results, then restore the files as above and run
 `git worktree remove <dir>`. Any difference means the edit changed behaviour; choose another. Use the differential
 section of `tdd`'s PROPERTIES.md if `tdd` is installed; without it, generate the inputs with the standard library's
-seeded random generator and print the seed.
+seeded random generator (or a small seeded generator of a few lines where it has none) and print the seed.
 
 ## Rules
 

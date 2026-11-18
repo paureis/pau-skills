@@ -72,9 +72,9 @@ date fix is tested on both sides of the daylight saving change, a limit at the l
 For a parser, money or a data write, a property test finds the edge cases people miss: one rule checked on many
 generated inputs (a round trip, an invariant such as totals kept, applying twice equals once, or the same result as a
 slow obvious version). Use the project's property library if it has one; without one, a seeded loop with the standard
-library, and ask before adding a library. Print the seed so a failure can be replayed, and keep the smallest failing
-case as an example test. Use `tdd`'s PROPERTIES.md for the details if `tdd` is installed; without it, these lines are
-the rule.
+library (or a small seeded generator of a few lines where it has none), and ask before adding a library. Print the
+seed so a failure can be replayed, and keep the smallest failing case as an example test. Use `tdd`'s PROPERTIES.md
+for the details if `tdd` is installed; without it, these lines are the rule.
 
 ## Shortcut comments
 
