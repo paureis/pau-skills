@@ -36,6 +36,17 @@ test('change lists the REVIEW.md files at the merge base, nearest folder first, 
   assert.equal(execFileSync('sh', ['-c', j.reviewFiles[0].show], { encoding: 'utf8' }), 'spaced rules\n');
 });
 
+test('a folder whose name holds a newline is left out without shifting the other answers, and a file with none above gets no line', () => {
+  const { dir, base } = repoWith({ 'src/REVIEW.md': 'src rules\n', 'src/x.py': 'x = 1\n', 'a\nb/y.py': 'y = 1\n', 'lib/z.py': 'z = 1\n' });
+  for (const p of ['src/x.py', 'a\nb/y.py', 'lib/z.py']) put(dir, p, 'changed = 1\n');
+  const sha = base.slice(0, 12);
+  const top = quoted(g(dir, 'rev-parse', '--show-toplevel'));
+  const r = run(dir, ['change']);
+  assert.equal(r.code, 0, r.stderr);
+  const block = `\nREVIEW.md at ${sha}, nearest folder first:\n  src/x.py: src/REVIEW.md\nRead each with: git -C ${top} show ${sha}:src/REVIEW.md\n`;
+  assert.ok(r.stdout.includes(block), r.stdout);
+});
+
 test('with no REVIEW.md above the changed files, change says so', () => {
   const { dir, base } = repoWith({ 'src/x.py': 'x = 1\n', 'skills/s/SKILL.md': 's\n', 'skills/s/REVIEW.md': 'skill rules\n' });
   put(dir, 'src/x.py', 'x = 2\n');

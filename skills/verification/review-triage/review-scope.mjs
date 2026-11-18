@@ -21,7 +21,8 @@
  *       the delegation budget taken from the LEAN_SUBAGENT_BUDGET environment variable when it is set.
  *
  * Rules from the merge base: `change` and `fix` read `.claude/review-rules.json` as committed at the merge base, the
- * commit the change started from, so a change cannot loosen the rules that judge it; an uncommitted file is not read.
+ * commit the change started from, so a change cannot loosen the rules that judge it; an uncommitted file is not read,
+ * and one committed as a symlink is an error. Every git command runs with GIT_NO_REPLACE_OBJECTS=1.
  * They print where the rules came from. RULES flags a changed file that is the rules file, a REVIEW.md (except one
  * next to a SKILL.md, a skill's own file), or a path a `checks` command or checklist `check` names as a whole word
  * (split on whitespace and '"`=()[],;, a leading ./, a trailing . or : and a pytest ::<test> dropped). `change`
@@ -73,8 +74,11 @@ export * from './review-scope-checklist.mjs';
 /** The most output read from one git command, the diff of the added lines included. */
 export const DIFF_MAX_BYTES = 64 * 1024 * 1024;
 
+// A local `git replace` must not change the objects the script reads: the rules at the base, or the diff.
+const NO_REPLACE = { GIT_NO_REPLACE_OBJECTS: '1' };
+
 function git(repo, args, env = process.env, maxBuffer = DIFF_MAX_BYTES) {
-  return execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'], maxBuffer });
+  return execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', env: { ...env, ...NO_REPLACE }, stdio: ['ignore', 'pipe', 'pipe'], maxBuffer });
 }
 
 function tryGit(repo, args) {
@@ -94,14 +98,19 @@ export function loadConfig(repo, env = process.env) {
 }
 
 /** Read and resolve the configuration as it is at `commit`, for `change` and `fix`: the raw blob, with no textconv or
- * filter. No file there means the defaults. Problems name the file and the commit. */
+ * filter. No file there means the defaults; a symlink, folder or submodule there is an error. Problems name the file
+ * and the commit. */
 export function loadConfigAt(repo, commit, env = process.env) {
   const label = `${CONFIG_FILE} at ${commit.slice(0, 12)}`;
-  const spec = `${commit}:${CONFIG_FILE}`;
-  const found = tryGit(repo, ['cat-file', '-e', spec]) !== null;
+  const entry = tryGit(repo, ['ls-tree', commit, '--', CONFIG_FILE]); // "<mode> <type> <oid>\t<path>", or empty
+  const found = !!entry;
   let project = {};
   if (found) {
-    const text = stripBom(git(repo, ['cat-file', 'blob', spec]));
+    const [mode, , oid] = entry.split('\t')[0].split(' ');
+    if (mode !== '100644' && mode !== '100755') {
+      return { errors: [`${label}: is ${{ 120000: 'a symlink', 160000: 'a submodule' }[mode] || 'a folder'}; commit the file itself`] };
+    }
+    const text = stripBom(git(repo, ['cat-file', 'blob', oid]));
     try { project = JSON.parse(text); } catch (e) { return { errors: [`${label}: not valid JSON: ${e.message}`] }; }
   }
   return { ...resolveConfig(project, env, label), found };
@@ -121,13 +130,19 @@ function blobsAt(repo, commit, folders) {
   const dirs = [...new Set(folders)].filter((d) => !d.includes('\n'));
   if (!dirs.length) return new Map();
   const input = dirs.map((d) => `${commit}:${inFolder(d, REVIEW_FILE)}\n${commit}:${inFolder(d, 'SKILL.md')}\n`).join('');
-  const answers = execFileSync('git', ['-C', repo, 'cat-file', '--batch-check'], { input, encoding: 'utf8', maxBuffer: DIFF_MAX_BYTES }).split('\n');
+  const answers = execFileSync('git', ['-C', repo, 'cat-file', '--batch-check'], { input, encoding: 'utf8', env: { ...process.env, ...NO_REPLACE }, maxBuffer: DIFF_MAX_BYTES }).split('\n');
   return new Map(dirs.map((d, i) => [d, { review: isBlobLine(answers[2 * i]), skill: isBlobLine(answers[2 * i + 1]) }]));
 }
 
-/** The folders whose REVIEW.md is a skill's own file: a SKILL.md beside it at the merge base, or both new in the change. */
-function skillFolders(repo, atBase) {
-  return new Set([...atBase].filter(([d, b]) => b.skill || (!b.review && existsSync(join(repo, inFolder(d, 'SKILL.md'))))).map(([d]) => d));
+/** The folders whose REVIEW.md is a skill's own file: a SKILL.md beside it at the merge base that `files` (the change)
+ * does not delete, or a REVIEW.md new in the change beside a SKILL.md that is itself one of the changed files. */
+function skillFolders(atBase, files) {
+  const kept = new Set(files.filter((f) => !f.deleted).map((f) => f.path));
+  const deleted = new Set(files.filter((f) => f.deleted).map((f) => f.path));
+  return new Set([...atBase].filter(([d, b]) => {
+    const skill = inFolder(d, 'SKILL.md');
+    return b.skill ? !deleted.has(skill) : !b.review && kept.has(skill);
+  }).map(([d]) => d));
 }
 
 /** The base ref: the one given, else origin/HEAD, main, master. Throws when none resolves to a commit. */
@@ -233,7 +248,7 @@ export function collectChange(repo, base, config = null, options = {}) {
   return {
     base: b, mergeBase, rules: loaded && loaded.rules, files, summary: summarizeChange(files), riskyConfigured: cfg.riskyPaths.length > 0,
     checklist: checklistSince(repo, mergeBase, files, cfg, options),
-    flags: rulesFlag(files, cfg, skillFolders(repo, atBase), RULES_MESSAGES.change),
+    flags: rulesFlag(files, cfg, skillFolders(atBase, files), RULES_MESSAGES.change),
     reviewFiles: reviewFiles(files.map((f) => f.path), atBase, repo, mergeBase),
   };
 }
@@ -248,7 +263,7 @@ export function collectFix(repo, since, base, config = null, options = {}) {
   const cfg = config || loaded.config;
   const reviewed = git(repo, ['diff', '--name-only', '-z', '--no-renames', mergeBase, sinceSha]).split('\0').filter(Boolean);
   const files = classify(changedSince(repo, sinceSha), cfg);
-  const skills = skillFolders(repo, blobsAt(repo, mergeBase, files.filter((f) => isReviewFile(f.path)).map((f) => folderOf(f.path))));
+  const skills = skillFolders(blobsAt(repo, mergeBase, files.filter((f) => isReviewFile(f.path)).map((f) => folderOf(f.path))), files);
   return {
     repo, since: sinceSha, base: b, rules: loaded && loaded.rules, reviewed, files,
     flags: [...fixFlags(files, reviewed), ...rulesFlag(files, cfg, skills, RULES_MESSAGES.fix)],

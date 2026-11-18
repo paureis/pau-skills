@@ -3,6 +3,8 @@
 // kill timeout.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { symlinkSync } from 'node:fs';
+import { join } from 'node:path';
 import { g, put, commit, run, setup, repoWith, json } from './review-scope.helpers.mjs';
 import { CONFIG_FILE } from '../skills/verification/review-triage/review-scope.mjs';
 
@@ -84,6 +86,34 @@ test('an invalid rules file only in the working tree: change exits 0 and fix exi
   const f = run(dir, ['fix', '--since', 'HEAD', '--json']);
   assert.equal(f.code, 1, f.stderr);
   assert.deepEqual(rulesFlag(json(f)), { id: 'RULES', paths: [CONFIG_FILE], reasons: ['(the review rules)'], message: FIX_MESSAGE });
+});
+
+test('a local replace object for the base rules blob is ignored: the rules and the diff come from the real objects', () => {
+  const { dir } = setup({ riskyPaths: ['core/**'] });
+  put(dir, CONFIG_FILE, rules({}));
+  put(dir, 'core/pick.py', 'def pick():\n    return 2\n');
+  g(dir, 'replace', g(dir, 'rev-parse', `main:${CONFIG_FILE}`), g(dir, 'hash-object', '-w', CONFIG_FILE));
+  const j = json(run(dir, ['change', '--json', '--base', 'main']));
+  assert.deepEqual(j.summary.risky, ['core/pick.py']);
+  assert.deepEqual(rulesFlag(j).paths, [CONFIG_FILE]);
+});
+
+test('a rules file that is a symlink or a folder at the merge base stops change with exit 2: commit the file itself', () => {
+  const cases = [
+    ['a symlink', (dir) => { put(dir, '.claude/real.json', '{}'); symlinkSync('real.json', join(dir, CONFIG_FILE)); }],
+    ['a folder', (dir) => put(dir, `${CONFIG_FILE}/x.json`, '{}')],
+  ];
+  for (const [kind, make] of cases) {
+    const { dir } = repoWith({ 'src/x.py': 'x = 1\n' });
+    g(dir, 'switch', '-q', 'main');
+    make(dir);
+    const base = commit(dir, 'rules');
+    g(dir, 'switch', '-q', '-C', 'feature');
+    put(dir, 'src/x.py', 'x = 2\n');
+    const r = run(dir, ['change']);
+    assert.equal(r.code, 2, r.stdout);
+    assert.equal(r.stderr.trim(), `${CONFIG_FILE} at ${base.slice(0, 12)}: is ${kind}; commit the file itself`);
+  }
 });
 
 test('a byte order mark in the merge base\'s rules file is read', () => {
