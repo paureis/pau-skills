@@ -73,11 +73,14 @@ test('fix: only the fix\'s own added lines trigger, and the exit code still come
 test('hostile git settings do not change what the regex sees', () => {
   const { dir } = setup({ checklist: [entry({ added: '^needle$' }, 'found')] });
   put(dir, '.gitattributes', '*.txt diff=hide\n');
-  put(dir, 'hay.txt', '1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n');
+  // Blank lines around the changes: with diff.suppressBlankEmpty, a blank context line has no leading space, so any
+  // context that reaches the parser (from GIT_DIFF_OPTS or a merged hunk) shifts the line number.
+  put(dir, 'hay.txt', '1\n\n3\n\n5\n\n7\n\n9\n10\n');
   commit(dir, 'hay');
   for (const [k, v] of [['diff.noprefix', 'true'], ['diff.mnemonicPrefix', 'true'], ['color.diff', 'always'],
-    ['color.ui', 'always'], ['diff.hide.textconv', 'sed s/needle/HIDDEN/'], ['diff.interHunkContext', '5']]) g(dir, 'config', k, v);
-  put(dir, 'hay.txt', '1\n2\nx\n4\n5\n6\n7\nneedle\n9\n10\n');
+    ['color.ui', 'always'], ['diff.hide.textconv', 'sed s/needle/HIDDEN/'], ['diff.interHunkContext', '5'],
+    ['diff.suppressBlankEmpty', 'true']]) g(dir, 'config', k, v);
+  put(dir, 'hay.txt', '1\n\nx\n\n5\n\n7\nneedle\n9\n10\n');
   const r = run(dir, ['change', '--json'], { env: { GIT_EXTERNAL_DIFF: 'true', GIT_DIFF_OPTS: '-u3' } });
   assert.equal(r.code, 0, r.stderr);
   assert.deepEqual(triggered(r), [[1, ['hay.txt:8']]]);
@@ -125,4 +128,26 @@ test('without a checklist key there is no checklist line, and fix keeps the seco
     assert.equal(/Checklist/.test(r.stdout), want, r.stdout);
     assert.match(r.stdout, /\nFlags: none\n(Checklist: 1 of 1 entries triggered\n(?: [^\n]*\n){3})?Second look, the fix only: [^\n]+\n?$/);
   }
+});
+
+test('a deletion-only hunk is read for its old count, so a removed "-- header" stays content', () => {
+  const { dir } = setup({ checklist: [entry({ added: 'DROP TABLE' }, 'drop')] });
+  put(dir, 'm.sql', 'SELECT 1;\n-- header\nSELECT 2;\nSELECT 3;\nSELECT 4;\nSELECT 5;\n');
+  commit(dir, 'm');
+  put(dir, 'm.sql', 'SELECT 1;\nSELECT 2;\nSELECT 3;\nSELECT 4;\nDROP TABLE t;\nSELECT 5;\n');
+  assert.deepEqual(triggered(run(dir, ['change', '--json'])), [[1, ['m.sql:5']]]);
+});
+
+test('an untracked file gets no empty last line from its final newline, and loses one \\r per line', () => {
+  const { dir } = setup({ checklist: [entry({ added: '^$' }, 'empty line'), entry({ added: '\\r' }, 'carriage return')] });
+  put(dir, 'u.txt', 'one\r\ntwo\r\n');
+  assert.deepEqual(triggered(run(dir, ['change', '--json'])), []);
+});
+
+test('a tracked path with a space and a quote, which git quotes and ends with a tab, keeps its lines', () => {
+  const { dir } = setup({ checklist: [entry({ added: 'needle' }, 'found')] });
+  put(dir, 'sp ace "q".py', 'a = 1\n');
+  commit(dir, 'quoted');
+  put(dir, 'sp ace "q".py', 'a = 1\nneedle = 2\n');
+  assert.deepEqual(triggered(run(dir, ['change', '--json'])), [[1, ['sp ace "q".py:2']]]);
 });
