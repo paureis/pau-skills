@@ -53,3 +53,9 @@ permanently allowed file could not be left out; all three are fixed and tested.
 
 **Batch 8 (2026-10-23).** Q8 production rules: for one of the five rules in its copy of `PRODUCTION-RULES.md`, it
 starts from the checker the table names for the project's ecosystem, and says what that checker misses.
+
+**Q24 (2026-11-18).** From the Claude Code team's article on verification (claude.dev blog, 2026-11-16), ideas only, no shared text. A review checklist entry is a layer below a test and above prose, for a
+mistake a diff shows but no script can judge, proven on a past violation and a near-miss. A new blocking hook that may
+hit common work starts in observe mode: it logs what it would block, the log becomes PASS cases and a narrower rule,
+and the user switches it to enforce with a setting. This is the one idea kept from the article's commit gate, which Q24
+skipped because `verify-before-done` already checks at Stop.

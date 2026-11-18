@@ -87,6 +87,7 @@ under "Work items" below.
 - [Things that bit the fifteenth batch](backlog/things-that-bit/batch-15.md)
 - [Things that bit the sixteenth batch](backlog/things-that-bit/batch-16.md)
 - [Things that bit the seventeenth batch](backlog/things-that-bit/batch-17.md)
+- [Things that bit the eighteenth batch](backlog/things-that-bit/batch-18.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not; the first six batches are in
   [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md), and the seventh to twelfth in
   [done-2026-10-20-to-25.md](backlog/done-2026-10-20-to-25.md).
@@ -168,7 +169,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 21. Done: the sixteenth batch, Q22 two hooks that get in the way (pull request 73); its scope was decision 24.
 22. Done: the seventeenth batch, Q23 the lazy senior developer, adapted from ponytail (pull request 74); its scope was
     decision 25.
-23. **Next:** Q24 verification ideas from the Claude Code team (decision 26), then Q21 a subagent watchdog
-    (decisions 22 and 23). Both kickoffs are in [backlog/kickoff.md](backlog/kickoff.md).
+23. Done: the eighteenth batch, Q24 verification ideas from the Claude Code team; its scope was decision 26.
+24. **Next:** Q21 a subagent watchdog (decisions 22 and 23). Its kickoff is in [backlog/kickoff.md](backlog/kickoff.md).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

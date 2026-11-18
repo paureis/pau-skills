@@ -63,3 +63,12 @@ layer, wrapper, option or dependency the change added is fix if cheap when the f
 inside the failure-first method: the case is the failure written down, only for code the change added; the never-cut
 list (from ponytail's "Never cut" line) bounds it; the caller search is the reproduction; a shortcut never covers a
 must-fix or security finding; only a pure deletion skips the new test.
+
+**Q24 (2026-11-18).** From the Claude Code team's article on verification (claude.dev blog, 2026-11-16), ideas only, no shared text. `.claude/review-rules.json` takes an optional `checklist`: each entry has a
+trigger (path globs, a regex on the added lines, or both), a check and a why. `review-scope.mjs` (with the new
+`review-scope-checklist.mjs`) reads the added lines with the repository's diff settings turned off, runs each trigger
+regex in `node:vm` with a 1 second limit, and prints only the entries the diff triggers; a regex that times out or
+fails, or a diff over 64 MiB, prints its entry as triggered, to check by hand. `change` and `fix` read the rules as
+committed at the merge base, after the Code Review practice of reading REVIEW.md from the base branch, list the
+REVIEW.md files above each changed file at the merge base, and flag `RULES` when a change edits the rules file, a
+REVIEW.md or a file the rules name. TRIAGE.md treats a triggered entry as a claim and says what `RULES` does not see.

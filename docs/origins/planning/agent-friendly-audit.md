@@ -37,3 +37,7 @@ more sentence in an instruction file that nothing enforces.
 data, and keep secrets out of what gets written. The review round found that secrets in environment-variable form
 (`GITHUB_TOKEN=...`) printed unredacted and that `transcripts` would read any project's folder; both are covered by
 tests now. The cold run on this repository found live instances of two classes in existing code.
+
+**Q24 (2026-11-18).** From the Claude Code team's article on verification (claude.dev blog, 2026-11-16), ideas only, no shared text. `checklist` is a layer value in the plan: prose a reviewer is shown only
+when a diff matches, used only when the four layers above it cannot hold the mistake, and proven on a past instance's
+commit.

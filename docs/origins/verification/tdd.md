@@ -51,3 +51,10 @@ word 6-grams (3.4%) appear in those files: 48 from principle-test-behavior-not-i
 **Why.** I wanted the skill to work from the first message in an unfamiliar repository (find the runner, match the
 patterns) and to carry the mocking rules in the main file, where they are read. The pstack changes stop it from pushing agents to add
 brittle tests to every small fix, and give a check for whether a test is worth keeping.
+
+**Q24 (2026-11-18).** From the Claude Code team's article on verification (claude.dev blog, 2026-11-16), ideas only, no shared text. `PROPERTIES.md` is new: when a property test pays; round trip, invariants,
+idempotency and a naive version as the oracle; generators that cover the edges; seeded runs and replay for each
+library, as seen in runs of Hypothesis, fast-check, proptest, jqwik, gopter, rapid and Go's `testing/quick` and
+fuzzing; a seeded standard-library loop, or a small seeded generator, when the project has no property library;
+libraries by ecosystem; differential tests for a rewrite or a migration; and how to keep a mutation run clean. SKILL.md
+points to it, and its frontmatter allows reads of the skill's folder.

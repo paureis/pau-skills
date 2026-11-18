@@ -53,3 +53,9 @@ each with and without the ruleset in the prompt, 0.10 US dollars): the runs with
 on every task, by the judge and by a blind reader, and changed far less code on the bug fix (+2 lines against +9 to
 +12). Two of three left out a summer-time test, which led to the ruleset's edge-case wording. Small sample, one small
 model.
+
+**Q24 (2026-11-18).** From the Claude Code team's article on verification (claude.dev blog, 2026-11-16), ideas only, no shared text. The review finds the triggered checklist entries with `review-scope.mjs` if
+`review-triage` or `lean-subagent-dev` is installed, or matches them by hand against the diff from the merge base, and
+reports a `Checklist:` line. BUILD.md's Tests section adds property tests for parsers, money and data writes: the four
+properties and the seed rule in short, the project's own library or a small seeded loop, and a pointer to `tdd`'s
+PROPERTIES.md if it is installed.

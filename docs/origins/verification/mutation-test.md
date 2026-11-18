@@ -36,3 +36,7 @@ time left the mutant in place behind a false RESTORED: the restore now checks ou
 start a file with an edit git does not see, a skip-worktree or assume-unchanged file, and an absolute or `..` path, and
 reports a command that staged or committed the mutant. A review of the first fix found it could erase such hidden
 edits and delete files on the error paths; the fix round closed both.
+
+**Later changes (2026-11-18).** From Q24 part 3: the second check says KEPT and BROKE judge the test only when the
+refactor is pure, and confirms it with a differential run of HEAD, in a worktree outside the repository, against the
+refactored code on the same seeded inputs, most of all for a refactor across files checked by hand.

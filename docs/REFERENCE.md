@@ -30,7 +30,8 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 ## verification
 
 - **[tdd](../skills/verification/tdd/SKILL.md)** (adapted): Red-green-refactor in vertical slices, with mocking and refactoring rules, a
-  two-edit check for which tests to keep, and "prefer no new test over a bad test" for small fixes.
+  two-edit check for which tests to keep, "prefer no new test over a bad test" for small fixes, and property and
+  differential tests in `PROPERTIES.md`.
 - **[mutation-test](../skills/verification/mutation-test/SKILL.md)**: `mutate.sh` applies one mutation (a real past fix reversed, when there
   is one) and checks by script that it applied, changed behaviour, and was restored; `--refactor` checks that a pure
   refactor leaves the test green.
@@ -47,7 +48,8 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[review-triage](../skills/verification/review-triage/SKILL.md)** (adapted): Decides which review findings are worth fixing (must
   fix, fix if cheap, leave), with a test per fix and one review round and one fix round, says when a review is only
   nits, and records recurring findings as learned patterns; `review-scope.mjs` flags a fix with no test, in risky code
-  or outside the change.
+  or outside the change, prints the checklist entries the diff triggers, reads the rules and the per-folder REVIEW.md
+  files from the commit the change started from, and flags a change that edits what judges it.
 - **[bug-fix](../skills/verification/bug-fix/SKILL.md)** (adapted): Reproduces a bug twice on the real surface, tests hypotheses with
   runtime evidence, fixes the first wrong decision instead of guarding the symptom, commits the failing repro before
   the fix, and proves what the change cannot break.

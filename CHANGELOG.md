@@ -3,6 +3,27 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-18: Q24, verification ideas from the Claude Code team
+
+- A checklist triggered by the diff (verification 0.15.0, agent-orchestration 0.12.0): `.claude/review-rules.json`
+  takes an optional `checklist`, each entry a trigger (path globs, a regex on the added lines, or both), a check and a
+  why. `review-scope.mjs change` and `fix` in `review-triage` and `lean-subagent-dev` print only the entries the diff
+  triggers. A trigger regex runs with a 1 second limit; a regex that times out or fails, or a diff over 64 MiB, prints
+  its entry as triggered, to check by hand. The reviewer, `review-triage` and `lazy-senior`'s review (planning 0.10.0)
+  grade each triggered entry as a claim; `rule-to-hook` (guards 0.10.0) and `agent-friendly-audit` can propose one as
+  a layer below a test and above prose.
+- A change cannot edit the checks that judge it: `change` and `fix` read the rules as committed at the merge base, list
+  the REVIEW.md files above each changed file at that commit, nearest folder first, and flag `RULES` when a change
+  edits the rules file, a REVIEW.md or a file the rules name. `rule-to-hook` starts a new blocking hook in observe mode
+  before it enforces.
+- Property and differential tests: `tdd` gains `PROPERTIES.md` (the four properties, generators, seeded runs and replay
+  per library as seen in runs, libraries by ecosystem, differential tests for a rewrite or a migration).
+  `improve-codebase-architecture`, `lazy-senior`, `bug-fix` and `mutation-test` point to it if `tdd` is installed, with
+  a fallback. `flaky-test-hunt` corrects what proptest prints.
+- geppetto roster 6: the roster `reviewer` grades triggered checklist items as `Checklist #<n>` claims and reads the
+  REVIEW.md files from the base; `eng-lead` passes the `review-scope.mjs change` command into each reviewer prompt.
+  The installed copies in `.claude/agents/` are updated. The bundle goes to 0.20.0; no hook changed.
+
 ## 2026-11-16: Q23, the lazy senior developer, adapted from ponytail
 
 - `lazy-senior` (planning 0.9.0), a new skill adapted from DietrichGebert/ponytail (MIT): it writes the smallest

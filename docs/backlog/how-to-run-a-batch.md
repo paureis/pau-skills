@@ -86,6 +86,10 @@ opens the pull request and does steps 8 to 10. The agents take the rest:
   `builder` per slice in a worktree and one fresh `reviewer` per slice, then returns each builder's agent ID, the
   verdicts and a ready fix-round message. The main session sends the fix rounds (an agent resumed with SendMessage
   runs in the background, where `eng-lead` cannot wait for it), gives each fix its second look, and merges.
+  Give each reviewer the `review-scope.mjs change --base <sha> --repo <worktree>` command for its slice, run from the
+  main checkout's copy of the script, not the slice's (a slice that edits the script would pick its own checklist), so
+  it grades the triggered checklist items and reads the REVIEW.md files at the base. Builders in the cloud runner come
+  back in the background: `eng-lead` hands back their agent IDs at once, and the main session starts the reviewers.
 - **Nesting.** `eng-lead` needs `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` of 2 or more (`echo` it first). The cloud
   runner sets it to 1 whatever the environment page says, so this repository sets it to 3 in `.claude/settings.json`,
   which wins over the runner from the next session on. If it still reads 1, `eng-lead` says so and returns the briefs,
