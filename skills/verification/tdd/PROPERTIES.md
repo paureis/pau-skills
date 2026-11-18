@@ -73,7 +73,7 @@ the library's saved file is gone.
 |---|---|---|
 | Hypothesis | prints "Failing test case:" and saves it under `.hypothesis/examples` | the next run tries the saved case first; fix the seed with `pytest --hypothesis-seed=<n>`, `@seed(<n>)` or `settings(derandomize=True)` |
 | fast-check | prints `{ seed, path }` and the counterexample | `fc.assert(property, { seed, path })` |
-| proptest | prints the minimal failing input and the path of `proptest-regressions/<file>.txt`, where it saves a `cc <seed>` line | later runs replay that file first: commit it |
+| proptest | prints the minimal failing input, a `cc <seed>` line, and the path of `proptest-regressions/<file>.txt`, where it saves that line | later runs replay that file first: commit it; for a CI failure, where the file is lost, add the printed `cc` line to your copy; fix the seed with `PROPTEST_RNG_SEED=<n>` |
 | jqwik | prints `seed = ...` and writes `.jqwik-database` | `@Property(seed = "...")`; by default it tries the last failed sample first |
 | gopter | prints "failed with initial seed: N" | `gopter.DefaultTestParametersWithSeed(N)` |
 | rapid (Go) | prints `-rapid.seed=N` and a fail file under `testdata/rapid/` | `go test -run <Test> -rapid.seed=N`, or the printed `-rapid.failfile=` |
@@ -83,8 +83,8 @@ the library's saved file is gone.
 ## Without a property library
 
 Use the project's own property library if it has one. Without one, write a seeded loop with the standard library:
-Python `random.Random(seed)`, Go `testing/quick`, or in JavaScript, which has no seedable random in its standard
-library, a small seeded generator of a few lines. Print the seed on failure. Ask before adding a library, and name it,
+Python `random.Random(seed)`, Go `testing/quick`, or in JavaScript and Rust, whose standard libraries have no
+seedable random generator, a small seeded generator of a few lines. Print the seed on failure. Ask before adding a library, and name it,
 its size and its license. A loop does not shrink: cut a failing input down by hand before you keep it as an example.
 
 ```python
@@ -144,7 +144,8 @@ A property that never fails proves nothing. Break the code once (return a wrong 
 way), watch the property fail, then restore. Use `mutation-test` if it is installed; otherwise break the code by hand,
 run, and restore with `git checkout -- <file>`.
 
-In any mutation run, fix the seed so the control run and the mutant see the same inputs. Git-ignore `.hypothesis/`
-and `.jqwik-database` first, and after each run delete what a mutant wrote under `proptest-regressions/`,
-`testdata/rapid/` or `testdata/fuzz/`; never commit those. An untracked file left behind makes the next harness run
-refuse with "the tree has uncommitted changes".
+In any mutation run, fix the seed so the control run and the mutant see the same inputs. Git-ignore
+`.jqwik-database` first (Hypothesis git-ignores `.hypothesis/` itself). For proptest, set
+`PROPTEST_DISABLE_FAILURE_PERSISTENCE=1` in the command so a mutant writes no regressions file. After each run delete
+what a mutant wrote under `proptest-regressions/`, `testdata/rapid/` or `testdata/fuzz/`; never commit those. An
+untracked file left behind makes the next harness run refuse with "the tree has uncommitted changes".
