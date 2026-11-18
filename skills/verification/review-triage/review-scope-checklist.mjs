@@ -56,7 +56,7 @@ export function parseAddedLines(diffText) {
         if (path !== null) { if (!out.has(path)) out.set(path, []); out.get(path).push({ line: n, text: line.slice(1) }); }
         n++; newLeft--;
       } else if (line[0] === '-') oldLeft--;
-      else if (line[0] === ' ' || line === '') { n++; oldLeft--; newLeft--; }
+      else if (line[0] === ' ') { n++; oldLeft--; newLeft--; }
       // Anything else, such as "\ No newline at end of file", is not content and counts on neither side.
       continue;
     }
