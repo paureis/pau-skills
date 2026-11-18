@@ -25,8 +25,15 @@
  *     "testPaths":  ["globs that mark a file as a test"],                                 replaces the defaults
  *     "docPaths":   ["globs that mark a file as documentation"],                        replaces the defaults
  *     "checks":     ["the commands that prove the project still works, e.g. npm test"],
- *     "delegation": { "budget": "tight | normal | generous", "minFiles": 3, "log": "docs/delegation-log.md" }
+ *     "delegation": { "budget": "tight | normal | generous", "minFiles": 3, "log": "docs/delegation-log.md" },
+ *     "checklist":  [{ "trigger": { "paths": ["migrations/**"], "added": "DROP\\s+TABLE", "flags": "i" },
+ *                      "check": "what the reviewer verifies", "why": "the incident, pull request or commit behind it" }]
  *   }
+ *
+ * Checklist: `change` and `fix` print only the entries the diff triggers. A trigger with `paths` matches any changed
+ * file; one with `added`, a regex in JavaScript syntax with no flags unless `flags` is "i", is tested on each added
+ * line (the lines of untracked text files count whole); both together means a matching line in a matching file. The
+ * rules file never triggers an entry. A regex that runs past the time limit prints its entry as triggered.
  *
  * Glob syntax, relative to the repository root with forward slashes: `*` and `?` stay inside one path segment, `**`
  * crosses segments, `{a,b}` is a choice, a trailing `/` means everything under that folder, and a path without glob
@@ -41,14 +48,16 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs as nodeParseArgs } from 'node:util';
 import { CONFIG_FILE, resolveConfig, parseNumstat, classify, summarizeChange, fixFlags, formatChange, formatFix, formatConfig } from './review-scope-rules.mjs';
+import { parseAddedLines, splitLines, matchChecklist } from './review-scope-checklist.mjs';
 export * from './review-scope-rules.mjs';
+export * from './review-scope-checklist.mjs';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Git and the file system
 // ---------------------------------------------------------------------------------------------------------------
 
-function git(repo, args) {
-  return execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 });
+function git(repo, args, env = process.env) {
+  return execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 });
 }
 
 function tryGit(repo, args) {
@@ -116,11 +125,47 @@ export function changedSince(repo, ref) {
   return files.sort((a, b) => a.path.localeCompare(b.path));
 }
 
+/** The text lines of an untracked file, or null for a binary file or one that cannot be read (a nested repository, a
+ * link to a folder, a dangling link). */
+function textLines(path) {
+  try {
+    const buf = readFileSync(path);
+    if (buf.includes(0)) return null;
+    return splitLines(buf.toString('utf8'));
+  } catch { return null; }
+}
+
+// The repository's own settings must not change what a checklist regex sees: no prefixes of its choosing, no colour,
+// no external diff, no textconv, no context. GIT_DIFF_OPTS would override -U0.
+const DIFF_ARGS = ['diff', '-U0', '--inter-hunk-context=0', '--no-ext-diff', '--no-color', '--no-textconv', '--no-renames', '--src-prefix=a/', '--dst-prefix=b/'];
+
+/** The added lines since `ref` in the working tree (committed, staged and unstaged), plus the whole text of every
+ * untracked file in `files`: a Map from path to [{ line, text }]. */
+export function addedLinesSince(repo, ref, files) {
+  const { GIT_DIFF_OPTS, ...env } = process.env;
+  const added = parseAddedLines(git(repo, [...DIFF_ARGS, ref, '--'], env));
+  for (const f of files.filter((x) => x.untracked)) {
+    const lines = textLines(join(repo, f.path));
+    if (lines) added.set(f.path, lines.map((text, i) => ({ line: i + 1, text })));
+  }
+  return added;
+}
+
+/** The checklist result for files changed since `ref`. The diff is read only when some entry has a regex. */
+function checklistSince(repo, ref, files, config) {
+  const entries = config.checklist;
+  const added = entries.some((e) => e.trigger.added) ? addedLinesSince(repo, ref, files) : new Map();
+  return { entries: entries.length, triggered: matchChecklist(entries, files, added) };
+}
+
 export function collectChange(repo, base, config) {
   const b = resolveBase(repo, base);
   const mergeBase = startOf(repo, b, !!base, 'HEAD');
   const files = classify(changedSince(repo, mergeBase), config);
-  return { base: b, mergeBase, files, summary: summarizeChange(files), riskyConfigured: config.riskyPaths.length > 0 };
+  return {
+    base: b, mergeBase, files, summary: summarizeChange(files), riskyConfigured: config.riskyPaths.length > 0,
+    checklist: checklistSince(repo, mergeBase, files, config),
+  };
 }
 
 export function collectFix(repo, since, base, config) {
@@ -130,7 +175,7 @@ export function collectFix(repo, since, base, config) {
   const mergeBase = startOf(repo, b, !!base, sinceSha);
   const reviewed = git(repo, ['diff', '--name-only', '-z', '--no-renames', mergeBase, sinceSha]).split('\0').filter(Boolean);
   const files = classify(changedSince(repo, sinceSha), config);
-  return { repo, since: sinceSha, base: b, reviewed, files, flags: fixFlags(files, reviewed) };
+  return { repo, since: sinceSha, base: b, reviewed, files, flags: fixFlags(files, reviewed), checklist: checklistSince(repo, sinceSha, files, config) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
