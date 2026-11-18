@@ -78,8 +78,9 @@ When the message that continues you says yes, run only the slices it names, with
    `reviewer`, a `name` such as `reviewer-<slice>`, and a prompt that holds the contract (the slice's goal, files,
    rules and done-when commands) and the scope (worktree path, branch, base commit), plus the claims the builder
    made. When the message that continues you gives the command that prints a slice's triggered checklist items and
-   REVIEW.md files (`change`, not `fix`), put it in that slice's reviewer prompt with the slice's worktree path and
-   base commit. Do not pass on the builder's reasoning. Wait for every review.
+   REVIEW.md files (`change`, not `fix`), put it in that slice's reviewer prompt, filled in with
+   `--repo <the slice's worktree> --base <the slice's base commit>`, so it names the slice's tree and never the
+   reviewer's own working directory. Do not pass on the builder's reasoning. Wait for every review.
 4. Sort the findings. A FAIL with evidence inside the slice gets fixed. A "Bigger than needed" finding with its case
    and `file:line` goes to the fix round too, as a deletion or a reuse; one without a case is dropped. An UNVERIFIED
    claim that matters goes back to the builder to prove. Anything outside the slice goes to the main session's list,
