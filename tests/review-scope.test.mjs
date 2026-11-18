@@ -283,14 +283,12 @@ describe('against a real repository', () => {
     assert.match(r.stdout, /^Checks: none set; /m);
   });
 
-  test('an invalid config file stops every command with exit 2', () => {
+  test('an invalid config file in the working tree stops config with exit 2', () => {
     const { dir } = setup();
     put(dir, '.claude/review-rules.json', '{"riskyPath": []}');
-    for (const args of [['config'], ['change'], ['fix', '--since', 'HEAD']]) {
-      const r = run(dir, ...args);
-      assert.equal(r.code, 2, args.join(' '));
-      assert.match(r.stderr, /unknown key "riskyPath"/);
-    }
+    const r = run(dir, 'config');
+    assert.equal(r.code, 2);
+    assert.match(r.stderr, /unknown key "riskyPath"/);
   });
 
   test('a since that is not a commit, and a folder that is not a repository, exit 2', () => {

@@ -7,16 +7,25 @@
  *       (committed, staged, unstaged and untracked), lines added and removed, which files match `riskyPaths`, and
  *       which are tests. Without --base it uses origin/HEAD, then main, master, origin/main and origin/master,
  *       whichever exists first. When the work is committed on the base branch itself, pass --base <start commit>.
+ *       Also lists, for each changed file, the REVIEW.md files at the merge base from its folder up to the root,
+ *       nearest first, each with the `git show` command that prints it.
  *
  *   node review-scope.mjs fix --since <commit> [--base <ref>] [--repo <dir>] [--json]
  *       The fix round: what changed after <commit>, the commit the review looked at. Raises a flag when the fix
- *       changes code but no test, touches a risky file, or changes code in a file the reviewed change did not.
- *       Tests and docs are not code here, and a deleted test does not count as a test. Prints the command that shows
- *       the second look the fix and nothing else, plus any new files git does not track yet.
+ *       changes code but no test, touches a risky file, changes code in a file the reviewed change did not, or edits
+ *       what judges it (RULES). Tests and docs are not code here, and a deleted test does not count as a test. Prints
+ *       the command that shows the second look the fix and nothing else, plus any new files git does not track yet.
  *
  *   node review-scope.mjs config [--repo <dir>] [--json]
  *       The effective configuration: `.claude/review-rules.json` in the repository merged over the defaults, with
  *       the delegation budget taken from the LEAN_SUBAGENT_BUDGET environment variable when it is set.
+ *
+ * Rules from the merge base: `change` and `fix` read `.claude/review-rules.json` as committed at the merge base, the
+ * commit the change started from, so a change cannot loosen the rules that judge it; an uncommitted file is not read.
+ * They print where the rules came from. RULES flags a changed file that is the rules file, a REVIEW.md (except one
+ * next to a SKILL.md, a skill's own file), or a path a `checks` command or checklist `check` names as a whole word
+ * (split on whitespace and '"`=()[],;, a leading ./, a trailing . or : and a pytest ::<test> dropped). `change`
+ * prints it and exits 0; `fix` raises it. A REVIEW.md that only the change adds is flagged, not listed.
  *
  * Configuration, every key optional:
  *   {
@@ -41,15 +50,18 @@
  * crosses segments, `{a,b}` is a choice, a trailing `/` means everything under that folder, and a path without glob
  * characters matches that file or everything under that folder.
  *
- * Exit codes: 0 done (for `fix`, no flag raised); 1 `fix` raised a flag; 2 usage, an invalid configuration, or a git
- * command failed. Needs Node 20+ and git on PATH.
+ * Exit codes: 0 done (for `fix`, no flag raised); 1 `fix` raised a flag; 2 usage, an invalid configuration (for
+ * `change` and `fix`, the one at the merge base), or a git command failed. Needs Node 20+ and git on PATH.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, realpathSync, existsSync, lstatSync, readlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs as nodeParseArgs } from 'node:util';
-import { CONFIG_FILE, resolveConfig, parseNumstat, classify, summarizeChange, fixFlags, formatChange, formatFix, formatConfig } from './review-scope-rules.mjs';
+import {
+  CONFIG_FILE, REVIEW_FILE, RULES_MESSAGES, resolveConfig, parseNumstat, classify, summarizeChange, fixFlags, rulesFlag, reviewFiles,
+  isBlobLine, isReviewFile, folderOf, foldersUp, inFolder, formatChange, formatFix, formatConfig,
+} from './review-scope-rules.mjs';
 import { parseAddedLines, splitLines, matchChecklist } from './review-scope-checklist.mjs';
 export * from './review-scope-rules.mjs';
 export * from './review-scope-checklist.mjs';
@@ -69,14 +81,53 @@ function tryGit(repo, args) {
   try { return git(repo, args).trim(); } catch { return null; }
 }
 
-/** Read and resolve the configuration for a repository. */
+const stripBom = (text) => text.replace(/^\uFEFF/, '');
+
+/** Read and resolve the configuration in a repository's working tree, for `config`. */
 export function loadConfig(repo, env = process.env) {
   const path = join(repo, CONFIG_FILE);
   let project = {};
   if (existsSync(path)) {
-    try { project = JSON.parse(readFileSync(path, 'utf8').replace(/^\uFEFF/, '')); } catch (e) { return { errors: [`${CONFIG_FILE} is not valid JSON: ${e.message}`] }; }
+    try { project = JSON.parse(stripBom(readFileSync(path, 'utf8'))); } catch (e) { return { errors: [`${CONFIG_FILE} is not valid JSON: ${e.message}`] }; }
   }
   return { ...resolveConfig(project, env), found: existsSync(path) };
+}
+
+/** Read and resolve the configuration as it is at `commit`, for `change` and `fix`: the raw blob, with no textconv or
+ * filter. No file there means the defaults. Problems name the file and the commit. */
+export function loadConfigAt(repo, commit, env = process.env) {
+  const label = `${CONFIG_FILE} at ${commit.slice(0, 12)}`;
+  const spec = `${commit}:${CONFIG_FILE}`;
+  const found = tryGit(repo, ['cat-file', '-e', spec]) !== null;
+  let project = {};
+  if (found) {
+    const text = stripBom(git(repo, ['cat-file', 'blob', spec]));
+    try { project = JSON.parse(text); } catch (e) { return { errors: [`${label}: not valid JSON: ${e.message}`] }; }
+  }
+  return { ...resolveConfig(project, env, label), found };
+}
+
+/** The rules at the merge base for `change` and `fix`. Throws on an invalid file there, so the CLI exits 2. */
+function rulesAt(repo, commit, env = process.env) {
+  const loaded = loadConfigAt(repo, commit, env);
+  if (loaded.errors.length) throw new Error(loaded.errors.join('\n'));
+  return { config: loaded.config, rules: { commit, file: loaded.found ? CONFIG_FILE : null } };
+}
+
+/** For each folder, whether REVIEW.md and SKILL.md are blobs there at `commit`, from one `git cat-file --batch-check`. */
+function blobsAt(repo, commit, folders) {
+  // shortcut: a folder whose name holds a newline is left out, since its question would shift every later answer;
+  // ask with `cat-file -Z` (git 2.43+) if such a folder ever needs its REVIEW.md read.
+  const dirs = [...new Set(folders)].filter((d) => !d.includes('\n'));
+  if (!dirs.length) return new Map();
+  const input = dirs.map((d) => `${commit}:${inFolder(d, REVIEW_FILE)}\n${commit}:${inFolder(d, 'SKILL.md')}\n`).join('');
+  const answers = execFileSync('git', ['-C', repo, 'cat-file', '--batch-check'], { input, encoding: 'utf8', maxBuffer: DIFF_MAX_BYTES }).split('\n');
+  return new Map(dirs.map((d, i) => [d, { review: isBlobLine(answers[2 * i]), skill: isBlobLine(answers[2 * i + 1]) }]));
+}
+
+/** The folders whose REVIEW.md is a skill's own file: a SKILL.md beside it at the merge base, or both new in the change. */
+function skillFolders(repo, atBase) {
+  return new Set([...atBase].filter(([d, b]) => b.skill || (!b.review && existsSync(join(repo, inFolder(d, 'SKILL.md'))))).map(([d]) => d));
 }
 
 /** The base ref: the one given, else origin/HEAD, main, master. Throws when none resolves to a commit. */
@@ -170,25 +221,39 @@ function checklistSince(repo, ref, files, config, { maxDiffBytes = DIFF_MAX_BYTE
   return { entries: entries.length, triggered: matchChecklist(entries, files, added || new Map(), unread) };
 }
 
-/** `options.maxDiffBytes` caps the diff read for the checklist (default DIFF_MAX_BYTES). */
-export function collectChange(repo, base, config, options = {}) {
+/** With `config` null, the rules are read at the merge base (`options.env` resolves the budget) and reported as `rules`;
+ * a caller that passes a config gets `rules: null`. `options.maxDiffBytes` caps the diff read for the checklist. */
+export function collectChange(repo, base, config = null, options = {}) {
   const b = resolveBase(repo, base);
   const mergeBase = startOf(repo, b, !!base, 'HEAD');
-  const files = classify(changedSince(repo, mergeBase), config);
+  const loaded = config ? null : rulesAt(repo, mergeBase, options.env);
+  const cfg = config || loaded.config;
+  const files = classify(changedSince(repo, mergeBase), cfg);
+  const atBase = blobsAt(repo, mergeBase, files.flatMap((f) => foldersUp(f.path)));
   return {
-    base: b, mergeBase, files, summary: summarizeChange(files), riskyConfigured: config.riskyPaths.length > 0,
-    checklist: checklistSince(repo, mergeBase, files, config, options),
+    base: b, mergeBase, rules: loaded && loaded.rules, files, summary: summarizeChange(files), riskyConfigured: cfg.riskyPaths.length > 0,
+    checklist: checklistSince(repo, mergeBase, files, cfg, options),
+    flags: rulesFlag(files, cfg, skillFolders(repo, atBase), RULES_MESSAGES.change),
+    reviewFiles: reviewFiles(files.map((f) => f.path), atBase, repo, mergeBase),
   };
 }
 
-export function collectFix(repo, since, base, config, options = {}) {
+/** `config` and `options` as for collectChange. RULES comes after the other flags. */
+export function collectFix(repo, since, base, config = null, options = {}) {
   const sinceSha = tryGit(repo, ['rev-parse', '--verify', '--quiet', `${since}^{commit}`]);
   if (!sinceSha) throw new Error(`not a commit: ${since}`);
   const b = resolveBase(repo, base);
   const mergeBase = startOf(repo, b, !!base, sinceSha);
+  const loaded = config ? null : rulesAt(repo, mergeBase, options.env);
+  const cfg = config || loaded.config;
   const reviewed = git(repo, ['diff', '--name-only', '-z', '--no-renames', mergeBase, sinceSha]).split('\0').filter(Boolean);
-  const files = classify(changedSince(repo, sinceSha), config);
-  return { repo, since: sinceSha, base: b, reviewed, files, flags: fixFlags(files, reviewed), checklist: checklistSince(repo, sinceSha, files, config, options) };
+  const files = classify(changedSince(repo, sinceSha), cfg);
+  const skills = skillFolders(repo, blobsAt(repo, mergeBase, files.filter((f) => isReviewFile(f.path)).map((f) => folderOf(f.path))));
+  return {
+    repo, since: sinceSha, base: b, rules: loaded && loaded.rules, reviewed, files,
+    flags: [...fixFlags(files, reviewed), ...rulesFlag(files, cfg, skills, RULES_MESSAGES.fix)],
+    checklist: checklistSince(repo, sinceSha, files, cfg, options),
+  };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -218,20 +283,20 @@ export function main(argv, env = process.env, out = console.log, err = console.e
   try { a = parseArgs(argv); } catch (e) { err(`${e.message}\n${USAGE}`); return 2; }
   const top = tryGit(a.repo, ['rev-parse', '--show-toplevel']);
   if (!top) { err(`not a git repository: ${a.repo}`); return 2; }
-  const loaded = loadConfig(top, env);
-  if (loaded.errors.length) { err(loaded.errors.join('\n')); return 2; }
-  const config = loaded.config;
   try {
     if (a.cmd === 'config') {
+      const loaded = loadConfig(top, env);
+      if (loaded.errors.length) { err(loaded.errors.join('\n')); return 2; }
+      const config = loaded.config;
       out(a.json ? JSON.stringify({ file: loaded.found ? CONFIG_FILE : null, ...config }, null, 2) : `${loaded.found ? CONFIG_FILE : `No ${CONFIG_FILE}; defaults`}\n${formatConfig(config)}`);
       return 0;
     }
     if (a.cmd === 'change') {
-      const r = collectChange(top, a.base, config);
+      const r = collectChange(top, a.base, null, { env });
       out(a.json ? JSON.stringify(r, null, 2) : formatChange(r));
       return 0;
     }
-    const r = collectFix(top, a.since, a.base, config);
+    const r = collectFix(top, a.since, a.base, null, { env });
     out(a.json ? JSON.stringify(r, null, 2) : formatFix(r));
     return r.flags.length ? 1 : 0;
   } catch (e) {
