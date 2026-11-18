@@ -43,7 +43,7 @@
  * command failed. Needs Node 20+ and git on PATH.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, realpathSync, existsSync } from 'node:fs';
+import { readFileSync, realpathSync, existsSync, lstatSync, readlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs as nodeParseArgs } from 'node:util';
@@ -56,8 +56,11 @@ export * from './review-scope-checklist.mjs';
 // Git and the file system
 // ---------------------------------------------------------------------------------------------------------------
 
-function git(repo, args, env = process.env) {
-  return execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 });
+/** The most output read from one git command, the diff of the added lines included. */
+export const DIFF_MAX_BYTES = 64 * 1024 * 1024;
+
+function git(repo, args, env = process.env, maxBuffer = DIFF_MAX_BYTES) {
+  return execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'], maxBuffer });
 }
 
 function tryGit(repo, args) {
@@ -125,10 +128,11 @@ export function changedSince(repo, ref) {
   return files.sort((a, b) => a.path.localeCompare(b.path));
 }
 
-/** The text lines of an untracked file, or null for a binary file or one that cannot be read (a nested repository, a
- * link to a folder, a dangling link). */
+/** The text lines of an untracked file, or null for a binary file or one that cannot be read (a nested repository).
+ * A symlink is not followed: its one line is its target path, which is what git shows once the link is committed. */
 function textLines(path) {
   try {
+    if (lstatSync(path).isSymbolicLink()) return [readlinkSync(path)];
     const buf = readFileSync(path);
     if (buf.includes(0)) return null;
     return splitLines(buf.toString('utf8'));
@@ -140,10 +144,12 @@ function textLines(path) {
 const DIFF_ARGS = ['diff', '-U0', '--inter-hunk-context=0', '--no-ext-diff', '--no-color', '--no-textconv', '--no-renames', '--src-prefix=a/', '--dst-prefix=b/'];
 
 /** The added lines since `ref` in the working tree (committed, staged and unstaged), plus the whole text of every
- * untracked file in `files`: a Map from path to [{ line, text }]. */
-export function addedLinesSince(repo, ref, files) {
+ * untracked file in `files`: a Map from path to [{ line, text }]. Null when the diff is over `maxBytes`. */
+export function addedLinesSince(repo, ref, files, maxBytes = DIFF_MAX_BYTES) {
   const { GIT_DIFF_OPTS, ...env } = process.env;
-  const added = parseAddedLines(git(repo, [...DIFF_ARGS, ref, '--'], env));
+  let diff;
+  try { diff = git(repo, [...DIFF_ARGS, ref, '--'], env, maxBytes); } catch (e) { if (e.code === 'ENOBUFS') return null; throw e; }
+  const added = parseAddedLines(diff);
   for (const f of files.filter((x) => x.untracked)) {
     const lines = textLines(join(repo, f.path));
     if (lines) added.set(f.path, lines.map((text, i) => ({ line: i + 1, text })));
@@ -151,31 +157,36 @@ export function addedLinesSince(repo, ref, files) {
   return added;
 }
 
-/** The checklist result for files changed since `ref`. The diff is read only when some entry has a regex. */
-function checklistSince(repo, ref, files, config) {
+const sizeText = (n) => (n % 1048576 === 0 ? `${n / 1048576} MiB` : `${n} bytes`);
+
+/** The checklist result for files changed since `ref`. The diff is read only when some entry has a regex. A diff over
+ * `maxDiffBytes` is not read, and every regex entry is printed as triggered instead. */
+function checklistSince(repo, ref, files, config, { maxDiffBytes = DIFF_MAX_BYTES } = {}) {
   const entries = config.checklist;
-  const added = entries.some((e) => e.trigger.added) ? addedLinesSince(repo, ref, files) : new Map();
-  return { entries: entries.length, triggered: matchChecklist(entries, files, added) };
+  const added = entries.some((e) => e.trigger.added) ? addedLinesSince(repo, ref, files, maxDiffBytes) : new Map();
+  const unread = added ? null : `the diff was too large to read (over ${sizeText(maxDiffBytes)})`;
+  return { entries: entries.length, triggered: matchChecklist(entries, files, added || new Map(), unread) };
 }
 
-export function collectChange(repo, base, config) {
+/** `options.maxDiffBytes` caps the diff read for the checklist (default DIFF_MAX_BYTES). */
+export function collectChange(repo, base, config, options = {}) {
   const b = resolveBase(repo, base);
   const mergeBase = startOf(repo, b, !!base, 'HEAD');
   const files = classify(changedSince(repo, mergeBase), config);
   return {
     base: b, mergeBase, files, summary: summarizeChange(files), riskyConfigured: config.riskyPaths.length > 0,
-    checklist: checklistSince(repo, mergeBase, files, config),
+    checklist: checklistSince(repo, mergeBase, files, config, options),
   };
 }
 
-export function collectFix(repo, since, base, config) {
+export function collectFix(repo, since, base, config, options = {}) {
   const sinceSha = tryGit(repo, ['rev-parse', '--verify', '--quiet', `${since}^{commit}`]);
   if (!sinceSha) throw new Error(`not a commit: ${since}`);
   const b = resolveBase(repo, base);
   const mergeBase = startOf(repo, b, !!base, sinceSha);
   const reviewed = git(repo, ['diff', '--name-only', '-z', '--no-renames', mergeBase, sinceSha]).split('\0').filter(Boolean);
   const files = classify(changedSince(repo, sinceSha), config);
-  return { repo, since: sinceSha, base: b, reviewed, files, flags: fixFlags(files, reviewed), checklist: checklistSince(repo, sinceSha, files, config) };
+  return { repo, since: sinceSha, base: b, reviewed, files, flags: fixFlags(files, reviewed), checklist: checklistSince(repo, sinceSha, files, config, options) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------

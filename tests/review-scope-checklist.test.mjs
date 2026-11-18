@@ -140,13 +140,13 @@ describe('matchChecklist', () => {
   test('paths only: any changed file counts, a deleted one too, and `by` lists the matched paths in order', () => {
     const files = [file('db/schema.sql', { deleted: true }), file('migrations/1.sql'), file('src/a.py')];
     const r = matchChecklist([entry({ paths: ['migrations/**', 'db/schema.*'] })], files, new Map());
-    assert.deepEqual(r, [{ entry: 1, check: 'c', why: 'w', by: ['db/schema.sql', 'migrations/1.sql'], timedOut: false }]);
+    assert.deepEqual(r, [{ entry: 1, check: 'c', why: 'w', by: ['db/schema.sql', 'migrations/1.sql'], timedOut: false, error: null }]);
   });
 
   test('regex only: every added line of every changed file is tested, and `by` is the first match as path:line', () => {
     const added = new Map([['a.py', lines('x = 1', 'DROP TABLE t')], ['b.go', lines('DROP COLUMN c')]]);
     const r = matchChecklist([entry({ added: 'DROP\\s+(TABLE|COLUMN)' })], [file('a.py'), file('b.go')], added);
-    assert.deepEqual(r, [{ entry: 1, check: 'c', why: 'w', by: ['a.py:2'], timedOut: false }]);
+    assert.deepEqual(r, [{ entry: 1, check: 'c', why: 'w', by: ['a.py:2'], timedOut: false, error: null }]);
   });
 
   test('the regex has no flags unless the trigger asks for "i"', () => {
@@ -181,7 +181,7 @@ test('a configured checklist prints its triggered entries after the code files l
   const r = {
     base: 'main', mergeBase: 'a'.repeat(40), riskyConfigured: false, files: [],
     summary: { files: 1, added: 1, removed: 0, risky: [], tests: [], docs: [], code: ['m.sql'] },
-    checklist: { entries: 2, triggered: [{ entry: 2, check: 'Keep the column.', why: 'PR 412.', by: ['a', 'b', 'c', 'd', 'e'], timedOut: false }] },
+    checklist: { entries: 2, triggered: [{ entry: 2, check: 'Keep the column.', why: 'PR 412.', by: ['a', 'b', 'c', 'd', 'e'], timedOut: false, error: null }] },
   };
   const text = formatChange(r);
   assert.match(text, /\nCode files: 1; [^\n]*\nChecklist: 1 of 2 entries triggered\n {2}#2 Keep the column\.\n {5}why: PR 412\.\n {5}triggered by: a, b, c and 2 more\nNote: /);

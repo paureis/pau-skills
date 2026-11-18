@@ -101,7 +101,7 @@ test('a regex that backtracks for ever times out: its entry prints as triggered,
     assert.equal(r.error, undefined, 'killed by the timeout');
     assert.equal(r.code, 0, r.stderr);
     if (args.length === 1) assert.match(r.stdout, /\n {2}#1 slow\n {5}why: PR 1\.\n {5}triggered: its regex timed out after 1000 ms; check it by hand\n/);
-    else assert.deepEqual(json(r).checklist.triggered, [{ entry: 1, check: 'slow', why: 'PR 1.', by: [], timedOut: true }]);
+    else assert.deepEqual(json(r).checklist.triggered, [{ entry: 1, check: 'slow', why: 'PR 1.', by: [], timedOut: true, error: 'its regex timed out after 1000 ms' }]);
   }
 });
 
@@ -138,7 +138,7 @@ test('a deletion-only hunk is read for its old count, so a removed "-- header" s
   assert.deepEqual(triggered(run(dir, ['change', '--json', '--base', start])), [[1, ['m.sql:5']]]);
 });
 
-test('an untracked file gets no empty last line from its final newline, and loses one \\r per line', () => {
+test('an untracked file gets no empty last line from its final newline, and loses one carriage return per line', () => {
   const { dir } = setup({ checklist: [entry({ added: '^$' }, 'empty line'), entry({ added: '\\r' }, 'carriage return')] });
   put(dir, 'u.txt', 'one\r\ntwo\r\n');
   assert.deepEqual(triggered(run(dir, ['change', '--json'])), []);

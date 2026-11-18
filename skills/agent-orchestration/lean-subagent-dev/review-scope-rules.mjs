@@ -8,8 +8,6 @@ export const BUDGETS = ['tight', 'normal', 'generous'];
 /** Files a change must touch before it goes to a subagent, by budget. A subagent re-reads what it needs, so a tight
  * budget delegates less, not more. */
 export const MIN_FILES = { tight: 5, normal: 3, generous: 2 };
-/** How long one checklist regex may run over all the lines it is tested on before its entry counts as triggered. */
-export const REGEX_TIMEOUT_MS = 1000;
 
 export const DEFAULTS = {
   mustFix: [
@@ -226,7 +224,7 @@ function checklistLines(c) {
   for (const t of c.triggered) {
     lines.push(`  #${t.entry} ${t.check}`, `     why: ${t.why}`);
     const by = t.by.length > 3 ? `${t.by.slice(0, 3).join(', ')} and ${t.by.length - 3} more` : t.by.join(', ');
-    lines.push(t.timedOut ? `     triggered: its regex timed out after ${REGEX_TIMEOUT_MS} ms; check it by hand` : `     triggered by: ${by}`);
+    lines.push(t.error ? `     triggered: ${t.error}; check it by hand` : `     triggered by: ${by}`);
   }
   return lines;
 }
