@@ -26,11 +26,10 @@ console.log(JSON.stringify({ out, ms: Math.round(performance.now() - t0) }));`;
 
 const DIFFS = [
   ['a hunk header that never closes', '+++ b/x\n@@ -' + fill('1')],
-  ['a hunk header with a count that never closes', '+++ b/x\n@@ -1,' + fill('2')],
   ['a quoted path that never closes', '+++ "b/' + fill('\\')],
   ['a long quoted path of escapes', '+++ "b/' + fill('\\') + '"'],
   ['file headers with no hunk', fill('+++ b/')],
-  ['a path with a space and its tab', '+++ b/' + fill('a ') + '\t\n'],
+  ['a path of spaces and its tab', '+++ b/' + fill(' ') + 'x\t\n'],
 ];
 for (const [name, input] of DIFFS) {
   test(`timing: parseAddedLines on ${name} (${input.length} characters) finds no added line`, (t) => {

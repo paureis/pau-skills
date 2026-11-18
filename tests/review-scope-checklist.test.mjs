@@ -94,12 +94,13 @@ describe('parseAddedLines', () => {
     assert.deepEqual(at(m, 'main.go'), [{ line: 2, text: 'func a() {}' }, { line: 3, text: 'func b() {}' }]);
   });
 
-  test('a deleted file has no added lines, and a binary file has no hunks', () => {
+  test('a deleted file has no added lines, a binary file has no hunks, and the file after them is read', () => {
     const m = parseAddedLines(diff(
       'diff --git a/gone.py b/gone.py', 'deleted file mode 100644', '--- a/gone.py', '+++ /dev/null', '@@ -1 +0,0 @@', '-x = 1',
       'diff --git a/logo.png b/logo.png', 'Binary files a/logo.png and b/logo.png differ',
+      'diff --git a/next.py b/next.py', 'new file mode 100644', '--- /dev/null', '+++ b/next.py', '@@ -0,0 +1 @@', '+y = 2',
     ));
-    assert.deepEqual([...m.keys()], []);
+    assert.deepEqual([...m.entries()], [['next.py', [{ line: 1, text: 'y = 2' }]]]);
   });
 
   test('a content line that reads like a file header is still content', () => {
