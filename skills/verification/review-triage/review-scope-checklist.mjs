@@ -15,8 +15,9 @@ export function splitLines(text) {
 
 const ESCAPES = new Map([['a', 7], ['b', 8], ['t', 9], ['n', 10], ['v', 11], ['f', 12], ['r', 13], ['"', 34], ['\\', 92]]);
 
-/** Undo git's C quoting of a path: `"caf\303\251 \"q\""` becomes `café "q"`. Octal escapes are UTF-8 bytes, and a raw
- * character (core.quotePath=false) is encoded as UTF-8. A path that is not quoted comes back as it is. */
+/** Undo git's C quoting of a path: `"caf\303\251 \"q\""` becomes `caf` and an e with an acute accent, a space and
+ * `"q"`. Octal escapes are UTF-8 bytes, and a raw character (core.quotePath=false) is encoded as UTF-8. A path that is
+ * not quoted comes back as it is. */
 export function unquotePath(s) {
   if (s.length < 2 || s[0] !== '"' || !s.endsWith('"')) return s;
   const enc = new TextEncoder();

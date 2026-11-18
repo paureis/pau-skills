@@ -116,12 +116,12 @@ describe('parseAddedLines', () => {
     const m = parseAddedLines(diff(
       '--- "a/caf\\303\\251 \\"q\\".py"', '+++ "b/caf\\303\\251 \\"q\\".py"', '@@ -0,0 +1 @@', '+x = 1',
       '--- /dev/null', '+++ "b/tab\\there\\\\.py"', '@@ -0,0 +1 @@', '+y = 2',
-      '--- /dev/null', '+++ "b/raw é \\"q\\".go"', '@@ -0,0 +1 @@', '+var z = 3',
+      '--- /dev/null', '+++ "b/raw \u00e9 \\"q\\".go"', '@@ -0,0 +1 @@', '+var z = 3',
     ));
-    assert.deepEqual([...m.keys()], ['café "q".py', 'tab\there\\.py', 'raw é "q".go']);
+    assert.deepEqual([...m.keys()], ['caf\u00e9 "q".py', 'tab\there\\.py', 'raw \u00e9 "q".go']);
   });
 
-  test('a path with a space loses the tab git ends it with, and only that tab', () => {
+  test('a path with a space loses the tab git ends it with', () => {
     const m = parseAddedLines(diff('--- a/my file.py\t', '+++ b/my file.py\t', '@@ -1 +1 @@', '-a', '+b'));
     assert.deepEqual([...m.keys()], ['my file.py']);
   });
