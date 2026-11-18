@@ -9,6 +9,7 @@ Layer:       <architecture | types | lint or CI check | test | hook | checklist 
 Mechanism:   <hook event + matcher | git hook | linter rule | CI check | test | checklist entry in
              .claude/review-rules.json>, output <exit 2 | ask | context | shown to the reviewer>
              Ratchet: <none | baseline n in <file>>   Why: <one line>
+Rollout:     observe until <date or condition> | enforced
 Files:       <guard path>, <test path>, <settings or config path>
 Tests:       <n> DENY, <n> PASS, subprocess checks | ratchet: <n> counted, <n> not, baseline cases | the case that
              no longer builds; all green

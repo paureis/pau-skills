@@ -136,7 +136,9 @@ Do all four, every time. A subagent's report is a claim, not evidence.
 2. **Read the diff.** `git diff <start commit>` and
    `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" change --base <start commit>`. A file outside the brief's list is a
    finding. Pass the checklist entries it prints to the reviewer as claims to grade; at a tight budget, grade them
-   yourself.
+   yourself. It reads the rules as committed at the start commit and lists the REVIEW.md files above each changed
+   file (one next to a SKILL.md is skipped) with the `git show` command for each: give those to the reviewer. A
+   `RULES` flag means the change edits the rules file, a REVIEW.md or a file the rules name; `fix` raises it too.
 3. **Run the checks yourself**, after the subagent finished, in the checkout you will push from.
 4. **Run a control where it matters**: a run that would fail if the change were wrong, and does. For example, the
    right input passes and the wrong one is rejected; the old version fails the new test. A control is required for
