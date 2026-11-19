@@ -66,3 +66,16 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
     the plan check; a reviewer that ran the old and new hooks side by side as processes and timed long inputs.
   - Did not: no plan check and no listed mutation caught the flag pattern's exponential time; only the reviewer's
     timing did.
+- 2026-11-18: the eighteenth batch, Q24 verification ideas from the Claude Code team, merged as
+  [pull request 76](https://github.com/paureis/pau-skills/pull/76) (decision 26). Four slices on the roster: the
+  diff-triggered checklist, property and differential tests beside it, rules from the merge base with REVIEW.md and
+  the `RULES` flag on the checklist's merge, and geppetto roster 6 merged last with the installed copies. Every brief
+  had a read-only plan check that built the slice in a clone, every slice a fresh reviewer and one fix round. 1,892
+  tests (1,807 before); 11 skills changed, no hook. Q25 (Claude Code mods) was added to the backlog. With the roster:
+  - Worked: plan checks that prototyped each slice found the hostile git settings, the rules file triggering itself and
+    a REVIEW.md loophole before any builder started; reviewers that ran their own mutations found tests that could not
+    fail in every slice; a separate roster slice merged last kept one reviewer for the whole batch.
+  - Did not: the builders came back in the background, so `eng-lead` only planned and launched, and the main session
+    started the reviewers and sent the fix rounds; the owner's profile README could not be updated from the session
+    (the repository is outside its access).
+

@@ -2,7 +2,7 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The eighteenth batch is done (Q24, verification ideas from the Claude Code team). **Q21**, the subagent watchdog, is
+The eighteenth batch is done (Q24, verification ideas from the Claude Code team, pull request 76). **Q21**, the subagent watchdog, is
 next. Read "Things that bit the eighteenth batch" (`docs/backlog/things-that-bit/batch-18.md`) first; the Q24
 kickoff message is in this file's history (the commit before Q24's merge).
 

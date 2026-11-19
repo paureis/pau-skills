@@ -170,7 +170,8 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 21. Done: the sixteenth batch, Q22 two hooks that get in the way (pull request 73); its scope was decision 24.
 22. Done: the seventeenth batch, Q23 the lazy senior developer, adapted from ponytail (pull request 74); its scope was
     decision 25.
-23. Done: the eighteenth batch, Q24 verification ideas from the Claude Code team; its scope was decision 26.
+23. Done: the eighteenth batch, Q24 verification ideas from the Claude Code team (pull request 76); its scope was
+    decision 26.
 24. **Next:** Q21 a subagent watchdog (decisions 22 and 23). Its kickoff is in [backlog/kickoff.md](backlog/kickoff.md).
     After it, Q25 Claude Code mods, which needs the owner's decision on the layout and a measured prototype first.
 
