@@ -15,6 +15,12 @@ full. Change no code.
   data comes in, what is stored and what goes out.
 - A change can break code it does not touch. When a signature, a return value or a behaviour changes, search for
   every caller.
+- For a change, find the project's checklist entries the diff triggers (`checklist` in
+  `.claude/review-rules.json`). If `review-triage` or `lean-subagent-dev` is installed, run its `review-scope.mjs`
+  (the copy in that skill's folder): `node review-scope.mjs change --base <base>` prints them. Otherwise match them by
+  hand: a `paths` glob against the changed files; an `added` regex against the added lines of
+  `git diff -U0 $(git merge-base <base> HEAD)` (the merge base, so lines the base branch removed since do not count)
+  and the whole text of untracked files; an entry with both triggers only on a matching line in a matching file.
 - Find the expected load (README, deploy config, job schedules): one person running a script, or many users and
   processes at once. Judge scale against it, and say which load you assumed.
 - For a repository or a folder: read the README, the build and deploy config, the dependency list, the entry points
@@ -33,7 +39,10 @@ full. Change no code.
    state or lists that only grow, a query per item, quadratic work on big input, per-process state that must be
    shared.
 4. **A missing test for risky logic:** a branch, a parser, money, security, a data write or a bug fix with no test
-   that fails when it breaks. Ask for one good test, not coverage.
+   that fails when it breaks. Ask for one good test, not coverage. For a parser, money or a data write, ask for a
+   property test: a round trip, an invariant, idempotency, or equivalence with a naive version, seeded so a failure
+   replays. If `tdd` is installed, its PROPERTIES.md covers how; without it, use the property test library of the
+   project's language (Hypothesis, fast-check, proptest, gopter) or a loop over seeded random inputs.
 5. **Speed:** big slowdowns are problems. Small wins, such as work repeated in a hot loop, are suggestions.
 6. **Lean:** code that should not exist or should be smaller.
    - Delete: dead code, options and flags no caller sets, speculative features.
@@ -85,6 +94,8 @@ how many smaller ones you left out. Each finding has four short parts:
 
 End with:
 
+- `Checklist:` each triggered entry by its number, passed or failed, when the project has a checklist. A failed
+  entry is also a finding above.
 - `Verdict:` one line: ship, or which findings to fix first.
 - `Lean: -N lines possible` when lean findings exist, with `-M dependencies` for a repository.
 - `Not checked:` what mattered and you could not read or run.

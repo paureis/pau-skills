@@ -52,3 +52,10 @@ brief's file list and test first. `reviewer` step 9 is `ponytail-review`'s lean 
 file:line and a search, contract items and the never-cut list never reported, a shortcut a decision, size after
 correct, safe and tested, and no claim's verdict changed. `eng-lead` sends such a finding with its case to the fix
 round and drops one without.
+
+**Roster 6 (Q24, 2026-11-18).** From the Claude Code team's article on verification (claude.dev blog, 2026-11-16), ideas only, no shared text. The reviewer gets the checklist items the diff triggers, or the
+`review-scope.mjs change` command that prints them, and grades each as a claim named `Checklist #<n>`: its check is
+the claim, its why the past mistake behind it. Only an exit 0 with no Checklist line means none is configured; a failed
+command leaves the checklist claims UNVERIFIED. It reads each listed REVIEW.md with `git show <base>:<path>`, nearest
+folder first, and a REVIEW.md the change edits still applies at its base version. `eng-lead` has no Bash, so it puts
+the command, filled with the slice's worktree and base commit, into each reviewer prompt.

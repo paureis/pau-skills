@@ -65,7 +65,7 @@ green by skipping the failing test.
 - `test-tamper-guard` (hook) asks you before a test is skipped, focused or stripped of assertions.
 - `suppression-reason` (hook) tells the agent when it adds a lint or type-check suppression with no reason next to it.
 - `tdd` builds one behaviour at a time, test first, and keeps a test only when it fails if the behaviour breaks and
-  still passes after a pure refactor.
+  still passes after a pure refactor. For parsers, money and rewrites it adds seeded property and differential tests.
 - `mutation-test` breaks the code on purpose to prove a test catches it, preferring a real past mistake from git
   history, and checks that a pure refactor leaves the test green.
 - `evaluator` has a fresh agent, which did not build the change, grade it against its acceptance criteria.
@@ -174,7 +174,9 @@ by itself. Half the findings are preferences, and the fix for a minor one lands 
 - `review-triage` keeps only findings that name a failure (or a needless addition the change made, with its case), weighs the risk of each fix as well as the problem, and
   sorts them into must fix, fix if cheap, or leave. Every fix gets a test that fails without it, the second look covers
   only the fix, and there is one review round and one fix round. It works for any review, human or AI. When a review
-  is only nits, it says the change is probably fine instead of asking for another round.
+  is only nits, it says the change is probably fine instead of asking for another round. A checklist of past mistakes
+  in `.claude/review-rules.json` shows the reviewer only the items the diff triggers, and the rules and per-folder
+  REVIEW.md files are read from the commit the change started from, so a change cannot edit the checks that judge it.
 - `lean-subagent-dev` uses the same method for the review of each subagent's work.
 
 ### 8. The careful work nobody wants to do

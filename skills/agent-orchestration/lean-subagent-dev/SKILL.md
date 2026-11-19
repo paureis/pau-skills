@@ -135,7 +135,10 @@ Do all four, every time. A subagent's report is a claim, not evidence.
 1. **Read the report.** Every item under "unsure about" becomes a finding for triage.
 2. **Read the diff.** `git diff <start commit>` and
    `node "${CLAUDE_SKILL_DIR}/review-scope.mjs" change --base <start commit>`. A file outside the brief's list is a
-   finding.
+   finding. Pass the checklist entries it prints to the reviewer as claims to grade; at a tight budget, grade them
+   yourself. It reads the rules as committed at the start commit and lists the REVIEW.md files above each changed
+   file (one next to a SKILL.md is skipped) with the `git show` command for each: give those to the reviewer. A
+   `RULES` flag means the change edits the rules file, a REVIEW.md or a file the rules name; `fix` raises it too.
 3. **Run the checks yourself**, after the subagent finished, in the checkout you will push from.
 4. **Run a control where it matters**: a run that would fail if the change were wrong, and does. For example, the
    right input passes and the wrong one is rejected; the old version fails the new test. A control is required for
@@ -192,7 +195,9 @@ Optional `.claude/review-rules.json` in the repository. Every key is optional:
   "mustFix": ["a command runs against the wrong account", "a test touches a real external service"],
   "riskyPaths": ["src/core/decide/**", "migrations/"],
   "checks": ["make test", "make lint"],
-  "delegation": { "budget": "normal", "minFiles": 3, "log": "docs/delegation-log.md" }
+  "delegation": { "budget": "normal", "minFiles": 3, "log": "docs/delegation-log.md" },
+  "checklist": [{ "trigger": { "paths": ["migrations/**"], "added": "DROP\\s+TABLE" },
+                  "check": "The old table stays until every reader has moved.", "why": "PR 412" }]
 }
 ```
 
@@ -200,7 +205,9 @@ Optional `.claude/review-rules.json` in the repository. Every key is optional:
 more than it repairs. `delegation.budget` is `tight`, `normal` or `generous`; the `LEAN_SUBAGENT_BUDGET` environment
 variable wins over it, because the budget belongs to the person more than to the project. `minFiles` overrides the
 budget's threshold. Without `log` nothing is logged. `testPaths` and `docPaths` replace the default globs for tests
-and documentation. An unknown key is an error, so a typo cannot switch a rule off without anyone noticing.
+and documentation. A `checklist` entry is a check a reviewer makes only when the diff triggers it: a changed file
+matches its `paths` globs, an added line matches its `added` regex, or both when it has both. An unknown key is an
+error, so a typo cannot switch a rule off without anyone noticing.
 
 ## Report to the owner after each task
 

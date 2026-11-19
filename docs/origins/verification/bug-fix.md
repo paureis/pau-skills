@@ -32,3 +32,8 @@ the same wrong belief, and call it fixed from a unit test or from one run.
 **Why.** The playbook depends on Cursor and on other pstack skills for its key rules. A Claude Code agent needs them
 in one place, for any language and surface. Tried on a planted off-by-one whose obvious fix is a guard: the
 legitimacy question led to the producer, not the guard.
+
+**Q24 (2026-11-18).** From the Claude Code team's article on verification (claude.dev blog, 2026-11-16), ideas only, no shared text. `EVIDENCE.md` gains a differential check for a rewrite: when the smallest
+justified fix still rewrites a function, old (in a worktree outside the repository) and new run on the same seeded
+inputs, the bug's trigger is written as a condition, and every difference outside it is a blast-radius finding for step
+8 item 4.

@@ -2,47 +2,11 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The seventeenth batch is done (Q23, the lazy senior developer, pull request 74), and Q22 shipped in pull request 73.
-Two items are next, in this order: **Q24**, verification ideas from the Claude Code team (decision 26,
-`docs/backlog/q24.md`), and then **Q21**, the subagent watchdog. Read "Things that bit the seventeenth batch"
-(`docs/backlog/things-that-bit/batch-17.md`) first.
+The eighteenth batch is done (Q24, verification ideas from the Claude Code team). **Q21**, the subagent watchdog, is
+next. Read "Things that bit the eighteenth batch" (`docs/backlog/things-that-bit/batch-18.md`) first; the Q24
+kickoff message is in this file's history (the commit before Q24's merge).
 
-The owner starts Q24 with this message:
-
-```text
-You are the orchestrator for Q24 in this repository: verification ideas from the Claude Code team. Do not build it
-yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My choices are
-decision 26 in docs/backlog/decisions.md; build what docs/backlog/q24.md asks, in its order of value.
-
-Before anything else, read these in full:
-1. CLAUDE.md and docs/ADDING-A-SKILL.md (step 8 covers the version bumps).
-2. docs/backlog/q24.md, decisions 25 and 26, docs/backlog/how-to-run-a-batch.md ("With the roster") and
-   docs/backlog/things-that-bit/batch-17.md.
-3. skills/agent-orchestration/lean-subagent-dev/ (SKILL.md, review-scope.mjs and its modules, TRIAGE.md),
-   skills/verification/review-triage/, skills/verification/tdd/, skills/planning/lazy-senior/ (BUILD.md, REVIEW.md),
-   skills/guards/rule-to-hook/, skills/agent-orchestration/geppetto/roster/reviewer.md, and their tests.
-
-First, before any brief:
-- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
-  builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds.
-- Review q24.md against the code and tell me anything you would change; record it in the item.
-- Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone, tries
-  mutations of its own and times long inputs to any new pattern, and a fresh reviewer per slice. Commits carry the
-  harness's two attribution trailers; say so once in the standing orders.
-
-Rules that matter most:
-- Every skill works installed alone; language-neutral; Node standard library only; plain English, no em or en dashes;
-  no tracked file over its size limit. The schema in review-scope.mjs rejects unknown keys: add the new ones there.
-- Every new test fails without the change; prove each with mutate.sh and report every "# tests" line. Time every new
-  regex on long input that does not match, in a child process with a kill timeout.
-- Builders commit and never push. Merge the slices into the working branch, run the four repository checks, then ask
-  me before you push and open the pull request. After the merge, hand me one zip with every changed skill's zip and
-  the commands I run by hand.
-
-When it is ready, tell me in plain words what changed, what the reviews found, and anything I need to decide.
-```
-
-After Q24, the next session starts Q21 with this message:
+The next session starts Q21 with this message:
 
 ```text
 You are the orchestrator for Q21 in this repository: a subagent watchdog. Do not build it yourself; run the roster in

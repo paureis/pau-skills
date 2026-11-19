@@ -101,6 +101,14 @@ be checked this way. Check it by hand: commit first, make the refactor, run the 
 and restore them with `git checkout -- <files>`, and confirm `git status` is clean. Delete them first: `git checkout`
 and `git status` skip a file whose size and modification time match what git recorded, even when its content differs.
 
+`KEPT` and `BROKE` say something about the test only when the refactor is pure, and the suite cannot tell you that.
+Before you trust either, most of all for a refactor across files checked by hand, confirm it with a differential run:
+check out HEAD in a folder outside the repository (`git worktree add <dir> HEAD`), make the refactor in this tree, run
+both on the same seeded inputs and compare the results, then restore the files as above and run
+`git worktree remove <dir>`. Any difference means the edit changed behaviour; choose another. Use the differential
+section of `tdd`'s PROPERTIES.md if `tdd` is installed; without it, generate the inputs with the standard library's
+seeded random generator (or a small seeded generator of a few lines where it has none) and print the seed.
+
 ## Rules
 
 - One mutation (or refactor) per run, and one file per run.

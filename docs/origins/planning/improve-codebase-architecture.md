@@ -34,3 +34,7 @@ boolean sign and "do not force an abstraction"), 8 in `refactoring.md` ("type ch
 - Broader trigger phrases.
 
 **Why.** I run it in sessions and tools where subagents and the sibling skills are not available.
+
+**Q24 (2026-11-18).** From the Claude Code team's article on verification (claude.dev blog, 2026-11-16), ideas only, no shared text. Step 1's baseline becomes a differential test next to the pin, with the
+base commit in a worktree outside the repository. Step 2 proves it can fail; step 5 runs it once more, keeps a
+difference only on the user's yes in the approved differences, deletes the harness and reports them.

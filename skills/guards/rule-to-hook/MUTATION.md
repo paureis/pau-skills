@@ -7,6 +7,8 @@ Names and `${CLAUDE_SKILL_DIR}` mean what SKILL.md says: `${CLAUDE_SKILL_DIR}` i
   no longer matches the violation), and see the baseline cases from step 3 fail. With a linter's own baseline
   (ESLint suppressions, Ruff `noqa`), there is no code of yours to break: add one instance to a scratch copy and see
   it fail.
+- **Review checklist entry:** there is no code to break; the proof is that the trigger reads the diff right. See
+  the end of this file.
 - **Architecture or types:** nothing to mutate. The proof is the step 3 case that no longer builds, or the old way
   that no longer exists. Skip to the past mistake.
 
@@ -36,3 +38,16 @@ nothing. One file in today's tree keeps git, today's baseline and today's config
 folder, because it is not a git repository and the old tree's count is not today's. With no fixed violation in
 history, say "no past mistake" in the report; the mutation (or, for architecture and types, the case that no longer
 builds) is then the only proof.
+
+For a checklist entry, run the trigger on the commit of a past violation (it must trigger) and on a near-miss (it must
+not). If `review-triage` or `lean-subagent-dev` is installed, use the `review-scope.mjs` in that skill's folder, in a
+scratch worktree whose base commit holds the entry, so the rules come from the commit the change starts from:
+1. `git worktree add --detach <tmp> <sha>^`, write the entry into `<tmp>/.claude/review-rules.json`, commit it there.
+2. Apply the violation, `git diff <sha>^ <sha> | git -C <tmp> apply`, run
+   `node review-scope.mjs change --base HEAD --repo <tmp>`, and see the entry listed.
+3. Undo it (`git -C <tmp> checkout -- .` and `git -C <tmp> clean -fd`), write the near-miss into a file there, run
+   the same command and see the entry absent. Then `git worktree remove --force <tmp>`.
+
+Without those skills, match by hand: the globs against `git diff --name-only <sha>^ <sha>`, and the regex against the
+added lines of `git diff -U0 <sha>^ <sha>` (those that start with `+` but not `+++`). The regex is in JavaScript
+syntax, so test it with `node -e`, or with `grep -E` when it uses nothing beyond a plain pattern.

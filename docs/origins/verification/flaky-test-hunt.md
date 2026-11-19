@@ -15,3 +15,6 @@ the base CI actually tested (a pull request's merge commit names it); one re-run
 re-run only when asked; two identical failures end the hunt only when CI history and a few local runs agree, since a
 one-in-three flake fails twice in a row one time in nine. A cold run showed the description did not start the skill
 for a failed CI run someone wanted to retry, so it now names that situation.
+
+**Later changes (2026-11-18).** TAXONOMY.md: proptest prints the shrunk case, a `cc` seed line and the path of its
+proptest-regressions file (seen in a run of proptest 1.12.0).

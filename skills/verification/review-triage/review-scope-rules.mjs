@@ -1,4 +1,6 @@
-// The constants and pure functions of review-scope.mjs: configuration, globs, classifying files, fix flags, formatting.
+// The constants and pure functions of review-scope.mjs: configuration, globs, classifying files, fix flags, the RULES
+// flag and the REVIEW.md listing, formatting.
+// It compiles a checklist regex to validate it, and never runs one: review-scope-checklist.mjs does, with a time limit.
 // It imports nothing and touches neither git nor the file system.
 
 export const CONFIG_FILE = '.claude/review-rules.json';
@@ -24,6 +26,7 @@ export const DEFAULTS = {
   docPaths: ['docs/**', 'doc/**', '**/*.md', '**/*.mdx', '**/*.rst', '**/*.adoc', '**/LICENSE*', '**/CHANGELOG*'],
   checks: [],
   delegation: { budget: 'normal', minFiles: null, log: null },
+  checklist: [],
 };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -49,7 +52,8 @@ export function globToRegExp(glob) {
   for (let i = 0; i < g.length; i++) {
     const c = g[i];
     if (c === '*' && g[i + 1] === '*') {
-      if (g[i + 2] === '/') { out += '(?:.*/)?'; i += 2; } else { out += '.*'; i += 1; }
+      // Repeated `**/` collapse into one: each would add a nested `.*`, and together they backtrack for seconds.
+      if (g[i + 2] === '/') { out += '(?:.*/)?'; i += 2; while (g.startsWith('**/', i + 1)) i += 3; } else { out += '.*'; i += 1; }
     } else if (c === '*') out += '[^/]*';
     else if (c === '?') out += '[^/]';
     else if (c === '{') { out += '(?:'; depth++; }
@@ -69,12 +73,43 @@ export function anyMatch(globs) {
 }
 
 const isStringList = (v) => Array.isArray(v) && v.every((x) => typeof x === 'string' && x.trim() !== '');
+const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const ENTRY_KEYS = ['trigger', 'check', 'why'];
+const TRIGGER_KEYS = ['paths', 'added', 'flags'];
+
+/** The problems in a `checklist` value, each naming its entry as `checklist #<n>`, 1-based. */
+function checklistErrors(list) {
+  if (!Array.isArray(list)) return ['"checklist" must be a list of entries with trigger, check and why'];
+  const errs = [];
+  list.forEach((e, i) => {
+    const at = `checklist #${i + 1}`;
+    if (!isObject(e)) { errs.push(`${at} must be an object with trigger, check and why`); return; }
+    for (const k of Object.keys(e)) if (!ENTRY_KEYS.includes(k)) errs.push(`${at}: unknown key "${k}" (known: ${ENTRY_KEYS.join(', ')})`);
+    for (const k of ['check', 'why']) if (typeof e[k] !== 'string' || e[k].trim() === '') errs.push(`${at}: "${k}" must be a non-empty string`);
+    const t = e.trigger;
+    if (!isObject(t)) { errs.push(`${at}: "trigger" must be an object with paths, added or both`); return; }
+    for (const k of Object.keys(t)) if (!TRIGGER_KEYS.includes(k)) errs.push(`${at}: unknown key "trigger.${k}" (known: ${TRIGGER_KEYS.join(', ')})`);
+    const has = (k) => Object.hasOwn(t, k);
+    if (!has('paths') && !has('added')) errs.push(`${at}: "trigger" needs paths, added or both`);
+    if (has('paths')) {
+      if (!isStringList(t.paths) || t.paths.length === 0) errs.push(`${at}: "trigger.paths" must be a non-empty list of non-empty strings`);
+      else for (const g of t.paths) { try { globToRegExp(g); } catch (err) { errs.push(`${at}: "trigger.paths": ${err.message}`); } }
+    }
+    if (has('flags') && t.flags !== 'i') errs.push(`${at}: "trigger.flags" may only be "i"`);
+    else if (has('flags') && !has('added')) errs.push(`${at}: "trigger.flags" needs "added"`);
+    if (has('added')) {
+      if (typeof t.added !== 'string' || t.added === '') errs.push(`${at}: "trigger.added" must be a non-empty string`);
+      else { try { new RegExp(t.added, t.flags === 'i' ? 'i' : ''); } catch (err) { errs.push(`${at}: "trigger.added" is not a valid regular expression: ${err.message}`); } }
+    }
+  });
+  return errs;
+}
 
 /** Validate a parsed config object. Returns a list of problems; empty means valid. */
 export function validateConfig(cfg) {
   const errs = [];
   if (cfg === null || typeof cfg !== 'object' || Array.isArray(cfg)) return ['the configuration must be a JSON object'];
-  const known = ['mustFix', 'riskyPaths', 'testPaths', 'docPaths', 'checks', 'delegation'];
+  const known = ['mustFix', 'riskyPaths', 'testPaths', 'docPaths', 'checks', 'delegation', 'checklist'];
   for (const k of Object.keys(cfg)) if (!known.includes(k)) errs.push(`unknown key "${k}" (known: ${known.join(', ')})`);
   for (const k of ['mustFix', 'riskyPaths', 'testPaths', 'docPaths', 'checks']) {
     if (k in cfg && !isStringList(cfg[k])) errs.push(`"${k}" must be a list of non-empty strings`);
@@ -92,6 +127,7 @@ export function validateConfig(cfg) {
       if ('log' in d && (typeof d.log !== 'string' || d.log.trim() === '')) errs.push('"delegation.log" must be a non-empty path');
     }
   }
+  if ('checklist' in cfg) errs.push(...checklistErrors(cfg.checklist));
   return errs;
 }
 
@@ -114,6 +150,7 @@ export function resolveConfig(project = {}, env = {}, label = CONFIG_FILE) {
       docPaths: project.docPaths || DEFAULTS.docPaths,
       checks: project.checks || DEFAULTS.checks,
       delegation: { budget, budgetFrom, minFiles: d.minFiles || MIN_FILES[budget], log: d.log || null },
+      checklist: project.checklist || DEFAULTS.checklist,
     },
   };
 }
@@ -176,17 +213,118 @@ export function fixFlags(fix, reviewed) {
 
 const shQuote = (s) => (/^[A-Za-z0-9._\/@:=+-]+$/.test(s) ? s : `'${String(s).replace(/'/g, `'\\''`)}'`);
 
+// What judges a change: the rules file, a folder's REVIEW.md, and the files the rules name.
+export const REVIEW_FILE = 'REVIEW.md';
+export const RULES_MESSAGES = {
+  change: 'the change edits what judges it. The rules shown come from the merge base, and these edits are part of the change under review.',
+  fix: 'the fix edits what judges it. Revert it unless a finding asked for it, and say so.',
+};
+
+/** The folder of a repository path, '' for the root; a file name in a folder; whether a path is a REVIEW.md. */
+export const folderOf = (p) => p.slice(0, Math.max(p.lastIndexOf('/'), 0));
+export const inFolder = (d, name) => (d ? `${d}/${name}` : name);
+export const isReviewFile = (p) => p === REVIEW_FILE || p.endsWith(`/${REVIEW_FILE}`);
+
+/** The folders from a path's own up to the root, nearest first. */
+export function foldersUp(p) {
+  const out = [];
+  for (let d = folderOf(p); d; d = folderOf(d)) out.push(d);
+  return [...out, ''];
+}
+
+/** True for a `git cat-file --batch-check` answer `<oid> blob <size>`, never for `<commit>:<path> missing`. */
+export const isBlobLine = (line) => /^[0-9a-f]{40,64} blob \d+$/.test(line);
+
+/** The pieces of a command that can name a path, word for word: the text split on whitespace and ' " ` = ( ) [ ] , ;,
+ * each cut at a pytest `::`, without a leading ./ or a trailing . or :. A glob, a folder or a quoted path with a space
+ * names no file. */
+export function namedPaths(text) {
+  const out = new Set();
+  for (const piece of String(text).split(/[\s'"`=()[\],;]+/)) {
+    const cut = piece.indexOf('::');
+    const p = cut < 0 ? piece : piece.slice(0, cut);
+    let start = 0;
+    while (p.startsWith('./', start)) start += 2;
+    let end = p.length;
+    while (end > start && (p[end - 1] === '.' || p[end - 1] === ':')) end--;
+    if (end > start) out.add(p.slice(start, end));
+  }
+  return out;
+}
+
+/** The RULES flag for changed `files`: the rules file, a REVIEW.md whose folder is not in `skillDirs` (a skill's own
+ * file), and a path a `checks` command or checklist `check` of `config` names word for word. Each path has a reason. */
+export function rulesFlag(files, config, skillDirs, message) {
+  const texts = [...config.checks.map((c) => [c, '(named in checks)']), ...config.checklist.map((e, i) => [e.check, `(named in checklist #${i + 1})`])]
+    .map(([text, reason]) => ({ named: namedPaths(text), reason }));
+  const why = (path) => (path === CONFIG_FILE ? '(the review rules)'
+    : isReviewFile(path) && !skillDirs.has(folderOf(path)) ? '(a REVIEW.md)'
+      : texts.find((t) => t.named.has(path))?.reason);
+  const hit = files.map((f) => [f.path, why(f.path)]).filter(([, reason]) => reason);
+  return hit.length ? [{ id: 'RULES', paths: hit.map(([p]) => p), reasons: hit.map(([, r]) => r), message }] : [];
+}
+
+/** The REVIEW.md files above each path, nearest folder first: [{ path, show, for }] in order of first use. `atBase`
+ * maps a folder to { review, skill }, true for a blob at `commit`; one beside a SKILL.md is the skill's own. */
+export function reviewFiles(paths, atBase, repo, commit) {
+  const found = new Map();
+  for (const p of paths) {
+    for (const d of foldersUp(p)) {
+      const at = atBase.get(d);
+      if (!at || !at.review || at.skill) continue;
+      const path = inFolder(d, REVIEW_FILE);
+      if (!found.has(path)) found.set(path, { path, show: `git -C ${shQuote(repo)} show ${shQuote(`${commit.slice(0, 12)}:${path}`)}`, for: [] });
+      found.get(path).for.push(p);
+    }
+  }
+  return [...found.values()];
+}
+
+const rulesLine = ({ commit, file }) => `Rules: ${file ? `${file} at ${commit.slice(0, 12)}` : `the defaults (no ${CONFIG_FILE} at ${commit.slice(0, 12)})`}`;
+
+const flagLines = (flags) => flags.map((fl) => `  ${fl.id}: ${fl.paths.map((p, i) => (fl.reasons ? `${p} ${fl.reasons[i]}` : p)).join(', ')}: ${fl.message}`);
+
+/** The REVIEW.md listing of `change`: a line per changed file with a REVIEW.md above it, then one command per file. */
+function reviewLines(r) {
+  const at = r.mergeBase.slice(0, 12);
+  if (!r.reviewFiles.length) return [`REVIEW.md at ${at}: none above the changed files`];
+  const listed = new Set(r.reviewFiles.map((x) => x.path));
+  const lines = [`REVIEW.md at ${at}, nearest folder first:`];
+  for (const f of r.files) {
+    const above = foldersUp(f.path).map((d) => inFolder(d, REVIEW_FILE)).filter((p) => listed.has(p));
+    if (above.length) lines.push(`  ${shQuote(f.path)}: ${above.map(shQuote).join(', ')}`);
+  }
+  r.reviewFiles.forEach((x, i) => lines.push(`${i ? ' '.repeat(16) : 'Read each with: '}${x.show}`));
+  return lines;
+}
+
 function fileLine(f) {
   const tags = [f.risky ? 'RISKY' : '', f.test ? 'test' : '', f.doc ? 'doc' : ''].filter(Boolean).join(', ');
   return `  ${f.path}  +${f.added} -${f.removed}${tags ? `  (${tags})` : ''}`;
 }
 
+/** The checklist block: nothing when no entry is configured, else the count and each triggered entry. */
+function checklistLines(c) {
+  if (!c || !c.entries) return [];
+  const lines = [`Checklist: ${c.triggered.length} of ${c.entries} entries triggered`];
+  for (const t of c.triggered) {
+    lines.push(`  #${t.entry} ${t.check}`, `     why: ${t.why}`);
+    const by = t.by.length > 3 ? `${t.by.slice(0, 3).join(', ')} and ${t.by.length - 3} more` : t.by.join(', ');
+    lines.push(t.error ? `     triggered: ${t.error}; check it by hand` : `     triggered by: ${by}`);
+  }
+  return lines;
+}
+
 export function formatChange(r) {
   const s = r.summary;
   const lines = [`Change since ${r.base} (merge base ${r.mergeBase.slice(0, 12)}): ${s.files} file(s), +${s.added} -${s.removed}`];
+  if (r.rules) lines.push(rulesLine(r.rules));
   for (const f of r.files) lines.push(fileLine(f));
+  if (r.flags && r.flags.length) lines.push('Flags:', ...flagLines(r.flags));
   lines.push(`Risky files: ${s.risky.length ? s.risky.join(', ') : 'none'}${r.riskyConfigured ? '' : ` (no riskyPaths in ${CONFIG_FILE})`}`);
   lines.push(`Code files: ${s.code.length}; test files: ${s.tests.length}; doc files: ${s.docs.length}`);
+  lines.push(...checklistLines(r.checklist));
+  if (r.reviewFiles) lines.push(...reviewLines(r));
   if (s.code.length && !s.tests.length) lines.push('Note: code changed and no test did. New behaviour without a test is a "fix if cheap" finding.');
   return lines.join('\n');
 }
@@ -195,16 +333,21 @@ export function formatFix(r) {
   if (r.files.length === 0) return `Fix since ${r.since.slice(0, 12)}: nothing changed. There is no fix to look at.`;
   const s = summarizeChange(r.files);
   const lines = [`Fix since ${r.since.slice(0, 12)}: ${s.files} file(s), +${s.added} -${s.removed}`];
+  if (r.rules) lines.push(rulesLine(r.rules));
   for (const f of r.files) lines.push(fileLine(f));
-  if (r.flags.length) {
-    lines.push('Flags:');
-    for (const fl of r.flags) lines.push(`  ${fl.id}: ${fl.paths.join(', ')}: ${fl.message}`);
-  } else lines.push('Flags: none');
+  lines.push(...(r.flags.length ? ['Flags:', ...flagLines(r.flags)] : ['Flags: none']));
+  lines.push(...checklistLines(r.checklist));
   const tracked = r.files.filter((f) => !f.untracked).map((f) => shQuote(f.path));
   const untracked = r.files.filter((f) => f.untracked).map((f) => f.path);
   if (tracked.length) lines.push(`Second look, the fix only: git -C ${shQuote(r.repo)} diff ${r.since.slice(0, 12)} -- ${tracked.join(' ')}`);
   if (untracked.length) lines.push(`New files, not in git yet, read them whole: ${untracked.join(', ')}`);
   return lines.join('\n');
+}
+
+function triggerLine(e, i) {
+  const t = e.trigger;
+  const when = [t.paths ? `paths: ${t.paths.join(', ')}` : '', t.added ? `added: /${t.added}/${t.flags || ''}` : ''].filter(Boolean);
+  return `  #${i + 1} ${e.check} (when ${when.join(' and ')})`;
 }
 
 export function formatConfig(c) {
@@ -219,5 +362,6 @@ export function formatConfig(c) {
     `Checks: ${c.checks.length ? c.checks.join('; ') : `none set; use the project's own test, lint and typecheck commands`}`,
     `Test paths: ${c.testPaths.join(', ')}`,
     `Doc paths: ${c.docPaths.join(', ')}`,
+    ...(c.checklist.length ? ['Checklist:', ...c.checklist.map(triggerLine)] : ['Checklist: none set']),
   ].join('\n');
 }

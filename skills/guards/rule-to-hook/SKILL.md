@@ -83,6 +83,7 @@ each layer above the chosen one did not work; the report asks for it.
 3. **A lint or CI check whose error names what to use instead.** If the pattern is already common, make it a
    ratchet. Both are described in `${CLAUDE_SKILL_DIR}/MESSAGES-AND-RATCHETS.md`.
 4. **A test of the behaviour.** The rule is really a requirement.
+   Below a test, a diff-triggered review checklist entry: `${CLAUDE_SKILL_DIR}/MESSAGES-AND-RATCHETS.md`.
 5. **Prose, last, and only for judgment calls.** Nothing fails when an agent skips it.
 
 If the rule is one of the five in `PRODUCTION-RULES.md`, or the user asks to enforce the "Production rules" section
@@ -164,6 +165,7 @@ How strict to be: lean toward denying too much only when a false positive is che
 the user wave it through) and a miss is expensive (secrets, data loss, a push to a shared branch). When false
 positives would interrupt common work, narrow the pattern and accept a few misses; a guard people disable protects
 nothing. Write the choice in the file header.
+A new blocking hook that may hit common work starts in observe mode: "Observe first" in `${CLAUDE_SKILL_DIR}/MESSAGES-AND-RATCHETS.md`.
 
 Done when the guard file and its test exist and every test passes.
 

@@ -49,6 +49,41 @@ second still holds the first one's number; the fix is one more `--update`. ESLin
 same way. When the project has no CI, add the check to the command it already runs (its test or lint script), and
 tell the user that nothing enforces the rule on merge.
 
+**A review checklist entry, below a test and above prose.** Some mistakes are readable from a diff but no script
+can judge them: a `DROP COLUMN` in a migration is fine once every reader has moved, an `UPDATE` without a `WHERE` in
+a SQL file may be a deliberate backfill. For those, a project that uses `.claude/review-rules.json` can hold a
+`checklist` entry there, shown to the reviewer only when a change triggers it:
+`{ "trigger": { "paths": ["migrations/**"], "added": "DROP\\s+COLUMN" }, "check": "...", "why": "..." }`.
+- **Trigger:** as narrow as the step 1 violations allow: path globs, a regex on the added lines, or both (both means
+  a matching line in a matching file). The regex is in JavaScript syntax, whatever the project's language. Every
+  violation must trigger it and no step 1 near-miss may.
+- **Check:** one or two sentences the reviewer can answer passed or failed.
+- **Why:** the past mistake it comes from, by commit or pull request.
+
+Nothing fails when the reviewer skips the entry, so it holds only what layers 1 to 4 cannot. MUTATION.md says how to
+prove one.
+
+**Observe first, for a new blocking hook that may hit common work.** When a false positive would interrupt everyday
+commands and the step 1 near-misses may not cover them all, start the hook in observe mode. The decision runs as
+usual; where it would block, the hook appends one line to a git-ignored log (for example
+`.claude/hooks/<rule-id>.log`) with the time, the input fields the rule reads (the command, the file path) and the
+reason, then exits 0. It prints no decision and never `allow`, so the normal permission prompts still apply. The
+mode comes from a setting the user controls, such as an environment variable in `.claude/settings.local.json`. In
+your copy of the Node template, read it where the `MODE = 'deny'` constant is set, and observe in `decide()` before
+it returns exit 2; the Python template has no mode, so add the check in `main()` where it writes the reason and
+returns 2. Leaving observe mode is the user
+changing that setting (or choosing `ask`, where the user decides each call), never an edit of the hook and never a
+marker the agent could type into a command.
+- Tests run at enforce, plus one observe case that expects exit 0 and exactly one log line.
+- Run the live test of step 5 with the setting at enforce, then set it back. Write the rule text and the rule table
+  row as `observe until <date>`.
+- After real use (a week, or a set number of sessions), read the log. Each logged line that was not a violation
+  becomes a PASS case and a narrower rule. Then switch to enforce.
+- Never observe a fail-closed guard: a secret about to be written is blocked from the first day. Never log the value
+  the rule protects, such as a secret or a token; log the field name and the reason.
+- Keep an escape for a real exception: it names its reason, the hook logs it, and a human approves it, the way the
+  next paragraph asks. The agent never approves its own.
+
 **Exceptions go on the offending line**, with a reason, an expiry date and who approved it:
 `<comment marker> <check id>: allowed until <date>, <reason>, approved by <role or handle>`, for example
 `# no-env-read: allowed until 2026-12-31, read before the config loader exists, approved by @org/platform-owners`.
