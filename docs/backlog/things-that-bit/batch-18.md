@@ -28,3 +28,6 @@ Things that bit Q24, verification ideas from the Claude Code team:
   from its registry into a scratch folder and running a failing property.
 - The worktree guard refuses Bash commands that chain git with other commands; builders ran one git command per call.
 - A stop hook asks for a push at every turn end; the owner had asked to be asked first, so the pushes waited.
+- The X post the owner shared would not load (HTTP 402), and the first docs link they sent was the mods interface
+  page, so the session researched mods (Q25) while the post was about Code Mode (Q26). When a post will not load, ask
+  for the feature's own docs page by name before researching, and say which page the research rests on.
