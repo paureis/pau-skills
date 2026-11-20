@@ -235,3 +235,12 @@
    `.claude/review-rules.json`, checks a change cannot edit (rules read from the base commit, an optional per-folder
    REVIEW.md), and property and differential tests taught in `tdd` and pointed to from the rest. The commit gate is
    skipped; its observe-mode idea goes into `rule-to-hook`. Q24 runs before Q21. `docs/backlog/q24.md` holds the plan.
+
+## Decisions taken (2026-11-20)
+
+27. **Code Mode before Q21.** The owner turns on Code Mode (experimental) for their terminal sessions to save tokens.
+   A small item, Q26, checks every hook in `pau-skills-hooks` under Code Mode first, starting from a real Code Mode
+   transcript the owner provides, then Q21 follows. Q25 shrinks to a note: Code Mode already filters output before
+   Claude reads it, and it does not start with a mod that checks tool calls installed. `docs/backlog/q26.md` holds the
+   plan.
+

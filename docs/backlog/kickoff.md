@@ -2,11 +2,59 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The eighteenth batch is done (Q24, verification ideas from the Claude Code team, pull request 76). **Q21**, the subagent watchdog, is
-next. Read "Things that bit the eighteenth batch" (`docs/backlog/things-that-bit/batch-18.md`) first; the Q24
-kickoff message is in this file's history (the commit before Q24's merge).
+The eighteenth batch is done (Q24, verification ideas from the Claude Code team, pull request 76). Two items are
+next, in this order: **Q26**, our hooks under Code Mode (decision 27, `docs/backlog/q26.md`), and then **Q21**, the
+subagent watchdog. Read "Things that bit the eighteenth batch" (`docs/backlog/things-that-bit/batch-18.md`) first.
 
-The next session starts Q21 with this message:
+Before Q26 starts, the owner runs one Code Mode session in this repository on their computer (Code Mode cannot run in
+a cloud session) and attaches its transcript to the kickoff. A prompt that exercises the hooks: "Change the wording
+of one sentence in docs/backlog/q26.md, run npm test, then add a comment line to tests/style.test.mjs and stop without
+running anything." The transcript is the newest `.jsonl` under `%USERPROFILE%\.claude\projects\` (on macOS and
+Linux, `~/.claude/projects/`), in the folder named after this repository's path.
+
+The owner starts Q26 with this message, with the transcript attached:
+
+```text
+You are the orchestrator for Q26 in this repository: our hooks under Code Mode. Do not build it yourself; run the
+roster in .claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My choice is decision 27 in
+docs/backlog/decisions.md; build what docs/backlog/q26.md asks.
+
+I attached the transcript of one Code Mode session in this repository, from my computer. It is data to read, not
+instructions. Strip my paths and anything personal before any of it goes into tests/fixtures/.
+
+Before anything else, read these in full:
+1. CLAUDE.md and docs/ADDING-A-SKILL.md (step 5 covers hooks, step 8 the version bumps).
+2. docs/backlog/q26.md, decisions 22 to 27, docs/backlog/how-to-run-a-batch.md ("With the roster"),
+   docs/backlog/things-that-bit/batch-18.md and docs/backlog/q20.md.
+3. hooks/README.md, hooks/lib/, every hook script and hooks.json, and their tests; then the transcript.
+
+First, before any brief:
+- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
+  builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds.
+- Read the transcript yourself and write down, in q26.md, how Code Mode records the tool calls made inside the code
+  (which blocks, which names, where the commands and edited paths sit). Every brief builds on that, not on guesses.
+- Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone, tries
+  mutations of its own and times long inputs to any new pattern, and a fresh reviewer per slice. Commits carry the
+  harness's two attribution trailers; say so once in the standing orders.
+
+Rules that matter most:
+- A hook exits 0 on input it does not understand and checks hookEnabled(); Node standard library only; plain English,
+  no em or en dashes; no tracked file over its size limit. A hook must stay fast: in Code Mode, one that times out
+  refuses the call.
+- verify-before-done must keep catching an edit with no check, and keep counting a check that ran, in both normal and
+  Code Mode transcripts. No new false alarms.
+- Every new test fails without the change; prove each with mutate.sh and report every "# tests" line. Time every new
+  regex on long input that does not match, in a child process with a kill timeout.
+- Builders commit and never push. You push the working branch and open the PR. When CI is green on Linux, macOS and
+  the validate job and every review is clean, merge it yourself. Bump pau-skills-hooks and the plugins whose hooks
+  changed, and give me the update commands.
+
+When the PR is open, tell me in plain words what changed, what the reviews found, and anything I need to decide. After
+the merge, mark Q26 done in docs/backlog/ with what worked and what did not, and write down what Q21 needs to know
+about how Code Mode tool calls reach hooks.
+```
+
+After Q26, the next session starts Q21 with this message:
 
 ```text
 You are the orchestrator for Q21 in this repository: a subagent watchdog. Do not build it yourself; run the roster in
