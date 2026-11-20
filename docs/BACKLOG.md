@@ -134,7 +134,8 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q22 two hooks that get in the way](backlog/q22.md)
 - [Q23 the lazy senior developer, adapted from ponytail](backlog/q23.md)
 - [Q24 verification ideas from the Claude Code team](backlog/q24.md)
-- [Q25 Claude Code mods: where they could save tokens](backlog/q25.md)
+- [Q25 Claude Code mods: where they could save tokens](backlog/q25.md) (parked)
+- [Q26 our hooks under Code Mode](backlog/q26.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -170,8 +171,9 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 21. Done: the sixteenth batch, Q22 two hooks that get in the way (pull request 73); its scope was decision 24.
 22. Done: the seventeenth batch, Q23 the lazy senior developer, adapted from ponytail (pull request 74); its scope was
     decision 25.
-23. Done: the eighteenth batch, Q24 verification ideas from the Claude Code team; its scope was decision 26.
-24. **Next:** Q21 a subagent watchdog (decisions 22 and 23). Its kickoff is in [backlog/kickoff.md](backlog/kickoff.md).
-    After it, Q25 Claude Code mods, which needs the owner's decision on the layout and a measured prototype first.
+23. Done: the eighteenth batch, Q24 verification ideas from the Claude Code team (pull request 76); its scope was
+    decision 26.
+24. **Next:** Q26 our hooks under Code Mode (decision 27), then Q21 a subagent watchdog (decisions 22 and 23). Both
+    kickoffs are in [backlog/kickoff.md](backlog/kickoff.md). Q25 Claude Code mods is parked (decision 27).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
