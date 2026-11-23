@@ -79,3 +79,17 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
     started the reviewers and sent the fix rounds; the owner's profile README could not be updated from the session
     (the repository is outside its access).
 
+- 2026-11-23: the nineteenth batch, Q21 a subagent watchdog, merged as
+  [pull request 79](https://github.com/paureis/pau-skills/pull/79) (decisions 22, 23 and 30), with Q26 parked and Q27
+  added (decisions 28 and 29). One slice on the roster: a new `subagent-watchdog` hook (agent-orchestration 0.13.0,
+  `pau-skills-hooks` 0.6.0). A read-only plan check built the slice in a clone, a headless prototype (0.02 US dollars)
+  settled six hook facts, one builder built it test first, a fresh reviewer and one fix round followed. 1,946 tests
+  (1,892 before); 89 mutations caught. With the roster:
+  - Worked: `eng-lead` raised five questions the settled design had not covered, which the owner answered in one
+    prompt; the plan check found six blockers before any code (false asks on healthy runs, a test that could not
+    fail, a planted folder link that prune would follow); the prototype showed that TaskStop fires no SubagentStop and
+    a failed command fires PostToolUseFailure, so the brief was right before the build; the reviewer found the one
+    must-fix (parallel Agent calls read as stuck) by driving the hook through eng-lead's own way of working.
+  - Did not: the builder came back in the background again, so `eng-lead` only planned and launched; the orchestrator
+    committed decision 30 without running the suite and pushed `decisions.md` over its size limit, which the merge's
+    test run caught.

@@ -89,6 +89,7 @@ under "Work items" below.
 - [Things that bit the sixteenth batch](backlog/things-that-bit/batch-16.md)
 - [Things that bit the seventeenth batch](backlog/things-that-bit/batch-17.md)
 - [Things that bit the eighteenth batch](backlog/things-that-bit/batch-18.md)
+- [Things that bit the nineteenth batch](backlog/things-that-bit/batch-19.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not; the first six batches are in
   [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md), and the seventh to twelfth in
   [done-2026-10-20-to-25.md](backlog/done-2026-10-20-to-25.md).
@@ -131,7 +132,7 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q18 tests for the description rules checked by hand](backlog/q18.md)
 - [Q19 descriptions in printable ASCII only](backlog/q19.md)
 - [Q20 verify-before-done without false alarms](backlog/q20.md)
-- [Q21 a subagent watchdog](backlog/q21.md)
+- [Q21 a subagent watchdog](backlog/q21.md) (done)
 - [Q22 two hooks that get in the way](backlog/q22.md)
 - [Q23 the lazy senior developer, adapted from ponytail](backlog/q23.md)
 - [Q24 verification ideas from the Claude Code team](backlog/q24.md)
@@ -175,8 +176,9 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
     decision 25.
 23. Done: the eighteenth batch, Q24 verification ideas from the Claude Code team (pull request 76); its scope was
     decision 26.
-24. **Next:** Q21 a subagent watchdog (decisions 22 and 23); its kickoff is in [backlog/kickoff.md](backlog/kickoff.md).
-    Then Q27 Claude Ship and our skills (options 1 and 3, decision 29). Parked: Q25 Claude Code mods (decision 27) and
-    Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
+24. Done: the nineteenth batch, Q21 a subagent watchdog (pull request 79); its design was decisions 22, 23 and 30.
+25. **Next:** Q27 Claude Ship and our skills (options 1 and 3, decision 29); its kickoff is in
+    [backlog/kickoff.md](backlog/kickoff.md). Parked: Q25 Claude Code mods (decision 27) and Q26 our hooks under Code
+    Mode (decision 28). Work this order as it stands (decision 29).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
