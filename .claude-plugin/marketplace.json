@@ -120,6 +120,16 @@
             ]
           },
           {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
             "matcher": "Bash",
             "hooks": [
               {
@@ -174,6 +184,15 @@
                 "timeout": 5
               }
             ]
+          },
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
           }
         ],
         "Stop": [
@@ -187,12 +206,41 @@
             ]
           }
         ],
+        "PostToolUse": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "PostToolUseFailure": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
         "SubagentStart": [
           {
             "hooks": [
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/no-idle.mjs\"",
+                "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
                 "timeout": 5
               }
             ]
@@ -202,6 +250,17 @@
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/planning/lazy-senior.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "SubagentStop": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
                 "timeout": 5
               }
             ]
@@ -314,6 +373,16 @@
             ]
           },
           {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
             "matcher": "Bash",
             "hooks": [
               {
@@ -368,6 +437,15 @@
                 "timeout": 5
               }
             ]
+          },
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
           }
         ],
         "Stop": [
@@ -381,12 +459,41 @@
             ]
           }
         ],
+        "PostToolUse": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "PostToolUseFailure": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
         "SubagentStart": [
           {
             "hooks": [
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/no-idle.mjs\"",
+                "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
                 "timeout": 5
               }
             ]
@@ -396,6 +503,17 @@
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/planning/lazy-senior.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "SubagentStop": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
                 "timeout": 5
               }
             ]
@@ -584,6 +702,51 @@
                 "timeout": 5
               }
             ]
+          },
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "PostToolUse": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "PostToolUseFailure": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "UserPromptSubmit": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
           }
         ],
         "SubagentStart": [
@@ -592,6 +755,22 @@
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/no-idle.mjs\"",
+                "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "SubagentStop": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
                 "timeout": 5
               }
             ]
