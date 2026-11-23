@@ -3,51 +3,31 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
-## 2026-11-18: Q24, verification ideas from the Claude Code team
+## 2026-11-23: Q21, a subagent watchdog
 
-- A checklist triggered by the diff (verification 0.15.0, agent-orchestration 0.12.0): `.claude/review-rules.json`
-  takes an optional `checklist`, each entry a trigger (path globs, a regex on the added lines, or both), a check and a
-  why. `review-scope.mjs change` and `fix` in `review-triage` and `lean-subagent-dev` print only the entries the diff
-  triggers. A trigger regex runs with a 1 second limit; a regex that times out or fails, or a diff over 64 MiB, prints
-  its entry as triggered, to check by hand. The reviewer, `review-triage` and `lazy-senior`'s review (planning 0.10.0)
-  grade each triggered entry as a claim; `rule-to-hook` (guards 0.10.0) and `agent-friendly-audit` can propose one as
-  a layer below a test and above prose.
-- A change cannot edit the checks that judge it: `change` and `fix` read the rules as committed at the merge base, list
-  the REVIEW.md files above each changed file at that commit, nearest folder first, and flag `RULES` when a change
-  edits the rules file, a REVIEW.md or a file the rules name. `rule-to-hook` starts a new blocking hook in observe mode
-  before it enforces.
-- Property and differential tests: `tdd` gains `PROPERTIES.md` (the four properties, generators, seeded runs and replay
-  per library as seen in runs, libraries by ecosystem, differential tests for a rewrite or a migration).
-  `improve-codebase-architecture`, `lazy-senior`, `bug-fix` and `mutation-test` point to it if `tdd` is installed, with
-  a fallback. `flaky-test-hunt` corrects what proptest prints.
-- geppetto roster 6: the roster `reviewer` grades triggered checklist items as `Checklist #<n>` claims and reads the
-  REVIEW.md files from the base; `eng-lead` passes the `review-scope.mjs change` command into each reviewer prompt.
-  The installed copies in `.claude/agents/` are updated. The bundle goes to 0.20.0; no hook changed.
-
-## 2026-11-16: Q23, the lazy senior developer, adapted from ponytail
-
-- `lazy-senior` (planning 0.9.0), a new skill adapted from DietrichGebert/ponytail (MIT): it writes the smallest
-  complete change (does it need to exist, then the codebase, the standard library, an installed dependency), never
-  cuts validation, error handling, security, accessibility or a needed test, reviews a change or a repository with
-  bugs first and bloat last, and lists `shortcut:` comments with `debt.mjs`. Fresh, safe examples in five languages.
-- The `lazy-senior` hook (planning, `pau-skills-hooks` 0.5.0) adds the skill's short ruleset to every session and
-  every subagent, on by default; installing the `planning` plugin now turns it on too. Off with
-  `"hooks": {"lazy-senior": false}` or `PAU_SKILLS_DISABLE=lazy-senior`. A blind skill-eval run (Haiku, three tasks)
-  found the ruleset no worse and smaller on the bug fix.
-- The same rules everywhere: geppetto roster 5 (agent-orchestration 0.11.4), where `builder` works by the smallest
-  complete change and `reviewer` ends with a bigger-than-needed check that needs a concrete case; `review-triage`
-  (verification 0.14.3) and lean-subagent-dev's copy treat a needless addition with its case as fix if cheap and a
-  `shortcut:` comment as a decision, never for a guard or a security finding; `engineering-principles` says use what
-  already exists inside "Subtract before you add"; `which-skill` (session-discipline 0.13.2) routes to the new skill.
-  New tests: installed agents match their roster files byte for byte, the principles' line counts match their files,
-  and the shared rules agree across the skill, the agents and the triage method.
-- The bundle goes to 0.19.0. The entry of 2026-11-11 moved to `docs/changelog/2026-W46.md`, since week 46 had ended.
+- A new hook, `subagent-watchdog` (agent-orchestration 0.13.0, `pau-skills-hooks` 0.6.0). Inside a subagent it adds a
+  note when the same shell command runs a 3rd time with no edit in between, or when 40 tool calls pass with no edit,
+  and asks on the 5th run or the 80th call. The ask refuses only that one call, and its reason tells a healthy agent
+  to say so and go on. In the main session, when a subagent looks stuck (no tool call for 10 minutes), runs one
+  command for 30 minutes or is at a note, it adds one line per running subagent, at most once every 5 minutes. It
+  never stops an agent. Read-only agent types (reviewer, Explore, Plan, claude-code-guide, web-fetch, eng-lead) skip
+  the no-edit rule and get repeat notes but no asks. An agent waiting on its own subagents is never flagged for it.
+  The state is one small file per agent under the system temp folder, in a folder per user and session that must not
+  be a link or writable by others. Thresholds and the read-only list are options; off with
+  `{"hooks": {"subagent-watchdog": false}}`. Details in `hooks/agent-orchestration/subagent-watchdog.md`. `which-skill`
+  (session-discipline 0.13.3) lists it with the other hooks.
+- It runs before and after every tool call, in the main session and in every subagent: about 30 ms each time, so about
+  60 ms per tool call.
+- The bundle goes to 0.21.0. The entries of 2026-11-16 and 2026-11-18 moved to `docs/changelog/2026-W47.md`, since
+  week 47 had ended. In the backlog, Q26 (hooks under Code Mode) is parked, Q27 (Claude Ship) is added, and
+  `docs/backlog/decisions.md` is split, with decisions 1 to 21 in `docs/backlog/decisions-1-to-21.md`.
 
 ## Older entries
 
 Each earlier ISO week is in its own file in docs/changelog/, named `<year>-W<week>.md`; a week too large for one file
 goes on in `<year>-W<week>-2.md`.
 
+- [2026-W47: 2026-11-16 to 2026-11-22](docs/changelog/2026-W47.md)
 - [2026-W46: 2026-11-09 to 2026-11-15](docs/changelog/2026-W46.md)
 - [2026-W45: 2026-11-02 to 2026-11-08](docs/changelog/2026-W45.md)
 - [2026-W44: 2026-10-26 to 2026-11-01](docs/changelog/2026-W44.md)

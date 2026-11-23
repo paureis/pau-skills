@@ -161,6 +161,7 @@ Hooks act on every session where their plugin is installed. Each can be turned o
 | `suppression-reason` | Tells the agent when an edit adds a lint or type-check suppression with no reason |
 | `verify-before-done` | Sends the agent back once if it changed code and ran no checks |
 | `no-idle` | Tells every subagent never to end its turn waiting |
+| `subagent-watchdog` | Notes, then asks, when a subagent reruns a command or goes long with no edit; lists stuck subagents in the main session |
 | `lazy-senior` | Adds the smallest-complete-change rules to every session and subagent |
 
 ## Which skills do I actually use?

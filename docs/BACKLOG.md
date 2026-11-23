@@ -67,7 +67,8 @@ under "Work items" below.
 - [How to run a batch](backlog/how-to-run-a-batch.md): the 10 steps and "With the roster".
 - [Kickoff for the next session](backlog/kickoff.md): the next session's kickoff, and the fifth batch's kickoff as a
   template.
-- [Decisions](backlog/decisions.md): decisions 1 to 29, taken from 2026-10-17 to 2026-11-23.
+- [Decisions](backlog/decisions.md): decisions 22 to 30, taken from 2026-11-06 to 2026-11-23, and
+  [decisions 1 to 21](backlog/decisions-1-to-21.md), from 2026-10-17 to 2026-11-04.
 - [Context budget](backlog/context-budget.md): the facts and the policy since P0.5.
 - [Things that bit the first batch](backlog/things-that-bit/batch-1.md)
 - [Things that bit the second batch](backlog/things-that-bit/batch-2.md)

@@ -6,8 +6,12 @@ Skills: `methodology` (the method document, two adoption prompts and templates),
 `review-scope.mjs`, `review-scope-rules.mjs` and `review-scope-checklist.mjs`, identical copies of the ones in `review-triage`), `arena` (with `arena.mjs` and the candidate
 and judge briefs), `overnight-run` (with `log.mjs`, `LOOP.md`, `AUDIT.md`,
 `PROTECTION.md`, `CONTRACT.md` and `WAKE.md`), `geppetto` (with `COVENANT.md`, `PRODUCTION-RULES.md`, `check-agents.mjs` and its modules
-`check-agents-yaml.mjs` and `check-agents-checks.mjs`, the five agents under `roster/`, and `templates/designer.md`). Hook: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
-[hooks/README.md](../../hooks/README.md)).
+`check-agents-yaml.mjs` and `check-agents-checks.mjs`, the five agents under `roster/`, and `templates/designer.md`). Hooks: no-idle (turn it off with `"hooks": { "no-idle": false }`, see
+[hooks/README.md](../../hooks/README.md)) and subagent-watchdog: inside a subagent it adds a note, then asks, when
+the same command reruns with no edit or many tool calls pass with no edit, and in the main session it lists the
+running subagents when one looks stuck. It never stops an agent. Options and rules are in
+[hooks/agent-orchestration/subagent-watchdog.md](../../hooks/agent-orchestration/subagent-watchdog.md); turn it off with
+`"hooks": { "subagent-watchdog": false }`.
 
 ## lean-subagent-dev configuration
 

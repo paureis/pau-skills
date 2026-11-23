@@ -2,7 +2,7 @@
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Skills: 39](https://img.shields.io/badge/skills-39-informational)
-![Hooks: 15](https://img.shields.io/badge/hooks-15-informational)
+![Hooks: 16](https://img.shields.io/badge/hooks-16-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
 The Claude Code skills, hooks and scripts I use every day, packaged as a plugin marketplace. I am Alvaro "Pau" Reis,
@@ -165,6 +165,9 @@ context was compacted.
   with only your tokens and lists every value it had to invent), and a check for the mistakes that make Claude Code
   skip an agent or quietly change its tools.
 - `no-idle` (hook) stops subagents from ending their turn waiting for something that will never wake them.
+- `subagent-watchdog` (hook) nudges a subagent that reruns the same command or goes 40 tool calls with no edit, asks
+  at the 5th run or the 80th call, and shows the main session one line per subagent when one looks stuck. It never
+  stops an agent.
 
 ### 7. A review that never ends
 
