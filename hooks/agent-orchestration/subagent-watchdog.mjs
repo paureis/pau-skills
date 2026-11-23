@@ -20,18 +20,19 @@
 // on; a refused call has no PostToolUse; a failed command fires PostToolUseFailure; an agent stopped with TaskStop gets
 // no SubagentStop, and TaskStop's task_id is that agent's agent_id.
 //
-// State: <os.tmpdir()>/pau-skills-watchdog/<session_id>/<agent_id>.json, one file per agent, and a file "shown" with
-// the main session's last status time. Both ids must match ^[A-Za-z0-9_-]{1,128}$, or the event is ignored. Before
-// any read, write or prune, the base folder and the session folder must be real directories (not links), owned by
-// this user and not writable by group or others (where the platform has user ids); otherwise the hook does nothing.
-// They are made with mode 0700, only when a state file is first written. A write goes to
-// <file>.<pid>.<8 random hex>.tmp (flag wx, mode 0600) and is renamed over the file, so a reader sees the whole old
-// file or the whole new one; the file itself is never opened for writing. A file that does not parse reads as no
-// state and the next write replaces it. Concurrency: each agent writes only its own file, so no agent's write can undo
-// another's. Two parallel tool calls of the same agent can still lose a count; that only makes a note or ask come one
-// call later, never earlier. SubagentStart prunes: in the base folder, every session folder whose newest file is more
-// than a day old (regular files only; a folder holding anything else is left), and in its own session folder every
-// .json, .tmp and shown file more than a day old. Links are never followed.
+// State: <os.tmpdir()>/pau-skills-watchdog-<uid>/<session_id>/<agent_id>.json (no -<uid> where the platform has no
+// user ids), one file per agent, and a file "shown" with the main session's last status time. Both ids must match
+// ^[A-Za-z0-9_-]{1,128}$, or the event is ignored. Before any read, write or prune, the base folder and the session
+// folder must be real directories (not links), owned by this user and not writable by group or others (where the
+// platform has user ids); otherwise the hook does nothing. They are made with mode 0700, only when a state file is
+// first written. A write goes to <file>.<pid>.<8 random hex>.tmp (flag wx, mode 0600) and is renamed over the file,
+// so a reader sees the whole old file or the whole new one; the file itself is never opened for writing. A file that
+// does not parse reads as no state and the next write replaces it. Concurrency: each agent writes only its own file,
+// so no agent's write can undo another's. Two parallel tool calls of the same agent can still lose an update; that
+// can move a note or an ask by a call either way (a lost edit reset can bring one early), and only for parallel calls
+// of one agent. SubagentStart prunes: in the base folder, every session folder whose newest file is more than a day
+// old (regular files only; a folder holding anything else is left), and in its own session folder every .json, .tmp
+// and shown file more than a day old. Links are never followed.
 //
 // Options in .claude/pau-skills.json: {"subagent-watchdog": {"repeatNote": 3, "repeatAsk": 5, "noEditNote": 40,
 // "noEditAsk": 80, "readOnlyAgents": [...]}}. Off with {"hooks": {"subagent-watchdog": false}}. At most one line of
@@ -51,7 +52,8 @@ const SHOWN = 'shown';
 
 /** The state paths of one session under the temp folder. */
 export function paths(session, tmp = tmpdir()) {
-  const base = join(tmp, 'pau-skills-watchdog');
+  // One base folder per user, so a shared /tmp where another user made theirs first does not silence the hook.
+  const base = join(tmp, 'pau-skills-watchdog' + (typeof process.getuid === 'function' ? '-' + process.getuid() : ''));
   const dir = join(base, session);
   return { base, dir, agent: (id) => join(dir, id + '.json'), shown: join(dir, SHOWN) };
 }

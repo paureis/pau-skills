@@ -16,8 +16,8 @@ Under `"subagent-watchdog"` in `.claude/pau-skills.json`:
 |---|---|---|
 | `repeatNote` | `3` | A note on this run of the same shell command with no edit in between. |
 | `repeatAsk` | `5` | An ask on this run, and on every multiple of it after (10, 15, ...). |
-| `noEditNote` | `40` | A note at this many tool calls since the last edit. |
-| `noEditAsk` | `80` | An ask at this many tool calls since the last edit, and on every multiple of it after. |
+| `noEditNote` | `40` | One note on the first tool call at or past this many calls since the last edit. |
+| `noEditAsk` | `80` | An ask on the first call at or past this many calls since the last edit, then at or past each multiple of it (160, 240, ...). |
 | `readOnlyAgents` | `["reviewer", "Explore", "Plan", "claude-code-guide", "web-fetch", "eng-lead"]` | Agent types that are not expected to edit. They skip the no-edit rule, and get repeat notes but no repeat asks. A type such as `plugin:reviewer` matches by the part after its last `:`. A list replaces the default; entries that are not strings are dropped. |
 
 A number that is not a whole number above 0 keeps its default. Fixed: 10 minutes for "looks stuck", 30 minutes for
@@ -40,7 +40,9 @@ per agent, commands cut to 120 characters in a message and 80 in the status.
   reason. The reason names the agent type and id and the count, and tells the agent: if it is not making progress,
   stop and report what it has and what blocks it; if it is (a poll, a fix made through the shell, a mutation run),
   say so in one line and go on.
-- An edit, a `git commit`, SubagentHandback and SendMessage never get a note or an ask.
+- An edit, a `git commit`, SubagentHandback and SendMessage never get an ask, but may get a note: a loop of failing
+  edits, or the same failing `git commit` run again and again, still gets the note. The no-edit note and ask come
+  once per stretch and level, and start again after an edit.
 
 ## In the main session
 
@@ -53,15 +55,21 @@ repeat, and the call in flight. At most once every 5 minutes. An agent is flagge
 - a command reached the repeat note, or (for a type that is not read-only) the calls since the last edit reached the
   no-edit note.
 
-An agent whose call in flight is Agent or Task reads "waiting on a subagent for N minutes" and is never flagged for
-it: its own subagents are watched on their own. An agent with no call in flight and no event for 60 minutes is
-dropped from the status with a last line saying so: it may have ended without a stop event. A TaskStop that ran in
+An agent waiting on its own subagents is never flagged stuck or long-running for it, and never dropped: its
+subagents are watched on their own. Each Agent or Task call is tracked by its `tool_use_id` until the PostToolUse or
+PostToolUseFailure with the same id (at most 32 per agent, the oldest dropped), so an agent that started several in
+one message reads "waiting on 2 subagents for N minutes" while any of them runs. An Agent or Task call with no
+`tool_use_id` reads "waiting on a subagent for N minutes" while it is the call in flight. A refused Agent call (a
+PreToolUse with no PostToolUse) leaves its wait until the day-old prune. An agent that dies in the middle of a call
+shows "running <command> for N minutes" until the day-old prune. An agent with no call in flight, no wait and no
+event for 60 minutes is dropped from the status with a last line saying so: it may have ended without a stop event. A TaskStop that ran in
 the main session removes the agent it names, because an agent stopped with TaskStop gets no SubagentStop.
 
 ## The state
 
-One file per agent: `<temp folder>/pau-skills-watchdog/<session_id>/<agent_id>.json`, and a file `shown` with the
-time of the last status. The temp folder is the system's (`TMPDIR` on Linux and macOS, `TMP` or `TEMP` on Windows).
+One file per agent: `<temp folder>/pau-skills-watchdog-<uid>/<session_id>/<agent_id>.json`, and a file `shown` with
+the time of the last status. `<uid>` is your user id, so users who share a temp folder each get their own; where the
+system has no user ids (Windows) the folder is `pau-skills-watchdog`. The temp folder is the system's (`TMPDIR` on Linux and macOS, `TMP` or `TEMP` on Windows).
 Both ids must be 1 to 128 letters, digits, `_` or `-`; any other event is ignored.
 
 - The folders are made with mode 0700, and only when a state file is first written. Before every read, write or
@@ -70,7 +78,8 @@ Both ids must be 1 to 128 letters, digits, `_` or `-`; any other event is ignore
 - A write goes to a temp file next to the state file (mode 0600), which is then renamed over it, so a reader sees
   the whole old file or the whole new one. A file that does not parse reads as empty and is replaced.
 - Each agent writes only its own file, so parallel agents never undo each other's counts. Two parallel tool calls of
-  one agent can lose a count; that only makes a note or an ask come one call later, never earlier.
+  one agent can lose an update; that can move a note or an ask by a call either way (a lost edit reset can bring
+  one early), and only for parallel calls of one agent.
 - The agent's file is removed at SubagentStop and at a TaskStop. At SubagentStart, session folders whose newest file
   is over a day old are removed (only when they hold nothing but files), and so are the session's own `.json`, `.tmp`
   and `shown` files over a day old. Links are never followed.

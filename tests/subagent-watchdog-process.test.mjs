@@ -3,7 +3,7 @@
 // project folder, so no test touches the real ~/.claude or the real temp folder.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, statSync, utimesSync, symlinkSync, chmodSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, statSync, utimesSync, symlinkSync, chmodSync, chownSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import { serializeAgent } from '../hooks/agent-orchestration/subagent-watchdog-logic.mjs';
@@ -13,11 +13,13 @@ const HOOK = repo('hooks', 'agent-orchestration', 'subagent-watchdog.mjs');
 const WIN = process.platform === 'win32';
 const SID = 'sess-1';
 const DAY = 24 * 60 * MIN;
+// Literal on purpose: the folder name the docs give, with the user id where the platform has one.
+const BASE = 'pau-skills-watchdog' + (typeof process.getuid === 'function' ? '-' + process.getuid() : '');
 
 function world() {
   const home = tempDir(); const tmp = tempDir(); const project = tempDir();
   const env = { HOME: home, USERPROFILE: home, PAU_SKILLS_HOME: home, TMPDIR: tmp, TMP: tmp, TEMP: tmp, CLAUDE_PROJECT_DIR: project, PAU_SKILLS_DISABLE: '' };
-  const w = { home, tmp, project, env, base: join(tmp, 'pau-skills-watchdog') };
+  const w = { home, tmp, project, env, base: join(tmp, BASE) };
   w.run = (input, extra = {}) => runNode(HOOK, { input: typeof input === 'string' ? input : JSON.stringify(input), env: { ...env, ...extra } });
   w.dir = (sid = SID) => join(w.base, sid);
   w.file = (id = 'agent-1', sid = SID) => join(w.dir(sid), id + '.json');
@@ -49,7 +51,7 @@ test('P1 not JSON, empty, null, an array and a Stop event are silent with exit 0
   assert.deepEqual(tmps(w.dir()), []);
 });
 
-test('P2 five identical Bash runs in one subagent give a note on run 3 and an ask on run 5, kept in <TMPDIR>/pau-skills-watchdog/<session_id>/<agent_id>.json', () => {
+test('P2 five identical Bash runs in one subagent give a note on run 3 and an ask on run 5, kept in <TMPDIR>/pau-skills-watchdog-<uid>/<session_id>/<agent_id>.json', () => {
   const w = world();
   assert.deepEqual(kinds(w, 5), ['-', '-', 'note', '-', 'ask']);
   assert.equal(w.read().calls, 5);
@@ -71,8 +73,15 @@ test('P4 a main-session PreToolUse with a stuck agent in the state file gets the
   const w = world();
   w.prep();
   const now = Date.now();
-  writeFileSync(w.file(), serializeAgent(agentEntry({ start: now - 20 * MIN, last: now - 11 * MIN, calls: 4 })), { mode: 0o600 });
+  const stuck = serializeAgent(agentEntry({ start: now - 20 * MIN, last: now - 11 * MIN, calls: 4 }));
   const input = { session_id: SID, hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: {}, cwd: w.project };
+  if (!WIN) {
+    const elsewhere = join(tempDir(), 'agent-9.json');
+    writeFileSync(elsewhere, stuck);
+    symlinkSync(elsewhere, w.file('agent-9'));
+    silent(w.run(input), 'a *.json link in the session folder is not read');
+  }
+  writeFileSync(w.file(), stuck, { mode: 0o600 });
   const r = w.run(input);
   assert.deepEqual([r.code, r.stderr], [0, '']);
   const out = JSON.parse(r.stdout).hookSpecificOutput;
@@ -121,6 +130,11 @@ test('P7 SubagentStart prunes old session folders and old .json, .tmp and shown 
   dir('fresh'); mk(join('fresh', 'a.json'), 2 * DAY); mk(join('fresh', 'b.json'), MIN);
   dir('mixed'); mk(join('mixed', 'a.json'), 2 * DAY); mkdirSync(join(w.base, 'mixed', 'sub'));
   mk('stray.json', 2 * DAY);
+  mk(join(SID, 'day30h.json'), 30 * 60 * MIN);
+  dir('gone30'); mk(join('gone30', 'a.json'), 30 * 60 * MIN);
+  dir('bad.name'); mk(join('bad.name', 'a.json'), 2 * DAY);
+  age(join(w.base, dir('empty')), 2 * DAY);
+  age(join(w.base, dir('empty-new')), MIN);
   const target = tempDir();
   if (!WIN) {
     // Only an old file in the target: a prune that followed the link would delete it.
@@ -129,7 +143,8 @@ test('P7 SubagentStart prunes old session folders and old .json, .tmp and shown 
   }
   silent(w.run(w.ev('SubagentStart')));
   assert.deepEqual(readdirSync(w.dir()).sort(), ['agent-1.json', 'new.json', 'new.tmp', 'notes.txt']);
-  assert.deepEqual(readdirSync(w.base).sort(), ['fresh', 'mixed', SID, 'stray.json', ...(WIN ? [] : ['linked'])].sort());
+  assert.deepEqual(readdirSync(w.base).sort(), ['bad.name', 'empty-new', 'fresh', 'mixed', SID, 'stray.json', ...(WIN ? [] : ['linked'])].sort());
+  assert.deepEqual(readdirSync(join(w.base, 'bad.name')), ['a.json']);
   assert.deepEqual(readdirSync(join(w.base, 'fresh')).sort(), ['a.json', 'b.json']);
   assert.deepEqual(readdirSync(join(w.base, 'mixed')).sort(), ['a.json', 'sub']);
   if (!WIN) assert.deepEqual(readdirSync(target), ['a.json']);
@@ -166,7 +181,7 @@ test('P10 with TMPDIR a link to another folder: the state is found again, and an
   const ev = (event, extra) => w.ev(event, { cwd: projLink, ...extra });
   const runs = (n) => Array.from({ length: n }, () => kindOf(w.run(ev('PreToolUse', { tool_name: 'Bash', tool_input: { command: 'npm test' } }), env)));
   assert.deepEqual(runs(3), ['-', '-', 'note']);
-  assert.ok(existsSync(join(real, 'pau-skills-watchdog', SID, 'agent-1.json')));
+  assert.ok(existsSync(join(real, BASE, SID, 'agent-1.json')));
   for (const file of [join(proj, 'a.js'), join(projLink, 'b.js')]) {
     const edit = { tool_name: 'Write', tool_input: { file_path: file, content: 'x' } };
     silent(w.run(ev('PreToolUse', edit), env));
@@ -199,6 +214,8 @@ test('P12 the base folder or the session folder is a link to another folder, or 
     'session is a link': (w, target) => { mkdirSync(w.base, { mode: 0o700 }); seed(target); symlinkSync(target, w.dir()); },
     'base is group writable': (w) => { mkdirSync(w.base, { mode: 0o700 }); chmodSync(w.base, 0o770); },
     'session is group writable': (w) => { w.prep(); chmodSync(w.dir(), 0o770); },
+    'base is writable by others': (w) => { mkdirSync(w.base, { mode: 0o700 }); chmodSync(w.base, 0o702); },
+    'session is writable by others': (w) => { w.prep(); chmodSync(w.dir(), 0o702); },
   };
   for (const [name, setup] of Object.entries(setups)) {
     const w = world();
@@ -208,5 +225,16 @@ test('P12 the base folder or the session folder is a link to another folder, or 
     for (const input of [start(w), pre(w), pre(w), pre(w)]) silent(w.run(input), name);
     assert.deepEqual(readdirSync(target, { recursive: true }).sort(), before, name);
     if (!name.startsWith('session is a link')) assert.equal(existsSync(w.file()), false, name);
+  }
+});
+
+const ROOT_USER = typeof process.getuid === 'function' && process.getuid() === 0;
+test('P13 the base folder or the session folder owned by another user: silent and writes nothing', { skip: !ROOT_USER && 'needs root to give a folder to another user' }, () => {
+  for (const which of ['base', 'session']) {
+    const w = world();
+    w.prep();
+    chownSync(which === 'base' ? w.base : w.dir(), 12345, 12345);
+    for (const input of [w.ev('SubagentStart'), w.ev('PreToolUse', { tool_name: 'Bash', tool_input: { command: 'ls' } })]) silent(w.run(input), which);
+    assert.deepEqual(readdirSync(w.dir()), [], which);
   }
 });
