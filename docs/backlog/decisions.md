@@ -252,3 +252,10 @@
    shared Claude Ship (released 2026-11-23); Q27 records what its docs say and where it could meet our skills, for the
    owner to decide.
 
+29. **The backlog order holds, and Q27's scope.** Once an item is next in "Order", it is done next. The order changes
+   only when the owner gives a specific reason; a new idea goes after the planned items, so the backlog stays short.
+   The rule is in CLAUDE.md. Q21 starts now. The owner is on a personal plan and would run `/ship` both in the terminal
+   and in the desktop app, so Q27 takes options 1 (name `/ship` in `safe-merge` and `lean-subagent-dev`) and 3
+   (REVIEW.md files that do not confuse Code Review), after Q21. Options 2 and 4 need a Team or Enterprise plan and
+   are skipped.
+

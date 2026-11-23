@@ -67,7 +67,7 @@ under "Work items" below.
 - [How to run a batch](backlog/how-to-run-a-batch.md): the 10 steps and "With the roster".
 - [Kickoff for the next session](backlog/kickoff.md): the next session's kickoff, and the fifth batch's kickoff as a
   template.
-- [Decisions](backlog/decisions.md): decisions 1 to 28, taken from 2026-10-17 to 2026-11-23.
+- [Decisions](backlog/decisions.md): decisions 1 to 29, taken from 2026-10-17 to 2026-11-23.
 - [Context budget](backlog/context-budget.md): the facts and the policy since P0.5.
 - [Things that bit the first batch](backlog/things-that-bit/batch-1.md)
 - [Things that bit the second batch](backlog/things-that-bit/batch-2.md)
@@ -175,7 +175,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 23. Done: the eighteenth batch, Q24 verification ideas from the Claude Code team (pull request 76); its scope was
     decision 26.
 24. **Next:** Q21 a subagent watchdog (decisions 22 and 23); its kickoff is in [backlog/kickoff.md](backlog/kickoff.md).
-    Q27 Claude Ship waits for the owner's scope (decision 28). Parked: Q25 Claude Code mods (decision 27) and Q26 our
-    hooks under Code Mode (decision 28).
+    Then Q27 Claude Ship and our skills (options 1 and 3, decision 29). Parked: Q25 Claude Code mods (decision 27) and
+    Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
