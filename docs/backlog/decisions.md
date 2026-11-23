@@ -244,3 +244,11 @@
    Claude reads it, and it does not start with a mod that checks tool calls installed. `docs/backlog/q26.md` holds the
    plan.
 
+## Decisions taken (2026-11-23)
+
+28. **Code Mode parked, Q21 next.** The owner will not use Code Mode while it is experimental: it runs only in a
+   terminal, not in the desktop app, and it turns off tools the owner uses, such as browser access. Q26 is parked with
+   its plan kept, to pick up if Code Mode becomes a normal mode, since it does save tokens. Q21 is next. The owner also
+   shared Claude Ship (released 2026-11-23); Q27 records what its docs say and where it could meet our skills, for the
+   owner to decide.
+

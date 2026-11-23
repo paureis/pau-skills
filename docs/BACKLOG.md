@@ -67,7 +67,7 @@ under "Work items" below.
 - [How to run a batch](backlog/how-to-run-a-batch.md): the 10 steps and "With the roster".
 - [Kickoff for the next session](backlog/kickoff.md): the next session's kickoff, and the fifth batch's kickoff as a
   template.
-- [Decisions](backlog/decisions.md): decisions 1 to 24, taken from 2026-10-17 to 2026-11-11.
+- [Decisions](backlog/decisions.md): decisions 1 to 28, taken from 2026-10-17 to 2026-11-23.
 - [Context budget](backlog/context-budget.md): the facts and the policy since P0.5.
 - [Things that bit the first batch](backlog/things-that-bit/batch-1.md)
 - [Things that bit the second batch](backlog/things-that-bit/batch-2.md)
@@ -135,7 +135,8 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q23 the lazy senior developer, adapted from ponytail](backlog/q23.md)
 - [Q24 verification ideas from the Claude Code team](backlog/q24.md)
 - [Q25 Claude Code mods: where they could save tokens](backlog/q25.md) (parked)
-- [Q26 our hooks under Code Mode](backlog/q26.md)
+- [Q26 our hooks under Code Mode](backlog/q26.md) (parked)
+- [Q27 Claude Ship and our skills](backlog/q27.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -173,7 +174,8 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
     decision 25.
 23. Done: the eighteenth batch, Q24 verification ideas from the Claude Code team (pull request 76); its scope was
     decision 26.
-24. **Next:** Q26 our hooks under Code Mode (decision 27), then Q21 a subagent watchdog (decisions 22 and 23). Both
-    kickoffs are in [backlog/kickoff.md](backlog/kickoff.md). Q25 Claude Code mods is parked (decision 27).
+24. **Next:** Q21 a subagent watchdog (decisions 22 and 23); its kickoff is in [backlog/kickoff.md](backlog/kickoff.md).
+    Q27 Claude Ship waits for the owner's scope (decision 28). Parked: Q25 Claude Code mods (decision 27) and Q26 our
+    hooks under Code Mode (decision 28).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
