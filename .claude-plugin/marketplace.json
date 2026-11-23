@@ -9,7 +9,7 @@
     {
       "name": "pau-skills",
       "description": "Everything in this marketplace as one plugin: every skill and every hook from session-discipline, verification, agent-orchestration, guards and planning. Install this or the individual plugins, not both.",
-      "version": "0.20.0",
+      "version": "0.21.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -120,6 +120,16 @@
             ]
           },
           {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
             "matcher": "Bash",
             "hooks": [
               {
@@ -174,6 +184,15 @@
                 "timeout": 5
               }
             ]
+          },
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
           }
         ],
         "Stop": [
@@ -187,12 +206,41 @@
             ]
           }
         ],
+        "PostToolUse": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "PostToolUseFailure": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
         "SubagentStart": [
           {
             "hooks": [
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/no-idle.mjs\"",
+                "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
                 "timeout": 5
               }
             ]
@@ -206,13 +254,24 @@
               }
             ]
           }
+        ],
+        "SubagentStop": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
         ]
       }
     },
     {
       "name": "pau-skills-hooks",
-      "description": "Every hook in this marketplace and no skills: the guards against destructive commands, written secrets, skipped git hooks and weakened tests, the check that work was verified before it is called done, the session-start and compaction hooks, the lazy-senior rules at every session and subagent start, and a log of which skills start. Install it when your skills come from somewhere else, such as your claude.ai account. Do not install it next to pau-skills or the individual plugins, which carry the same hooks.",
-      "version": "0.5.0",
+      "description": "Every hook in this marketplace and no skills: the guards against destructive commands, written secrets, skipped git hooks and weakened tests, the check that work was verified before it is called done, the session-start and compaction hooks, the lazy-senior rules at every session and subagent start, a watchdog that nudges subagents that loop or go long with no edit and lists stuck ones in the main session, and a log of which skills start. Install it when your skills come from somewhere else, such as your claude.ai account. Do not install it next to pau-skills or the individual plugins, which carry the same hooks.",
+      "version": "0.6.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -314,6 +373,16 @@
             ]
           },
           {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          },
+          {
             "matcher": "Bash",
             "hooks": [
               {
@@ -368,6 +437,15 @@
                 "timeout": 5
               }
             ]
+          },
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
           }
         ],
         "Stop": [
@@ -381,12 +459,41 @@
             ]
           }
         ],
+        "PostToolUse": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "PostToolUseFailure": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
         "SubagentStart": [
           {
             "hooks": [
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/no-idle.mjs\"",
+                "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
                 "timeout": 5
               }
             ]
@@ -400,13 +507,24 @@
               }
             ]
           }
+        ],
+        "SubagentStop": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
         ]
       }
     },
     {
       "name": "session-discipline",
       "description": "Start every session from the written roadmap and the git state, keep the facts a compaction loses, and close in a fixed order: retrospective, roadmap and log, handoff, commit. Plus an instruction-file audit, a guided project setup for new users, a router over every skill, and a log and report of which skills you actually use.",
-      "version": "0.13.2",
+      "version": "0.13.3",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -551,8 +669,8 @@
     },
     {
       "name": "agent-orchestration",
-      "description": "Working with subagents: a hook that stops agents from ending their turn idle, an operating methodology where no agent certifies its own work, a codebase oracle that grades the evidence for every answer, parallel work in separate git worktrees, a lean one-subagent-at-a-time way of working that adjusts to your usage budget, and an arena where a blind judge helps pick among several attempts.",
-      "version": "0.12.0",
+      "description": "Working with subagents: a hook that stops agents from ending their turn idle, a watchdog hook that nudges a subagent that reruns a command or goes long with no edit and shows the main session which subagents look stuck, an operating methodology where no agent certifies its own work, a codebase oracle that grades the evidence for every answer, parallel work in separate git worktrees, a lean one-subagent-at-a-time way of working that adjusts to your usage budget, and an arena where a blind judge helps pick among several attempts.",
+      "version": "0.13.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -584,6 +702,51 @@
                 "timeout": 5
               }
             ]
+          },
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "PostToolUse": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "PostToolUseFailure": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "UserPromptSubmit": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
           }
         ],
         "SubagentStart": [
@@ -592,6 +755,22 @@
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/no-idle.mjs\"",
+                "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "SubagentStop": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
                 "timeout": 5
               }
             ]

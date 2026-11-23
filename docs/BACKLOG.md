@@ -67,7 +67,8 @@ under "Work items" below.
 - [How to run a batch](backlog/how-to-run-a-batch.md): the 10 steps and "With the roster".
 - [Kickoff for the next session](backlog/kickoff.md): the next session's kickoff, and the fifth batch's kickoff as a
   template.
-- [Decisions](backlog/decisions.md): decisions 1 to 24, taken from 2026-10-17 to 2026-11-11.
+- [Decisions](backlog/decisions.md): decisions 22 to 30, taken from 2026-11-06 to 2026-11-23, and
+  [decisions 1 to 21](backlog/decisions-1-to-21.md), from 2026-10-17 to 2026-11-04.
 - [Context budget](backlog/context-budget.md): the facts and the policy since P0.5.
 - [Things that bit the first batch](backlog/things-that-bit/batch-1.md)
 - [Things that bit the second batch](backlog/things-that-bit/batch-2.md)
@@ -88,6 +89,7 @@ under "Work items" below.
 - [Things that bit the sixteenth batch](backlog/things-that-bit/batch-16.md)
 - [Things that bit the seventeenth batch](backlog/things-that-bit/batch-17.md)
 - [Things that bit the eighteenth batch](backlog/things-that-bit/batch-18.md)
+- [Things that bit the nineteenth batch](backlog/things-that-bit/batch-19.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not; the first six batches are in
   [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md), and the seventh to twelfth in
   [done-2026-10-20-to-25.md](backlog/done-2026-10-20-to-25.md).
@@ -130,12 +132,13 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q18 tests for the description rules checked by hand](backlog/q18.md)
 - [Q19 descriptions in printable ASCII only](backlog/q19.md)
 - [Q20 verify-before-done without false alarms](backlog/q20.md)
-- [Q21 a subagent watchdog](backlog/q21.md)
+- [Q21 a subagent watchdog](backlog/q21.md) (done)
 - [Q22 two hooks that get in the way](backlog/q22.md)
 - [Q23 the lazy senior developer, adapted from ponytail](backlog/q23.md)
 - [Q24 verification ideas from the Claude Code team](backlog/q24.md)
 - [Q25 Claude Code mods: where they could save tokens](backlog/q25.md) (parked)
-- [Q26 our hooks under Code Mode](backlog/q26.md)
+- [Q26 our hooks under Code Mode](backlog/q26.md) (parked)
+- [Q27 Claude Ship and our skills](backlog/q27.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -173,7 +176,9 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
     decision 25.
 23. Done: the eighteenth batch, Q24 verification ideas from the Claude Code team (pull request 76); its scope was
     decision 26.
-24. **Next:** Q26 our hooks under Code Mode (decision 27), then Q21 a subagent watchdog (decisions 22 and 23). Both
-    kickoffs are in [backlog/kickoff.md](backlog/kickoff.md). Q25 Claude Code mods is parked (decision 27).
+24. Done: the nineteenth batch, Q21 a subagent watchdog (pull request 79); its design was decisions 22, 23 and 30.
+25. **Next:** Q27 Claude Ship and our skills (options 1 and 3, decision 29); its kickoff is in
+    [backlog/kickoff.md](backlog/kickoff.md). Parked: Q25 Claude Code mods (decision 27) and Q26 our hooks under Code
+    Mode (decision 28). Work this order as it stands (decision 29).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

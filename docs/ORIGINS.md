@@ -67,6 +67,7 @@ Cursor's plugin repository. pstack is a single snapshot, so there is no history 
 ## agent-orchestration
 
 - [No-idle hook, `hooks/agent-orchestration/no-idle.mjs`](origins/agent-orchestration/no-idle.md): Original
+- [Subagent watchdog hook, `hooks/agent-orchestration/subagent-watchdog.mjs`](origins/agent-orchestration/subagent-watchdog.md): Original
 - [methodology](origins/agent-orchestration/methodology.md): Original
 - [codebase-oracle](origins/agent-orchestration/codebase-oracle.md): Adapted from [pstack `how`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/how) and [`why`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/why)
 - [parallel-worktrees and `worktrees.mjs`](origins/agent-orchestration/parallel-worktrees.md): Original

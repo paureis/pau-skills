@@ -102,7 +102,10 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   that Create fills with the paths of the project's design system (it extends a keyframe into further screens with
   only the system's tokens and lists every value it invents), and `check-agents.mjs`, which finds what makes Claude
   Code skip an agent or quietly change its tools. Asks before every write.
-- Hook: [`no-idle`](../hooks/agent-orchestration/no-idle.mjs).
+- Hooks: [`no-idle`](../hooks/agent-orchestration/no-idle.mjs) and
+  [`subagent-watchdog`](../hooks/agent-orchestration/subagent-watchdog.mjs) (a note, then an ask, when a subagent reruns a
+  command or goes many tool calls with no edit; one status line per subagent in the main session when one looks stuck;
+  see [its page](../hooks/agent-orchestration/subagent-watchdog.md)).
 
 ## guards
 

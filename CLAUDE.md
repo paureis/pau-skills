@@ -37,6 +37,9 @@ This is a Claude Code plugin marketplace. Read this before changing anything.
   `pau-skills-hooks`. After a merge that adds or changes a skill, hand over the zips for those skills, built on main
   with `node scripts/pack-skills.mjs --since <main before the change>`; see step 10 of "How to run a batch" in
   docs/backlog/how-to-run-a-batch.md. A new batch starts from the kickoff message in docs/backlog/kickoff.md.
+- Work the backlog in its "Order" (docs/BACKLOG.md). The item marked next is the one to do; never move it back or put
+  a new item ahead of it unless the owner gives a specific reason for the change. A new idea goes after the planned
+  items, so the backlog does not pile up (decision 29).
 
 ## Checks before every commit
 
