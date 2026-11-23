@@ -129,6 +129,18 @@ const OFF_SWITCH = [
     acts: (r) => { assert.equal(r.code, 0); assert.ok(additionalContext(r)); },
   },
   {
+    // The runner rewrites the project file between its runs, so the option is in the user file (PAU_SKILLS_HOME).
+    name: 'subagent-watchdog', script: ['agent-orchestration', 'subagent-watchdog.mjs'],
+    input: (p) => ({ hook_event_name: 'PreToolUse', session_id: 'sess-k1', agent_id: 'agent-k1', agent_type: 'builder', cwd: p, tool_name: 'Bash', tool_input: { command: 'npm test' } }),
+    acts: (r) => { assert.equal(r.code, 0); assert.equal(JSON.parse(r.stdout).hookSpecificOutput.permissionDecision, 'ask'); },
+    env: () => {
+      const home = tempDir(); const user = tempDir(); const tmp = tempDir();
+      mkdirSync(join(user, '.claude'));
+      writeFileSync(join(user, '.claude', 'pau-skills.json'), JSON.stringify({ 'subagent-watchdog': { repeatAsk: 1 } }));
+      return { HOME: home, USERPROFILE: home, PAU_SKILLS_HOME: user, TMPDIR: tmp, TMP: tmp, TEMP: tmp };
+    },
+  },
+  {
     name: 'lazy-senior', script: ['planning', 'lazy-senior.mjs'],
     input: (p) => ({ hook_event_name: 'SubagentStart', cwd: p }),
     acts: (r) => { assert.equal(r.code, 0); assert.ok(additionalContext(r).startsWith('When you write or change code')); },
@@ -183,7 +195,7 @@ for (const h of OFF_SWITCH) {
     if (h.setup) h.setup(p);
     const run = (disable) => runNode(repo('hooks', ...h.script), {
       input: h.input ? JSON.stringify(h.input(p)) : '',
-      env: { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: p, PAU_SKILLS_DISABLE: disable },
+      env: { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: p, PAU_SKILLS_DISABLE: disable, ...(h.env ? h.env(p) : {}) },
     });
     const silent = (r, how) => {
       assert.equal(r.code, 0, `exit code, ${how}`);
