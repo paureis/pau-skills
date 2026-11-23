@@ -9,8 +9,11 @@
 // Inside a subagent (the event carries agent_id):
 //   - A repeat is the same shell command (Bash or PowerShell), white space collapsed, run again with no edit in
 //     between. A note on the 3rd run, an ask on the 5th and every 5th after it.
-//   - No progress is a stretch of tool calls with no edit: a note at 40, an ask at 80 and every 80th after it.
-//     Read-only agent types skip this rule, and get repeat notes but no repeat asks.
+//   - No progress is a stretch of tool calls with no edit: one note on the first call at or past 40, an ask on the
+//     first call at or past 80, 160, ... (the last level asked is kept; both reset at an edit). Read-only agent
+//     types skip this rule, and get repeat notes but no repeat asks.
+//   - An exempt call (an edit, a git commit, SubagentHandback, SendMessage) may get a note but never an ask, so a
+//     loop of failing edits or commits is still noticed.
 //   - An edit is Edit, Write, MultiEdit or NotebookEdit on a path inside the project or inside the agent's own
 //     working folder (insideProject from verify-before-done), or a git commit (found with commands() from
 //     hooks/lib/shell.mjs, which also looks inside bash -c). It counts at PostToolUse, so a refused edit is no edit;
@@ -21,9 +24,11 @@
 // In the main session (no agent_id): on UserPromptSubmit and PreToolUse, when at least one subagent is flagged, one
 // line per running subagent, at most once every 5 minutes. Flags: looks stuck (no tool call started or finished for
 // 10 minutes and none in flight), a command in flight for 30 minutes, a repeat at the note, no edit at the note. An
-// agent waiting on its own subagent (an Agent or Task call in flight) is never flagged for that. An agent with no
-// call in flight and no event for 60 minutes is dropped from the state: it may have ended with no stop event, as an
-// agent stopped with TaskStop does. A main-session PostToolUse for TaskStop removes the agent it names.
+// Agent or Task call with a tool_use_id is a wait until the PostToolUse or PostToolUseFailure with the same id (at
+// most 32, oldest dropped), so parallel Agent calls are tracked one by one; an agent with a wait, or with an Agent or
+// Task call in flight, reads "waiting" and is never flagged stuck or long-running, nor dropped. An agent with no call
+// in flight, no wait and no event for 60 minutes is dropped from the state: it may have ended with no stop event, as
+// an agent stopped with TaskStop does. A main-session PostToolUse for TaskStop removes the agent it names.
 //
 // Facts it rests on, from two headless prototypes (decision 23, and Claude Code 2.1.330 on 2026-11-23): subagent hook
 // events carry the main session's session_id and their own agent_id and agent_type; main-session events carry no
@@ -31,8 +36,8 @@
 // next event. A failed shell command fires PostToolUseFailure. TaskStop's task_id is the agent_id the agent's own
 // hooks carry, and a stopped agent gets no SubagentStop.
 //
-// The state of one agent is { type, start, last, calls, sinceEdit, edit, runs, top, flight }, times in Date.now()
-// milliseconds; runs maps a key ("h" and 16 characters of the command's SHA-256) to its count, at most 200 keys. The
+// The state of one agent is { type, start, last, calls, sinceEdit, edit, runs, top, flight, waits, noted, asked },
+// times in Date.now() milliseconds; runs maps a key ("h" and 16 characters of the command's SHA-256) to its count, at most 200 keys. The
 // main session's state is { shownAt, agents: Map }; a Map, so an id such as __proto__ is a plain entry. step() returns
 // the new state, the output or null, and which agents to write or remove; the hook does the I/O.
 import { createHash } from 'node:crypto';
@@ -47,7 +52,7 @@ export const DEFAULTS = Object.freeze({
 const MINUTE = 60 * 1000;
 export const LIMITS = Object.freeze({
   stuck: 10 * MINUTE, long: 30 * MINUTE, throttle: 5 * MINUTE, drop: 60 * MINUTE, day: 24 * 60 * MINUTE,
-  keys: 200, shown: 80, message: 120, path: 4096, type: 200,
+  keys: 200, shown: 80, message: 120, path: 4096, type: 200, waits: 32, waitId: 128,
 });
 // Every regular expression in this file. id: a session id or an agent id, also the file name of an agent's state.
 export const PATTERNS = Object.freeze({ id: /^[A-Za-z0-9_-]{1,128}$/, key: /^h[A-Za-z0-9_-]{16}$/ });
@@ -109,7 +114,11 @@ export function isEdit(input, where = {}) {
 }
 
 export const emptyState = () => ({ shownAt: 0, agents: new Map() });
-const newAgent = (type, now) => ({ type, start: now, last: now, calls: 0, sinceEdit: 0, edit: 0, runs: {}, top: null, flight: null });
+const newAgent = (type, now) => ({
+  type, start: now, last: now, calls: 0, sinceEdit: 0, edit: 0, runs: {}, top: null, flight: null, waits: [], noted: false, asked: 0,
+});
+/** A tool_use_id that can key a wait: a string of 1 to 128 characters. */
+const waitId = (v) => (typeof v === 'string' && v.length >= 1 && v.length <= LIMITS.waitId ? v : null);
 
 /** One agent's state from its file's text, or null when it is not a valid state. Strings are capped. */
 export function parseAgent(text) {
@@ -137,11 +146,20 @@ export function parseAgent(text) {
     if (!isObject(f) || typeof f.tool !== 'string' || !(f.cmd === null || typeof f.cmd === 'string') || !Number.isFinite(f.at)) return null;
     flight = { tool: f.tool.slice(0, LIMITS.type), cmd: f.cmd === null ? null : f.cmd.slice(0, LIMITS.shown), at: f.at };
   }
-  return { type: v.type.slice(0, LIMITS.type), start: v.start, last: v.last, calls: v.calls, sinceEdit: v.sinceEdit, edit: v.edit, runs, top, flight };
+  const waits = v.waits === undefined ? [] : v.waits;
+  if (!Array.isArray(waits) || !waits.every((w) => isObject(w) && waitId(w.id) !== null && Number.isFinite(w.at))) return null;
+  const noted = v.noted === undefined ? false : v.noted;
+  const asked = v.asked === undefined ? 0 : v.asked;
+  if (typeof noted !== 'boolean' || !Number.isInteger(asked) || asked < 0) return null;
+  return {
+    type: v.type.slice(0, LIMITS.type), start: v.start, last: v.last, calls: v.calls, sinceEdit: v.sinceEdit, edit: v.edit, runs, top, flight,
+    waits: waits.slice(-LIMITS.waits).map((w) => ({ id: w.id, at: w.at })), noted, asked,
+  };
 }
 
 export const serializeAgent = (a) => JSON.stringify({
   type: a.type, start: a.start, last: a.last, calls: a.calls, sinceEdit: a.sinceEdit, edit: a.edit, runs: a.runs, top: a.top, flight: a.flight,
+  waits: a.waits, noted: a.noted, asked: a.asked,
 });
 
 /** The main session's last status time from the "shown" file's text, or 0. */
@@ -196,7 +214,9 @@ function subagent(state, input, id, now, o, where) {
   if (event === 'PostToolUse' || event === 'PostToolUseFailure') {
     a.last = now;
     a.flight = null;
-    if (event === 'PostToolUse' && isEdit(input, where)) Object.assign(a, { sinceEdit: 0, runs: {}, top: null, edit: now });
+    const ended = waitId(input.tool_use_id);
+    if (ended !== null) a.waits = a.waits.filter((w) => w.id !== ended);
+    if (event === 'PostToolUse' && isEdit(input, where)) Object.assign(a, { sinceEdit: 0, runs: {}, top: null, edit: now, noted: false, asked: 0 });
     return done();
   }
   // PreToolUse
@@ -208,6 +228,8 @@ function subagent(state, input, id, now, o, where) {
   a.sinceEdit += 1;
   a.last = now;
   a.flight = { tool, cmd: shell ? norm.slice(0, LIMITS.shown) : null, at: now };
+  const started = WAIT_TOOLS.has(tool) ? waitId(input.tool_use_id) : null;
+  if (started !== null && !a.waits.some((w) => w.id === started)) a.waits = [...a.waits, { id: started, at: now }].slice(-LIMITS.waits);
   let n = 0;
   if (shell) {
     const key = commandKey(norm);
@@ -215,13 +237,17 @@ function subagent(state, input, id, now, o, where) {
     n = a.runs[key] = (a.runs[key] || 0) + 1;
     if (!a.top || n > a.top.n) a.top = { n, cmd: norm.slice(0, LIMITS.shown) };
   }
-  if (QUIET_TOOLS.has(tool) || isEdit(input, where)) return done();
+  const exempt = QUIET_TOOLS.has(tool) || isEdit(input, where);
   const readOnly = isReadOnly(a.type, o.readOnlyAgents);
   const k = a.sinceEdit;
-  const repeatAsk = shell && !readOnly && n >= o.repeatAsk && (n - o.repeatAsk) % o.repeatAsk === 0;
-  const noEditAsk = !readOnly && k >= o.noEditAsk && (k - o.noEditAsk) % o.noEditAsk === 0;
+  const level = Math.floor(k / o.noEditAsk);
+  const repeatAsk = shell && !exempt && !readOnly && n >= o.repeatAsk && (n - o.repeatAsk) % o.repeatAsk === 0;
+  const noEditAsk = !exempt && !readOnly && k >= o.noEditAsk && level > a.asked;
+  const noEditNote = !readOnly && !a.noted && k >= o.noEditNote;
   const repeat = repeatAsk || (shell && n === o.repeatNote);
-  const noEdit = noEditAsk || (!readOnly && k === o.noEditNote);
+  const noEdit = noEditAsk || noEditNote;
+  if (noEditNote) a.noted = true;
+  if (noEditAsk) a.asked = level;
   if (!repeat && !noEdit) return done();
   const shown = norm.slice(0, LIMITS.message);
   const parts = [];
@@ -239,12 +265,12 @@ const oneLine = (s, n) => normalizeCommand(s).slice(0, n);
 export function judge(a, now, o) {
   const flags = [];
   const idle = now - a.last;
-  const waiting = a.flight !== null && WAIT_TOOLS.has(a.flight.tool);
-  if (a.flight === null && idle >= LIMITS.stuck) flags.push(`looks stuck: no tool call for ${minutes(idle)} minutes`);
+  const waiting = a.waits.length > 0 || (a.flight !== null && WAIT_TOOLS.has(a.flight.tool));
+  if (a.flight === null && !waiting && idle >= LIMITS.stuck) flags.push(`looks stuck: no tool call for ${minutes(idle)} minutes`);
   if (a.flight !== null && !waiting && now - a.flight.at >= LIMITS.long) flags.push(`one call has run for ${minutes(now - a.flight.at)} minutes`);
   if (a.top && a.top.n >= o.repeatNote) flags.push(`the same command ran ${a.top.n} times with no edit in between`);
   if (!isReadOnly(a.type, o.readOnlyAgents) && a.sinceEdit >= o.noEditNote) flags.push(`${a.sinceEdit} tool calls with no edit`);
-  return { flags, drop: a.flight === null && idle >= LIMITS.drop, waiting };
+  return { flags, drop: a.flight === null && !waiting && idle >= LIMITS.drop, waiting };
 }
 
 function line(id, a, now, { flags, waiting }) {
@@ -253,7 +279,12 @@ function line(id, a, now, { flags, waiting }) {
   if (a.flight !== null) {
     const m = minutes(now - a.flight.at);
     const what = a.flight.cmd !== null ? `\`${oneLine(a.flight.cmd, LIMITS.shown)}\`` : oneLine(a.flight.tool, LIMITS.type);
-    bits.push(waiting ? `waiting on a subagent for ${m} minutes` : `running ${what} for ${m} minutes`);
+    if (!WAIT_TOOLS.has(a.flight.tool)) bits.push(`running ${what} for ${m} minutes`);
+    else if (a.waits.length === 0) bits.push(`waiting on a subagent for ${m} minutes`);
+  }
+  if (a.waits.length) {
+    const n = a.waits.length;
+    bits.push(`waiting on ${n} subagent${n === 1 ? '' : 's'} for ${minutes(now - Math.min(...a.waits.map((w) => w.at)))} minutes`);
   }
   if (flags.length) bits.push(`flagged: ${flags.join('; ')}`);
   return `- ${bits.join(', ')}`;

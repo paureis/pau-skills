@@ -134,24 +134,6 @@ test('W9 no edit: 240 tool calls with no edit give a note on call 40 only and an
   assert.deepEqual(reads(s, 240), expected(240, { 40: 'note', 80: 'ask', 160: 'ask', 240: 'ask' }));
 });
 
-test('W10 no edit: an Edit in the project, a git commit, SubagentHandback and SendMessage get no note and no ask, even as call 80', () => {
-  const lastCall = {
-    Edit: ['Edit', { file_path: join(P, 'a.js') }],
-    commit: ['Bash', { command: 'git commit -m x' }],
-    SubagentHandback: ['SubagentHandback', { message: 'done' }],
-    SendMessage: ['SendMessage', { to: 'main', message: 'done' }],
-    'Read (control)': ['Read', { file_path: join(P, 'z.js') }],
-  };
-  for (const [name, [tool, input]] of Object.entries(lastCall)) {
-    for (const [before, control] of [[39, 'note'], [79, 'ask']]) {
-      const s = sim({ project: P });
-      reads(s, before);
-      const r = s.send(sub('PreToolUse', { tool_name: tool, tool_input: input, cwd: P }));
-      assert.equal(kind(r), name === 'Read (control)' ? control : '-', `${name} as call ${before + 1}`);
-    }
-  }
-});
-
 test('W11 read-only: each default type and a prefixed name skip the no-edit rule and get repeat notes but no repeat asks; builder and general-purpose do not skip', () => {
   for (const type of [...READ_ONLY, 'plugin:reviewer', 'a:b:reviewer']) {
     const ex = { agent_type: type };

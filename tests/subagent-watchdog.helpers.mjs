@@ -45,5 +45,6 @@ export const reads = (s, times, extra) =>
 
 /** An agent's state with the given fields changed. */
 export const agentEntry = (over = {}) => ({
-  type: 'builder', start: T0, last: T0, calls: 0, sinceEdit: 0, edit: 0, runs: {}, top: null, flight: null, ...over,
+  type: 'builder', start: T0, last: T0, calls: 0, sinceEdit: 0, edit: 0, runs: {}, top: null, flight: null,
+  waits: [], noted: false, asked: 0, ...over,
 });
