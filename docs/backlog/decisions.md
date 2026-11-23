@@ -259,3 +259,15 @@
    (REVIEW.md files that do not confuse Code Review), after Q21. Options 2 and 4 need a Team or Enterprise plan and
    are skipped.
 
+30. **What Q21's plan found that decision 23 did not cover**, the owner's answers each as recommended, and the changes
+   the plan check and a headless prototype (0.02 US dollars) forced:
+   - An edit inside the agent's own working folder counts, as well as one inside the project.
+   - `eng-lead` joins the read-only types. Read-only types get repeat notes but never a repeat ask.
+   - An agent with no event for 60 minutes is dropped from the status, unless it has a call in flight.
+   - The prototype showed that TaskStop fires no SubagentStop, so the main session's TaskStop call removes the agent,
+     and that a failing command fires PostToolUseFailure, which the hook also handles.
+   - One state file per agent in a folder per session, instead of one file per session: with one shared file, parallel
+     agents lost each other's stops and resets.
+   - An ask's reason tells a healthy agent it may say so and go on, since only one call was refused: fixes made through
+     the shell, mutation runs and poll loops reach an ask, and decision 22 forbids cutting off a healthy run.
+
