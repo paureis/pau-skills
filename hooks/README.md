@@ -62,6 +62,7 @@ To remove every hook from one plugin, disable the plugin: `claude plugin disable
 | [`skill-usage`](session-discipline/skill-usage.mjs) | session-discipline | PreToolUse (Skill), UserPromptSubmit | Records each skill start (time, name, typed or by the agent) for which-skill's usage report, and never the prompt | No |
 | [`lazy-senior`](planning/lazy-senior.mjs) | planning | SessionStart (startup, resume, clear, compact), SubagentStart | Adds the lazy-senior ruleset (the smallest complete change; never cut validation, error handling, security or accessibility; the project's instructions come first) to every session and every subagent as start-up context | No |
 | [`no-idle`](agent-orchestration/no-idle.mjs) | agent-orchestration | SubagentStart; PreToolUse (Agent, Task) only with `rewritePrompt` | Adds "never end your turn waiting" to every subagent as start-up context | No |
+| [`subagent-watchdog`](agent-orchestration/subagent-watchdog.mjs) | agent-orchestration | PreToolUse, PostToolUse, PostToolUseFailure, UserPromptSubmit, SubagentStart, SubagentStop | Inside a subagent, a note and then an ask when the same command reruns with no edit in between or many tool calls pass with no edit; in the main session, one line per running subagent when one looks stuck or wasteful, at most every 5 minutes. Never stops an agent | Asks |
 
 ## Options per hook
 
@@ -228,6 +229,11 @@ never started in the last 30 days.
 By default the rule arrives only as start-up context (SubagentStart), which reaches launches in the foreground, in the
 background, in a worktree and as a fork. `NO_IDLE_RULE` replaces the rule text; see
 [agent-orchestration](../skills/agent-orchestration/README.md).
+
+### subagent-watchdog
+
+Options `repeatNote`, `repeatAsk`, `noEditNote`, `noEditAsk` and `readOnlyAgents`, the state files and every rule:
+[agent-orchestration/subagent-watchdog.md](agent-orchestration/subagent-watchdog.md).
 
 ### lazy-senior
 
