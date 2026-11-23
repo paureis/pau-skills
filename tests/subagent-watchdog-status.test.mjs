@@ -54,6 +54,9 @@ test('S3 in flight: shows as running <command> for N minutes and is flagged from
   quiet(at(s.state, t + 35 * MIN), s.state, 'the denied call no longer reads as in flight');
   s.send(sub('PostToolUseFailure', { tool_name: 'Read', tool_input: {}, cwd: P }), 1 * MIN);
   assert.equal(s.agent().flight, null);
+  const q = sim({ project: P });
+  q.send(sub('PreToolUse', { tool_name: 'Read', tool_input: { file_path: 'a.js' }, cwd: P }));
+  assert.match(lineOf(at(q.state, q.now + 31 * MIN), 'agent-1')[0], /, running Read for 31 minutes, /, 'a call that is not a shell command shows its tool name');
 });
 
 test('S4 waste: an agent at the repeat note or the no-edit note is flagged; a read-only agent at the no-edit note is not', () => {
@@ -128,6 +131,7 @@ test('S9 drop: an agent with no call in flight is dropped at exactly 60:00 and k
   assert.deepEqual(gone.remove, ['agent-1']);
   assert.equal(gone.state.agents.has('agent-1'), false);
   const lines = ctx(gone).split('\n');
+  assert.equal(lines.length, 3, 'a dropped agent gets only its drop line, not its regular line too');
   assert.match(lines.at(-2), /dropped builder agent-1: no event for 60 minutes \(it may have ended without a stop event\)/);
   const kept = at(stateOf([['agent-1', fresh({ last: now - 60 * MIN + SEC })]]), now);
   assert.deepEqual([kept.remove, kept.state.agents.has('agent-1')], [[], true]);
@@ -162,6 +166,7 @@ test('S11 a main-session PostToolUse for TaskStop with the agent\'s id removes i
   assert.deepEqual([r.output, r.remove, r.write, r.changed], [null, ['agent-1'], [], true]);
   assert.deepEqual([...r.state.agents.keys()], ['agent-2']);
   quiet(stop('PreToolUse', 'agent-1'), state, 'PreToolUse for TaskStop');
+  quiet(stop('PostToolUseFailure', 'agent-1'), state, 'PostToolUseFailure for TaskStop');
   for (const bad of ['../x', '', 5, null, 'a'.repeat(129)]) quiet(stop('PostToolUse', bad), state, `task_id ${bad}`);
   quiet(stop('PostToolUse', 'agent-1', 'Bash'), state, 'another tool');
 });
