@@ -123,8 +123,8 @@ test('P7 SubagentStart prunes old session folders and old .json, .tmp and shown 
   mk('stray.json', 2 * DAY);
   const target = tempDir();
   if (!WIN) {
-    mkdirSync(join(target, 'x'), { mode: 0o700 });
-    writeFileSync(join(target, 'x', 'a.json'), 'x'); age(join(target, 'x', 'a.json'), 2 * DAY);
+    // Only an old file in the target: a prune that followed the link would delete it.
+    writeFileSync(join(target, 'a.json'), 'x'); age(join(target, 'a.json'), 2 * DAY);
     symlinkSync(target, join(w.base, 'linked'));
   }
   silent(w.run(w.ev('SubagentStart')));
@@ -132,7 +132,7 @@ test('P7 SubagentStart prunes old session folders and old .json, .tmp and shown 
   assert.deepEqual(readdirSync(w.base).sort(), ['fresh', 'mixed', SID, 'stray.json', ...(WIN ? [] : ['linked'])].sort());
   assert.deepEqual(readdirSync(join(w.base, 'fresh')).sort(), ['a.json', 'b.json']);
   assert.deepEqual(readdirSync(join(w.base, 'mixed')).sort(), ['a.json', 'sub']);
-  if (!WIN) assert.deepEqual(readdirSync(join(target, 'x')), ['a.json']);
+  if (!WIN) assert.deepEqual(readdirSync(target), ['a.json']);
 });
 
 test('P8 turned off in the project file, in the user file, or with PAU_SKILLS_DISABLE, it is silent and writes no state', () => {
