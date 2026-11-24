@@ -32,3 +32,7 @@ Things that bit Q27, the second part of the nineteenth batch:
   the same files.
 - The owner could not find `/ship` on launch day. A command named in a skill needs "if the user has it", and the
   answer to "where is it" is the version, where it runs, the rollout and the plan.
+- A timing test that passed its input to a child process on a stdin pipe hung once on macOS with Node 20 until its
+  20-second kill, on the first case, before the child's timer started (pull request 82; the same job had passed three
+  times). Pass a long input in a file: it leaves the child nothing to block on, and still avoids the 131,072-byte
+  argument limit that pushed batch 16 to stdin.
