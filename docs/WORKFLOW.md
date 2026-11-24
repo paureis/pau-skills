@@ -35,6 +35,6 @@ waiting on a background task, and the guards stop the shell mistakes I made most
 because a builder said so: each guard gets a mutation run through `mutate.sh`, and an evaluator that has not seen the
 build attacks it.
 
-When the work is done or the context is running out, `session-close` runs the retrospective (whose audit usually tells
-me the lesson is already written somewhere, and the fix is a hook rather than another sentence), updates the roadmap
-and the log, writes the handoff, and commits.
+When the work is done or the context is running out, I type `/session-close`. It runs the retrospective (whose
+audit usually tells me the lesson is already written somewhere, and the fix is a hook rather than another sentence),
+updates the roadmap and the log, writes the handoff, and commits.

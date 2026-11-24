@@ -3,6 +3,24 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-24: Q28, some skills typed only again
+
+- Seven skills now start only when you type them: `session-close`, `lean-subagent-dev`, `overnight-run`,
+  `skill-eval`, `agent-friendly-audit`, `geppetto` and `launch-readiness` (`disable-model-invocation: true`,
+  decision 32). Their descriptions are one short line each and cost no context; the model-invoked descriptions total
+  11,395 characters of 14,000. A skill another skill starts stays model-invoked, so `session-close` still runs the
+  short retrospective and the handoff, and now offers the full `retrospective` when it finds a correction or a broken
+  rule. It no longer starts by itself at a context warning. The headless turns of `overnight-run` read a copy of its
+  SKILL.md in the control folder. `rule-to-hook` and `engineering-principles` tell you to type
+  `/agent-friendly-audit` and `/skill-eval`.
+- The ask-first list drops from 14 skills to 9. `which-skill` has a "Skills you type" section, and its hook table
+  moved to `HOOKS.md`. `scripts/new-skill.mjs --typed-only` scaffolds a typed-only skill, and
+  `tests/typed-only-list.mjs` decides the list, checked against the frontmatter, the README, `which-skill` and every
+  mention. Typed-only skills have no trigger request list.
+- Versions: session-discipline 0.14.0, verification 0.16.0, agent-orchestration 0.14.0, guards 0.11.0, planning
+  0.11.0, the bundle 0.22.0. No hook changed. After the upload, check one typed-only skill in the terminal too: the
+  claude.ai test covered the desktop app.
+
 ## 2026-11-24: Q27, Claude Ship and our skills
 
 - `lean-subagent-dev` (agent-orchestration 0.13.1) and `safe-merge` (guards 0.10.1) know Claude Code's `/ship`: the
