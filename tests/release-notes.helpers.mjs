@@ -52,22 +52,31 @@ export function makeRoot(notes = { 'v0.9.0.md': GOOD }, { version = '0.9.0', med
 export const notFound = () => Object.assign(new Error('gh: Not Found (HTTP 404)'), { stderr: 'gh: Not Found (HTTP 404)' });
 
 /**
- * main with every side effect injected. The default run records gh's arguments, answers the tag lookup with a 404
- * (the tag does not exist) and returns no output for anything else.
+ * A fake gh: the release list answers `list`, the tag lookup answers `tagSha` (or a 404 when it is null, the tag
+ * does not exist), and release create calls `create`.
  */
-export function cli(argv, { env = { GITHUB_REPOSITORY: 'o/r', GITHUB_SHA: SHA }, run, tmp = tempDir('release-body-') } = {}) {
+export const fakeGh = ({ list = '', tagSha = null, create = () => '' } = {}) => (args) => {
+  if (args[0] === 'api' && args[1].endsWith('/releases')) return list;
+  if (args[0] === 'api' && args[1].includes('/git/ref/tags/')) {
+    if (tagSha === null) throw notFound();
+    return `${tagSha}\n`;
+  }
+  return create(args);
+};
+
+/** main with every side effect injected. Every gh call is recorded; `run` replaces the fake gh. */
+export function cli(argv, { env = { GITHUB_REPOSITORY: 'o/r', GITHUB_SHA: SHA }, run, tmp = tempDir('release-body-'), ...fake } = {}) {
   const out = [];
   const err = [];
   const calls = [];
-  const gh = run || ((args) => {
-    calls.push(args);
-    if (args[0] === 'api' && /\/git\/ref\/tags\//.test(args[1])) throw notFound();
-    return '';
-  });
+  const inner = run || fakeGh(fake);
+  const gh = (args) => { calls.push(args); return inner(args); };
   const code = main(argv, { log: (s) => out.push(s), warn: (s) => err.push(s), env, run: gh, tmp });
   return { code, out: out.join('\n'), err: err.join('\n'), calls, creates: calls.filter((a) => a[0] === 'release'), tmp };
 }
 export const check = (notes, opts) => cli(['check', '--root', makeRoot(notes, opts)]);
+/** check on GOOD with `s` added to the New section (line 9), in a root that holds media/a.gif. */
+export const checkImage = (s) => check({ 'v0.9.0.md': edit('- A skill.', `- A skill.\n\n${s}`) }, { media: ['a.gif'] });
 export const fails = (r, re) => {
   assert.equal(r.code, 1, `exit 1\n${r.out}\n${r.err}`);
   assert.match(r.err, re);

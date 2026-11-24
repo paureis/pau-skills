@@ -1,14 +1,12 @@
-// scripts/release-notes.mjs (Q31): docs/releases/v<version>.md is checked by npm test and published as a GitHub
-// Release when it reaches main. Every root here is a temp folder written from the strings in
-// tests/release-notes.helpers.mjs; gh never runs (main gets an injected run, and the child process gets a PATH with
-// no gh).
+// scripts/release-notes.mjs (Q31). Roots are temp folders written from the strings in release-notes.helpers.mjs;
+// gh never runs (main gets an injected run, the child process a PATH with no gh).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync, realpathSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { repo, runNode, tempDir } from './helpers.mjs';
 import { compareVersions, readNotes, releaseBody, treeCounts } from '../scripts/release-notes.mjs';
-import { SHA, TITLE, GOOD, edit, older, makeRoot, cli, check, fails, noGh } from './release-notes.helpers.mjs';
+import { SHA, TITLE, GOOD, edit, older, makeRoot, cli, check, checkImage, fails, noGh } from './release-notes.helpers.mjs';
 
 const SCRIPT = repo('scripts', 'release-notes.mjs');
 
@@ -42,7 +40,7 @@ test('check: other ## headings may sit between the required ones, and ### lines 
 });
 
 test('check: a heading with a Unicode emoji or trailing words matches; a longer word does not', () => {
-  const unicode = edit('## :sparkles: New', '## ✨ New').split('## :warning: Known').join('## ⚠️ Known');
+  const unicode = edit('## :sparkles: New', '## \u{2728} New').split('## :warning: Known').join('## \u{26A0}\u{FE0F} Known');
   const r = check({ 'v0.9.0.md': edit('## :inbox_tray: What you do', '## What you do (uploads)', unicode) });
   assert.equal(r.code, 0, r.err);
   fails(check({ 'v0.9.0.md': edit('## :sparkles: New', '## :sparkles: Newsletter') }), /the section "New" is missing/);
@@ -63,6 +61,17 @@ test('check: a count outside the Counts section is ignored, and a number may use
   const notes = readNotes(edit('- Skills: 2', '- Skills: 1,002'), { version: '0.9.0' });
   assert.deepEqual(notes.problems, []);
   assert.deepEqual(notes.counts, { Skills: 1002, Hooks: 3, Tests: 1957 });
+  for (const bad of ['1,00', '1,0000', '12,34,567', '2,']) {
+    fails(check({ 'v0.9.0.md': edit('- Skills: 2', `- Skills: ${bad}`) }), new RegExp(`Counts: "Skills: ${bad}" is not a number`));
+  }
+  assert.equal(check({ 'v0.9.0.md': edit('- Skills: 2', '- Skills: 2 (one new)') }).code, 0);
+});
+
+test('check: a fenced ## heading is not a section, and only its own marker closes a fence', () => {
+  const fenced = (open, inner, close) => ({ 'v0.9.0.md': edit('## :warning: Known issues\n\nNone.', `## :warning: Known issues\n\n${open}\n${inner}\n## :sparkles: New\n${close}`) });
+  assert.equal(check(fenced('```markdown', '~~~', '```')).code, 0, 'a ~~~ inside a ``` fence');
+  assert.equal(check(fenced('~~~~', '~~~', '~~~~')).code, 0, 'a shorter ~~~ inside a ~~~~ fence');
+  fails(check(fenced('', '', '')), /the section "New" appears twice/);
 });
 
 test('check: line 1 is the title with the file version and no shortcode or emoji', () => {
@@ -73,28 +82,25 @@ test('check: line 1 is the title with the file version and no shortcode or emoji
 });
 
 test('check: images only as ![...](media/<name>) with the file in docs/releases/media/', () => {
-  const img = (s) => ({ 'v0.9.0.md': edit('- A skill.', `- A skill.\n\n${s}`) });
-  assert.equal(check(img('![demo](media/a.gif)'), { media: ['a.gif'] }).code, 0);
-  fails(check(img('![demo](https://example.com/a.gif)'), { media: ['a.gif'] }), /image target "https:\/\/example\.com\/a\.gif" is not media\/<name>/);
-  fails(check(img('![demo](../media/a.gif)'), { media: ['a.gif'] }), /image target "\.\.\/media\/a\.gif"/);
-  fails(check(img('![a [nested] alt](https://example.com/a.gif)'), { media: ['a.gif'] }), /image target "https:/);
-  fails(check(img('![demo](media/missing.gif)'), { media: ['a.gif'] }), /docs\/releases\/media\/missing\.gif does not exist/);
-  fails(check(img('![demo][r]\n\n[r]: https://example.com/a.gif'), { media: ['a.gif'] }), /reference-style image/);
-  fails(check(img('![demo]\n\n[demo]: ../a.gif'), { media: ['a.gif'] }), /reference-style image/);
+  assert.equal(checkImage('![demo](media/a.gif)').code, 0);
+  fails(checkImage('![demo](https://example.com/a.gif)'), /image target "https:\/\/example\.com\/a\.gif" is not media\/<name>/);
+  fails(checkImage('![demo](../media/a.gif)'), /image target "\.\.\/media\/a\.gif"/);
+  fails(checkImage('![a [nested] alt](https://example.com/a.gif)'), /image target "https:/);
+  fails(checkImage('![demo](media/missing.gif)'), /docs\/releases\/media\/missing\.gif does not exist/);
+  fails(checkImage('![demo][r]\n\n[r]: https://example.com/a.gif'), /reference-style image/);
+  fails(checkImage('![demo]\n\n[demo]: ../a.gif'), /reference-style image/);
 });
 
 test('check: the image scan reads the whole text, so no outside URL slips through', () => {
-  const img = (s) => ({ 'v0.9.0.md': edit('- A skill.', `- A skill.\n\n${s}`) });
-  const m = { media: ['a.gif'] };
-  assert.equal(check(img('![demo](media/a.gif) and \\![not an image](https://example.com/a.gif)'), m).code, 0, 'control');
-  fails(check(img('![wrapped\nalt](https://example.com/a.gif)'), m), /^docs\/releases\/v0\.9\.0\.md:9: image "!\[wrapped" is not !\[<alt>\]\(media\/<name>\)/m);
-  fails(check(img('![a [b [c]] d](https://example.com/a.gif)'), m), /image target "https:\/\/example\.com\/a\.gif"/);
-  const label = check(img('![My  Demo]\n\n[my demo]: https://example.com/a.gif'), m);
+  assert.equal(checkImage('![demo](media/a.gif) and \\![not an image](https://example.com/a.gif)').code, 0, 'control');
+  fails(checkImage('![wrapped\nalt](https://example.com/a.gif)'), /^docs\/releases\/v0\.9\.0\.md:9: image "!\[wrapped" is not !\[<alt>\]\(media\/<name>\)/m);
+  fails(checkImage('![a [b [c]] d](https://example.com/a.gif)'), /image target "https:\/\/example\.com\/a\.gif"/);
+  const label = checkImage('![My  Demo]\n\n[my demo]: https://example.com/a.gif');
   fails(label, /image "!\[My {2}Demo\]" is not/);
   fails(label, /:11: reference definition \[my demo\] points at "https:\/\/example\.com\/a\.gif", outside media\//);
-  fails(check(img('Quote:\n\n>  > [demo]: https://example.com/a.gif'), m), /reference definition \[demo\] points at "https:/);
-  fails(check(img('[demo]:\n  <https://example.com/a.gif>'), m), /reference definition \[demo\] points at "https:/);
-  assert.equal(check(img('[clip]: media/a.gif'), m).code, 0, 'a definition of a media file is fine');
+  fails(checkImage('Quote:\n\n>  > [demo]: https://example.com/a.gif'), /reference definition \[demo\] points at "https:/);
+  fails(checkImage('[demo]:\n  <https://example.com/a.gif>'), /reference definition \[demo\] points at "https:/);
+  assert.equal(checkImage('[clip]: media/a.gif').code, 0, 'a definition of a media file is fine');
 });
 
 test('check: <img>, <picture>, <source> and <video> tags are refused', () => {
@@ -145,39 +151,48 @@ test('tree counts: folders with a SKILL.md, and distinct hook scripts across eve
 });
 
 test('publish: a gh api failure while listing releases creates nothing', () => {
-  const calls = [];
-  const run = (args) => { calls.push(args); throw new Error('gh: not logged in'); };
-  fails(cli(['publish', '--root', makeRoot()], { run }), /not logged in/);
-  assert.equal(calls.length, 1);
+  const r = cli(['publish', '--root', makeRoot()], { run: () => { throw new Error('gh: not logged in'); } });
+  fails(r, /not logged in/);
+  assert.equal(r.calls.length, 1);
 });
 
 test('publish: plans with injected existing tags, and creates only the file with no release', () => {
   const root = makeRoot({ 'v0.8.0.md': older, 'v0.9.0.md': GOOD });
   const r = cli(['publish', '--root', root, '--existing', 'v0.8.0']);
   assert.equal(r.code, 0, r.err);
-  assert.equal(r.calls.length, 1);
-  assert.equal(r.calls[0][2], 'v0.9.0');
+  assert.deepEqual(r.creates.map((a) => a[2]), ['v0.9.0']);
   const none = cli(['publish', '--root', root, '--existing', 'v0.8.0,v0.9.0'], { run: noGh });
   assert.equal(none.code, 0, none.err);
   assert.match(none.out, /Nothing to publish/);
 });
 
-test('publish: the argv list, with --repo and --sha given', () => {
+test('publish: the argv list, with --repo and --sha given, after the tag lookup', () => {
   const r = cli(['publish', '--root', makeRoot(), '--repo', 'me/x', '--sha', SHA, '--existing', ''], { env: {} });
   assert.equal(r.code, 0, r.err);
-  const file = r.calls[0].at(-1);
-  assert.deepEqual(r.calls, [['release', 'create', 'v0.9.0', '--repo', 'me/x', '--target', SHA, '--title', TITLE, '--notes-file', file]]);
+  const file = r.creates[0].at(-1);
+  assert.deepEqual(r.calls, [['api', 'repos/me/x/git/ref/tags/v0.9.0', '--jq', '.object.sha'],
+    ['release', 'create', 'v0.9.0', '--repo', 'me/x', '--target', SHA, '--title', TITLE, '--notes-file', file]]);
   assert.match(r.out, /Published v0\.9\.0/);
 });
 
 test('publish: without --existing the released tags come from gh api', () => {
-  const calls = [];
-  const run = (args) => { calls.push(args); return args[0] === 'api' ? 'v0.8.0\n' : ''; };
-  const r = cli(['publish', '--root', makeRoot({ 'v0.8.0.md': older, 'v0.9.0.md': GOOD })], { run });
+  const r = cli(['publish', '--root', makeRoot({ 'v0.8.0.md': older, 'v0.9.0.md': GOOD })], { list: 'v0.8.0\n' });
   assert.equal(r.code, 0, r.err);
-  assert.deepEqual(calls[0], ['api', 'repos/o/r/releases', '--paginate', '--jq', '.[].tag_name']);
-  assert.equal(calls.length, 2);
-  assert.equal(calls[1][2], 'v0.9.0');
+  assert.deepEqual(r.calls[0], ['api', 'repos/o/r/releases', '--paginate', '--jq', '.[].tag_name']);
+  assert.deepEqual(r.creates.map((a) => a[2]), ['v0.9.0']);
+});
+
+test('publish: a tag that exists goes ahead only when it points at the sha', () => {
+  const pub = (opts, dry = []) => cli(['publish', '--root', makeRoot(), ...dry], opts);
+  assert.deepEqual(pub({ tagSha: SHA }).creates.map((a) => a[6]), [SHA]);
+  const other = pub({ tagSha: 'b2'.repeat(20) });
+  fails(other, /tag v0\.9\.0 already exists at b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2, not at a1a1/);
+  assert.deepEqual(other.creates, []);
+  const broken = pub({ run: (a) => { if (a[1].endsWith('/releases')) return ''; throw new Error('gh: HTTP 500'); } });
+  fails(broken, /looking up tag v0\.9\.0 failed: gh: HTTP 500/);
+  assert.deepEqual(broken.creates, []);
+  fails(pub({ tagSha: SHA, env: { GITHUB_REPOSITORY: 'o/r' } }, ['--dry-run']), /tag v0\.9\.0 already exists/);
+  assert.equal(pub({ run: noGh }, ['--dry-run', '--existing', '']).code, 0, 'a dry run with --existing skips the lookup');
 });
 
 test('publish: a Skills count that does not match the tree creates nothing', () => {
@@ -216,8 +231,8 @@ test('publish: the body is the file without line 1, with media links rewritten t
   const notes = edit('- A skill.', '- A skill. ![demo](media/a.gif) and [the clip](media/b.gif).');
   const root = makeRoot({ 'v0.9.0.md': notes }, { media: ['a.gif', 'b.gif'] });
   let body = null;
-  const run = (args) => { body = readFileSync(args.at(-1), 'utf8'); return ''; };
-  assert.equal(cli(['publish', '--root', root, '--existing', ''], { run }).code, 0);
+  const create = (args) => { body = readFileSync(args.at(-1), 'utf8'); return ''; };
+  assert.equal(cli(['publish', '--root', root, '--existing', ''], { create }).code, 0);
   const base = 'https://raw.githubusercontent.com/o/r/v0.9.0/docs/releases/media/';
   assert.ok(body.includes(`![demo](${base}a.gif)`), body);
   assert.ok(body.includes(`[the clip](${base}b.gif)`), body);
@@ -228,12 +243,12 @@ test('publish: the body is the file without line 1, with media links rewritten t
 
 test('publish: the body file exists while gh runs and is deleted after, also when gh fails', () => {
   let seen = null;
-  const ok = cli(['publish', '--root', makeRoot(), '--existing', ''], { run: (args) => { seen = args.at(-1); assert.ok(existsSync(seen)); return ''; } });
+  const ok = cli(['publish', '--root', makeRoot(), '--existing', ''], { create: (args) => { seen = args.at(-1); assert.ok(existsSync(seen)); return ''; } });
   assert.equal(ok.code, 0, ok.err);
   assert.ok(seen && realpathSync(dirname(dirname(seen))) === realpathSync(ok.tmp), seen);
   assert.equal(existsSync(seen), false);
   assert.deepEqual(readdirSync(ok.tmp), []);
-  const bad = cli(['publish', '--root', makeRoot(), '--existing', ''], { run: (args) => { seen = args.at(-1); throw new Error('gh: HTTP 403'); } });
+  const bad = cli(['publish', '--root', makeRoot(), '--existing', ''], { create: (args) => { seen = args.at(-1); throw new Error('gh: HTTP 403'); } });
   fails(bad, /HTTP 403/);
   assert.equal(existsSync(seen), false);
   assert.deepEqual(readdirSync(bad.tmp), []);
@@ -245,13 +260,15 @@ test('publish: exit 2 without a repo, and without a sha outside a dry run', () =
   assert.equal(cli(['publish', '--root', root, '--existing', ''], { env: { GITHUB_REPOSITORY: 'o/r' } }).code, 2);
   assert.equal(cli(['publish', '--root', root, '--existing', ''], { env: { GITHUB_REPOSITORY: 'o/r', GITHUB_SHA: '' } }).code, 2);
   assert.equal(cli(['publish', '--root', root, '--existing', '', '--repo', 'not a repo']).code, 2);
-  assert.equal(cli(['publish', '--root', root, '--existing', '', '--sha', 'xyz']).code, 2);
+  for (const sha of ['xyz', 'abc1234', `${SHA}0`, 'g'.repeat(40)]) assert.equal(cli(['publish', '--root', root, '--existing', '', '--sha', sha]).code, 2, sha);
+  assert.equal(cli(['publish', '--root', root, '--existing', ''], { env: { GITHUB_REPOSITORY: 'o/r', GITHUB_SHA: 'abc1234' } }).code, 2);
 });
 
 test('publish: a dry run with no sha prints <sha>, quotes each argument, writes no file and runs no gh', () => {
   const r = cli(['publish', '--dry-run', '--root', makeRoot(), '--existing', ''], { env: { GITHUB_REPOSITORY: 'o/r' }, run: noGh });
   assert.equal(r.code, 0, r.err);
-  assert.ok(r.out.includes(`gh 'release' 'create' 'v0.9.0' '--repo' 'o/r' '--target' '<sha>' '--title' '${TITLE}' '--notes-file' '<body file>'`), r.out);
+  const line = `gh 'release' 'create' 'v0.9.0' '--repo' 'o/r' '--target' '<sha>' '--title' '${TITLE}' '--notes-file' '<body file>'`;
+  assert.ok(r.out.includes(`${line}\n${releaseBody(GOOD, 'o/r', 'v0.9.0')}`), r.out);
   assert.deepEqual(readdirSync(r.tmp), []);
   const quoted = cli(['publish', '--dry-run', '--root', makeRoot({ 'v0.9.0.md': edit(TITLE, "Patch 0.9.0: it's done") }), '--existing', ''], { run: noGh });
   assert.ok(quoted.out.includes(`'Patch 0.9.0: it'\\''s done'`), quoted.out);
@@ -274,6 +291,7 @@ test('child process: a dry run on a temp root, with a PATH that holds no gh', ()
   assert.ok(from, r.stdout);
   assert.equal(realpathSync(from[1]), realpathSync(join(root, 'docs', 'releases', 'v0.9.0.md')));
   assert.match(r.stdout, /^gh 'release' 'create' 'v0\.9\.0' '--repo' 'o\/r' '--target' '<sha>' /m);
+  assert.ok(r.stdout.includes('![demo](https://raw.githubusercontent.com/o/r/v0.9.0/docs/releases/media/a.gif)'), r.stdout);
   const failed = runNode(SCRIPT, { args: ['check', '--root', makeRoot({ 'notes.md': GOOD })] });
   assert.equal(failed.code, 1);
   assert.match(failed.stderr, /notes\.md: the name is not/);

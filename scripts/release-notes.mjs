@@ -12,7 +12,8 @@
 // pau-skills bundle in .claude-plugin/marketplace.json.
 // publish: one release per notes file whose tag has none, tagged at --sha (the merge commit), so no session pushes a
 // tag. Every unreleased file must carry the bundle version and the tree's skill and hook counts, or nothing is
-// created (fail closed). The released tags come from gh api, or from --existing, in which case gh never runs.
+// created (fail closed), and a tag that exists must point at --sha. The released tags come from gh api, or from
+// --existing, with which a dry run runs no gh at all.
 //
 // Exit: 0 ok, 1 problems (nothing was created), 2 usage.
 import { readFileSync, readdirSync, existsSync, statSync, writeFileSync, rmSync, mkdtempSync, realpathSync } from 'node:fs';
@@ -28,10 +29,11 @@ export const SECTIONS = ['New', 'Changed', 'Versions', 'Counts', 'What you do', 
 export const COUNTS = ['Skills', 'Hooks', 'Tests'];
 const NAME = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\.md$/;
 const SHORTCODE = /:[a-z0-9_+-]+:/i;
-const EMOJI = /[\p{Extended_Pictographic}\p{Regional_Indicator}⃣]/u;
+const EMOJI = /[\p{Extended_Pictographic}\p{Regional_Indicator}\u{20E3}]/u;
 // Shortcodes, Unicode emoji (with their joiners, variation selectors and skin tones) and spaces before a heading's words.
-const LEAD = /^(?:\s|:[a-z0-9_+-]+:|[\p{Extended_Pictographic}\p{Emoji_Modifier}\p{Regional_Indicator}‍️⃣])+/iu;
-const COUNT = /\b(Skills|Hooks|Tests):[ \t]*(\d{1,3}(?:,\d{3})+|\d+)(?!\d)/g;
+const LEAD = /^(?:\s|:[a-z0-9_+-]+:|[\p{Extended_Pictographic}\p{Emoji_Modifier}\p{Regional_Indicator}\u{200D}\u{FE0F}\u{20E3}])+/iu;
+const COUNT = /\b(Skills|Hooks|Tests):[ \t]*(\d[\d,]*)/g;
+const NUMBER = /^(?:\d{1,3}(?:,\d{3})*|\d+)$/;
 // The one accepted image form, tried at every unescaped "![": alt text with no bracket or line break, then (target).
 const IMAGE = /!\[[^[\]\n]*\]\(([^)\s]*)\)/y;
 // Any "](target" on the same line, to name the target of a refused image.
@@ -41,7 +43,7 @@ const REF_DEF = /^(?:[ \t]*(?:>|[-*+]|\d+[.)]))*[ \t]*\[([^\]\n]*)\]:[ \t]*(\S*)
 const HTML_MEDIA = /<(img|picture|source|video)\b/gi;
 const MEDIA = /^media\/((?!\.)[\w.-]+)$/;
 const REPO = /^[\w.-]+\/[\w.-]+$/;
-const SHA = /^[0-9a-f]{7,40}$/i;
+const SHA = /^[0-9a-f]{40}$/i;
 
 export const HELP = `Check and publish the patch notes in docs/releases/ (docs/RELEASES.md).
 
@@ -51,10 +53,11 @@ export const HELP = `Check and publish the patch notes in docs/releases/ (docs/R
 
   --root <dir>       the repository (default: the one this script is in)
   --repo <o/name>    the GitHub repository (default: GITHUB_REPOSITORY)
-  --sha <commit>     the commit each new release is tagged at (default: GITHUB_SHA; not needed with --dry-run)
-  --dry-run          print the gh command for each release instead of running it
-  --existing <tags>  the tags that already have a release, comma separated; gh is then never run
-                     (--existing "" means none). Without it they come from gh api.
+  --sha <commit>     the full 40-character commit id each new release is tagged at (default: GITHUB_SHA;
+                     not needed with --dry-run)
+  --dry-run          print the gh command and the body of each release instead of running it
+  --existing <tags>  the tags that already have a release, comma separated, instead of gh api; a dry run
+                     with it runs no gh at all (--existing "" means none).
 
 Exit: 0 ok, 1 problems (nothing was created), 2 usage.`;
 
@@ -74,7 +77,7 @@ export const compareVersions = (a, b) => {
 };
 
 const sectionOf = (heading) => {
-  const rest = heading.replace(LEAD, '');
+  const rest = heading.replace(LEAD, () => '');
   return SECTIONS.find((s) => rest.toLowerCase().startsWith(s.toLowerCase()) && !/^\p{L}/u.test(rest.slice(s.length)));
 };
 
@@ -89,10 +92,14 @@ export function readNotes(text, { version, hasMedia = () => false }) {
   else if (SHORTCODE.test(title) || EMOJI.test(title)) at(0, 'the title holds a shortcode or an emoji; put them in the ## headings');
 
   const heads = [];
-  let fence = false;
+  // A fence closes only on a bare line of its own character, at least as long (CommonMark), so ~~~ never ends ```.
+  let fence = null;
   lines.forEach((l, i) => {
-    if (/^\s*(```|~~~)/.test(l)) fence = !fence;
-    else if (!fence && /^#{1,2}\s/.test(l)) heads.push({ i, h2: /^##\s/.test(l), section: /^##\s/.test(l) ? sectionOf(l.replace(/^##\s+/, '')) : undefined });
+    const f = /^\s*(`{3,}|~{3,})(.*)$/.exec(l);
+    if (fence) {
+      if (f && f[1][0] === fence[0] && f[1].length >= fence.length && !f[2].trim()) fence = null;
+    } else if (f && !(f[1][0] === '`' && f[2].includes('`'))) fence = f[1];
+    else if (/^#{1,2}\s/.test(l)) heads.push({ i, section: /^##\s/.test(l) ? sectionOf(l.slice(3)) : undefined });
   });
   const found = new Map();
   heads.forEach((h, k) => {
@@ -113,7 +120,10 @@ export function readNotes(text, { version, hasMedia = () => false }) {
   const countsSection = found.get('Counts');
   if (countsSection) {
     const seen = new Map(COUNTS.map((k) => [k, []]));
-    for (const m of countsSection.body.join('\n').matchAll(COUNT)) seen.get(m[1]).push(Number(m[2].split(',').join('')));
+    for (const m of countsSection.body.join('\n').matchAll(COUNT)) {
+      if (!NUMBER.test(m[2])) at(countsSection.i, `Counts: "${m[1]}: ${m[2]}" is not a number; write digits, with commas only between groups of three`);
+      seen.get(m[1]).push(Number(m[2].split(',').join('')));
+    }
     for (const [k, v] of seen) {
       if (v.length === 1) counts[k] = v[0];
       else at(countsSection.i, `Counts: "${k}: <n>" is ${v.length ? `given ${v.length} times` : 'missing'}; write it once`);
@@ -235,7 +245,8 @@ export function parseArgs(argv) {
 }
 
 const quote = (s) => `'${s.split("'").join("'\\''")}'`;
-const ghRun = (args) => execFileSync('gh', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
+// stderr is piped, so a failure carries gh's message (a missing tag is "Not Found (HTTP 404)").
+const ghRun = (args) => execFileSync('gh', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 
 function publish(opts, root, { env, log, warn, run, tmp }) {
   const repo = opts.repo || env.GITHUB_REPOSITORY;
@@ -243,7 +254,7 @@ function publish(opts, root, { env, log, warn, run, tmp }) {
   if (!repo) throw new Failure('publish needs --repo <owner/name> or GITHUB_REPOSITORY', 2);
   if (!REPO.test(repo)) throw new Failure(`--repo ${repo} is not <owner/name>`, 2);
   if (!sha && !opts.dryRun) throw new Failure('publish needs --sha <commit> or GITHUB_SHA (or --dry-run)', 2);
-  if (sha && !SHA.test(sha)) throw new Failure(`--sha ${sha} is not a commit id`, 2);
+  if (sha && !SHA.test(sha)) throw new Failure(`--sha ${sha} is not a full 40-character commit id`, 2);
 
   const { bundle, notes, problems } = checkRoot(root);
   if (problems.length) {
@@ -279,11 +290,32 @@ function publish(opts, root, { env, log, warn, run, tmp }) {
     return 1;
   }
 
+  // gh ignores --target when the tag exists and attaches the release to the tag's commit, so look the tag up first.
+  // A dry run given --existing skips the lookup, so it runs no gh.
+  if (!(opts.dryRun && opts.existing !== undefined)) {
+    for (const n of pending) {
+      let at = null;
+      try {
+        at = run(['api', `repos/${repo}/git/ref/tags/${n.tag}`, '--jq', '.object.sha']).trim();
+      } catch (e) {
+        if (!/HTTP 404|Not Found/.test(`${e.stderr || ''} ${e.message}`)) {
+          warn(`Nothing was published: looking up tag ${n.tag} failed: ${e.message}`);
+          return 1;
+        }
+      }
+      if (at !== null && at !== sha) {
+        warn(`Nothing was published: tag ${n.tag} already exists at ${at}, not at ${sha || 'the merge commit'}, and gh would attach the release there. Check the tag on github.com and delete it or release it by hand.`);
+        return 1;
+      }
+    }
+  }
+
   for (const n of pending) {
     const args = (file) => ['release', 'create', n.tag, '--repo', repo, '--target', sha || '<sha>', '--title', n.title, '--notes-file', file];
     if (opts.dryRun) {
       log(`Would publish ${n.tag} from ${n.file}`);
       log(`gh ${args('<body file>').map(quote).join(' ')}`);
+      log(releaseBody(n.text, repo, n.tag));
       continue;
     }
     const dir = mkdtempSync(join(tmp, 'release-notes-'));

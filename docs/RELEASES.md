@@ -12,7 +12,8 @@ start with batch 20; the batches before it get none (no backfill).
    `v<bundle version>` at the merge commit. The tag is made by the release, so no session pushes a tag.
 4. `publish` refuses, and creates nothing, when a notes file with no release does not carry the bundle version in
    `.claude-plugin/marketplace.json`, or when its `Skills` or `Hooks` count does not match the tree. It fails
-   closed: an older notes file with no release blocks the new one too.
+   closed: an older notes file with no release blocks the new one too. It also refuses when the tag already exists
+   at another commit, because gh would then attach the release to that commit and ignore the merge commit.
 
 A batch with no bundle bump gets no release and no notes file.
 
@@ -89,9 +90,8 @@ What you do lists the zips to upload as new, to replace, or to delete on claude.
 The only image form is `![what it shows](media/<name>)`, with the file committed in `docs/releases/media/`: the
 project's own files, never one from outside the repository. `publish` points each `](media/` link at the file at the
 release's tag, so the image does not change when main does. `check` refuses any other image target, a missing media
-file, a reference-style image, and an HTML `<img>`, `<picture>`, `<source>` or `<video>` tag.
-
-Without code, the owner can also drag a GIF into a published release on github.com, which uploads it to the release.
+file, a reference-style image, alt text with a bracket or a line break, a reference definition that points outside
+`media/`, and an HTML `<img>`, `<picture>`, `<source>` or `<video>` tag.
 
 ## Before the merge
 
@@ -101,8 +101,9 @@ Run the pre-merge check from the batch's branch:
 node scripts/release-notes.mjs publish --dry-run --repo <owner/name>
 ```
 
-It lists the existing releases with `gh api` (that works from a session), runs the publish checks, and prints the
-`gh release create` command it would run, with `<sha>` for the merge commit. Use `--existing <every released tag>`,
+It lists the existing releases with `gh api` (that works from a session), runs the publish checks, looks up the new
+tag, and prints the `gh release create` command it would run, with `<sha>` for the merge commit, then the release
+body with its media links rewritten. Use `--existing <every released tag>`,
 comma separated, only when gh is unavailable. `--existing ""` would treat every older notes file as unpublished, so
 it fails from the second release on.
 
