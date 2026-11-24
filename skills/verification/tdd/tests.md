@@ -41,6 +41,22 @@ Red flags:
 - Test breaks when refactoring without behavior change
 - Test name describes HOW rather than WHAT
 
+**Tautological tests**: The expected value is worked out the same way the code works it out, so the test cannot fail.
+
+```
+// BAD: Recomputes the expected total with the same sum the code uses
+test("order total adds the line prices", () => {
+  const lines = [{ price: 400 }, { price: 250 }];
+  const expected = lines.reduce((total, line) => total + line.price, 0);
+  expect(orderTotal(lines)).toBe(expected);
+});
+
+// GOOD: Asserts a total known from the requirement
+test("order total adds the line prices", () => {
+  expect(orderTotal([{ price: 400 }, { price: 250 }])).toBe(650);
+});
+```
+
 ## Naming Convention
 
 Test names should read like specifications:
