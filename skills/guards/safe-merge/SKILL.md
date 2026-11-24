@@ -16,9 +16,8 @@ node "${CLAUDE_SKILL_DIR}/safe-merge.mjs" <number>
 Always run the dry run first and show its output to the user. Merging is an outward-facing action: get the user's go
 ahead for this specific PR before the real run, unless they already gave it for this PR.
 
-If the user has Claude Code's `/ship` command (typed at the prompt on their own machine; an agent or `claude -p` cannot
-start it), it pushes the change, opens the PR, reviews it and works on failing checks, and never merges. The merge
-still goes through this script.
+If the user ran Claude Code's `/ship` on the PR, it never merges, but with GitHub auto-merge on, a fix it pushes can
+merge the PR: leave auto-merge off and merge with this script as above.
 
 ## Before merging on an older verdict
 
