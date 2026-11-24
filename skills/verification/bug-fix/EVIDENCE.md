@@ -41,9 +41,10 @@ once it is fixed. Try these in roughly this order, and keep the first one that s
 4. **A headless browser script** that drives the page and asserts on the DOM, the console or the network.
 5. **A captured request, payload or event log**, saved to a file and replayed through the code path on its own.
 6. **A throwaway harness**: one service with its dependencies faked, reaching the code path in a single call.
-7. **A seeded property or fuzz loop**, for output that is only sometimes wrong: many generated inputs, the seed
-   printed, a check on each result. `tdd`'s PROPERTIES.md covers it, if `tdd` is installed; without it, use the
-   standard library's seeded random generator, or a small seeded generator of a few lines where it has none.
+7. **A seeded property or fuzz loop**, for output that is wrong for some inputs and right for others (a failure that
+   comes and goes on the same input follows the flaky rule in SKILL.md): many generated inputs, the seed printed, a
+   check on each result. `tdd`'s PROPERTIES.md covers it, if `tdd` is installed; without it, use the standard
+   library's seeded random generator, or a small seeded generator of a few lines where it has none.
 8. **A bisection harness** for `git bisect run`: a script that builds each commit, runs the check and exits with the
    codes bisect reads (see "Finding when it started" below).
 9. **A differential loop**: the same input through the old and the new version, or through two configurations, with

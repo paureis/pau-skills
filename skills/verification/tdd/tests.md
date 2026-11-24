@@ -41,7 +41,7 @@ Red flags:
 - Test breaks when refactoring without behavior change
 - Test name describes HOW rather than WHAT
 
-**Tautological tests**: The expected value is worked out the same way the code works it out, so the test cannot fail.
+**Tautological tests**: The expected value is worked out the same way the code works it out, so any mistake the code and the test share passes.
 
 ```
 // BAD: Recomputes the expected total with the same sum the code uses

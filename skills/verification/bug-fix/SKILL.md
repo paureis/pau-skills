@@ -67,8 +67,8 @@ running service, the public function of the library called from a small program,
 Then turn the repro into an automated check ("Building the automated check" in `EVIDENCE.md` lists the ways) and
 minimise it before step 3. Cut inputs, callers, configuration, data and steps one at a time, rerunning the check
 after each cut, and keep a cut only while the check still shows the discriminating observation. The repro is minimal
-when removing any one remaining element makes the check pass. A minimal repro leaves fewer moving parts to suspect
-in step 3, and it becomes step 6's test. Keep the surface repro for step 8.
+when removing any one remaining element makes the discriminating observation go away. A minimal repro leaves fewer
+moving parts to suspect in step 3, and it becomes step 6's test. Keep the surface repro for step 8.
 
 ## Step 3. Test hypotheses with runtime evidence
 
