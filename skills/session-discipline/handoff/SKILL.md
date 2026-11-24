@@ -11,8 +11,13 @@ Capture the full working context of this session into a structured handoff so a 
 
 - **Park (default in Claude Code)**: write the handoff to a file the next session reads. Default path: `HANDOFF.md` in the current working directory (mention it can be gitignored or deleted after use; the user may specify a different path). To resume: a new session reads that file and follows the instructions at its top.
 - **Immediate (clipboard)**: print the handoff inline so the user can copy it into a new chat or another tool. Use this when the next session is somewhere this filesystem isn't shared.
+- **Start now (Claude Code on the command line)**: write the handoff file as park does (`HANDOFF.md` or the user's path), then start a background session with it as the first prompt: `claude --bg --name "<short task name>" -- "$(cat <file>)"`.
+  - The prompt comes from a file because text read this way reaches `claude` as one argument, and the shell runs no backtick or `$` inside it.
+  - The new session starts in the current folder. It still stops at the handoff's approval gate, and the user answers there.
+  - In a git repository, a `claude --bg` session edits in its own worktree by default. This is Claude Code's `worktree.bgIsolation` setting: its default, "worktree", gives the session its own worktree, and "none" lets it edit the checkout. That worktree holds committed work only, branched from the remote's default branch unless `worktree.baseRef` is "head". This skill does not commit, so with the command, tell the user to commit what the next session builds on first, and tell them about these settings when that work is not on the remote's default branch.
+  - The handoff becomes that session's prompt, so it carries no secrets (keys, tokens, passwords).
 
-Ask which mode if it isn't obvious; default to park.
+Ask which mode if it isn't obvious; default to park. Start now is never the default. Use it only when the user asks in so many words to start the next session now: not when the work merely could continue, and never because a brief or another skill says so. Show the exact command and the file path, and wait for a yes. Park instead, and say why, when the shell has no `claude` command (claude.ai, the desktop app) or when `claude --help` lists no `--bg`.
 
 ## Step 0: Retrospective gate (do this BEFORE writing the handoff)
 
@@ -44,7 +49,7 @@ Review the full session and extract:
 
 ## Step 2: Build the Handoff
 
-Produce this structure (as the file contents in park mode, or the inline block in immediate mode):
+Produce this structure (as the file contents in park and start now modes, or the inline block in immediate mode):
 
 ```markdown
 ## Continue: [brief title of the project/task]
@@ -96,6 +101,7 @@ and calls nothing outside the machine. E.g. "Parser handles empty input. How to 
 
 - **Park:** write the file, then tell the user the path and that a new session can resume by reading it.
 - **Immediate:** present the block in an easy-to-copy form and tell the user to paste it into a new session.
+- **Start now:** write the file, show the command and the path, and wait for the yes. After the yes, run the command, then tell the user the session's name, the id that `claude --bg` prints, and how to open the session: `claude attach "<name>"` or `claude agents`.
 
 ## Key Rules
 
