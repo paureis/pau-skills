@@ -19,15 +19,16 @@ order; the scrub check and the validator at the end catch most of what gets forg
    `disable-model-invocation: true` after the description, and add `<plugin>/<skill>` to `TYPED_ONLY` in
    `tests/typed-only-list.mjs`, the only place the list is decided. Name it too in the typed paragraph of the README
    ("What loads on its own") and under "Skills you type" in `which-skill`; `tests/typed-only.test.mjs` checks both.
-   No request in words, no agent and no other skill can start a typed-only skill, and its description costs no
-   context: it shows only in the `/` menu. Write it as one sentence on what the skill does, at most 160 characters,
-   with no "Use when" (or whenever, before, for, after) opener and no quoted phrase; it does not count in the total.
-   A model-invoked skill's description is in every session's context, so write it as a short trigger list: one
-   sentence on what the skill does, then "Use when" with the phrases a person would actually say, and, where another
-   skill could be picked for the same words, what makes this one different. At most 400 characters, all
-   model-invoked descriptions together at most 14,000, and exactly one "Use when" (or whenever, before, for, after)
-   opener. For both kinds: no XML-like tag such as `<word>`, and no other skill's name in backticks. Leave out what
-   the body already says. Write it as one double-quoted line with no backslash or double quote inside, in printable
+   No request in words, no agent and no other skill can start a typed-only skill. A typed-only skill adds no context
+   load (its description shows only in the `/` menu) but adds cognitive load (the user has to remember it exists and
+   when to type it). Write its description as one sentence on what the skill does, at most 160 characters, with no
+   "Use when" (or whenever, before, for, after) opener and no quoted phrase; it does not count in the total. A
+   model-invoked skill's description is context load: it is in every session's context, used or not, so write it as
+   a short trigger list: one sentence on what the skill does, then "Use when" with the phrases a person would
+   actually say, and, where another skill could be picked for the same words, what makes this one different. At most
+   400 characters, all model-invoked descriptions together at most 14,000, and exactly one "Use when" (or whenever,
+   before, for, after) opener. For both kinds: no XML-like tag such as `<word>`, and no other skill's name in
+   backticks. Leave out what the body already says. Write it as one double-quoted line with no backslash or double quote inside, in printable
    ASCII only (no curly quote, no accented letter, nothing outside the space to the tilde), with no backtick. On a
    skill in the confirm list, no quoted phrase holds a question mark or has one right after it: write a question as a
    situation. `tests/context-budget.test.mjs` checks the lengths and `tests/description-rules.test.mjs` the four rules.

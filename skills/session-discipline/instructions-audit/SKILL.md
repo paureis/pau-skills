@@ -3,6 +3,9 @@ name: instructions-audit
 description: "Audit existing agent instruction files (CLAUDE.md, AGENTS.md, rules) for token cost, duplicates, contradictions, stale paths, vague rules and secrets, and propose edits. Use when the user says 'audit my CLAUDE.md' or 'clean up CLAUDE.md', or when CLAUDE.md is too long, the agent keeps ignoring its rules, or the instructions may be stale."
 argument-hint: "[project root, default: current directory]"
 allowed-tools: Read(~/.claude/CLAUDE.md), Read(~/.claude/rules/**)
+license: MIT (adapted from mattpocock/skills; see NOTICE)
+metadata:
+  upstream: https://github.com/mattpocock/skills/tree/abeeaf95660ba9e8b7c753eb38f441ca707a8823/skills/productivity/writing-for-agents
 ---
 
 # CLAUDE.md audit
