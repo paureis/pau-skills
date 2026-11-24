@@ -38,7 +38,7 @@ rehearsal and the night are separate conversations:
 # The outer loop of an overnight run. It lives in the control folder, which no turn can write.
 # Fill in the values when the run starts, never while it runs.
 set -u
-CTL='/abs/path/run/control'        # RUN.md, done.sh, predicate.sha, log.mjs, AUDIT.md, this script; STOP when made
+CTL='/abs/path/run/control'        # RUN.md, done.sh, predicate.sha, log.mjs, AUDIT.md, SKILL.md, this script; STOP when made
 STATE='/abs/path/run/state'        # decisions.tsv, resume.md, summary.md, and this script's own output
 WT='/abs/path/worktree'
 PRED_FILES=('tests/test_parse.py') # at least one file in the worktree that defines the predicate; frozen with done.sh
@@ -49,7 +49,7 @@ PER_TURN=2
 TURN_USD=2                         # --max-budget-usd per turn; the night costs at most (MAX_TURNS + 2) x this
 DEADLINE='2026-10-19T07:00'        # no new turn after this local time (a budget, not a finish)
 
-ALLOW=('Skill(overnight-run)' 'Agent' "Read(/$CTL/**)" "Read(/$STATE/**)" "Edit(/$WT/**)"
+ALLOW=('Agent' "Read(/$CTL/**)" "Read(/$STATE/**)" "Edit(/$WT/**)"
   "Edit(/$STATE/resume.md)" "Edit(/$STATE/summary.md)"
   "Bash(node $CTL/log.mjs *)" "Bash(bash $CTL/done.sh)" "Bash($TEST)" "Bash(ls $CTL)"
   "Bash(git -C $WT status *)" "Bash(git -C $WT diff *)" "Bash(git -C $WT log *)" "Bash(git -C $WT show *)"
@@ -115,12 +115,12 @@ turn() {       # turn <capture name> <prompt> [more allow rules]
 reason=''
 for i in $(seq 1 "$MAX_TURNS"); do
   reason=$(why_stop); [ -n "$reason" ] && break
-  turn "turn-$i" "Overnight run, turn $i of at most $MAX_TURNS. Read $CTL/RUN.md and follow it (with the overnight-run skill, step 5, if it is available). Do at most $PER_TURN iterations, then end the turn."
+  turn "turn-$i" "Overnight run, turn $i of at most $MAX_TURNS. Read $CTL/RUN.md and follow it with step 5 of $CTL/SKILL.md. Do at most $PER_TURN iterations, then end the turn."
 done
 [ -n "$reason" ] || reason=$(why_stop)
 [ -n "$reason" ] || reason='budget: turns'
 echo "$(date -u +%FT%TZ) loop ended: $reason" >> "$STATE/loop.out"
-FINAL="The overnight loop ended: $reason. This turn does no work on the task. Follow steps 6 to 8 of the overnight-run skill (or RUN.md): the stop row, the morning audit by a fresh subagent given the prompt in $CTL/AUDIT.md with the turn captures $STATE/$SID-*.jsonl as the transcripts, and the summary in $STATE/summary.md. Log every row without --run, so it carries this session's id."
+FINAL="The overnight loop ended: $reason. This turn does no work on the task. Follow steps 6 to 8 of $CTL/SKILL.md: the stop row, the morning audit by a fresh subagent given the prompt in $CTL/AUDIT.md with the turn captures $STATE/$SID-*.jsonl as the transcripts, and the summary in $STATE/summary.md. Log every row without --run, so it carries this session's id."
 turn final "$FINAL"
 if ! grep -q '"type":"result"' "$STATE/$SID-final.jsonl"; then started=$((1 - started)); turn final-retry "$FINAL"; fi
 rm -f "$STATE/loop.pid" "$STATE/turn.pid"
@@ -134,9 +134,8 @@ Notes on the script:
   so `a && b` or `a; echo $?` needs a rule for each part.
 - No `--add-dir`: the absolute `Edit`, `Write` and `Read` rules reach the state and control files without it. Never
   pass `--add-dir` for the parent folder: it opens the main checkout and every repository beside it.
-- The turns use the real HOME, so the login and the installed skills apply. The skill name in `Skill(...)` is the
-  name in the `/` menu; a skill uploaded to claude.ai shows up as `anthropic-skills:overnight-run`. The prompt points
-  at `RUN.md` first, so a turn that cannot load the skill still has the contract.
+- The turns use the real HOME, so the login applies. The skill starts only when typed, so a turn cannot load it,
+  whatever way it is installed: the prompt points at `RUN.md` and at the copy in `<control>/SKILL.md` instead.
 - `--strict-mcp-config` with no `--mcp-config` gives the turns no MCP server, which removes every mail, chat and
   tracker tool in one step (and any `send_later`-style tool with them).
 - Each turn's capture is `<state>/<session id>-turn-<n>.jsonl`, and `loop.out` logs each turn's exit code. The
@@ -174,7 +173,8 @@ pushed. So:
   deny every other push. Only the user can allow that, before leaving. Without that yes, use the outer loop on a
   machine that stays on.
 - **Where the log goes.** Nothing outside the clone survives between firings, so the run branch carries the state:
-  `.overnight/<label>/` on the run branch holds `RUN.md`, `done.sh`, `decisions.tsv` and `resume.md`. A firing
+  `.overnight/<label>/` on the run branch holds `RUN.md`, `done.sh`, the `SKILL.md` copy, `decisions.tsv` and
+  `resume.md`. A firing
   copies that folder out of the clone first (to `$HOME/overnight/<label>/`), appends to the copy outside the work
   tree with `LOG`, as usual, and at its end copies the folder back into the clone and commits it with its work.
   Before appending, check that the copy still starts with the bytes the branch held (`cmp -n`), so a firing cannot

@@ -96,9 +96,10 @@ absolute:
 - `<control>` (`<run>/control`): written now, attended, and never by a turn. No turn gets an allow rule to write
   it, its folder is never passed with `--add-dir`, and `Edit(/<control>/**)` is denied.
   It holds `RUN.md` (the contract, from the template in `CONTRACT.md`), `done.sh` (the predicate, starting with
-  `cd <worktree>`), `predicate.sha` (the fingerprint below), and copies of `log.mjs` and `AUDIT.md`
-  (`cp ${CLAUDE_SKILL_DIR}/log.mjs ${CLAUDE_SKILL_DIR}/AUDIT.md <control>/`). The outer loop's `loop.sh` goes here
-  too, and the user's off switch, `<control>/STOP`.
+  `cd <worktree>`), `predicate.sha` (the fingerprint below), and copies of `log.mjs`, `AUDIT.md` and this
+  `SKILL.md` (`cp ${CLAUDE_SKILL_DIR}/log.mjs ${CLAUDE_SKILL_DIR}/AUDIT.md ${CLAUDE_SKILL_DIR}/SKILL.md <control>/`):
+  this skill starts only when typed, so a headless turn cannot load it and reads `<control>/SKILL.md` instead. The
+  outer loop's `loop.sh` goes here too, and the user's off switch, `<control>/STOP`.
 - `<state>` (`<run>/state`): what the run writes. `decisions.tsv` only through `LOG append`, which creates it with
   the header, refuses a path inside a git work tree and never rewrites a row; `resume.md` and `summary.md`; and the
   outer loop's own output.
@@ -188,8 +189,8 @@ The reasons, and what each adds:
   switch or the user saying to pause does.
 - **The predicate looks wrong, or the next step needs a forbidden action**: stop and say so. The user decides.
 
-To resume later, a new session reads `RUN.md`, `resume.md` and the log, logs a row under its own session id, and
-continues at step 5.
+To resume later, a new session types `/overnight-run` or reads `<control>/SKILL.md`, then reads `RUN.md`,
+`resume.md` and the log, logs a row under its own session id, and continues at step 5.
 
 ## Step 7. The morning audit
 
