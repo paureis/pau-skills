@@ -3,6 +3,15 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-24: Q27, Claude Ship and our skills
+
+- `lean-subagent-dev` (agent-orchestration 0.13.1) and `safe-merge` (guards 0.10.1) know Claude Code's `/ship`: the
+  user runs it on their own machine (an agent cannot start it), it may push fixes after the orchestrator's check and
+  never merges. Before the merge the orchestrator reads what it pushed and reruns the checks at the new head, and
+  `safe-merge` says to leave GitHub auto-merge off, since a fix `/ship` pushes could merge the PR. Code Review's
+  `REVIEW.md` needed nothing: only the managed service (Team and Enterprise) reads it, and the local `/code-review`
+  reads `CLAUDE.md`. The bundle goes to 0.21.1. No hook changed.
+
 ## 2026-11-23: Q21, a subagent watchdog
 
 - A new hook, `subagent-watchdog` (agent-orchestration 0.13.0, `pau-skills-hooks` 0.6.0). Inside a subagent it adds a

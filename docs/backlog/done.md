@@ -93,3 +93,11 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
   - Did not: the builder came back in the background again, so `eng-lead` only planned and launched; the orchestrator
     committed decision 30 without running the suite and pushed `decisions.md` over its size limit, which the merge's
     test run caught.
+- 2026-11-24: Q27 Claude Ship and our skills, merged as
+  [pull request 80](https://github.com/paureis/pau-skills/pull/80) (decision 29). `lean-subagent-dev` and `safe-merge`
+  name `/ship`; option 3 needed nothing (the local `/code-review` reads no `REVIEW.md`). Two prose edits made by the
+  orchestrator, one fresh reviewer, one fix. With the roster:
+  - Worked: reading the docs before the brief turned option 3 into a finding instead of a build; the reviewer, with the
+    docs facts as its contract, found the one real gap (a merge after `/ship` pushed unchecked fixes).
+  - Did not: `eng-lead`, the plan check and a builder were skipped as too heavy for two paragraphs; the kickoff asked
+    for the full roster.

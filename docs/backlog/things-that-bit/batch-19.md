@@ -23,3 +23,12 @@ Things that bit Q21, a subagent watchdog (and the parked Q26):
 - CI validates with Claude Code 2.1.302. Installing that version with `npm install --prefix <scratch>` and running its
   `claude plugin validate` checked a new hook event before the push; a made-up event name was the control.
 - A test file ended 5 bytes under its limit after the first round; the fix round needed a new test file.
+
+Things that bit Q27, the second part of the nineteenth batch:
+- An option the owner picked can turn out to need nothing: reading the docs page first showed that the local
+  `/code-review` reads no `REVIEW.md`. Read the source a choice rests on before the brief, not during the build.
+- The session's force push of a branch reset to main after a squash merge was refused by the auto mode classifier,
+  even with a lease on the merged head. Checking out the remote tip and merging main into it gave a normal push with
+  the same files.
+- The owner could not find `/ship` on launch day. A command named in a skill needs "if the user has it", and the
+  answer to "where is it" is the version, where it runs, the rollout and the plan.
