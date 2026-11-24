@@ -138,7 +138,7 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q24 verification ideas from the Claude Code team](backlog/q24.md)
 - [Q25 Claude Code mods: where they could save tokens](backlog/q25.md) (parked)
 - [Q26 our hooks under Code Mode](backlog/q26.md) (parked)
-- [Q27 Claude Ship and our skills](backlog/q27.md)
+- [Q27 Claude Ship and our skills](backlog/q27.md) (done)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -177,8 +177,8 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 23. Done: the eighteenth batch, Q24 verification ideas from the Claude Code team (pull request 76); its scope was
     decision 26.
 24. Done: the nineteenth batch, Q21 a subagent watchdog (pull request 79); its design was decisions 22, 23 and 30.
-25. **Next:** Q27 Claude Ship and our skills (options 1 and 3, decision 29); its kickoff is in
-    [backlog/kickoff.md](backlog/kickoff.md). Parked: Q25 Claude Code mods (decision 27) and Q26 our hooks under Code
-    Mode (decision 28). Work this order as it stands (decision 29).
+25. Done: Q27 Claude Ship and our skills (pull request 80); its scope was decision 29.
+26. **Next:** nothing planned; the owner adds the next item. Parked: Q25 Claude Code mods (decision 27) and Q26 our
+    hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
