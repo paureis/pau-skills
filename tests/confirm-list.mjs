@@ -6,9 +6,9 @@
 // for the user's yes before they write (retrospective, instructions-audit, to-issues, ci-cost-and-cadence,
 // project-setup, improve-codebase-architecture, whose code changes start only on an explicit ask to implement),
 // conversations the user can stop with a word (brainstorm, and grill-me, whose subagent is optional and read-only,
-// like bug-fix step 8) and skills that write only a local file or a proposal (handoff, which starts a background
-// session only on an explicit ask and a yes, and to-prd) do not ask twice. A typed-only skill (tests/typed-only-list.mjs, decision 32) cannot
-// start on its own, so it is never on this list.
+// like bug-fix step 8), to-prd, which writes only a local file or a proposal, and handoff, which writes only a local
+// file and starts a background session only on an explicit ask and a yes, do not ask twice. A typed-only skill
+// (tests/typed-only-list.mjs, decision 32) cannot start on its own, so it is never on this list.
 export const CONFIRM_LIST = [
   // launches subagents or headless runs
   'agent-orchestration/arena', 'agent-orchestration/codebase-oracle', 'agent-orchestration/parallel-worktrees',
