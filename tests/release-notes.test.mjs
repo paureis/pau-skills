@@ -224,6 +224,7 @@ test('publish: without --existing the released tags come from gh api', () => {
 test('publish: a Skills count that does not match the tree creates nothing', () => {
   const r = cli(['publish', '--root', makeRoot({ 'v0.9.0.md': edit('- Skills: 2', '- Skills: 3') }), '--existing', '']);
   fails(r, /Skills: 3 in Counts, but the tree has 2/);
+  assert.doesNotMatch(r.err, /older notes file/);
   assert.deepEqual(r.calls, []);
 });
 
@@ -242,7 +243,7 @@ test('publish: a version that is not the bundle version creates nothing', () => 
 test('publish: an older notes file with no release blocks publishing (fail closed)', () => {
   const r = cli(['publish', '--root', makeRoot({ 'v0.8.0.md': older, 'v0.9.0.md': GOOD }), '--existing', '']);
   fails(r, /v0\.8\.0\.md: version 0\.8\.0 is not the bundle version/);
-  assert.match(r.err, /Nothing was published/);
+  assert.match(r.err, /Nothing was published\. An older notes file with no release must first be released by hand/);
   assert.deepEqual(r.calls, []);
 });
 

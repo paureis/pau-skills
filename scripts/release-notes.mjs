@@ -261,7 +261,8 @@ function publish(opts, root, { env, log, warn, run, tmp }) {
   }
   if (bad.length) {
     for (const b of bad) warn(b);
-    warn('Nothing was published. An older notes file with no release must first be released by hand on github.com, at its merge commit.');
+    const older = pending.some((n) => compareVersions(n.version, bundle) < 0);
+    warn(`Nothing was published.${older ? ' An older notes file with no release must first be released by hand on github.com, at its merge commit.' : ''}`);
     return 1;
   }
 
