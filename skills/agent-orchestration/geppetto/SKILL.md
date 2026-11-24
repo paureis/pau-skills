@@ -1,6 +1,7 @@
 ---
 name: geppetto
-description: "Designs, installs, audits and updates Claude Code subagents in .claude/agents, with a starter roster: eng-lead, builder, reviewer, writer, sweeper. Use when the user says 'create an agent', 'install the agent roster', 'audit my agents' or 'update my agents', or when agents overlap or carry leftover tools. Writes agents, not skills."
+description: "Design, install, audit and update Claude Code subagents in .claude/agents, with a starter roster: eng-lead, builder, reviewer, writer, sweeper."
+disable-model-invocation: true
 argument-hint: "[create | install | audit | update] [what the agent is for]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 ---

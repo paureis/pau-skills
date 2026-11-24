@@ -1,6 +1,7 @@
-// Every skill loads on its own (docs/backlog/decisions-1-to-21.md, decision 7), so the model can start a skill the user never asked for.
-// The skills that launch subagents or paid runs, take over the session, or write outside the conversation first say
-// what they will do and what it costs, and wait for a yes. They all use the same paragraph, word for word, so the
+// Every skill but the typed-only ones (tests/typed-only-list.mjs, decision 32 in docs/backlog/decisions.md) loads on
+// its own, so the model can start a skill the user never asked for. Of those, the skills that launch subagents or paid
+// runs, take over the session, or write outside the conversation first say what they will do and what it costs, and
+// wait for a yes. They all use the same paragraph, word for word, so the
 // rule reads the same everywhere and this test can find it. The list in tests/confirm-list.mjs is the only place it is
 // decided: a skill on it must carry the paragraph, and a skill not on it must not.
 import { test } from 'node:test';

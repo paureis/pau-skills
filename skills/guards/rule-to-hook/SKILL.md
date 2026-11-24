@@ -15,8 +15,8 @@ does that conversion in a fixed order, so the result lives at the highest layer 
 violation, leaves the near-misses alone, and has a test that has been seen to fail.
 
 This skill implements one rule. To find which rules a project needs, from its review comments, fix commits and
-transcripts, run the `agent-friendly-audit` skill if it is installed; it uses the same fix order and asks for the
-same exception fields. Without it, start from the rule the user names.
+transcripts, the user can type `/agent-friendly-audit` if it is installed (it starts only when typed); it uses the same
+fix order and asks for the same exception fields. Without it, start from the rule the user names.
 
 The rule, or where to find it: $ARGUMENTS
 

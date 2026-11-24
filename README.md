@@ -207,26 +207,20 @@ will change, or how to make it remember how they like to work.
 
 ## What loads on its own
 
-Every skill loads on its own: the agent can start it when your words fit its description ("let's brainstorm options
-for this", "wrap up this session", "is this test any good"), and you can still type any of them as
-`/pau-skills:<skill>` or `/<plugin>:<skill>`. Claude Code puts every description into the context of every session,
-so each one is a short list of the phrases that should start it. `tests/context-budget.test.mjs` holds each
-description to 400 characters and all of them to 14,000 together.
+Most skills load on their own: the agent starts one when your words fit its description ("let's brainstorm options
+for this", "is this test any good"), and you can type any as `/pau-skills:<skill>` or `/<plugin>:<skill>`. Each such
+description is in every session's context, so it is a short list of the phrases that should start it: at most 400
+characters, 14,000 in all (`tests/context-budget.test.mjs`).
 
-Some skills cost something when they run, and nothing else in them stops for your yes first: they launch subagents
-or headless runs, commit, push or install with no other check, or change how the whole session works. When the agent
-starts one of these on its own, without you asking for what it does, it first says in one or two lines what it will
-do and what it will cost, and waits for your yes. A remark that only matches a description ("the code is getting
-messy") does not count as asking.
+Seven start only when typed and cost no context: `session-close`, `lean-subagent-dev`, `overnight-run`,
+`skill-eval`, `agent-friendly-audit`, `geppetto`, `launch-readiness`. A request in words, the agent and other skills
+cannot start them. `tests/typed-only-list.mjs` holds the list.
 
-- `arena`, `codebase-oracle` (big questions only), `overnight-run`, `parallel-worktrees`, `agent-friendly-audit`,
-  `hillclimb`, `skill-eval`, `verify-app`;
-- `dependency-upgrade`, `rule-to-hook`, `architect`, `session-close`;
-- `lean-subagent-dev`, `methodology`.
-
-`tests/confirm-list.mjs` keeps this list, and `tests/confirm-step.test.mjs` keeps the skills in step.
-The other skills either cost little or already ask before they write (for example `retrospective` and `to-issues`
-show you their edits or issues and wait).
+Some skills cost something when they run (subagents, headless runs, a commit, push or install with no other check,
+or a new way of working), and nothing else in them asks first. When the agent starts one on its own, without you
+asking for it, it first says what it will do and cost, and waits for your yes: `arena`, `codebase-oracle` (for big
+questions), `parallel-worktrees`, `hillclimb`, `verify-app`, `dependency-upgrade`, `rule-to-hook`, `architect`,
+`methodology`. `tests/confirm-list.mjs` keeps this list.
 
 ## Reference
 

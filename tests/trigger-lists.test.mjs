@@ -1,22 +1,25 @@
 // The request lists for skill-eval's trigger mode (docs/backlog/q16.md): evals/triggers/requests/<skill>.json, one per
-// skill, with 3 requests that should start it and 2 near misses that should start another skill or none. Request 1 is
-// the phrase quoted after "Use when" in the description; no other request may copy a quoted phrase. No model runs.
+// model-invoked skill, with 3 requests that should start it and 2 near misses that should start another model-invoked
+// skill or none. Request 1 is the phrase quoted after "Use when" in the description; no other request may copy a
+// quoted phrase. A typed-only skill (tests/typed-only-list.mjs, decision 32) starts only when typed, so no request can
+// start it: it has no list, and no near miss expects it. No model runs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT } from './helpers.mjs';
+import { TYPED_ONLY } from './typed-only-list.mjs';
+import { norm, DASHES, quoteMarks, holds, sameKeys, brokenShape, readLists, readSkills } from './trigger-lists.helpers.mjs';
 
-const SKILL_COUNT = 39;
+// The skills that can start from a request. A new typed-only skill changes this file nowhere.
+const MODEL_INVOKED_COUNT = 32;
 const REQUESTS_DIR = join(ROOT, 'evals', 'triggers', 'requests');
+// The lists here use bare skill names; the typed-only list holds <plugin>/<skill> ids.
+const TYPED_NAMES = new Set(TYPED_ONLY.map((id) => id.split('/')[1]));
 
 // A quote right after a letter or digit cannot open a phrase, one right before cannot close it, so "the user's" holds
 // no quote. Read it only with matchAll: a global regex keeps lastIndex between strings with exec or test.
 const QUOTED = /(?<![\p{L}\p{N}])'([^']+)'(?![\p{L}\p{N}])/gu;
 const USE = /\bUse (whenever|when|before|for|after)\b/;
-const WORD = /[\p{L}\p{N}]/u;
-const norm = (s) => s.toLowerCase().replace(/\s+/g, ' ').trim();
-const DASHES = [String.fromCharCode(0x2013), String.fromCharCode(0x2014)];
 
 const phrases = (description) => [...description.matchAll(QUOTED)].map((m) => m[1]);
 
@@ -24,24 +27,6 @@ const phrases = (description) => [...description.matchAll(QUOTED)].map((m) => m[
 function requestOne(description) {
   const at = description.search(USE);
   return at < 0 ? undefined : phrases(description.slice(at))[0];
-}
-
-const isWord = (c) => c !== undefined && WORD.test(c);
-
-// Apostrophes not between two letters or digits: two per phrase, so another count means a phrase was not read.
-function quoteMarks(text) {
-  let n = 0;
-  for (let i = 0; i < text.length; i++) if (text[i] === "'" && !(isWord(text[i - 1]) && isWord(text[i + 1]))) n++;
-  return n;
-}
-
-// Whole words only: "land it" is not in "island items".
-function holds(text, phrase) {
-  if (!phrase) return false;
-  for (let at = text.indexOf(phrase); at >= 0; at = text.indexOf(phrase, at + 1)) {
-    if (!isWord(text[at - 1]) && !isWord(text[at + phrase.length])) return true;
-  }
-  return false;
 }
 
 // Every description here is one double-quoted frontmatter line with no quote or backslash inside; anything else is
@@ -57,28 +42,17 @@ function readDescription(text) {
   return m ? { description: m[1] } : { why: 'has a description that is not one double-quoted line' };
 }
 
-const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
-const sameKeys = (o, keys) => Object.keys(o).sort().join() === keys.sort().join();
-
-// Why the other checks cannot read the list, or undefined.
-function brokenShape(list) {
-  if (!isObject(list)) return 'is not an object';
-  if (!Array.isArray(list.should) || !list.should.every((r) => typeof r === 'string')) return 'should is not a list of strings';
-  if (!Array.isArray(list.nearMisses)) return 'nearMisses is not a list';
-  const bad = list.nearMisses.findIndex((n) => !isObject(n) || typeof n.request !== 'string' || typeof n.expect !== 'string');
-  return bad < 0 ? undefined : `nearMisses[${bad}] needs a string request and expect`;
-}
-
 // lists: the requests folder's entries as { file, text } (text null for a folder). skills: { name, text } with the
-// SKILL.md text. Returns a sentence per problem naming the file, the request and the check. No sentence quotes a
-// description phrase: the lists' writer must not see the descriptions.
-function checkLists(lists, skills) {
+// SKILL.md text. typed: the names of the typed-only skills. Returns a sentence per problem naming the file, the
+// request and the check. No sentence quotes a description phrase: the lists' writer must not see the descriptions.
+function checkLists(lists, skills, typed = TYPED_NAMES) {
   const problems = [];
   const names = new Set(skills.map((s) => s.name));
 
-  // Check 9: every description is read, so checks 5 and 6 never skip a skill quietly.
+  // Check 9: every model-invoked description is read, so checks 5 and 6 never skip a skill quietly.
   const descriptions = new Map();
   for (const skill of skills) {
+    if (typed.has(skill.name)) continue;
     const { description, why } = readDescription(skill.text);
     if (why) { problems.push(`skill ${skill.name}: check 9: its SKILL.md ${why}`); continue; }
     const hasOne = requestOne(description) !== undefined;
@@ -88,13 +62,14 @@ function checkLists(lists, skills) {
     if (hasOne && marks) descriptions.set(skill.name, description);
   }
 
-  // Check 1: one <skill>.json per skill, and nothing else.
-  const wanted = new Set([...names].map((n) => `${n}.json`));
+  // Check 1: one <skill>.json per model-invoked skill, and nothing else: no list for a typed-only skill.
+  const wanted = new Set([...names].filter((n) => !typed.has(n)).map((n) => `${n}.json`));
   const present = new Set(lists.map((l) => l.file));
   for (const file of [...wanted].sort()) if (!present.has(file)) problems.push(`${file}: check 1: missing`);
 
   const seen = new Map();
   for (const { file, text } of [...lists].sort((a, b) => (a.file < b.file ? -1 : 1))) {
+    if (typed.has(file.replace(/\.json$/, ''))) { problems.push(`${file}: check 1: a typed-only skill has no list, since no request can start it`); continue; }
     if (!wanted.has(file) || text === null) { problems.push(`${file}: check 1: not the list of a skill`); continue; }
     const skill = file.slice(0, -'.json'.length);
     const fail = (where, n, what) => problems.push(`${file}${where && ` ${where}`}: check ${n}: ${what}`);
@@ -120,9 +95,9 @@ function checkLists(lists, skills) {
       else if (/^[/-]/.test(request.trimStart())) fail(where, 3, 'starts with a slash or a hyphen');
     }
 
-    // Check 4: a near miss names the skill that should start instead, or none.
+    // Check 4: a near miss names the model-invoked skill that should start instead, or none.
     list.nearMisses.forEach(({ expect }, i) => {
-      if (expect !== 'none' && !names.has(expect)) fail(`nearMisses[${i}]`, 4, 'expect is neither a skill nor none');
+      if (expect !== 'none' && (!names.has(expect) || typed.has(expect))) fail(`nearMisses[${i}]`, 4, 'expect is neither a model-invoked skill nor none');
       if (expect === list.skill) fail(`nearMisses[${i}]`, 4, "expect is the list's own skill");
     });
 
@@ -156,35 +131,22 @@ function checkLists(lists, skills) {
 }
 
 // The real data: every entry in the requests folder, and every skills/<plugin>/<skill>/ that holds a SKILL.md.
-const readLists = () => readdirSync(REQUESTS_DIR, { withFileTypes: true })
-  .map((e) => ({ file: e.name, text: e.isFile() ? readFileSync(join(REQUESTS_DIR, e.name), 'utf8') : null }));
-
-function readSkills() {
-  const out = [];
-  const dirs = (p) => readdirSync(p, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
-  for (const plugin of dirs(join(ROOT, 'skills'))) {
-    for (const name of dirs(join(ROOT, 'skills', plugin))) {
-      const file = join(ROOT, 'skills', plugin, name, 'SKILL.md');
-      if (existsSync(file)) out.push({ name, text: readFileSync(file, 'utf8') });
-    }
-  }
-  return out;
-}
-
-const REPO_SKILLS = readSkills();
-const REPO = checkLists(readLists(), REPO_SKILLS);
+const REPO_SKILLS = readSkills(ROOT);
+const REPO = checkLists(readLists(REQUESTS_DIR), REPO_SKILLS);
 const only = (...checks) => REPO.filter((p) => checks.some((n) => p.includes(`: check ${n}: `)));
 
-test('there are 39 skills and every description is read, with its request-1 phrase', () => {
-  assert.equal(REPO_SKILLS.length, SKILL_COUNT);
+test(`there are ${MODEL_INVOKED_COUNT} model-invoked skills and every one's description is read, with its request-1 phrase`, () => {
+  const ids = new Set(REPO_SKILLS.map((s) => s.id));
+  assert.deepEqual(TYPED_ONLY.filter((id) => !ids.has(id)), [], 'every typed-only id is a skill');
+  assert.equal(REPO_SKILLS.filter((s) => !TYPED_NAMES.has(s.name)).length, MODEL_INVOKED_COUNT);
   assert.deepEqual(only(9), []);
 });
 
-test('the requests folder holds one list per skill and nothing else', () => assert.deepEqual(only(1), []));
+test('the requests folder holds one list per model-invoked skill and nothing else', () => assert.deepEqual(only(1), []));
 
 test('every list has its shape, and every request is one line that is not a command', () => assert.deepEqual(only(2, 3), []));
 
-test('every near miss names a skill or none, never its own skill', () => assert.deepEqual(only(4), []));
+test('every near miss names a model-invoked skill or none, never its own skill', () => assert.deepEqual(only(4), []));
 
 test('request 1 is the request-1 phrase, and no other request copies a quoted phrase', () => assert.deepEqual(only(5, 6), []));
 
@@ -193,12 +155,15 @@ test('no list holds a dash, no request appears twice, and nothing else is wrong'
   assert.deepEqual(REPO, []);
 });
 
-// Fixtures: three skills. The apostrophes in "the user's" and "the agent's" are not quotes.
+// Fixtures: three model-invoked skills and a typed-only one, delta, with no list. The apostrophes in "the user's" and
+// "the agent's" are not quotes.
 const ALPHA = "Plans the user's work in small steps. Use when the user says 'plan it', 'land it' or 'map the steps', or when the agent's plan is unclear.";
 const BETA = "Checks a build. Use for 'check the build' or 'run checks'.";
 const GAMMA = "Writes notes. Use after 'write it down'.";
+const DELTA = 'Closes the day in a fixed order.';
+const TYPED = new Set(['delta']);
 const skillMd = (name, description) => `---\nname: ${name}\ndescription: "${description}"\n---\n\n# ${name}\n`;
-const SKILLS = [['alpha', ALPHA], ['beta', BETA], ['gamma', GAMMA]].map(([name, d]) => ({ name, text: skillMd(name, d) }));
+const SKILLS = [['alpha', ALPHA], ['beta', BETA], ['gamma', GAMMA], ['delta', DELTA]].map(([name, d]) => ({ name, text: skillMd(name, d) }));
 const makeList = (skill, should, [a, b], [c, d]) => ({ skill, should, nearMisses: [{ request: a, expect: b }, { request: c, expect: d }] });
 const GOOD = {
   alpha: makeList('alpha', ['plan it', 'Break the migration into a short ordered list', 'The release has many moving parts and I keep losing track'],
@@ -211,17 +176,28 @@ const GOOD = {
 const asFile = (l, file) => ({ file, text: `${JSON.stringify(l, null, 2)}\n` });
 
 // The checks on the good fixture after `edit` changed the parsed lists and `editFiles` the files.
-function run(edit = () => {}, { editFiles = (files) => files, skills = SKILLS } = {}) {
+function run(edit = () => {}, { editFiles = (files) => files, skills = SKILLS, typed = TYPED } = {}) {
   const lists = structuredClone(GOOD);
   edit(lists);
-  return checkLists(editFiles(Object.entries(lists).map(([name, l]) => asFile(l, `${name}.json`))), skills);
+  return checkLists(editFiles(Object.entries(lists).map(([name, l]) => asFile(l, `${name}.json`))), skills, typed);
 }
 
 // Exactly one problem, from check n, naming `where`.
 function one(problems, n, where) {
   assert.equal(problems.length, 1, `expected one check ${n} problem, got:\n${problems.join('\n')}`);
   assert.ok(problems[0].startsWith(`${where}: check ${n}: `), problems[0]);
+  return problems[0];
 }
+
+test('a typed-only skill needs no list, may have none, and no near miss may expect it', () => {
+  assert.deepEqual(run(), [], 'delta has no list and no request-1 phrase, and that is fine');
+  const listed = run(() => {}, { editFiles: (f) => [...f, asFile({ ...GOOD.gamma, skill: 'delta' }, 'delta.json')] });
+  assert.match(one(listed, 1, 'delta.json'), /typed-only/);
+  one(run((l) => { l.alpha.nearMisses[1].expect = 'delta'; }), 4, 'alpha.json nearMisses[1]');
+  // The same skill when it is model-invoked: its list is missing and its description has no request-1 phrase.
+  assert.deepEqual(run(() => {}, { typed: new Set() }).map((p) => p.split(': ').slice(0, 2).join(': ')),
+    ['skill delta: check 9', 'delta.json: check 1']);
+});
 
 test('the good fixture has no problem, and a phrase inside a longer word is not a copy', () => {
   assert.deepEqual(run(), []);

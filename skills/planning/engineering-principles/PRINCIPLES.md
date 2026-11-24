@@ -61,8 +61,8 @@ something other than the work you think.
   models, and does the scenario matter.
 
 For a performance number, see the benchmark checklist in `hillclimb` if it is installed: it turns this into
-questions you answer from real runs. For a number from runs of a skill or a prompt, see `skill-eval` if it is
-installed.
+questions you answer from real runs. For a number from runs of a skill or a prompt, the user can type `/skill-eval`
+if it is installed.
 
 **Sign you skipped it.** The number has no run count, no spread or no named limiter, or the time saved is larger
 than the time the changed piece took in the first place.

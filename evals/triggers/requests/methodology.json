@@ -12,7 +12,7 @@
     },
     {
       "request": "Leave this Go refactor going while I am asleep and give me something to audit in the morning",
-      "expect": "overnight-run"
+      "expect": "none"
     }
   ]
 }

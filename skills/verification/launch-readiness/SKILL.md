@@ -1,6 +1,7 @@
 ---
 name: launch-readiness
-description: "Give an honest go or no-go for the stage an app is entering (beta, paying customers, enterprise, regulated data), backed by evidence and probes, in a READINESS.md ledger that rechecks what changed. Use when the user says 'is this ready for paying customers', 'check launch readiness', 'can we launch'. Not for a package CVE or the current diff."
+description: "Give an honest go or no-go for the stage an app is entering, from beta to regulated data, backed by evidence, probes and a ledger."
+disable-model-invocation: true
 argument-hint: "[stage: beta | paying | enterprise | regulated] [the app's folder, when the repository has several]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 ---

@@ -1,6 +1,7 @@
 ---
 name: session-close
-description: "End a working session in a fixed order: clean tree, short retrospective, roadmap and log, handoff file, commit and push. Use when the user says 'close the session', 'end the session' or 'wrap up this session', or when work stops for the day, the context is nearly full, or a roadmap item is done and the next will not fit."
+description: "End a working session in a fixed order: clean tree, short retrospective, roadmap and log, handoff file, commit and push."
+disable-model-invocation: true
 argument-hint: "[optional: what the next session should focus on]"
 ---
 
@@ -8,10 +9,6 @@ argument-hint: "[optional: what the next session should focus on]"
 
 One command for the loop: work -> reflect -> prepare the next session. It runs in full and in this order; no step is
 skipped silently. If a step does not apply, say why.
-
-If you started this skill on your own, without the user typing its name or asking for what it does, first say in one
-or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only matches its
-description is not asking for it. If the user asked for it, or the brief you are working from does, go ahead.
 
 ## Configuration
 
