@@ -8,7 +8,7 @@
   "nearMisses": [
     {
       "request": "Mine the whole git history and review threads for errors that agents repeat in this repo",
-      "expect": "agent-friendly-audit"
+      "expect": "none"
     },
     {
       "request": "Write the notes the next session needs to continue this database port",

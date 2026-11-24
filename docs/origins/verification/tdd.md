@@ -58,3 +58,12 @@ library, as seen in runs of Hypothesis, fast-check, proptest, jqwik, gopter, rap
 fuzzing; a seeded standard-library loop, or a small seeded generator, when the project has no property library;
 libraries by ecosystem; differential tests for a rewrite or a migration; and how to keep a mutation run clean. SKILL.md
 points to it, and its frontmatter allows reads of the skill's folder.
+
+**Q30 (2026-11-24).** From mattpocock/skills `skills/engineering/tdd/SKILL.md` and `tests.md` at abeeaf9. "What to
+test" names the tautological test (an expected value worked out the way the code works it out, or a constant compared
+with itself), with a language-neutral example, and takes the expected value from a source that does not share the
+code's method. "Before You Start" item 3 has the tester write down, for each test surface, what a test there catches
+and what it misses (upstream calls the surface a seam; here "seam" stays where code meets an external system).
+`tests.md` gains a tautological BAD and GOOD pair. Not taken: confirming seams with the user (tdd runs in subagents
+that cannot ask), the codebase-design call, and "refactoring is not part of the loop". 6 of 135 new word 6-grams in
+`SKILL.md` appear upstream (one phrase), 0 of 82 in `tests.md`.

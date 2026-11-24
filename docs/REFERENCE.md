@@ -15,11 +15,15 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[retrospective](../skills/session-discipline/retrospective/SKILL.md)**: Turns a session's corrections into rule, memory or skill edits, gated by `audit.mjs`; drops
   an edit that would not change what a future agent does, and catches decisions that were right for the wrong reason;
   `--stale` finds rules that cite files that are gone.
-- **[session-close](../skills/session-discipline/session-close/SKILL.md)**: Closes a session in a fixed order: clean tree, retrospective, roadmap and log, handoff, commit
+- **[friction-review](../skills/session-discipline/friction-review/SKILL.md)** (adapted, typed only): Counts the friction
+  that repeats across this project's last sessions (search churn, costly tool calls, failed access, unwired checks, no
+  guardrail), proposes changes by severity and makes only the ones you pick.
+- **[session-close](../skills/session-discipline/session-close/SKILL.md)** (typed only): Closes a session in a fixed order: clean tree, retrospective, roadmap and log, handoff, commit
   and push.
 - **[handoff](../skills/session-discipline/handoff/SKILL.md)**: Writes a handoff the next session can resume from, after a retrospective gate, with a
-  cheap check for every claim so the next session verifies instead of redoing.
-- **[instructions-audit](../skills/session-discipline/instructions-audit/SKILL.md)**: Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
+  cheap check for every claim so the next session verifies instead of redoing. On request it starts that session in the
+  background now (`claude --bg`).
+- **[instructions-audit](../skills/session-discipline/instructions-audit/SKILL.md)** (adapted): Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
   references and secrets, and proposes edits for approval.
 - **[project-setup](../skills/session-discipline/project-setup/SKILL.md)**: Interviews you about how you want to work, then writes the project CLAUDE.md and,
   with a separate yes, your personal preferences, in your language. Written for people new to Claude Code. When the
@@ -62,14 +66,14 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   step by step: a frozen harness proven sensitive with a deliberate regression, a stop predicate with a minimum number
   of attempts, one change and one measurement per attempt (keep or revert), a commit per win, and an append-only
   decision log outside the repository kept by `decisions.mjs`, with a checklist run before any number is reported.
-- **[skill-eval](../skills/verification/skill-eval/SKILL.md)** (adapted): Checks whether a change to a skill or prompt
+- **[skill-eval](../skills/verification/skill-eval/SKILL.md)** (adapted, typed only): Checks whether a change to a skill or prompt
   changes what an agent does: each variant runs several times as a headless `claude -p` session in a neutral folder
   that holds only that variant, runs are graded on what they did, and a reviewer with no tools scores them blind next
   to your own blind read; `skill-eval.mjs` sets up the folders, refuses leaks and makes the blind copy. Its `triggers`
   mode runs every request of a folder of request lists as a run of one turn (or up to three with `--max-turns`) with
   all the skills under test installed, and reports which skill started for each request (hits, misses, wrong starts,
   near misses, and with more turns the turn of each hit), within a cost cap.
-- **[launch-readiness](../skills/verification/launch-readiness/SKILL.md)**: An honest go or no-go for the stage an app is
+- **[launch-readiness](../skills/verification/launch-readiness/SKILL.md)** (typed only): An honest go or no-go for the stage an app is
   entering (private beta, paying customers, enterprise, regulated data). The profile is confirmed first, every row has
   `file:line` or command evidence, security suspects are confirmed by probe tests, what code cannot show goes through
   a questionnaire with expiry, and `READINESS.md` rechecks only rows whose evidence changed; `ledger.mjs` keeps it.
@@ -86,17 +90,17 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[parallel-worktrees](../skills/agent-orchestration/parallel-worktrees/SKILL.md)**: Runs independent pieces of work in separate git worktrees, or races several
   attempts at one piece and keeps the best, with `worktrees.mjs` to check a plan for overlapping files and report every
   worktree's state.
-- **[lean-subagent-dev](../skills/agent-orchestration/lean-subagent-dev/SKILL.md)** (adapted): A way of working for a whole session:
+- **[lean-subagent-dev](../skills/agent-orchestration/lean-subagent-dev/SKILL.md)** (adapted, typed only): A way of working for a whole session:
   one subagent at a time with a written brief and standing orders, the main session checks the work itself and triages
   the review, and the usage budget sets how much to delegate and each role's effort.
 - **[arena](../skills/agent-orchestration/arena/SKILL.md)** (adapted): Runs several candidate subagents at one task, each with a
   different brief, has a fresh judge score them blind against a rubric they never saw, then picks a base and grafts
   the best parts by hand; `arena.mjs` scaffolds the folders and makes the blind copy.
-- **[overnight-run](../skills/agent-orchestration/overnight-run/SKILL.md)** (adapted): Runs one task unattended under a
+- **[overnight-run](../skills/agent-orchestration/overnight-run/SKILL.md)** (adapted, typed only): Runs one task unattended under a
   contract: trust checks before the loop, a finish condition a script checks, a fresh worktree, an append-only
   decision log kept outside the repository by `log.mjs`, a control folder no turn can write, an off switch and a
   resume note, and a morning audit by a fresh reviewer; the summary ends with an Attention section.
-- **[geppetto](../skills/agent-orchestration/geppetto/SKILL.md)**: Designs, installs, audits and updates a project's
+- **[geppetto](../skills/agent-orchestration/geppetto/SKILL.md)** (typed only): Designs, installs, audits and updates a project's
   Claude Code agent files, with a starter roster (eng-lead, builder, reviewer, writer, sweeper) that all carry one
   covenant (builder and reviewer also carry the production rules from `PRODUCTION-RULES.md`), a designer template
   that Create fills with the paths of the project's design system (it extends a keyframe into further screens with
@@ -123,7 +127,8 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 
 ## planning
 
-- **[grill-me](../skills/planning/grill-me/SKILL.md)** (adapted): Interviews you one question at a time until every branch of a plan is decided.
+- **[grill-me](../skills/planning/grill-me/SKILL.md)** (adapted): Interviews you in rounds, every question whose prerequisites are settled, until every branch of a plan is
+  decided, and writes a questionnaire for whoever can answer what you cannot.
 - **[to-prd](../skills/planning/to-prd/SKILL.md)** (adapted): Synthesizes the conversation into a PRD without re-interviewing.
 - **[to-issues](../skills/planning/to-issues/SKILL.md)** (adapted): Splits a plan into vertical-slice issues for any tracker.
 - **[improve-codebase-architecture](../skills/planning/improve-codebase-architecture/SKILL.md)** (adapted): Finds refactors that turn shallow modules into deep ones,
@@ -138,7 +143,7 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   a score, with a premortem each, and a short summary for `grill-me`.
 - **[sharpen](../skills/planning/sharpen/SKILL.md)** (adapted): Before a task, restates the goal and the problem behind
   it, asks how an expert would check the result, and confirms in six lines before working.
-- **[agent-friendly-audit](../skills/planning/agent-friendly-audit/SKILL.md)** (adapted): Mines review comments, fix and
+- **[agent-friendly-audit](../skills/planning/agent-friendly-audit/SKILL.md)** (adapted, typed only): Mines review comments, fix and
   revert commits, this project's transcripts and instruction files for the mistakes agents repeat, and proposes a fix
   for each at the highest layer (architecture, types, lint, test, prose), proven on a past instance; `mine.mjs` does
   the read-only mining, with redaction. Writes nothing without your yes.

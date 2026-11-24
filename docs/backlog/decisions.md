@@ -113,3 +113,17 @@ Decisions 1 to 21 (2026-10-17 to 2026-11-04) are in [decisions-1-to-21.md](decis
    - Each batch is announced as a GitHub Release written like game patch notes, with emojis and GIFs, at the owner's
      request (Q31).
    - Order: Q28, Q29, Q30, Q31.
+
+32. **Some skills are typed only again (Q28), superseding decision 7**, from decision 31 and the owner's rule for
+   skills that go together, each as recommended:
+   - Typed only (`disable-model-invocation: true`): `session-close`, `lean-subagent-dev`, `overnight-run`,
+     `skill-eval`, `agent-friendly-audit`, `geppetto`, `launch-readiness`, and `friction-review` from Q29. Each is a
+     ritual or a costly run the owner starts on purpose, and no other skill starts it. Typing `/name` starts it;
+     words, the agent and other skills cannot.
+   - A skill that another skill starts stays model-invoked: `retrospective`, `handoff`, `methodology`, `hillclimb`,
+     `instructions-audit`, `to-prd`, `to-issues`. "The user can type /x" is used twice, both for a different job:
+     `rule-to-hook` for `agent-friendly-audit`, `engineering-principles` for `skill-eval`.
+   - `tests/typed-only-list.mjs` decides the list; a typed-only description is one sentence of at most 160
+     characters, outside the 14,000 total, with no trigger list. The confirm list drops from 14 to 9.
+   - `session-close` no longer starts itself at a context warning and offers the full `retrospective` when its short
+     one finds a correction. `overnight-run`'s headless turns read a copy of its SKILL.md.

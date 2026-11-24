@@ -94,7 +94,8 @@ skill, it is an optional extra, and the skill says what to do without it.
 
 ## When skills show without a description
 
-Claude Code puts every skill's description into each session, in a listing capped at 1% of the context window. When
+Claude Code puts the description of every skill the agent may start into each session (a typed-only skill, with
+`disable-model-invocation: true`, adds none), in a listing capped at 1% of the context window. When
 the listing is full, it drops the descriptions of the least used skills and keeps only their names, and the agent can
 then start those skills only when you name them. To check, ask a new session: "List every skill in your skill listing
 that has no description." If the list is not empty:

@@ -14,18 +14,28 @@ order; the scrub check and the validator at the end catch most of what gets forg
    stub `docs/origins/<plugin>/<skill-name>.md`, adds a line linking the stub to the plugin's list in the
    `docs/ORIGINS.md` index, and adds a bullet to the plugin's list in `docs/REFERENCE.md`. Every placeholder is marked
    `TODO(new-skill)`, and the scrub check fails until none is left. The script refuses a name that already exists in any plugin.
-   Every skill loads on its own: never add `disable-model-invocation: true` (`tests/context-budget.test.mjs` fails on
-   it). Claude Code puts every description into every session's context, so write it as a short trigger list: one
-   sentence on what the skill does, then "Use when" with the phrases a person would actually say, and, where another
-   skill could be picked for the same words, what makes this one different. At most 400 characters, all descriptions
-   together at most 14,000, no XML-like tag such as `<word>`, and no other skill's name in backticks. Leave out what
-   the body already says. Write it as one double-quoted line with no backslash or double quote inside, in printable
-   ASCII only (no curly quote, no accented letter, nothing outside the space to the tilde), with no backtick, and
-   exactly one "Use when" (or whenever, before, for, after) opener. On a skill in the confirm list, no quoted phrase holds a question mark or has one right after it:
-   write a question as a situation. `tests/description-rules.test.mjs` checks these four rules.
-   If the skill launches subagents or headless runs, commits, pushes or installs with no other check, or changes how
-   the whole session works, and nothing in it already stops for the user's yes before that cost, add it to
-   `CONFIRM_LIST` in `tests/confirm-list.mjs` and to the lists in the README ("What loads on its own") and
+   A skill loads on its own (it is model-invoked) unless it is typed only. Make it typed only when the user always
+   starts it on purpose and no other skill starts it: scaffold it with `--typed-only`, which writes
+   `disable-model-invocation: true` after the description, and add `<plugin>/<skill>` to `TYPED_ONLY` in
+   `tests/typed-only-list.mjs`, the only place the list is decided. Name it too in the typed paragraph of the README
+   ("What loads on its own") and under "Skills you type" in `which-skill`; `tests/typed-only.test.mjs` checks both.
+   No request in words, no agent and no other skill can start a typed-only skill. A typed-only skill adds no context
+   load (its description shows only in the `/` menu) but adds cognitive load (the user has to remember it exists and
+   when to type it). Write its description as one sentence on what the skill does, at most 160 characters, with no
+   "Use when" (or whenever, before, for, after) opener and no quoted phrase; it does not count in the total. A
+   model-invoked skill's description is context load: it is in every session's context, used or not, so write it as
+   a short trigger list: one sentence on what the skill does, then "Use when" with the phrases a person would
+   actually say, and, where another skill could be picked for the same words, what makes this one different. At most
+   400 characters, all model-invoked descriptions together at most 14,000, and exactly one "Use when" (or whenever,
+   before, for, after) opener. For both kinds: no XML-like tag such as `<word>`, and no other skill's name in
+   backticks. Leave out what the body already says. Write it as one double-quoted line with no backslash or double quote inside, in printable
+   ASCII only (no curly quote, no accented letter, nothing outside the space to the tilde), with no backtick. On a
+   skill in the confirm list, no quoted phrase holds a question mark or has one right after it: write a question as a
+   situation. `tests/context-budget.test.mjs` checks the lengths and `tests/description-rules.test.mjs` the four rules.
+   The confirm list is only for skills that can start on their own, so a typed-only skill is never on it. If a
+   model-invoked skill launches subagents or headless runs, commits, pushes or installs with no other check, or
+   changes how the whole session works, and nothing in it already stops for the user's yes before that cost, add it
+   to `CONFIRM_LIST` in `tests/confirm-list.mjs` and to the lists in the README ("What loads on its own") and
    `which-skill`, and paste this paragraph into its `SKILL.md`, word for word, near the top (or at the start of the
    step that costs, when only one step does):
 
@@ -36,8 +46,10 @@ order; the scrub check and the validator at the end catch most of what gets forg
    go ahead.
    ```
 
-   Any skill can start another, so a mention of another skill says "use `<name>` if it is installed" for a step
+   A skill may start or offer a model-invoked skill: a mention says "use `<name>` if it is installed" for a step
    inside the work the user asked for, and "offer to run `<name>` if it is installed" for a next step after this one.
+   No skill can start a typed-only one, so a mention of one says what the user can type (`/<name>`), and only where
+   keeping that skill typed only is right. `tests/typed-only.test.mjs` checks this.
 
 3. **Copy the skill in and generalise it.** Bring its `SKILL.md` body and any bundled files across from the project.
    Then:

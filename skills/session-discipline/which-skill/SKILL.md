@@ -1,12 +1,14 @@
 ---
 name: which-skill
 description: "Recommend which pau-skills skill, or sequence of skills, fits the user's situation, what the installed hooks already do, and which skills the user actually starts. Use when the user asks 'which skill should I use', 'what can these skills do', 'where do I start', 'is there a skill for this', 'help me pick', 'which skills do I actually use', or seems unsure how to approach a task."
+allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 ---
 
 # Which Skill
 
 A router over every skill in this marketplace. Read the user's situation, pick the smallest set of skills that fits,
-and say in what order to run them. Do not run them yourself unless the user asks.
+and say in what order to run them. Do not run them yourself unless the user asks, and never run one under "Skills
+you type".
 
 ## How to answer
 
@@ -32,14 +34,19 @@ Where a table and a skill's own `SKILL.md` disagree, the skill wins.
 
 Keep the answer short. A list of every skill is not an answer.
 
+## Skills you type
+
+These start only when the user types them: `session-close`, `lean-subagent-dev`, `overnight-run`, `skill-eval`,
+`agent-friendly-audit`, `geppetto`, `launch-readiness`, `friction-review`. Typed as `/pau-skills:session-close`,
+for example, or `/anthropic-skills:session-close` when uploaded to claude.ai. Neither you nor a skill can start one:
+when one fits, give the user the exact name to type.
+
 ## Which skills ask first
 
-Every skill can start on its own when the situation fits, and the user can also type any of them, for example
-`/pau-skills:grill-me`. These ask first when the agent started them without the user asking for what they do, because
-they launch subagents or headless runs, commit, push or install with no other check, or change how the session works:
-`arena`, `codebase-oracle` (big questions only), `overnight-run`, `parallel-worktrees`, `agent-friendly-audit`,
-`hillclimb`, `skill-eval`, `verify-app`, `dependency-upgrade`, `rule-to-hook`, `architect`, `session-close`,
-`lean-subagent-dev`, `methodology`.
+These ask first when the agent started them without the user asking for what they do, because they launch subagents
+or headless runs, commit, push or install with no other check, or change how the session works: `arena`,
+`codebase-oracle` (big questions only), `parallel-worktrees`, `hillclimb`, `verify-app`, `dependency-upgrade`,
+`rule-to-hook`, `architect`, `methodology`.
 
 ## Starting out
 
@@ -52,7 +59,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
    me ideas", "what are my options"), widen the options first: 8 to 12 options from named lenses, the agent's picks
    to accept with a tap or an "ok", 3 or 4 finalists with a premortem each. Then run `grill-me` on the chosen
    direction.
-1. **`grill-me`** (planning). Settle every open decision before anything is built, one question at a time.
+1. **`grill-me`** (planning). Settle every open decision before anything is built, one round of questions at a time.
    Start here whenever the user has an idea that is not fully decided.
 2. **`to-prd`** (planning). Turn the decided conversation into a written spec, without interviewing again.
 3. **`to-issues`** (planning). Split the spec into vertical slices that can each be built and verified alone.
@@ -105,8 +112,8 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 
 | Symptom | What to do |
 |---|---|
-| A skill did not start on its own from the user's words | The skill listing may be over budget, so Claude Code dropped its description. Type the skill's name for now; in a new session, ask "List every skill in your skill listing that has no description" and, if any are listed, raise `SLASH_COMMAND_TOOL_CHAR_BUDGET` or turn off unused plugins (`docs/INSTALL.md` in the repository) |
-| One of the skills under "Which skills ask first" asked although the user had asked for it, or started its costly step on a remark | Those skills count a request for them or for what they do, or a brief that asks for it, as a yes, and a remark that only matches the description as no. Say plainly which it was; if the skill got it wrong, that is a bug to report. Every other skill is meant to start on its own when the situation fits |
+| A skill did not start on its own from the user's words | One under "Skills you type" never starts from words: give the user its name to type. Otherwise the skill listing may be over budget, so Claude Code dropped its description. Type the skill's name for now; in a new session, ask "List every skill in your skill listing that has no description" and, if any are listed, raise `SLASH_COMMAND_TOOL_CHAR_BUDGET` or turn off unused plugins (`docs/INSTALL.md` in the repository) |
+| One of the skills under "Which skills ask first" asked although the user had asked for it, or started its costly step on a remark | Those skills count a request for them or for what they do, or a brief that asks for it, as a yes, and a remark that only matches the description as no. Say plainly which it was; if the skill got it wrong, that is a bug to report. A skill under "Skills you type" never starts from words; every other skill is meant to start on its own when the situation fits |
 | Parallel agents overwrote each other's files | `parallel-worktrees`: one worktree and branch per agent. Telling agents "do not touch X" is not enough |
 | The agent claimed success from a green build or from reading the code | Ask for the real command, the stored value read back, or a drive of the app. `evaluator` grades the change with evidence; `verify-app` gives the project a way to drive the app |
 | The review and fix loop keeps going | `review-triage`: one review round, one fix round, then the rest goes to the owner or an issue |
@@ -141,28 +148,14 @@ These change how future sessions go, not the product code.
 - **`agent-friendly-audit`** (planning): mine the whole history (review comments, fix
   commits, transcripts, instruction files) for mistakes agents repeat, and get a plan that fixes each at the highest
   layer, proven on a past instance. `retrospective` covers one session; `rule-to-hook` builds one chosen rule.
+- **`friction-review`** (session-discipline, typed): the agent keeps searching, rerunning commands, hitting failed
+  access or skipping checks; it counts that friction across the last sessions and proposes fixes. `retrospective`
+  covers the user's corrections in one session; `agent-friendly-audit` covers repeated code mistakes.
 
 ## What runs without asking
 
-Hooks act on every session where their plugin is installed. Each can be turned off in `.claude/pau-skills.json`
-(see hooks/README.md in the repository).
-
-| Hook | When it acts |
-|---|---|
-| `roadmap`, `branch-context` | Session start: roadmap position, git branch and working-tree state |
-| `compact-snapshot` | Before and after a compaction: keeps your last messages, edited files and todos |
-| `skill-usage` | Each skill start, typed or by the agent: logs the time and name (never the prompt) for the usage report below |
-| `secret-guard` | Blocks a credential being written into a file |
-| `file-size-guard` | Blocks a change that leaves a file over 5,000 tokens and larger than before, with a split recipe |
-| `destructive-guard` | Blocks commands that destroy work or data for good |
-| `no-verify-guard` | Blocks skipping git hooks or commit signing |
-| `merge-guard`, `inline-backtick-guard` | Block a raw `gh pr merge` and backticks in inline interpreter payloads |
-| `test-tamper-guard` | Asks before a test is skipped, focused or loses assertions |
-| `suppression-reason` | Tells the agent when an edit adds a lint or type-check suppression with no reason |
-| `verify-before-done` | Sends the agent back once if it changed code and ran no checks |
-| `no-idle` | Tells every subagent never to end its turn waiting |
-| `subagent-watchdog` | Notes, then asks, when a subagent reruns a command or goes long with no edit; lists stuck subagents in the main session |
-| `lazy-senior` | Adds the smallest-complete-change rules to every session and subagent |
+Hooks act in every session where their plugin is installed. When a hook matters to the answer, read
+`${CLAUDE_SKILL_DIR}/HOOKS.md`.
 
 ## Which skills do I actually use?
 

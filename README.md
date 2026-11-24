@@ -1,7 +1,7 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 39](https://img.shields.io/badge/skills-39-informational)
+![Skills: 40](https://img.shields.io/badge/skills-40-informational)
 ![Hooks: 16](https://img.shields.io/badge/hooks-16-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
@@ -93,6 +93,8 @@ green by skipping the failing test.
 - `agent-friendly-audit` mines review comments, fix commits, transcripts and instruction files for the mistakes agents
   repeat, and proposes a fix for each at the highest layer it can live in (architecture, types, a lint or CI check, a
   test, then prose), proven on a past instance.
+- `friction-review` counts the friction that repeats across your last sessions (searches before the first edit,
+  reruns, failed access, big tool results, checks nobody runs or wires in) and proposes a fix for each.
 - `file-size-guard` (hook) blocks a change that grows a file past 5,000 tokens, the file an agent keeps appending to,
   and says how to split it.
 - `skill-eval` checks whether a change to a skill or prompt changes what the agent actually does, with blind runs,
@@ -129,7 +131,7 @@ context was compacted.
 - `sharpen` restates a task in its own words, with the problem behind it and one outside check, and confirms before
   starting.
 - `brainstorm` widens the options before `grill-me` narrows them, so the first idea is not the only one considered.
-- `grill-me` interviews you one question at a time until every branch of the plan is decided.
+- `grill-me` interviews you in rounds of ready questions until every branch of the plan is decided.
 - `to-prd` and `to-issues` turn the decided plan into a spec and vertical-slice issues.
 - `codebase-oracle` answers questions about the code from the code and its history, and labels how strong the
   evidence is for each answer.
@@ -207,26 +209,20 @@ will change, or how to make it remember how they like to work.
 
 ## What loads on its own
 
-Every skill loads on its own: the agent can start it when your words fit its description ("let's brainstorm options
-for this", "wrap up this session", "is this test any good"), and you can still type any of them as
-`/pau-skills:<skill>` or `/<plugin>:<skill>`. Claude Code puts every description into the context of every session,
-so each one is a short list of the phrases that should start it. `tests/context-budget.test.mjs` holds each
-description to 400 characters and all of them to 14,000 together.
+Most skills load on their own: the agent starts one when your words fit its description ("let's brainstorm options
+for this", "is this test any good"), and you can type any as `/pau-skills:<skill>` or `/<plugin>:<skill>`. Each such
+description is in every session's context, so it is a short list of the phrases that should start it: at most 400
+characters, 14,000 in all (`tests/context-budget.test.mjs`).
 
-Some skills cost something when they run, and nothing else in them stops for your yes first: they launch subagents
-or headless runs, commit, push or install with no other check, or change how the whole session works. When the agent
-starts one of these on its own, without you asking for what it does, it first says in one or two lines what it will
-do and what it will cost, and waits for your yes. A remark that only matches a description ("the code is getting
-messy") does not count as asking.
+Eight start only when typed and cost no context: `session-close`, `lean-subagent-dev`, `overnight-run`,
+`skill-eval`, `agent-friendly-audit`, `geppetto`, `launch-readiness`, `friction-review`. A request in words, the
+agent and other skills cannot start them. `tests/typed-only-list.mjs` holds the list.
 
-- `arena`, `codebase-oracle` (big questions only), `overnight-run`, `parallel-worktrees`, `agent-friendly-audit`,
-  `hillclimb`, `skill-eval`, `verify-app`;
-- `dependency-upgrade`, `rule-to-hook`, `architect`, `session-close`;
-- `lean-subagent-dev`, `methodology`.
-
-`tests/confirm-list.mjs` keeps this list, and `tests/confirm-step.test.mjs` keeps the skills in step.
-The other skills either cost little or already ask before they write (for example `retrospective` and `to-issues`
-show you their edits or issues and wait).
+Some skills cost something when they run (subagents, headless runs, a commit, push or install with no other check,
+or a new way of working), and nothing else in them asks first. When the agent starts one on its own, without you
+asking for it, it first says what it will do and cost, and waits for your yes: `arena`, `codebase-oracle` (for big
+questions), `parallel-worktrees`, `hillclimb`, `verify-app`, `dependency-upgrade`, `rule-to-hook`, `architect`,
+`methodology`. `tests/confirm-list.mjs` keeps this list.
 
 ## Reference
 

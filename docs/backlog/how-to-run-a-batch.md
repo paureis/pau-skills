@@ -44,8 +44,12 @@ batch); see "With the roster" after step 10. The steps stay; what changes is who
    the reference bullets in `docs/REFERENCE.md`, the ORIGINS entry files and their index lines, NOTICE, `which-skill`, `evaluator` or other links the items ask for, plugin READMEs and
    descriptions, minor version bumps for every plugin whose files changed and for the bundle, CHANGELOG (when the
    current ISO week has ended, first move its entries to `docs/changelog/<year>-W<week>.md`), and the
-   statuses in `docs/BACKLOG.md` and `docs/backlog/`. To list the plugins to bump, use the command in step 8 of `docs/ADDING-A-SKILL.md`. Run all four checks, commit, push, and open one pull request that says how each item was built
-   and checked and what the owner must decide. When `html-plan` is installed in the session, put the owner's
+   statuses in `docs/BACKLOG.md` and `docs/backlog/`. To list the plugins to bump, use the command in step 8 of `docs/ADDING-A-SKILL.md`. Write the patch notes, `docs/releases/v<bundle version>.md`, from the
+   template in `docs/RELEASES.md`, and run `node scripts/release-notes.mjs publish --dry-run --repo <owner/name>`: it
+   must exit 0 and print one `gh release create` line, for the new tag. Run all four checks, commit, push, and open
+   one pull request that says how each item was built and checked, with the evidence as a before and an after, whether
+   merging is a two-way door (a revert undoes it) or a one-way door (what else could break and what to check first),
+   and what the owner must decide. When `html-plan` is installed in the session, put the owner's
    decisions on one html-plan page published as a private artifact, so the owner can answer from a phone; otherwise
    list them in the pull request and the chat. The page opens at the decisions (`<doc-plan open="needs">`), and the
    publish declares `capabilities: {comments: {}}`, so the owner's Send to Claude button (html-plan built by
@@ -72,6 +76,9 @@ batch); see "With the roster" after step 10. The steps stay; what changes is who
     - When any hook changed, bump `pau-skills-hooks` too, and tell the owner to run
       `claude plugin marketplace update pau-skills` and `claude plugin update pau-skills-hooks@pau-skills` on each
       computer.
+    - The merge publishes the patch notes as a GitHub Release (the Release workflow). Check the run and the release:
+      its title, body and every image. If the run failed, fix the cause on main and use Run workflow, or create the
+      release by hand from the notes file, tagged at the merge commit.
 
 ## With the roster (from the seventh batch)
 

@@ -8,7 +8,7 @@
   "nearMisses": [
     {
       "request": "End today's session properly: run the lessons step, update the roadmap and log, write notes for next time, and commit",
-      "expect": "session-close"
+      "expect": "none"
     },
     {
       "request": "Summarize this pull request description in two lines",

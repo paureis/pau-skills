@@ -1,12 +1,14 @@
 # Trigger request lists
 
-`requests/<skill>.json` holds, for every skill in this repository, 3 requests that should start it and 2 near misses,
-each naming the skill (or `none`) that should start instead. Request 1 is a phrase quoted in the skill's description;
+`requests/<skill>.json` holds, for every model-invoked skill in this repository, 3 requests that should start it and
+2 near misses, each naming the model-invoked skill (or `none`) that should start instead. A typed-only skill (in
+`tests/typed-only-list.mjs`) starts only when the user types it, so no request can start it: it has no list, and no
+near miss names it. Request 1 is a phrase quoted in the skill's description;
 requests 2 and 3 and the near misses were written by an agent that never saw a description, from the skill bodies and
 the README's problem lists, so they cannot copy the description's wording. `tests/trigger-lists.test.mjs` checks their
 shape on every `npm test`; CI never runs a model.
 
-A round runs each request as a one-turn headless `claude -p` with all 39 skills installed, through `skill-eval`'s
+A round runs each request as a one-turn headless `claude -p` with every skill installed, through `skill-eval`'s
 trigger mode (see `skills/verification/skill-eval/TRIGGERS.md`). Run it from the repository root with `TMPDIR` set to a folder
 outside every repository, so no run reads this repository's `CLAUDE.md` (the mode refuses a run root inside a git work
 tree):
@@ -20,7 +22,8 @@ node skills/verification/skill-eval/skill-eval.mjs triggers "$LAB/round" --skill
 Drop `--plan` to run it, and pass `--baseline evals/triggers/after-q17` to see what got better or worse (decision
 20). `after-q17/` holds the full round run after Q17 reworded ten descriptions, in parts (one per list, and
 `round.json`), each under the 20,000-byte limit. `baseline/` holds the first full round in the same parts, and
-`baseline.md` says what each round showed.
+`baseline.md` says what each round showed. `baseline/`, `after-q17/` and `two-turn/` ran before Q28 made seven skills
+typed only, so they still hold lists and runs for skills that now have no list.
 
 `two-turn/requests/` holds the 41 should runs of the baseline that ran a tool first and started nothing ("looked
 first"), one list per skill that had such a miss; a request that missed in both repeats is listed twice.

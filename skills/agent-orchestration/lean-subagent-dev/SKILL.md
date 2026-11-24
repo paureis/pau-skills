@@ -1,6 +1,7 @@
 ---
 name: lean-subagent-dev
-description: "Run the session as orchestrator: one subagent at a time builds each change from a written brief, you check its work and keep every push and merge, delegating to fit the usage budget. Use when the user says 'work lean', 'lean subagent', 'delegate this to a subagent', 'brief a subagent', wants subagents to build while they keep control, asks how much to delegate, or says usage is low."
+description: "Run the session as orchestrator: one subagent at a time builds each change from a brief, and you check its work and keep every push and merge."
+disable-model-invocation: true
 argument-hint: "[the work for this session, or a path to a plan]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack and DietrichGebert/ponytail; see NOTICE)
@@ -23,10 +24,6 @@ Bundled files, open each when you reach its step:
 
 This is the light way of working: one builder, one checker, a short review. For work under a written contract, or
 where a defect costs money, credentials or data, step up (see "When to step up").
-
-If you started this skill on your own, without the user typing its name or asking for what it does, first say in one
-or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only matches its
-description is not asking for it. If the user asked for it, or the brief you are working from does, go ahead.
 
 ## 1. At the start of the session
 
@@ -161,10 +158,14 @@ need to load it as well.
 - One review round and one fix round. What the second look finds goes to the owner (a must-fix) or to an issue
   (anything else).
 
-Then do the GitHub writes yourself, the way the project lands work. If the user runs Claude Code's `/ship` on their own
-machine instead (you cannot start it), it may push fixes after your check and never merges: before the merge, read
-what it pushed since the commit you checked, rerun the checks at the new head, and merge only with the user's go-ahead
-(use `safe-merge` if it is installed).
+Then do the GitHub writes yourself, the way the project lands work. A pull request body holds the evidence as a
+before and an after (the test that failed and now passes, or the output or a screenshot before and after), the
+triage table from TRIAGE.md, and whether merging is a two-way door (cheap to walk back: revert the merge) or a
+one-way door (hard to reverse: data deleted or migrated, a published interface, a release, a message sent to users).
+For a one-way door, it also says what else could break (the blast radius) and what the owner should check first.
+If the user runs Claude Code's `/ship` on their own machine instead (you cannot start it), it may push fixes after
+your check and never merges: before the merge, read what it pushed since the commit you checked, rerun the checks at
+the new head, and merge only with the user's go-ahead (use `safe-merge` if it is installed).
 
 ## 7. Keep a log
 
@@ -219,7 +220,7 @@ Task: <name>   Route: <inline | subagent, model, effort>   Budget: <tight | norm
 Changed: <files, one line>   Commits: <range>
 Checks I ran: <command: PASS | FAIL>   Control: <what, result | not needed because ...>
 Review: <findings by bucket>   Fix round: <none | commits>   Second look: <clean | what, and where it went>
-Needs you: <questions or decisions, or "nothing">
+Door: <two-way | one-way: what could break, what to check first>   Needs you: <questions or decisions, or "nothing">
 ```
 
 ## Do not

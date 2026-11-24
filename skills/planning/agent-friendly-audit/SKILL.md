@@ -1,6 +1,7 @@
 ---
 name: agent-friendly-audit
-description: "Mine a project's history (reviews, fix commits, transcripts, instruction files) for mistakes agents repeat, and propose a check or design fix for each, backed by counts. Use when the user says 'make this repo agent friendly', 'find what agents keep breaking' or 'mine our history for agent mistakes', or when agents keep making the same mistake and review has to catch it."
+description: "Mine a project's history (reviews, fix commits, transcripts, instruction files) for mistakes agents repeat, and propose a fix for each, with counts."
+disable-model-invocation: true
 argument-hint: "[focus: a module, a mistake you keep correcting, or a time range]"
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
@@ -23,10 +24,6 @@ request is the problem this skill fixes.
 
 The output is a plan backed by counts. **Nothing in the project is written until the user says yes**, except the
 scratch folder of step 6, where prototypes and proofs run, ignored by git and removed before the plan.
-
-If you started this skill on your own, without the user typing its name or asking for what it does, first say in one
-or two lines what it will do and what it will cost, and wait for a yes. A remark or a question that only matches its
-description is not asking for it. If the user asked for it, or the brief you are working from does, go ahead.
 
 Bundled files:
 - `${CLAUDE_SKILL_DIR}/mine.mjs`: read-only helper (Node 20+, no dependencies). `commits` lists fix, revert and
@@ -68,8 +65,9 @@ Leave out how to fix things and any guess at the cause; the evidence decides tho
 can run it on the audit prompt first; it does this check in more depth. Ask nothing else up front: an open design
 question is answered later with a prototype (step 6).
 
-**No one to answer** (a headless `claude -p` run, a scheduled job): do not assume a yes. If the prompt that started
-the run already says what to audit and to go ahead, write the restatement as the assumption you work under and
+**No one to answer** (a headless `claude -p` run, a scheduled job): do not assume a yes. Such a run starts this
+skill by typing it, with `/agent-friendly-audit <focus>` as the prompt. If the prompt that started the run already
+says what to audit and to go ahead, write the restatement as the assumption you work under and
 continue; steps 2 to 7 change nothing in the project but the scratch folder of step 6. Otherwise stop here and
 report the restatement and the question.
 

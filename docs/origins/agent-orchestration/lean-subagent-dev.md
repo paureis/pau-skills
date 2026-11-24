@@ -61,3 +61,10 @@ fix round, and the triage of every review used the new `TRIAGE.md`.
 review-triage's: the diff-triggered checklist, rules read from the merge base, the REVIEW.md listing and the `RULES`
 flag. Step 5 passes the triggered entries and the REVIEW.md commands to the reviewer, or grades them yourself at a
 tight budget.
+
+**Q30 (2026-11-24).** From mattpocock/skills `pr` at abeeaf9, ideas only (0 of 116 new word 6-grams shared). Step 6
+says what a pull request body holds: the evidence as a before and an after, the triage table, and whether merging is a
+two-way door (a revert undoes it) or a one-way door (data deleted or migrated, a published interface, a release, a
+message to users). The owner report gains a `Door:` field. Upstream asks for the blast radius on every pull request;
+this version asks for it, with what the owner should check first, only for a one-way door. Not taken: upstream's
+Summary menu of visuals, which its CREDITS file says is copied from another project whose license was not checked.
