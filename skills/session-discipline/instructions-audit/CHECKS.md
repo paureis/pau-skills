@@ -71,6 +71,13 @@ Options, cheapest first: delete it; replace it with a one-line pointer to the do
 `docs/deploy.md`"), which the agent reads only when needed; move it to a nested `CLAUDE.md` or a path-scoped rules
 file; turn a procedure into a skill. Note that an `@import` does not save tokens: it loads the file every time.
 
+Every option trades context load (tokens and attention in every session) for cognitive load (someone has to know
+the material exists and when it is needed). A one-line pointer keeps the trade small: it says what the material is
+and when to read it. The pointer's wording, not its target, decides when the agent reads it, so a needed doc behind
+a vague pointer ("see `docs/`") is a finding: propose sharpening the pointer first, and inlining the material only
+if that fails. Deleting a section and leaving no pointer moves it entirely onto someone's memory: propose that only
+for material nobody needs.
+
 ### Obvious or redundant with the code
 Rules that a linter, formatter, type checker or test already enforce ("use semicolons", "no unused imports"),
 rules that any agent follows by default ("read the file before editing it"), and descriptions of the folder tree

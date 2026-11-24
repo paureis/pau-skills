@@ -158,10 +158,14 @@ need to load it as well.
 - One review round and one fix round. What the second look finds goes to the owner (a must-fix) or to an issue
   (anything else).
 
-Then do the GitHub writes yourself, the way the project lands work. If the user runs Claude Code's `/ship` on their own
-machine instead (you cannot start it), it may push fixes after your check and never merges: before the merge, read
-what it pushed since the commit you checked, rerun the checks at the new head, and merge only with the user's go-ahead
-(use `safe-merge` if it is installed).
+Then do the GitHub writes yourself, the way the project lands work. A pull request body holds the evidence as a
+before and an after (the test that failed and now passes, or the output or a screenshot before and after), the
+triage table from TRIAGE.md, and whether merging is a two-way door (cheap to walk back: revert the merge) or a
+one-way door (hard to reverse: data deleted or migrated, a published interface, a release, a message sent to users).
+For a one-way door, it also says what else could break (the blast radius) and what the owner should check first.
+If the user runs Claude Code's `/ship` on their own machine instead (you cannot start it), it may push fixes after
+your check and never merges: before the merge, read what it pushed since the commit you checked, rerun the checks at
+the new head, and merge only with the user's go-ahead (use `safe-merge` if it is installed).
 
 ## 7. Keep a log
 
@@ -216,7 +220,7 @@ Task: <name>   Route: <inline | subagent, model, effort>   Budget: <tight | norm
 Changed: <files, one line>   Commits: <range>
 Checks I ran: <command: PASS | FAIL>   Control: <what, result | not needed because ...>
 Review: <findings by bucket>   Fix round: <none | commits>   Second look: <clean | what, and where it went>
-Needs you: <questions or decisions, or "nothing">
+Door: <two-way | one-way: what could break, what to check first>   Needs you: <questions or decisions, or "nothing">
 ```
 
 ## Do not
