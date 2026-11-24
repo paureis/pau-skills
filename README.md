@@ -131,7 +131,7 @@ context was compacted.
 - `sharpen` restates a task in its own words, with the problem behind it and one outside check, and confirms before
   starting.
 - `brainstorm` widens the options before `grill-me` narrows them, so the first idea is not the only one considered.
-- `grill-me` interviews you one question at a time until every branch of the plan is decided.
+- `grill-me` interviews you in rounds of ready questions until every branch of the plan is decided.
 - `to-prd` and `to-issues` turn the decided plan into a spec and vertical-slice issues.
 - `codebase-oracle` answers questions about the code from the code and its history, and labels how strong the
   evidence is for each answer.

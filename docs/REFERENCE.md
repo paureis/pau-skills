@@ -21,8 +21,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[session-close](../skills/session-discipline/session-close/SKILL.md)** (typed only): Closes a session in a fixed order: clean tree, retrospective, roadmap and log, handoff, commit
   and push.
 - **[handoff](../skills/session-discipline/handoff/SKILL.md)**: Writes a handoff the next session can resume from, after a retrospective gate, with a
-  cheap check for every claim so the next session verifies instead of redoing.
-- **[instructions-audit](../skills/session-discipline/instructions-audit/SKILL.md)**: Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
+  cheap check for every claim so the next session verifies instead of redoing. On request it starts that session in the
+  background now (`claude --bg`).
+- **[instructions-audit](../skills/session-discipline/instructions-audit/SKILL.md)** (adapted): Audits CLAUDE.md, AGENTS.md and similar files, with `scan.mjs` for size, duplicates, stale
   references and secrets, and proposes edits for approval.
 - **[project-setup](../skills/session-discipline/project-setup/SKILL.md)**: Interviews you about how you want to work, then writes the project CLAUDE.md and,
   with a separate yes, your personal preferences, in your language. Written for people new to Claude Code. When the
@@ -126,7 +127,8 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 
 ## planning
 
-- **[grill-me](../skills/planning/grill-me/SKILL.md)** (adapted): Interviews you one question at a time until every branch of a plan is decided.
+- **[grill-me](../skills/planning/grill-me/SKILL.md)** (adapted): Interviews you in rounds, every question whose prerequisites are settled, until every branch of a plan is
+  decided, and writes a questionnaire for whoever can answer what you cannot.
 - **[to-prd](../skills/planning/to-prd/SKILL.md)** (adapted): Synthesizes the conversation into a PRD without re-interviewing.
 - **[to-issues](../skills/planning/to-issues/SKILL.md)** (adapted): Splits a plan into vertical-slice issues for any tracker.
 - **[improve-codebase-architecture](../skills/planning/improve-codebase-architecture/SKILL.md)** (adapted): Finds refactors that turn shallow modules into deep ones,

@@ -35,7 +35,7 @@ Cursor's plugin repository. pstack is a single snapshot, so there is no history 
 - [session-close](origins/session-discipline/session-close.md): Original
 - [handoff](origins/session-discipline/handoff.md): Original
 - [Roadmap hook, `hooks/session-discipline/roadmap.mjs`](origins/session-discipline/roadmap.md): Original
-- [instructions-audit and `scan.mjs`](origins/session-discipline/instructions-audit.md): Original
+- [instructions-audit and `scan.mjs`](origins/session-discipline/instructions-audit.md): Original; one paragraph of `CHECKS.md` adapted from [mattpocock/skills `writing-for-agents`](https://github.com/mattpocock/skills/tree/abeeaf95660ba9e8b7c753eb38f441ca707a8823/skills/productivity/writing-for-agents)
 - [which-skill](origins/session-discipline/which-skill.md): Original
 - [friction-review](origins/session-discipline/friction-review.md): Adapted from [mattpocock/skills `retro`](https://github.com/mattpocock/skills/tree/abeeaf95660ba9e8b7c753eb38f441ca707a8823/skills/engineering/retro)
 - [Branch-context hook, `hooks/session-discipline/branch-context.mjs`](origins/session-discipline/branch-context.md): Original
@@ -98,9 +98,9 @@ Cursor's plugin repository. pstack is a single snapshot, so there is no history 
 All four are adapted from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT, see `NOTICE`). Each
 `SKILL.md` carries a `license` line and an `upstream` link in its frontmatter.
 
-- [grill-me](origins/planning/grill-me.md): Adapted from [`grill-me`](https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me)
-- [to-prd](origins/planning/to-prd.md): Adapted from [`to-prd`](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-spec), now `to-spec` upstream
-- [to-issues](origins/planning/to-issues.md): Adapted from [`to-issues`](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-tickets), now `to-tickets` upstream
+- [grill-me](origins/planning/grill-me.md): Adapted from [`grill-me`](https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me), [`grilling` and `to-questionnaire`](https://github.com/mattpocock/skills/tree/abeeaf95660ba9e8b7c753eb38f441ca707a8823/skills/productivity) (abeeaf9)
+- [to-prd](origins/planning/to-prd.md): Adapted from [`to-spec`](https://github.com/mattpocock/skills/tree/abeeaf95660ba9e8b7c753eb38f441ca707a8823/skills/engineering/to-spec), formerly `to-prd` upstream
+- [to-issues](origins/planning/to-issues.md): Adapted from [`to-tickets`](https://github.com/mattpocock/skills/tree/abeeaf95660ba9e8b7c753eb38f441ca707a8823/skills/engineering/to-tickets), formerly `to-issues` upstream
 - [improve-codebase-architecture](origins/planning/improve-codebase-architecture.md): Adapted from [`improve-codebase-architecture`](https://github.com/mattpocock/skills/tree/main/skills/engineering/improve-codebase-architecture) and pstack [`design-red-flags.md`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/architect/references/design-red-flags.md), `architect/SKILL.md`, `principle-minimize-reader-load`, `principle-model-the-domain` and `poteto-mode/playbooks/refactoring.md`
 - [architect](origins/planning/architect.md): Adapted from [pstack `architect`](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/architect)
 - [brainstorm](origins/planning/brainstorm.md): Original

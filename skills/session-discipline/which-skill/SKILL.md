@@ -59,7 +59,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
    me ideas", "what are my options"), widen the options first: 8 to 12 options from named lenses, the agent's picks
    to accept with a tap or an "ok", 3 or 4 finalists with a premortem each. Then run `grill-me` on the chosen
    direction.
-1. **`grill-me`** (planning). Settle every open decision before anything is built, one question at a time.
+1. **`grill-me`** (planning). Settle every open decision before anything is built, one round of questions at a time.
    Start here whenever the user has an idea that is not fully decided.
 2. **`to-prd`** (planning). Turn the decided conversation into a written spec, without interviewing again.
 3. **`to-issues`** (planning). Split the spec into vertical slices that can each be built and verified alone.

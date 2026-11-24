@@ -38,3 +38,9 @@ boolean sign and "do not force an abstraction"), 8 in `refactoring.md` ("type ch
 **Q24 (2026-11-18).** From the Claude Code team's article on verification (claude.dev blog, 2026-11-16), ideas only, no shared text. Step 1's baseline becomes a differential test next to the pin, with the
 base commit in a worktree outside the repository. Step 2 proves it can fail; step 5 runs it once more, keeps a
 difference only on the user's yes in the approved differences, deletes the harness and reports them.
+
+**Q30 (2026-11-24).** Upstream renamed `CONTEXT.md` to `GLOSSARY.md` (improve-codebase-architecture and
+domain-modeling at abeeaf9). This version reads both, writes to the one that exists (`GLOSSARY.md` when both do), and
+creates `GLOSSARY.md` when there is none. Elsewhere it says "the project's glossary", so it does not clash with the
+skill's own Glossary of architecture terms. Not taken: GLOSSARY-MAP.md, the HTML report, sub-agent exploration,
+hot-spot scoping. 0 of 120 new word 6-grams in `SKILL.md` and 0 of 10 in `EXECUTION.md` are upstream text.

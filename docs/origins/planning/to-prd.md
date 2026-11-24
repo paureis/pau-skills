@@ -1,4 +1,4 @@
-# to-prd (Adapted from [`to-prd`](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-spec), now `to-spec` upstream)
+# to-prd (Adapted from [`to-spec`](https://github.com/mattpocock/skills/tree/abeeaf95660ba9e8b7c753eb38f441ca707a8823/skills/engineering/to-spec), formerly `to-prd` upstream)
 
 Back to the [origins index](../../ORIGINS.md).
 
@@ -19,3 +19,11 @@ Closest upstream: `skills/engineering/to-prd`, 2026-04-17 to 2026-04-28 (about h
   conversation did not settle, for the user to correct.
 
 **Why.** Not every project tracks work in GitHub issues, and the first drafts it produced were thin on unhappy paths.
+
+**Q30 (2026-11-24).** From upstream `to-spec` at abeeaf9. Implementation Decisions allows a snippet a prototype
+produced (state machine, reducer, schema, type shape), inlined in its decision, trimmed to the part that decides and
+marked as from a prototype; the Rules bullet names the exception. Step 1 uses the glossary words (`GLOSSARY.md` or
+`CONTEXT.md`) and respects the ADRs. Not taken: the seam sketch and its check with the user (they contradict the
+no-interview rule), publishing with a triage label, the user-story example. 16 of 109 new word 6-grams are upstream
+text, most of them from the snippet exception, worded as `to-issues` already had it. The `upstream:` link is pinned to
+abeeaf9.
