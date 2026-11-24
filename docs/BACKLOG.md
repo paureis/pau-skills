@@ -90,6 +90,7 @@ under "Work items" below.
 - [Things that bit the seventeenth batch](backlog/things-that-bit/batch-17.md)
 - [Things that bit the eighteenth batch](backlog/things-that-bit/batch-18.md)
 - [Things that bit the nineteenth batch](backlog/things-that-bit/batch-19.md)
+- [Things that bit the twentieth batch](backlog/things-that-bit/batch-20.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not; the first six batches are in
   [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md), and the seventh to twelfth in
   [done-2026-10-20-to-25.md](backlog/done-2026-10-20-to-25.md).
