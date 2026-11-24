@@ -97,3 +97,19 @@ Decisions 1 to 21 (2026-10-17 to 2026-11-04) are in [decisions-1-to-21.md](decis
    - An ask's reason tells a healthy agent it may say so and go on, since only one call was refused: fixes made through
      the shell, mutation runs and poll loops reach an ask, and decision 22 forbids cutting off a healthy run.
 
+
+## Decisions taken (2026-11-24)
+
+31. **The next batch, from Matt Pocock's newer skills and an owner brief**, each as recommended except the last:
+   - Some skills become user-invoked again (`disable-model-invocation: true`), reversing decision 7: the owner wants to
+     type the session rituals and the costly audits, and `which-skill` answers "which skill fits". The owner's reason
+     is the one decision 29 asks for. About 14 skills move (Q28), which frees about 4,900 description characters; only
+     71 were left. A test upload to claude.ai comes first, to check that a user-invoked skill still works there.
+   - A new skill, `friction-review` (Q29), separate from `retrospective`: it reads this project's last 30 sessions (a
+     number the user can change), finds the friction that repeats (search churn, costly tool calls, missing
+     information, checks that exist but are not wired in, no guardrail), and proposes changes; one session on request.
+     Its method is adapted from upstream `retro` (MIT), which reviews one session.
+   - About nine small additions from upstream into skills we have (Q30), and `wizard` later.
+   - Each batch is announced as a GitHub Release written like game patch notes, with emojis and GIFs, at the owner's
+     request (Q31).
+   - Order: Q28, Q29, Q30, Q31.

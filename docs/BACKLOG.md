@@ -67,7 +67,7 @@ under "Work items" below.
 - [How to run a batch](backlog/how-to-run-a-batch.md): the 10 steps and "With the roster".
 - [Kickoff for the next session](backlog/kickoff.md): the next session's kickoff, and the fifth batch's kickoff as a
   template.
-- [Decisions](backlog/decisions.md): decisions 22 to 30, taken from 2026-11-06 to 2026-11-23, and
+- [Decisions](backlog/decisions.md): decisions 22 to 31, taken from 2026-11-06 to 2026-11-24, and
   [decisions 1 to 21](backlog/decisions-1-to-21.md), from 2026-10-17 to 2026-11-04.
 - [Context budget](backlog/context-budget.md): the facts and the policy since P0.5.
 - [Things that bit the first batch](backlog/things-that-bit/batch-1.md)
@@ -139,6 +139,10 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q25 Claude Code mods: where they could save tokens](backlog/q25.md) (parked)
 - [Q26 our hooks under Code Mode](backlog/q26.md) (parked)
 - [Q27 Claude Ship and our skills](backlog/q27.md) (done)
+- [Q28 some skills typed only again](backlog/q28.md)
+- [Q29 friction-review](backlog/q29.md)
+- [Q30 small additions from upstream](backlog/q30.md)
+- [Q31 patch notes for every batch](backlog/q31.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -178,7 +182,8 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
     decision 26.
 24. Done: the nineteenth batch, Q21 a subagent watchdog (pull request 79); its design was decisions 22, 23 and 30.
 25. Done: Q27 Claude Ship and our skills (pull request 80); its scope was decision 29.
-26. **Next:** nothing planned; the owner adds the next item. Parked: Q25 Claude Code mods (decision 27) and Q26 our
-    hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
+26. **Next:** Q28 some skills typed only again, then Q29 friction-review, Q30 small additions from upstream and Q31
+    patch notes (decision 31); the kickoff is in [backlog/kickoff.md](backlog/kickoff.md). Parked: Q25 Claude Code
+    mods (decision 27) and Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
