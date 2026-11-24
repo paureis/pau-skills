@@ -1,4 +1,4 @@
-# bug-fix (Adapted from [pstack bug-fix playbook](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/playbooks/bug-fix.md))
+# bug-fix (Adapted from [pstack bug-fix playbook](https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/playbooks/bug-fix.md) and [mattpocock/skills diagnosing-bugs](https://github.com/mattpocock/skills/tree/abeeaf95660ba9e8b7c753eb38f441ca707a8823/skills/engineering/diagnosing-bugs))
 
 Back to the [origins index](../../ORIGINS.md).
 
@@ -37,3 +37,13 @@ legitimacy question led to the producer, not the guard.
 justified fix still rewrites a function, old (in a worktree outside the repository) and new run on the same seeded
 inputs, the bug's trigger is written as a condition, and every difference outside it is a blast-radius finding for step
 8 item 4.
+
+**Q30 (2026-11-24).** From mattpocock/skills `skills/engineering/diagnosing-bugs/SKILL.md` at abeeaf9 (MIT), in my own
+words. `EVIDENCE.md` gains "Building the automated check": nine ways to build a check that goes red on the bug, in
+about the order to try them (a failing test, an HTTP script, a CLI command diffed against a known-good copy, a headless
+browser script, a replayed capture, a throwaway harness, a seeded property or fuzz loop, a `git bisect run` harness, a
+differential loop), and how to make it faster, sharper and deterministic. Step 2 minimises the repro one element at a
+time before step 3; it is minimal when removing any one element makes the discriminating observation go away. Not
+taken: the human-in-the-loop script (its template is not here), Redact, ranked hypotheses shown to the user, the
+performance branch and the glossary read. 2 of 125 new word 6-grams in `SKILL.md` and 0 of 367 in `EVIDENCE.md`
+appear upstream.
