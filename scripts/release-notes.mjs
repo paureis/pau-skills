@@ -32,11 +32,12 @@ const EMOJI = /[\p{Extended_Pictographic}\p{Regional_Indicator}⃣]/u;
 // Shortcodes, Unicode emoji (with their joiners, variation selectors and skin tones) and spaces before a heading's words.
 const LEAD = /^(?:\s|:[a-z0-9_+-]+:|[\p{Extended_Pictographic}\p{Emoji_Modifier}\p{Regional_Indicator}‍️⃣])+/iu;
 const COUNT = /\b(Skills|Hooks|Tests):[ \t]*(\d{1,3}(?:,\d{3})+|\d+)(?!\d)/g;
-// Alt text may hold one level of brackets, as in ![a [b] c](x).
-const ALT = String.raw`!\[((?:[^\[\]]|\[[^\[\]]*\])*)\]`;
-const INLINE_IMAGE = new RegExp(`${ALT}\\(([^)\\s]*)`, 'g');
-const REF_IMAGE = new RegExp(`${ALT}(?!\\()(?:\\[([^\\]]*)\\])?`, 'g');
-const REF_DEF = /^ {0,3}\[([^\]]+)\]:/;
+// The one accepted image form, tried at every unescaped "![": alt text with no bracket or line break, then (target).
+const IMAGE = /!\[[^[\]\n]*\]\(([^)\s]*)\)/y;
+// Any "](target" on the same line, to name the target of a refused image.
+const TARGET = /!\[[^\n]*?\]\(([^)\s]*)/y;
+// A reference definition: [label]: url at the start of a line, after any blockquote or list markers.
+const REF_DEF = /^(?:[ \t]*(?:>|[-*+]|\d+[.)]))*[ \t]*\[([^\]\n]*)\]:[ \t]*(\S*)/;
 const HTML_MEDIA = /<(img|picture|source|video)\b/gi;
 const MEDIA = /^media\/((?!\.)[\w.-]+)$/;
 const REPO = /^[\w.-]+\/[\w.-]+$/;
@@ -119,24 +120,36 @@ export function readNotes(text, { version, hasMedia = () => false }) {
     }
   }
 
-  problems.push(...imageProblems(lines, hasMedia));
+  problems.push(...imageProblems(text, lines, hasMedia));
   return { title, counts, problems };
 }
 
-function imageProblems(lines, hasMedia) {
+// The whole text is scanned, not line by line, so alt text that wraps or nests brackets cannot hide an image.
+function imageProblems(text, lines, hasMedia) {
   const out = [];
-  const defs = new Set(lines.map((l) => REF_DEF.exec(l)?.[1].toLowerCase()).filter(Boolean));
+  const lineOf = (p) => text.slice(0, p).split('\n').length;
+  for (let p = text.indexOf('!['); p !== -1; p = text.indexOf('![', p + 2)) {
+    let slashes = 0;
+    while (text[p - 1 - slashes] === '\\') slashes++;
+    if (slashes % 2) continue;
+    const at = (msg) => out.push({ line: lineOf(p), msg });
+    IMAGE.lastIndex = p;
+    const media = MEDIA.exec(IMAGE.exec(text)?.[1] ?? '');
+    if (media) {
+      if (!hasMedia(media[1])) at(`image media/${media[1]}: docs/releases/media/${media[1]} does not exist`);
+      continue;
+    }
+    TARGET.lastIndex = p;
+    const target = TARGET.exec(text)?.[1];
+    if (target !== undefined && !MEDIA.test(target)) at(`image target "${target}" is not media/<name>; only the project's own files in docs/releases/media/ are allowed`);
+    else at(`image "${text.slice(p).split('\n')[0].slice(0, 40)}" is not ![<alt>](media/<name>); reference-style images, and alt text with a bracket or a line break, are refused`);
+  }
   lines.forEach((l, i) => {
-    const at = (msg) => out.push({ line: i + 1, msg });
-    for (const m of l.matchAll(INLINE_IMAGE)) {
-      const media = MEDIA.exec(m[2]);
-      if (!media) at(`image target "${m[2]}" is not media/<name>; only the project's own files in docs/releases/media/ are allowed`);
-      else if (!hasMedia(media[1])) at(`image ${m[2]}: docs/releases/media/${media[1]} does not exist`);
-    }
-    for (const m of l.matchAll(REF_IMAGE)) {
-      if (m[2] !== undefined || defs.has(m[1].toLowerCase())) at('reference-style image: write it as ![...](media/<name>), the only form the release rewrites');
-    }
-    for (const m of l.matchAll(HTML_MEDIA)) at(`HTML <${m[1].toLowerCase()}> tag: write an image as ![...](media/<name>)`);
+    const def = REF_DEF.exec(l);
+    // The destination may sit on the next line, and may be written <url>.
+    const url = def && (def[2] || (lines[i + 1] || '').trim().split(/\s/)[0]).replace(/^<(.*)>$/, (_, u) => u);
+    if (def && !MEDIA.test(url)) out.push({ line: i + 1, msg: `reference definition [${def[1]}] points at "${url}", outside media/` });
+    for (const m of l.matchAll(HTML_MEDIA)) out.push({ line: i + 1, msg: `HTML <${m[1].toLowerCase()}> tag: write an image as ![...](media/<name>)` });
   });
   return out;
 }

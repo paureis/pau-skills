@@ -83,6 +83,20 @@ test('check: images only as ![...](media/<name>) with the file in docs/releases/
   fails(check(img('![demo]\n\n[demo]: ../a.gif'), { media: ['a.gif'] }), /reference-style image/);
 });
 
+test('check: the image scan reads the whole text, so no outside URL slips through', () => {
+  const img = (s) => ({ 'v0.9.0.md': edit('- A skill.', `- A skill.\n\n${s}`) });
+  const m = { media: ['a.gif'] };
+  assert.equal(check(img('![demo](media/a.gif) and \\![not an image](https://example.com/a.gif)'), m).code, 0, 'control');
+  fails(check(img('![wrapped\nalt](https://example.com/a.gif)'), m), /^docs\/releases\/v0\.9\.0\.md:9: image "!\[wrapped" is not !\[<alt>\]\(media\/<name>\)/m);
+  fails(check(img('![a [b [c]] d](https://example.com/a.gif)'), m), /image target "https:\/\/example\.com\/a\.gif"/);
+  const label = check(img('![My  Demo]\n\n[my demo]: https://example.com/a.gif'), m);
+  fails(label, /image "!\[My {2}Demo\]" is not/);
+  fails(label, /:11: reference definition \[my demo\] points at "https:\/\/example\.com\/a\.gif", outside media\//);
+  fails(check(img('Quote:\n\n>  > [demo]: https://example.com/a.gif'), m), /reference definition \[demo\] points at "https:/);
+  fails(check(img('[demo]:\n  <https://example.com/a.gif>'), m), /reference definition \[demo\] points at "https:/);
+  assert.equal(check(img('[clip]: media/a.gif'), m).code, 0, 'a definition of a media file is fine');
+});
+
 test('check: <img>, <picture>, <source> and <video> tags are refused', () => {
   for (const tag of ['<img src="media/a.gif">', '<picture>', '<source srcset="media/a.gif">', '<VIDEO src="media/a.gif">']) {
     fails(check({ 'v0.9.0.md': edit('- A skill.', `- A skill. ${tag}`) }, { media: ['a.gif'] }), /HTML <(img|picture|source|video)> tag/i);
