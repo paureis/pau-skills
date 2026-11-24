@@ -134,13 +134,14 @@ test('C4 SubagentStop and a TaskStop unlink the agent\'s file; a stop for a miss
   }
 });
 
-// The child measures one case: the input on stdin, the case and the project as arguments.
+// The child measures one case: the input in a file, the case and the project as arguments. A file, not stdin: on macOS
+// with Node 20 one child waited on a 100,000-character stdin pipe until the 20 s kill, before its timer started.
 const CHILD = `
 import { readFileSync } from 'node:fs';
-const [, logic, hook, which, project] = process.argv;
+const [, logic, hook, which, project, inputFile] = process.argv;
 const m = await import(logic);
 const h = await import(hook);
-const text = readFileSync(0, 'utf8');
+const text = readFileSync(inputFile, 'utf8');
 const t = process.hrtime.bigint();
 if (which === 'session') h.SESSION_ID.test(text);
 else if (which.startsWith('pattern:')) m.PATTERNS[which.slice(8)].test(text);
@@ -163,9 +164,11 @@ test('C5 timing: every pattern, the session-id pattern, normalizeCommand and isE
   }
   assert.ok(Object.keys(PATTERNS).length >= 2);
   const args = [pathToFileURL(LOGIC).href, pathToFileURL(HOOK).href];
+  const inputFile = join(tempDir(), 'input.txt');
   for (const [which, input, budget] of cases) {
     const label = `${which} on ${input.length} characters starting ${JSON.stringify(input.slice(0, 4))}`;
-    const r = spawnSync(process.execPath, ['--input-type=module', '-e', CHILD, ...args, which, project], { input, encoding: 'utf8', timeout: 20000 });
+    fs.writeFileSync(inputFile, input);
+    const r = spawnSync(process.execPath, ['--input-type=module', '-e', CHILD, ...args, which, project, inputFile], { encoding: 'utf8', timeout: 20000, stdio: ['ignore', 'pipe', 'pipe'] });
     assert.equal(r.status, 0, `${label}: ${r.signal || r.stderr}`);
     const ms = Number(r.stdout);
     assert.ok(ms < budget, `${label}: ${ms} ms, over ${budget}`);
