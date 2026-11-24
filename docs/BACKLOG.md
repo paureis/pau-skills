@@ -140,11 +140,12 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q25 Claude Code mods: where they could save tokens](backlog/q25.md) (parked)
 - [Q26 our hooks under Code Mode](backlog/q26.md) (parked)
 - [Q27 Claude Ship and our skills](backlog/q27.md) (done)
-- [Q28 some skills typed only again](backlog/q28.md)
-- [Q29 friction-review](backlog/q29.md)
-- [Q30 small additions from upstream](backlog/q30.md)
-- [Q31 patch notes for every batch](backlog/q31.md)
+- [Q28 some skills typed only again](backlog/q28.md) (done)
+- [Q29 friction-review](backlog/q29.md) (done)
+- [Q30 small additions from upstream](backlog/q30.md) (done)
+- [Q31 patch notes for every batch](backlog/q31.md) (done)
 - [Q32 skill-usage logs typed starts as the agent's](backlog/q32.md)
+- [Q33 context in fewer calls: splitting files only where it helps](backlog/q33.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -186,8 +187,9 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 25. Done: Q27 Claude Ship and our skills (pull request 80); its scope was decision 29.
 26. Done: the twentieth batch, Q28 to Q31: typed-only skills, friction-review, small additions from upstream and
     patch notes (pull request 83); its scope was decisions 31 and 32.
-27. **Next:** Q32 skill-usage typed starts; the kickoff is in [backlog/kickoff.md](backlog/kickoff.md). Later, its
-    own item: `wizard`, a guided script for the steps only a person can do (Q30). Parked: Q25 Claude Code mods
+27. **Next:** Q32 skill-usage typed starts; the kickoff is in [backlog/kickoff.md](backlog/kickoff.md). Then Q33
+    context in fewer calls (the owner's request of 2026-11-24). Later, its own item: `wizard`, a guided script for the
+    steps only a person can do (Q30). Parked: Q25 Claude Code mods
     (decision 27) and Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
