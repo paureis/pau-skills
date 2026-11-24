@@ -161,7 +161,9 @@ need to load it as well.
 - One review round and one fix round. What the second look finds goes to the owner (a must-fix) or to an issue
   (anything else).
 
-Then do the GitHub writes yourself, the way the project lands work.
+Then do the GitHub writes yourself, the way the project lands work. If the user has Claude Code's `/ship` command, they
+can type it to push, open the pull request and work on failing checks; you cannot start it, and it never merges, so
+the merge stays a step you take with the user's go-ahead (use `safe-merge` if it is installed).
 
 ## 7. Keep a log
 
