@@ -11,24 +11,35 @@ Facts (Claude Code documentation, skills page, checked 2026-10-17):
 - On 2026-10-17 the 25 skills here were all model-invocable and their descriptions totalled about 15,000
   characters, already over the budget of a 200k window.
 
-**Policy since P0.5** (decision 7; this replaces the two tiers of decision 4).
-- Every skill is model-invocable. No skill sets `disable-model-invocation`; `tests/context-budget.test.mjs` fails on
-  it.
-- Each description is a trigger list: one sentence on what the skill does, then the phrases a person would say, and
-  what makes it different where another installed skill could be picked. At most 400 characters each and 14,000 in
-  total (the owner runs a 1M window with `SLASH_COMMAND_TOOL_CHAR_BUDGET` at 80000; raised from 12,000 for the fifth
-  batch and to 14,000 for the sixth, by the owner's choice).
-- Skills that launch subagents or headless runs, commit, push or install with no other check, or change how the whole
-  session works carry the confirm paragraph word for word, unless something in them already stops for the user's yes
-  before that cost. `CONFIRM_LIST` in `tests/confirm-list.mjs` is the list (14 skills), and the README and
-  `which-skill` must name the same skills. In those skills' descriptions only phrases that ask for the work are
-  quoted; remarks and questions are written as situations.
-- Every description is one double-quoted line in printable ASCII only (the space to the tilde), with no backtick and
-  exactly one "Use ..." opener. On a confirm-list skill no quoted phrase holds a question mark or has one right after
-  it. `tests/description-rules.test.mjs` checks the four rules (Q18; rule 1 since Q19).
-- A skill starts another one directly ("use `x` if it is installed") for a step inside the work the user asked for,
-  and offers it ("offer to run `x` if it is installed") for a next step or while the current skill is read-only.
+- Checked 2026-11-24 (Q28): on claude.ai a typed `/name` starts a flagged skill and a request in words gets "Couldn't
+  load skill"; headless, `claude -p "/name args"` starts one on Claude Code 2.1.331 and the Skill tool refuses it
+  from words. `claude plugin validate` accepts any frontmatter key, so it proves nothing about the flag.
+
+**Policy since Q28** (decision 32; it replaces the policy of decision 7, called "Policy since P0.5" before).
+- Most skills are model-invocable. A skill is typed only (`disable-model-invocation: true`) when the owner always
+  starts it on purpose and no other skill starts it. `TYPED_ONLY` in `tests/typed-only-list.mjs` is the list (8
+  skills), and the tests fail when a frontmatter flag and the list differ. A typed-only skill costs no context until
+  the user types `/name`, and nothing else can start it.
+- Each model-invoked description is a trigger list: one sentence on what the skill does, then the phrases a person
+  would say, and what makes it different where another installed skill could be picked. At most 400 characters each
+  and 14,000 in total, counting model-invoked descriptions only (the owner runs a 1M window with
+  `SLASH_COMMAND_TOOL_CHAR_BUDGET` at 80000). A typed-only description is one sentence for the `/` menu, at most 160
+  characters, with no "Use ..." opener and no quoted phrase.
+- Skills that can start on their own and launch subagents or headless runs, commit, push or install with no other
+  check, or change how the whole session works carry the confirm paragraph word for word, unless something in them
+  already stops for the user's yes before that cost. `CONFIRM_LIST` in `tests/confirm-list.mjs` is the list (9
+  skills); a typed-only skill is never on it. The README and `which-skill` name the same skills, and each also names
+  exactly the typed-only skills. In confirm-list descriptions only phrases that ask for the work are quoted; remarks
+  and questions are written as situations.
+- Every description is one double-quoted line in printable ASCII only (the space to the tilde), with no backtick. A
+  model-invoked one has exactly one "Use ..." opener; a typed-only one has none. On a confirm-list skill no quoted
+  phrase holds a question mark or has one right after it. `tests/description-rules.test.mjs` checks these rules.
+- A skill starts a model-invoked skill directly ("use `x` if it is installed") for a step inside the work the user
+  asked for, and offers it ("offer to run `x` if it is installed") for a next step or while the current skill is
+  read-only. No skill starts a typed-only skill: a mention of one says what the user can type (`/x`), and only where
+  keeping `x` typed only is right. `tests/typed-only.test.mjs` checks it.
+- Typed-only skills have no request list in `evals/triggers/requests/`, and no near miss expects one.
 - After each upload, a new session measures the listing with `/context`, and asks "List every skill in your skill
-  listing that has no description"; the answer should be none.
+  listing that has no description"; the answer should be none, and no typed-only skill should be listed.
 - The listing's budget is 1% of the context window unless `SLASH_COMMAND_TOOL_CHAR_BUDGET` (characters) raises it.
   The owner sets it to 80000 on each computer and in the default cloud environment (see `docs/INSTALL.md`).
