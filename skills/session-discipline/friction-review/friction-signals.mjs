@@ -36,10 +36,17 @@ export const runsCheck = (words, c) => c.spellings.some((sp) => sp.every((t, i) 
 // repository's own transcripts is the worktree guard of Claude Code ("This agent is isolated in the worktree ...
 // Refusing to run it"); the user's rejection ("doesn't want to proceed", "tool use was rejected"), a permission rule
 // ("Permission to use ... has been denied", "haven't granted it yet") and a hook that blocks a call are the other
-// shapes Claude Code writes. A refusal is printed as its class only.
+// shapes Claude Code writes. A hook that fails or blocks a call starts its result with the event and "hook error:"
+// ("PreToolUse:Bash hook error: ..."), or says "hook blocking error"; the user's rejection can also read "doesn't want
+// to take this action". A refusal is printed as its class only.
+const REFUSED = [
+  /Permission denied|EACCES|doesn't want to (proceed|take this action)|tool use was rejected|Permission to use .{1,200}denied|haven't granted|permission rule/i,
+  /^[A-Z][A-Za-z]+(:\S+)? hook error:|hook blocking error|\bhook\b.{0,80}\b(denied|blocked|refused)|blocked by .{0,40}hook/im,
+  /is isolated in the worktree|Refusing to run it/,
+];
 const CLASSES = [
-  ['refused', /Permission denied|EACCES|doesn't want to proceed|tool use was rejected|Permission to use .{1,200}denied|haven't granted|permission rule|\bhook\b.{0,80}\b(denied|blocked|refused)|blocked by .{0,40}hook|is isolated in the worktree|Refusing to run it/i],
-  ['network', /Could not resolve host|ECONNREFUSED|ETIMEDOUT|getaddrinfo|\bHTTP(\/[\d.]+)?\s*(error\s*)?(401|403|407)\b|status code (401|403|407)\b/i],
+  ['refused', { test: (text) => REFUSED.some((re) => re.test(text)) }],
+  ['network', /Could not resolve host|ECONNREFUSED|ETIMEDOUT|getaddrinfo|\bHTTP(\/[\d.]+)?\s*(error\s*)?(401|403|407)\b|status code (401|403|407)\b|returned error:?\s*(401|403|407)\b|\b(401|403|407) (Unauthorized|Forbidden|Proxy)/i],
   // "File does not exist" is how Read reports a missing file.
   ['not found', /command not found|No such file or directory|ENOENT|not recognized|File does not exist/i],
 ];
@@ -145,14 +152,15 @@ export function printSignals(s, project, out) {
   out('## automated checks');
   if (!s.runs.size) out('runs of checks: the project defines no check command this script knows');
   for (const [check, sig] of s.runs) count(`runs of ${check.cmd}`, sig, `; failed: at least ${sig.failed} (a lower bound: only is_error counts, and a pipe hides the exit code)`);
-  count('sessions that edited and ran no check', s.noCheck);
+  if (s.runs.size) count('sessions that edited and ran no check', s.noCheck);
+  else out('sessions that edited and ran no check: not counted (no known check command)');
   const never = [...s.runs].filter(([, sig]) => !sig.n).map(([c]) => c.cmd);
   out(`checks no session ran: ${never.length ? never.join(', ') : 'none'}`);
   const unwired = project.checks.filter((c) => !c.wired.length).map((c) => c.cmd);
   out(`unwired checks (no CI file, pre-commit config or Claude Code hook names them): ${unwired.length ? unwired.join(', ') : 'none'}`);
   out('## tool economy');
   count(`results over ${BIG_RESULT_CHARS} characters`, s.big);
-  count(`same command ${SHELL_REPEAT_MIN} or more times with no edit between`, s.shellRepeat);
+  count(`same command ${SHELL_REPEAT_MIN} or more times with no edit between, in one transcript`, s.shellRepeat);
   const failed = [...s.failedByTool].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).map(([t, n]) => `${show(t, 60)} ${n}`);
   out(`failed calls per tool: ${failed.length ? failed.join(', ') : 'none'}`);
   const most = s.calls.reduce((a, b) => (b.n > (a?.n ?? -1) ? b : a), null);

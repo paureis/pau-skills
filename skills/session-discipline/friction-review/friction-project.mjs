@@ -4,7 +4,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve, relative, sep } from 'node:path';
 import { homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';
-import { show } from './friction-show.mjs';
+import { show, plural } from './friction-show.mjs';
 
 const listDir = (d) => { try { return readdirSync(d, { withFileTypes: true }); } catch { return []; } };
 const statOf = (p) => { try { return statSync(p); } catch { return null; } };
@@ -158,6 +158,6 @@ export function printProject(p, out) {
   const g = p.guardrails;
   out(`guardrails: CI: ${list(g.ci.map((f) => f.name))}; pre-commit: ${list(g.pre.map((f) => f.name))}; Claude Code hooks: ${g.claude ? '.claude/settings.json' : 'none'}`);
   if (p.noGuardrail) out('finding: no guardrail (no CI file and no pre-commit hook runs a check before the code lands)');
-  for (const f of p.instructions) out(`instructions: ${show(f.name, 200)}, ${f.tokens} tokens`);
+  for (const f of p.instructions) out(`instructions: ${show(f.name, 200)}, ${plural(f.tokens, 'token')}`);
   for (const problem of p.problems) out(`problem: ${problem}`);
 }

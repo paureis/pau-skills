@@ -94,6 +94,9 @@ test('wiring: each check says which guardrail names it; a check none names is un
   // The control: with npm test gone from the workflow, it is unwired too.
   const bare = project({ ...files, '.github/workflows/ci.yml': 'steps:\n  - run: npm ci\n' });
   assert.match(bare.out, /^check: npm test \(package\.json\), named by: nothing \(unwired check\)$/m);
+  // A CI step that runs cargo fmt without --check formats; it does not run the check.
+  const fmt = project({ ...files, '.github/workflows/ci.yml': 'steps:\n  - run: cargo fmt\n' });
+  assert.match(fmt.out, /^check: cargo fmt --check \(Cargo\.toml\), named by: nothing \(unwired check\)$/m);
 });
 
 test('a package.json or settings file that does not parse is reported, not a crash', () => {
@@ -114,4 +117,6 @@ test('instruction files with their size in tokens (bytes / 4), the home folder a
   const r = w.run();
   assert.deepEqual(linesOf(r.stdout, 'instructions: '),
     ['CLAUDE.md, 100 tokens', 'AGENTS.md, 3 tokens', '.claude/CLAUDE.md, 2 tokens', '.claude/rules/style.md, 10 tokens', '~/.claude/CLAUDE.md, 3 tokens']);
+  w.file('AGENTS.md', 'x');
+  assert.match(w.run().stdout, /^instructions: AGENTS\.md, 1 token$/m);
 });

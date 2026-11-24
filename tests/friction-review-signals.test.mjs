@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { step, bash, world, linesOf } from './friction-review.helpers.mjs';
 import { extractActions } from '../skills/session-discipline/friction-review/skill-eval-core.mjs';
+import { readCalls } from '../skills/session-discipline/friction-review/friction-sessions.mjs';
 
 const NPM_TEST = 'cd /x && npm test 2>&1 | tail -5';
 const edit = (f = '/x/a.js') => step('Edit', { file_path: f, old_string: 'a', new_string: 'b' });
@@ -31,7 +32,7 @@ function sessions() {
     bash('make lint', 'ok'), bash('make lint', 'ok'), edit(), bash('make lint', 'ok'),
     bash('npm run test', 'ok'),
     bash('uv run pytest -q', 'ok'), bash('python -m pytest', 'ok'), bash('rg foo | wc -l', '0'),
-  ], { ageMin: 200 });
+  ], { ageMin: 200, subagents: [{ name: 'look', agentType: 'explorer', steps: [step('Grep', { pattern: 'LOOKMARK' }, 'a.js'), bash('ls src', 'a.js')] }] });
   w.session(w.own, 's3', [
     step('Write', { file_path: '/x/new.js', content: 'x' }),
     read('/x/b.js'), read('/x/b.js'), read('/x/b.js', { offset: 10, limit: 5 }),
@@ -57,7 +58,9 @@ const run = () => {
 
 test('navigation: searches before the first edit, searches that found nothing, repeated reads', () => {
   const out = run();
+  // The explorer subagent of s2 searches and never edits: its searches are not counted.
   assert.deepEqual(linesOf(out, 'searches before the first edit, in transcripts that edit: '), ['5 in 2 of 3 sessions']);
+  assert.doesNotMatch(out, /LOOKMARK/);
   // s1: Grep, Glob, rg and the Grep after the edit; s2: rg piped to wc -l that printed 0.
   assert.deepEqual(linesOf(out, 'searches that found nothing: '), ['5 in 2 of 3 sessions']);
   // s1 reads a.js three times; s3 reads b.js twice and then another range of it, which is not a repeat.
@@ -94,9 +97,10 @@ test('tool economy: big results, a command repeated with no edit between (an edi
   assert.match(out, /^ {2}~-src-app\/s3\.jsonl:\d+ Bash cat big\.log \(25000 characters\)$/m);
   assert.doesNotMatch(out, /cat small\.log/);
   // s1 runs the npm test line three times (spaces collapsed); s2 runs make lint twice, edits, then once more.
-  assert.deepEqual(linesOf(out, 'same command 3 or more times with no edit between: '), ['1 in 1 of 3 sessions']);
+  assert.deepEqual(linesOf(out, 'same command 3 or more times with no edit between, in one transcript: '), ['1 in 1 of 3 sessions']);
   assert.deepEqual(linesOf(out, 'failed calls per tool: '), ['Bash 6, WebFetch 1']);
   assert.deepEqual(linesOf(out, 'calls per session: '), ['median 13, maximum 15 (~-src-app/s3.jsonl)']);
+  assert.match(out, /^# friction-review: 3 sessions .*; 3 subagent transcripts; 3 unreadable lines;/m);
 });
 
 test('information access: failed calls by class, with the failure line or only the class for a refusal', () => {
@@ -116,7 +120,6 @@ test('steps from a subagent file carry its agent type, or unknown with no meta f
   assert.match(out, /^ {2}~-src-app\/s3\/subagents\/agent-rev\.jsonl:\d+ Grep SUBMARK \(subagent: reviewer\)$/m);
   assert.match(out, /^ {2}~-src-app\/s1\/subagents\/agent-nometa\.jsonl:\d+ Bash foo --bar failed: \/bin\/sh: foo: command not found \(subagent: unknown\)$/m);
   assert.match(out, /^ {2}~-src-app\/s1\.jsonl:\d+ Grep foo in src$/m);
-  assert.match(out, /^# friction-review: 3 sessions .*; 2 subagent transcripts; 3 unreadable lines;/m);
 });
 
 test('sidechain lines in a main file (older versions) count as subagent steps', () => {
@@ -125,6 +128,22 @@ test('sidechain lines in a main file (older versions) count as subagent steps', 
   const r = w.run();
   assert.equal(r.code, 0, r.stderr);
   assert.match(r.stdout, /^ {2}~-src-app\/old\.jsonl:\d+ Bash npx nope failed: nope: command not found \(subagent: unknown\)$/m);
+});
+
+test('with no check command the project defines, sessions that ran no check are not counted', () => {
+  const w = world();
+  w.session(w.own, 's', [edit(), bash('ls', 'a')]);
+  const r = w.run();
+  assert.equal(r.code, 0, r.stderr);
+  assert.deepEqual(linesOf(r.stdout, 'sessions that edited and ran no check: '), ['not counted (no known check command)']);
+});
+
+test('a transcript whose steps do not match the second pass is left out as unreadable', () => {
+  const lines = [{ type: 'assistant', message: { content: [{ type: 'tool_use', id: 't1', name: 'Grep', input: { pattern: 'p' } }] } }]
+    .map((entry, i) => ({ n: i + 1, raw: JSON.stringify(entry), entry }));
+  assert.equal(readCalls(lines).length, 1);
+  assert.equal(readCalls(lines, () => ({ steps: [{ tool: 'Glob', target: 'p' }] })), null);
+  assert.equal(readCalls(lines, () => ({ steps: [] })), null);
 });
 
 test('extractActions reads the steps of a session file as Claude Code writes it', () => {

@@ -52,9 +52,10 @@ const contentText = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map
 
 /**
  * The calls of one stream of lines ({ n, raw, entry }), in file order: { line, tool, input, target, result }, where
- * result is { line, text, size, isError } or null. Null when the steps of extractActions do not match this pass.
+ * result is { line, text, size, isError } or null. Null when extract (extractActions; a test passes its own) throws
+ * or its steps do not match this pass.
  */
-export function readCalls(lines) {
+export function readCalls(lines, extract = extractActions) {
   const calls = [];
   const byId = new Map();
   for (const { n, entry: e } of lines) {
@@ -78,7 +79,8 @@ export function readCalls(lines) {
     }
   }
   let steps;
-  try { steps = extractActions(lines.map((l) => l.raw).join('\n')).steps; } catch { return null; }
+  try { steps = extract(lines.map((l) => l.raw).join('\n')).steps; } catch { return null; }
+  // The two passes read the same lines the same way, so they match unless the copy of extractActions changes.
   if (steps.length !== calls.length || steps.some((s, i) => s.tool !== calls[i].tool)) return null;
   steps.forEach((s, i) => { calls[i].target = s.target; });
   return calls;

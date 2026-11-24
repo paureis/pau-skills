@@ -23,14 +23,35 @@ const realOrSelf = (p) => { try { return realpathSync(p); } catch { return p; } 
 /** The home folder in the dash form of a project folder name ("-home-ana-src" or this machine's own) shown as ~. */
 export function hideEncodedHome(text, home = homedir()) {
   let out = String(text);
+  // This user's home is known whole: its dash form already turns a dot or an underscore in the login into a dash.
   for (const h of new Set([home, realOrSelf(home)])) {
     const enc = encodeProjectPath(h);
     if (enc.length > 1) out = out.replace(new RegExp(`(?<![A-Za-z0-9])${escapeRe(enc)}(?![A-Za-z0-9])`, 'g'), '~');
   }
+  // Another user's home: the dash form hides where the login ends, so only its first segment is known and hidden
+  // ("-home-jane-doe-src" shows as "~-doe-src").
   return out.replace(/(?<![A-Za-z0-9])-(home|Users)-[A-Za-z0-9]+(?![A-Za-z0-9])/g, '~');
 }
 
-/** Any string about to be printed: redacted, the encoded home hidden, then one line, cut to max. */
-export const show = (text, max = TARGET_CHARS) => cut(oneLine(hideEncodedHome(redact(String(text ?? '')))), max);
+// Password and key shapes the copied redact() does not know. Each keeps its flag or name and hides the value.
+const SECRETS = [
+  // A password stuck to -p in a database client (mysql -psecret); "-p 8080", with a space, is a port.
+  [/\b(mysql|mysqldump|mysqladmin|mariadb|psql)\b[^|;&\n]*/g, (seg) => seg.replace(/(\s-p)(?=\S)\S+/g, '$1[secret]')],
+  // curl -u user:password, --user user:password.
+  [/((?:^|\s)(?:-u|--user)(?:\s+|=)?)([^\s:]+):\S+/g, '$1$2:[secret]'],
+  [/(--password(?:=|\s+))(?!\[secret\])\S+/g, '$1[secret]'],
+  // A URL query value whose name holds key, token, password or secret.
+  [/([?&][A-Za-z0-9_.-]{0,40}(?:key|token|password|passwd|secret)=)[^&\s#'"]+/gi, '$1[secret]'],
+  // NAME_PASS=, NAME_PASSWORD=, NAME_TOKEN=, NAME_SECRET=, NAME_KEY= assignments.
+  [/(?<![A-Za-z0-9_])([A-Za-z0-9]+(?:_[A-Za-z0-9]+)*_(?:PASS|PASSWORD|TOKEN|SECRET|KEY)=)("[^"\n]*"|'[^'\n]*'|[^\s"']+)/gi, '$1[secret]'],
+];
+
+const hideSecrets = (text) => SECRETS.reduce((t, [re, to]) => t.replace(re, to), text);
+
+/**
+ * Any string about to be printed: the "\n" that targetOf writes for a newline made a space (so a secret after it
+ * starts a word again), redacted, the encoded home hidden, then one line, cut to max.
+ */
+export const show = (text, max = TARGET_CHARS) => cut(oneLine(hideEncodedHome(hideSecrets(redact(String(text ?? '').replace(/\\n/g, ' '))))), max);
 
 export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
