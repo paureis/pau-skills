@@ -165,6 +165,13 @@ test('check: the repository own docs/releases passes', () => {
   assert.equal(r.code, 0, r.err);
 });
 
+test('the template in docs/RELEASES.md passes check', () => {
+  const fence = /^```markdown\n([\s\S]*?)^```$/m.exec(readFileSync(repo('docs', 'RELEASES.md'), 'utf8'));
+  assert.ok(fence, 'docs/RELEASES.md has a markdown fence');
+  const version = /^# Patch (\d+\.\d+\.\d+):/.exec(fence[1])[1];
+  assert.deepEqual(readNotes(fence[1], { version }).problems, []);
+});
+
 test('usage: an unknown command or option exits 2, and --help exits 0', () => {
   assert.equal(cli([]).code, 2);
   assert.equal(cli(['ship']).code, 2);
