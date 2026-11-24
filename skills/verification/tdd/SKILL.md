@@ -40,7 +40,7 @@ Then loop. Pick the next behavior, write the next test.
 
 2. **Check for existing test patterns.** Look at how other tests in the codebase are structured: file location, naming convention, test utilities, fixture patterns. Match them.
 
-3. **Identify the public interface.** What module, function, or endpoint are you testing? That's your test surface. Don't go deeper.
+3. **Identify the public interface.** What module, function, or endpoint are you testing? That's your test surface. Don't go deeper. Write down each test surface (public interface) you will test at, with one line on what a test there catches and one on what it misses, so the gaps are ones you chose rather than ones you find later.
 
 ## During Development
 
@@ -64,7 +64,7 @@ Then loop. Pick the next behavior, write the next test.
 - **Test edge cases through the same interface.** Empty inputs, error conditions, boundary values: all through the public API.
 - **Test error paths.** What happens when the input is invalid? When the dependency is unavailable? These are behaviors too.
 - **Use a property where examples miss edge cases.** For a parser, a serializer, money, a data write or a rewrite, state a rule that holds for every input (round trip, invariant, idempotency, a naive version as the oracle), run it seeded, and keep the shrunk failing case as an example test. See `${CLAUDE_SKILL_DIR}/PROPERTIES.md`.
-- **Take the expected value from the requirement**, not from a run of the code. An expected value copied from the output of the code under test passes whether that output is right or wrong.
+- **Take the expected value from the requirement**, not from a run of the code. An expected value copied from the output of the code under test passes whether that output is right or wrong. The same goes for a tautological test, one that works the expected value out the same way the code does (`assert add(a, b) == a + b`) or compares a constant with itself: it passes by construction and can never disagree with the code, since any mistake in the code's arithmetic is repeated in the test. Take the expected value from a source that does not share the code's method: a literal from a worked example or the spec, or, in a property test, the rule or naive version in PROPERTIES.md.
 - **Assert what callers rely on.** An exact error message pins wording no caller reads; assert the error type or code callers branch on, unless the message itself is the promise (text shown to a user, for example).
 
 ### What NOT to test
