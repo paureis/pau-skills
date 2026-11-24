@@ -29,3 +29,6 @@ Things that bit Q28 to Q31 (typed-only skills, friction-review, small additions 
   fix round, and kept the shared files (ORIGINS, NOTICE, REFERENCE, CHANGELOG) to itself. No merge conflicted.
 - A replace script that requires each old text to occur exactly once caught a NOTICE edit that would have landed in
   the wrong license list.
+- CI on macOS failed one release-notes test that passed on Linux: the fixture wrote `v0.9.0.md` and `V0.9.0.md` into
+  one folder, and on macOS's case-insensitive file system the second overwrote the first. Fixture file names in one
+  folder must differ by more than case.

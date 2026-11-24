@@ -110,7 +110,7 @@ test('check: <img>, <picture>, <source> and <video> tags are refused', () => {
 });
 
 test('check: a bad file name is a problem, and media/ is skipped', () => {
-  for (const name of ['notes.md', 'v1.2.md', 'v01.2.3.md', 'V0.9.0.md', 'v0.9.0.txt']) {
+  for (const name of ['notes.md', 'v1.2.md', 'v01.2.3.md', 'V0.8.0.md', 'v0.9.0.txt']) {
     fails(check({ 'v0.9.0.md': GOOD, [name]: GOOD }, { media: ['a.gif'] }), new RegExp(`${name.split('.').join('\\.')}: the name is not v<major>`));
   }
   assert.equal(check({ 'v0.9.0.md': GOOD }, { media: ['a.gif'] }).code, 0);
