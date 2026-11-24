@@ -24,7 +24,8 @@ blind comparison in SKILL.md.
 
 One JSON file per skill in the `--requests` folder; every `*.json` file directly in it is a list, and other files
 are ignored. A list names a skill under test, the requests that should start it, and near misses: requests that
-look close but should start another installed skill, or nothing (`"none"`).
+look close but should start another installed skill, or nothing (`"none"`). A skill with
+`disable-model-invocation: true` cannot start from a request, so it gets no list and no near miss names it.
 
 ```json
 {

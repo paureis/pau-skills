@@ -8,7 +8,7 @@
   "nearMisses": [
     {
       "request": "Go through our last six months of review threads and fix commits and list the errors agents make again and again",
-      "expect": "agent-friendly-audit"
+      "expect": "none"
     },
     {
       "request": "Our CLAUDE.md has grown to 900 lines with rules that contradict each other; find the problems in it",

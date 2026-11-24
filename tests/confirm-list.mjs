@@ -6,14 +6,14 @@
 // for the user's yes before they write (retrospective, instructions-audit, to-issues, ci-cost-and-cadence,
 // project-setup, improve-codebase-architecture, whose code changes start only on an explicit ask to implement),
 // conversations the user can stop with a word (brainstorm, grill-me) and skills that write only a local file or a
-// proposal (handoff, to-prd) do not ask twice.
+// proposal (handoff, to-prd) do not ask twice. A typed-only skill (tests/typed-only-list.mjs, decision 32) cannot
+// start on its own, so it is never on this list.
 export const CONFIRM_LIST = [
   // launches subagents or headless runs
-  'agent-orchestration/arena', 'agent-orchestration/codebase-oracle', 'agent-orchestration/overnight-run',
-  'agent-orchestration/parallel-worktrees',
-  'planning/agent-friendly-audit', 'verification/hillclimb', 'verification/skill-eval', 'verification/verify-app',
+  'agent-orchestration/arena', 'agent-orchestration/codebase-oracle', 'agent-orchestration/parallel-worktrees',
+  'verification/hillclimb', 'verification/verify-app',
   // commits, pushes or installs with no other gate
-  'guards/dependency-upgrade', 'guards/rule-to-hook', 'planning/architect', 'session-discipline/session-close',
+  'guards/dependency-upgrade', 'guards/rule-to-hook', 'planning/architect',
   // sets the whole session's way of working
-  'agent-orchestration/lean-subagent-dev', 'agent-orchestration/methodology',
+  'agent-orchestration/methodology',
 ];

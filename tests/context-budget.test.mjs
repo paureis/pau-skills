@@ -1,16 +1,21 @@
 // The context budget for skill descriptions. Claude Code loads the description of every skill the model may start
-// into every session, and since P0.5 (docs/backlog/decisions-1-to-21.md, decision 7) every skill may be started by the model, so every
-// description costs context all the time. The skill listing gets about 1% of the context window (about 40,000
-// characters on the owner's 1M window) and is shared with every other plugin installed; over budget, Claude Code drops
-// the descriptions of the least used skills. This test keeps each description a short trigger list and the total small.
+// into every session, so each one costs context all the time. Since decision 32 (docs/backlog/decisions.md), the skills
+// in TYPED_ONLY (tests/typed-only-list.mjs) set `disable-model-invocation: true`: they start only when the user types
+// them, and their description shows only in the / menu, so it costs no context. Every other skill is model-invoked.
+// The skill listing gets about 1% of the context window (about 40,000 characters on the owner's 1M window) and is
+// shared with every other plugin installed; over budget, Claude Code drops the descriptions of the least used skills.
+// This test keeps each model-invoked description a short trigger list and their total small, and each typed-only
+// description one short line for the / menu.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT } from './helpers.mjs';
+import { TYPED_ONLY } from './typed-only-list.mjs';
 
-const MAX_DESCRIPTION = 400;
-const MAX_TOTAL = 14000;
+const MAX_DESCRIPTION = 400; // a model-invoked description
+const MAX_TOTAL = 14000; // all model-invoked descriptions together
+const MAX_TYPED = 160; // a typed-only description: one sentence for the / menu
 const MAX_ANY_DESCRIPTION = 1536; // Claude Code cuts any description longer than this.
 const MAX_UPLOAD_DESCRIPTION = 1024; // claude.ai refuses to upload a skill with a longer description.
 
@@ -146,9 +151,11 @@ function parseDescription(front) {
   }
 }
 
-// The frontmatter line that hides a skill from the model, with any value: `false` changes nothing but still says the
-// skill might be hidden, so it goes too.
-const hasFlag = (front) => front.some((l) => /^(["']?)disable-model-invocation\1\s*:/.test(l));
+// A frontmatter line that hides a skill from the model, with any value: `false` changes nothing but still says the
+// skill might be hidden, so it counts too. A typed-only skill holds exactly one, written exactly as TYPED_LINE.
+const FLAG = /^(["']?)disable-model-invocation\1\s*:/;
+const hasFlag = (front) => front.some((l) => FLAG.test(l));
+const TYPED_LINE = 'disable-model-invocation: true';
 
 function readSkills() {
   const out = [];
@@ -158,25 +165,33 @@ function readSkills() {
       const end = lines.indexOf('---', 1);
       const front = lines[0] === '---' && end > 0 ? lines.slice(1, end) : [];
       const { value: description = '', error } = parseDescription(front);
-      out.push({ id: `${plugin}/${name}`, description, flag: hasFlag(front), error });
+      out.push({ id: `${plugin}/${name}`, description, flags: front.filter((l) => FLAG.test(l)), error });
     }
   }
   return out;
 }
 
-// Each check returns what is wrong, so the same checks run on the repository and on the fixtures below.
+// Each check takes the skills and the typed-only list and returns what is wrong, so the same checks run on the
+// repository and on the fixtures below.
+const model = (skills, list) => skills.filter((s) => !list.includes(s.id));
+const typed = (skills, list) => skills.filter((s) => list.includes(s.id));
+const over = (skills, max) => skills.filter((s) => s.description.length > max).map((s) => `${s.id}: ${s.description.length}`);
 const checks = {
   empty: (skills) => skills.filter((s) => !s.description.trim()).map((s) => s.id),
-  each: (skills) => skills.filter((s) => s.description.length > MAX_DESCRIPTION).map((s) => `${s.id}: ${s.description.length}`),
-  total: (skills) => {
-    const total = skills.reduce((n, s) => n + s.description.length, 0);
-    return total > MAX_TOTAL ? [`descriptions total ${total} characters`] : [];
+  each: (skills, list) => over(model(skills, list), MAX_DESCRIPTION),
+  typed: (skills, list) => over(typed(skills, list), MAX_TYPED),
+  total: (skills, list) => {
+    const total = model(skills, list).reduce((n, s) => n + s.description.length, 0);
+    return total > MAX_TOTAL ? [`model-invoked descriptions total ${total} characters`] : [];
   },
-  any: (skills) => skills.filter((s) => s.description.length > MAX_ANY_DESCRIPTION).map((s) => `${s.id}: ${s.description.length}`),
-  upload: (skills) => skills.filter((s) => s.description.length > MAX_UPLOAD_DESCRIPTION).map((s) => `${s.id}: ${s.description.length}`),
-  // Every skill loads on its own (decision 7). A ratchet at zero: the flag hides the description and stops the model,
-  // and other skills, from starting the skill.
-  flag: (skills) => skills.filter((s) => s.flag).map((s) => s.id),
+  any: (skills) => over(skills, MAX_ANY_DESCRIPTION),
+  upload: (skills) => over(skills, MAX_UPLOAD_DESCRIPTION),
+  // The flag hides the description and stops the model, a subagent and other skills from starting the skill, so it
+  // is set on exactly the skills the list names, once, and on no other skill in any form.
+  flag: (skills, list) => skills.flatMap((s) => {
+    if (!list.includes(s.id)) return s.flags.length ? [`${s.id}: not typed only, but sets disable-model-invocation`] : [];
+    return s.flags.length === 1 && s.flags[0] === TYPED_LINE ? [] : [`${s.id}: typed only, but its frontmatter does not hold the flag line once, exactly`];
+  }),
   // claude.ai refuses to upload a skill whose description contains anything shaped like an XML tag, such as `<app>`.
   tags: (skills) => skills.filter((s) => /<[A-Za-z/!?]/.test(s.description)).map((s) => `${s.id}: ${s.description.match(/<[^>]*>?/)[0]}`),
 };
@@ -230,16 +245,21 @@ test('every skill has a non-empty description (the / menu and the model both rea
   assert.deepEqual(checks.empty(SKILLS), []);
 });
 
-test('no skill sets disable-model-invocation: every skill loads on its own', () => {
-  assert.deepEqual(checks.flag(SKILLS), []);
+test('exactly the typed-only skills set disable-model-invocation: true, and no other skill has the line in any form', () => {
+  assert.ok(TYPED_ONLY.length > 0, 'the typed-only list is empty');
+  assert.deepEqual(checks.flag(SKILLS, TYPED_ONLY), []);
 });
 
-test(`each description is at most ${MAX_DESCRIPTION} characters`, () => {
-  assert.deepEqual(checks.each(SKILLS), []);
+test(`each model-invoked description is at most ${MAX_DESCRIPTION} characters`, () => {
+  assert.deepEqual(checks.each(SKILLS, TYPED_ONLY), []);
 });
 
-test(`all descriptions together are at most ${MAX_TOTAL} characters`, () => {
-  assert.deepEqual(checks.total(SKILLS), []);
+test(`each typed-only description is at most ${MAX_TYPED} characters`, () => {
+  assert.deepEqual(checks.typed(SKILLS, TYPED_ONLY), []);
+});
+
+test(`all model-invoked descriptions together are at most ${MAX_TOTAL} characters`, () => {
+  assert.deepEqual(checks.total(SKILLS, TYPED_ONLY), []);
 });
 
 test(`every description is at most ${MAX_UPLOAD_DESCRIPTION} characters (claude.ai upload) and ${MAX_ANY_DESCRIPTION} (Claude Code cut)`, () => {
@@ -248,22 +268,37 @@ test(`every description is at most ${MAX_UPLOAD_DESCRIPTION} characters (claude.
 });
 
 test('each check flags one character or one skill over its limit, and nothing at the limit', () => {
-  const skill = (id, length, flag = false) => ({ id, description: 'x'.repeat(length), flag });
-  // At every limit at once: as many skills at the per-description limit as the total allows, plus one that takes the
-  // rest of the total (more than nothing, at most one description).
+  const skill = (id, length, flags = []) => ({ id, description: 'x'.repeat(length), flags });
+  // At every limit at once: as many model-invoked skills at the per-description limit as the total allows, plus one
+  // that takes the rest of the total (more than nothing, at most one description), and a typed-only skill at its own
+  // limit, which the total does not count.
   const full = Math.ceil(MAX_TOTAL / MAX_DESCRIPTION) - 1;
-  const atLimit = [...Array.from({ length: full }, (_, i) => skill(`s${i}`, MAX_DESCRIPTION)), skill('rest', MAX_TOTAL - full * MAX_DESCRIPTION)];
-  assert.equal(atLimit.reduce((n, s) => n + s.description.length, 0), MAX_TOTAL, 'fixture: the skills must add up to the total');
-  for (const [name, check] of Object.entries(checks)) assert.deepEqual(check(atLimit), [], name);
+  const atLimit = [...Array.from({ length: full }, (_, i) => skill(`s${i}`, MAX_DESCRIPTION)), skill('rest', MAX_TOTAL - full * MAX_DESCRIPTION),
+    skill('typed', MAX_TYPED, [TYPED_LINE])];
+  const list = ['typed'];
+  assert.equal(model(atLimit, list).reduce((n, s) => n + s.description.length, 0), MAX_TOTAL, 'fixture: the skills must add up to the total');
+  for (const [name, check] of Object.entries(checks)) assert.deepEqual(check(atLimit, list), [], name);
 
-  assert.deepEqual(checks.each([skill('long', MAX_DESCRIPTION + 1)]), [`long: ${MAX_DESCRIPTION + 1}`]);
+  assert.deepEqual(checks.each([skill('long', MAX_DESCRIPTION + 1)], []), [`long: ${MAX_DESCRIPTION + 1}`]);
+  assert.deepEqual(checks.each([skill('long', MAX_DESCRIPTION + 1)], ['long']), [], 'a typed-only description has its own limit');
+  assert.deepEqual(checks.typed([skill('t', MAX_TYPED + 1)], ['t']), [`t: ${MAX_TYPED + 1}`]);
+  assert.deepEqual(checks.typed([skill('m', MAX_TYPED + 1)], []), [], 'a model-invoked description is not held to the typed limit');
   const overTotal = atLimit.map((s) => (s.id === 'rest' ? skill('rest', s.description.length + 1) : s));
-  assert.deepEqual(checks.total(overTotal), [`descriptions total ${MAX_TOTAL + 1} characters`]);
-  assert.deepEqual(checks.upload([skill('big', MAX_UPLOAD_DESCRIPTION + 1)]), [`big: ${MAX_UPLOAD_DESCRIPTION + 1}`]);
-  assert.deepEqual(checks.upload([skill('ok', MAX_UPLOAD_DESCRIPTION)]), []);
-  assert.deepEqual(checks.any([skill('huge', MAX_ANY_DESCRIPTION + 1)]), [`huge: ${MAX_ANY_DESCRIPTION + 1}`]);
+  assert.deepEqual(checks.total(overTotal, list), [`model-invoked descriptions total ${MAX_TOTAL + 1} characters`]);
+  // The upload and cut limits hold for every skill, typed only or not.
+  for (const id of ['big', 'typed']) {
+    assert.deepEqual(checks.upload([skill(id, MAX_UPLOAD_DESCRIPTION + 1)], list), [`${id}: ${MAX_UPLOAD_DESCRIPTION + 1}`]);
+    assert.deepEqual(checks.any([skill(id, MAX_ANY_DESCRIPTION + 1)], list), [`${id}: ${MAX_ANY_DESCRIPTION + 1}`]);
+  }
+  assert.deepEqual(checks.upload([skill('ok', MAX_UPLOAD_DESCRIPTION)], []), []);
   assert.deepEqual(checks.empty([{ id: 'blank', description: ' ' }]), ['blank']);
-  assert.deepEqual(checks.flag([skill('hidden', 10, true), skill('shown', 10)]), ['hidden']);
+
+  // The flag: once and written exactly on a listed skill, and in no form on another.
+  assert.equal(checks.flag([skill('hidden', 10, [TYPED_LINE]), skill('shown', 10)], []).length, 1);
+  assert.equal(checks.flag([skill('hidden', 10, ['disable-model-invocation: false'])], []).length, 1);
+  for (const flags of [[], ['disable-model-invocation: false'], ['disable-model-invocation:true'], [TYPED_LINE, TYPED_LINE]]) {
+    assert.equal(checks.flag([skill('typed', 10, flags)], list).length, 1, JSON.stringify(flags));
+  }
 });
 
 test('the flag is found in any form a frontmatter line can take', () => {
