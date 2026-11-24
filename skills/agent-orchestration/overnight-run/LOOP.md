@@ -134,8 +134,9 @@ Notes on the script:
   so `a && b` or `a; echo $?` needs a rule for each part.
 - No `--add-dir`: the absolute `Edit`, `Write` and `Read` rules reach the state and control files without it. Never
   pass `--add-dir` for the parent folder: it opens the main checkout and every repository beside it.
-- The turns use the real HOME, so the login applies. The skill starts only when typed, so a turn cannot load it,
-  whatever way it is installed: the prompt points at `RUN.md` and at the copy in `<control>/SKILL.md` instead.
+- The turns use the real HOME, so the login applies. The skill starts only when typed, so a turn prompted in words
+  cannot load it, whatever way it is installed: the prompt points at `RUN.md` and at the copy in
+  `<control>/SKILL.md` instead.
 - `--strict-mcp-config` with no `--mcp-config` gives the turns no MCP server, which removes every mail, chat and
   tracker tool in one step (and any `send_later`-style tool with them).
 - Each turn's capture is `<state>/<session id>-turn-<n>.jsonl`, and `loop.out` logs each turn's exit code. The
@@ -174,9 +175,10 @@ pushed. So:
   machine that stays on.
 - **Where the log goes.** Nothing outside the clone survives between firings, so the run branch carries the state:
   `.overnight/<label>/` on the run branch holds `RUN.md`, `done.sh`, the `SKILL.md` copy, `decisions.tsv` and
-  `resume.md`. A firing
-  copies that folder out of the clone first (to `$HOME/overnight/<label>/`), appends to the copy outside the work
-  tree with `LOG`, as usual, and at its end copies the folder back into the clone and commits it with its work.
+  `resume.md`. A firing prompted in words cannot load the skill, so the scheduled prompt says to read
+  `.overnight/<label>/RUN.md` and follow it with step 5 of the `SKILL.md` copy there. A firing copies that folder
+  out of the clone first (to `$HOME/overnight/<label>/`), appends to the copy outside the work tree with `LOG`, as
+  usual, and at its end copies the folder back into the clone and commits it with its work.
   Before appending, check that the copy still starts with the bytes the branch held (`cmp -n`), so a firing cannot
   drop rows. The fingerprint is checked against the `predicate.sha` in the first commit of the run branch, which a
   later firing cannot rewrite without a force push.

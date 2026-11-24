@@ -1,6 +1,7 @@
 ---
 name: which-skill
 description: "Recommend which pau-skills skill, or sequence of skills, fits the user's situation, what the installed hooks already do, and which skills the user actually starts. Use when the user asks 'which skill should I use', 'what can these skills do', 'where do I start', 'is there a skill for this', 'help me pick', 'which skills do I actually use', or seems unsure how to approach a task."
+allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 ---
 
 # Which Skill
