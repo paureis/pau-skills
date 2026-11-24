@@ -101,3 +101,18 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
     docs facts as its contract, found the one real gap (a merge after `/ship` pushed unchecked fixes).
   - Did not: `eng-lead`, the plan check and a builder were skipped as too heavy for two paragraphs; the kickoff asked
     for the full roster.
+- 2026-11-24: the twentieth batch, Q28 some skills typed only again, Q29 friction-review, Q30 small additions from
+  upstream and Q31 patch notes, merged as [pull request 83](https://github.com/paureis/pau-skills/pull/83)
+  (decisions 31 and 32). Seven skills became typed only, friction-review is new, nine skills took a few lines each
+  from mattpocock/skills at abeeaf9, and each batch now ships a GitHub Release (v0.22.0 first). Two `eng-lead` runs
+  planned seven slices (Q28, Q29, then S1, S2 with S4, S3 and S5 in parallel); every brief had a read-only plan check
+  that built it in a clone, every slice a fresh reviewer and one fix round. 2,034 tests (1,946 before). With the
+  roster:
+  - Worked: the owner's rule for skills that go together, applied to a full start map, cut the typed-only list from 14
+    to 7 with only two "type /name" pointers; plan checks that measured sizes and read the installed binary
+    (`worktree.bgIsolation`, the question tool's limits) before any builder started; reviewers that built hostile
+    fixtures found two privacy leaks in friction-review and an image bypass in the release check; four builders in
+    parallel on disjoint files, with the shared files kept by the orchestrator, merged with no conflict.
+  - Did not: eng-lead's size targets were already broken at the base; builders wrote code before tests for parts of
+    friction-review's CLI; `gh api markdown` is refused from a session, so emoji shortcodes were not rendered before
+    the merge; an inline `node -e` payload broke on an apostrophe in the orchestrator's own CHANGELOG edit.

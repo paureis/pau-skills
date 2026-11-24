@@ -184,9 +184,10 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
     decision 26.
 24. Done: the nineteenth batch, Q21 a subagent watchdog (pull request 79); its design was decisions 22, 23 and 30.
 25. Done: Q27 Claude Ship and our skills (pull request 80); its scope was decision 29.
-26. **Next:** Q28 some skills typed only again, then Q29 friction-review, Q30 small additions from upstream and Q31
-    patch notes (decision 31), then Q32 skill-usage typed starts; the kickoff is in
-    [backlog/kickoff.md](backlog/kickoff.md). Parked: Q25 Claude Code mods (decision 27) and Q26 our hooks under Code
-    Mode (decision 28). Work this order as it stands (decision 29).
+26. Done: the twentieth batch, Q28 to Q31: typed-only skills, friction-review, small additions from upstream and
+    patch notes (pull request 83); its scope was decisions 31 and 32.
+27. **Next:** Q32 skill-usage typed starts; the kickoff is in [backlog/kickoff.md](backlog/kickoff.md). Later, its
+    own item: `wizard`, a guided script for the steps only a person can do (Q30). Parked: Q25 Claude Code mods
+    (decision 27) and Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

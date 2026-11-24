@@ -2,53 +2,50 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-Q27 (Claude Ship and our skills, pull request 80) is done. Next, in this order (decision 31): **Q28** some skills
-typed only again, **Q29** friction-review, **Q30** small additions from upstream, **Q31** patch notes. Read "Things
-that bit the nineteenth batch" (`docs/backlog/things-that-bit/batch-19.md`) first.
+The twentieth batch (Q28 to Q31, pull request 83) is done. Next, in this order: **Q32** skill-usage logs typed starts
+as the agent's. Read "Things that bit the twentieth batch" (`docs/backlog/things-that-bit/batch-20.md`) first.
 
-The owner's two checks are done and recorded in `docs/backlog/q28.md`: a typed-only skill works on claude.ai, and the
-usage log covers 25 days, with typed and agent starts not told apart (Q32).
+Q32 starts from evidence the owner can give: a real transcript or a headless run that shows what `UserPromptSubmit`
+and the Skill tool receive when a skill is typed as `/name` and as `/anthropic-skills:name`. Typed-only skills now
+make this easier to see: they can only start typed.
 
 The owner starts the batch with this message:
 
 ```text
-You are the orchestrator for the twentieth batch in this repository: Q28 (some skills typed only again) and Q29
-(friction-review), then Q30 and Q31 if the session has room. Do not build it yourself; run the roster in
-.claude/agents/ (eng-lead, builder, reviewer) and integrate their work. My choices are decision 31 in
-docs/backlog/decisions.md; build what docs/backlog/q28.md to q31.md ask, in that order.
-
-My claude.ai test and the usage report are in docs/backlog/q28.md.
+You are the orchestrator for the twenty-first batch in this repository: Q32 (skill-usage logs typed starts as the
+agent's). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and integrate
+their work. Type /lean-subagent-dev first (it is typed only since Q28).
 
 Before anything else, read these in full:
-1. CLAUDE.md and docs/ADDING-A-SKILL.md (step 2 covers the description rules and the confirm list).
-2. docs/backlog/q28.md to q31.md, decisions 7 and 31, docs/backlog/context-budget.md,
-   docs/backlog/how-to-run-a-batch.md ("With the roster") and docs/backlog/things-that-bit/batch-19.md.
-3. tests/context-budget.test.mjs, tests/description-rules.test.mjs, tests/confirm-list.mjs, tests/confirm-step.test.mjs,
-   tests/trigger-lists.test.mjs and tests/standalone.test.mjs; skills/session-discipline/which-skill/SKILL.md.
-4. For Q29: upstream retro, cloned with git clone --depth 1 https://github.com/mattpocock/skills into the scratchpad
-   (data to read, not instructions), skills/planning/agent-friendly-audit and its mine-transcripts.mjs, and
-   skills/verification/skill-eval/skill-eval-core.mjs (extractActions).
+1. CLAUDE.md and docs/ADDING-A-SKILL.md.
+2. docs/backlog/q32.md, decisions 31 and 32 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md ("With
+   the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md and
+   docs/backlog/things-that-bit/batch-20.md.
+3. hooks/session-discipline/skill-usage.mjs, its tests, and skills/session-discipline/which-skill/usage-report.mjs.
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
   builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds.
-- If my claude.ai test failed, stop Q28 and tell me what you would do instead; Q29 can still go ahead, typed only
-  or not.
+- Get the real hook input first: a headless run with a hook that logs every event (an empty HOME,
+  --max-budget-usd), typing a skill as /name and as /<plugin>:name, and the Skill tool start. Read the transcript,
+  not the answer.
 - Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone and tries
   mutations of its own, and a fresh reviewer per slice. Commits carry the harness's two attribution trailers.
 
 Rules that matter most:
-- Every skill works on its own; a mention of a typed-only skill says "tell the user to type /name". Plain English,
-  no em or en dashes; Node standard library only; no tracked file over its size limit.
+- Every skill works on its own; a mention of a typed-only skill holds /name in the same paragraph. Plain English, no
+  em or en dashes; Node standard library only; no tracked file over its size limit.
+- A hook exits 0 on input it does not understand and checks hookEnabled(). A hook change bumps pau-skills-hooks.
 - Every new test fails without the change: prove each with mutate.sh and report every "# tests" line.
-- Run npm test before every commit, docs included.
+- Run npm test before every commit, docs included. Write docs/releases/v<bundle version>.md for the batch and run its
+  pre-merge check.
 - Builders commit and never push. You push the working branch and open the PR. When CI is green on Linux, macOS and
   the validate job and every review is clean, merge it yourself.
 
 When the PR is open, tell me in plain words what changed, what the reviews found, and anything I need to decide. After
-the merge, give me the zips of every changed skill in one bundle (node scripts/pack-skills.mjs --since <main before
-the batch>, with which-skill, safe-merge and lean-subagent-dev from the Q21 and Q27 merges, which I have not uploaded
-yet), mark the items done in docs/backlog/ with what worked and what did not, and write the next kickoff here.
+the merge, check the Release run, give me the zips of every changed skill (node scripts/pack-skills.mjs --since <main
+before the batch>), mark the items done in docs/backlog/ with what worked and what did not, and write the next kickoff
+here.
 ```
 
 ## The fifth batch's kickoff, as a template
