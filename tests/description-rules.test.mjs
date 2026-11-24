@@ -10,7 +10,7 @@
 // (tests/typed-only-list.mjs, decision 32), no opener and no quoted phrase: no request in words can start it, so its
 // description is one sentence for the / menu.
 // Rule 4: on a skill in the confirm list (tests/confirm-list.mjs), no quoted phrase holds a question mark or has one
-// right after it: a question is written as a situation ("Policy since P0.5" in docs/backlog/context-budget.md). With
+// right after it: a question is written as a situation ("Policy since Q28" in docs/backlog/context-budget.md). With
 // rule 1 in place, no question mark but the ASCII one can reach a description, so rule 4 reads only the ASCII one.
 // A description the reader cannot read is a problem that names the skill, never a skip. No message holds text from a
 // description: a message names the skill, the rule and, for rule 4, the phrase by its number. The long rule 1 fixtures
