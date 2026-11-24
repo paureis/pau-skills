@@ -1,4 +1,4 @@
-# Evidence: reproducing, observing, bisecting, committing the repro
+# Evidence: reproducing, building the automated check, observing, bisecting, committing the repro
 
 Reference for the `bug-fix` skill. Read the section the current step points to.
 
@@ -29,6 +29,30 @@ find out which before going further.
   user role and data volume one at a time.
 - **Instrument until it fires.** Log the path the request takes and compare it with the path the report implies. The
   first place they differ is where to look.
+
+## Building the automated check
+
+Step 2 shrinks the surface repro to one command that you can rerun unattended, red while the bug is there and green
+once it is fixed. Try these in roughly this order, and keep the first one that shows the discriminating observation:
+
+1. **A failing test** at the interface that reaches the bug: a unit, integration or end to end test.
+2. **An HTTP request script** (`curl`, or a few lines in the project's language) against the running service.
+3. **The CLI command on a fixture input**, with its output diffed against a known-good copy.
+4. **A headless browser script** that drives the page and asserts on the DOM, the console or the network.
+5. **A captured request, payload or event log**, saved to a file and replayed through the code path on its own.
+6. **A throwaway harness**: one service with its dependencies faked, reaching the code path in a single call.
+7. **A seeded property or fuzz loop**, for output that is only sometimes wrong: many generated inputs, the seed
+   printed, a check on each result. `tdd`'s PROPERTIES.md covers it, if `tdd` is installed; without it, use the
+   standard library's seeded random generator, or a small seeded generator of a few lines where it has none.
+8. **A bisection harness** for `git bisect run`: a script that builds each commit, runs the check and exits with the
+   codes bisect reads (see "Finding when it started" below).
+9. **A differential loop**: the same input through the old and the new version, or through two configurations, with
+   the outputs diffed. Steps 2 and 3 of "Differential check for a rewrite" below say how to keep the old version
+   runnable and feed both the same inputs.
+
+Then tighten it. Faster: cache the setup and run only what reaches the bug. Sharper: assert the reported symptom (the
+wrong value, the error text), not "it did not crash". Deterministic: pin the clock, seed the randomness, give each run
+its own folder on the file system, and keep the network out, so every run gives the same verdict.
 
 ## Getting runtime evidence
 

@@ -2,9 +2,10 @@
 name: bug-fix
 description: "Debug and fix a bug at its root cause from runtime evidence: reproduce it twice, test one hypothesis at a time, commit a failing test first. Use when something is broken and the cause is unclear, a first fix did not hold or the bug came back, or for 'find the root cause', 'why does X return Y'. An obvious one-line fix needs no skill; a failure that comes and goes needs counted runs."
 argument-hint: "<the bug report: what you did, what you expected, what happened, where>"
-license: MIT (adapted from cursor/plugins pstack; see NOTICE)
+license: MIT (adapted from cursor/plugins pstack and mattpocock/skills; see NOTICE)
 metadata:
   upstream: https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/poteto-mode/playbooks/bug-fix.md
+  upstream-mattpocock: https://github.com/mattpocock/skills/tree/abeeaf95660ba9e8b7c753eb38f441ca707a8823/skills/engineering/diagnosing-bugs
 allowed-tools: Read(/${CLAUDE_SKILL_DIR}/**)
 ---
 
@@ -16,8 +17,8 @@ evidence justifies. Reading code tells you where to look. Running it tells you w
 The bug: $ARGUMENTS
 
 Reference, read when a step points to it: `${CLAUDE_SKILL_DIR}/EVIDENCE.md` (how to reproduce on each kind of
-surface, how to get runtime evidence in each language, `git bisect`, checks on the observation itself, and how to
-commit a failing test in each ecosystem).
+surface, how to build and tighten the automated check, how to get runtime evidence in each language, `git bisect`,
+checks on the observation itself, and how to commit a failing test in each ecosystem).
 
 ## Rules that apply throughout
 
@@ -63,8 +64,11 @@ running service, the public function of the library called from a small program,
    conditions to match the report, or add logging until you see the path it takes. If it still does not fire after
    that, stop with the verdict **not reproduced** (step 9). Do not fix a bug you cannot see.
 
-Then shrink the repro to the smallest automated check that still shows the discriminating observation, usually a
-test at the lowest level that still fails for the reported reason. Keep the surface repro for step 8.
+Then turn the repro into an automated check ("Building the automated check" in `EVIDENCE.md` lists the ways) and
+minimise it before step 3. Cut inputs, callers, configuration, data and steps one at a time, rerunning the check
+after each cut, and keep a cut only while the check still shows the discriminating observation. The repro is minimal
+when removing any one remaining element makes the check pass. A minimal repro leaves fewer moving parts to suspect
+in step 3, and it becomes step 6's test. Keep the surface repro for step 8.
 
 ## Step 3. Test hypotheses with runtime evidence
 
