@@ -2,8 +2,8 @@
 // time, one by id, the live one left out) and its exit codes, on temporary folders.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { writeFileSync, mkdirSync, symlinkSync } from 'node:fs';
+import { join, dirname } from 'node:path';
 import { runNode, tempDir } from './helpers.mjs';
 import { SCRIPT, git, step, bash, world, encodeProjectPath } from './friction-review.helpers.mjs';
 
@@ -128,4 +128,28 @@ test('the header names the projects folder, the counts and the thresholds', () =
   const r = w.run();
   assert.equal(r.code, 0, r.stderr);
   assert.match(header(r.stdout), /^# friction-review: 1 session from \d{4}-\d\d-\d\d to \d{4}-\d\d-\d\d in ~\/\.claude\/projects; 1 subagent transcript; 1 unreadable line; thresholds: READ_REPEAT_MIN 3, SHELL_REPEAT_MIN 3, POINTERS_PER_SIGNAL 3, BIG_RESULT_CHARS 20000$/);
+});
+
+test('the live-session window is 10 minutes: a newest session 11 minutes old is kept, 9 minutes old is left out', () => {
+  const w = world();
+  w.session(w.own, 's11', marked('MARK11'), { ageMin: 11 });
+  const kept = w.run();
+  assert.match(kept.stdout, /MARK11/);
+  assert.doesNotMatch(kept.stdout, /left out/);
+  w.session(w.own, 's9', marked('MARK9'), { ageMin: 9 });
+  const r = w.run();
+  assert.match(r.stdout, /MARK11/);
+  assert.doesNotMatch(r.stdout, /MARK9/);
+  assert.match(r.stdout, /^# left out 1 recent session/m);
+});
+
+test('it runs when started through a symlinked skill folder', { skip: process.platform === 'win32' }, () => {
+  const w = world();
+  w.session(w.own, 's', marked('LINKMARK'));
+  const link = join(tempDir('fr-link-'), 'friction-review');
+  symlinkSync(dirname(SCRIPT), link, 'dir');
+  const r = runNode(join(link, 'friction.mjs'), { args: ['--repo', w.main], env: w.env });
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stdout, /^# friction-review: 1 session /);
+  assert.match(r.stdout, /LINKMARK/);
 });

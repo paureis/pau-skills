@@ -20,6 +20,7 @@
  * Exit codes: 0 done; 1 refused or failed (not a git repository, a --session that is not found); 2 usage.
  * Node 20+, standard library only.
  */
+import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { Refusal } from './mine-redact.mjs';
@@ -101,6 +102,8 @@ export function main(argv, out = console.log, err = console.error) {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+// Node loads a module by its real path, so a start through a symlinked skill folder compares the real path too.
+const startedAs = (p) => { try { return pathToFileURL(realpathSync(p)).href; } catch { return null; } };
+if (process.argv[1] && import.meta.url === startedAs(process.argv[1])) {
   process.exit(main(process.argv.slice(2)));
 }
