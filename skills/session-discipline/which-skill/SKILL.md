@@ -148,6 +148,9 @@ These change how future sessions go, not the product code.
 - **`agent-friendly-audit`** (planning): mine the whole history (review comments, fix
   commits, transcripts, instruction files) for mistakes agents repeat, and get a plan that fixes each at the highest
   layer, proven on a past instance. `retrospective` covers one session; `rule-to-hook` builds one chosen rule.
+- **`friction-review`** (session-discipline, typed): the agent keeps searching, rerunning commands, hitting failed
+  access or skipping checks; it counts that friction across the last sessions and proposes fixes. `retrospective`
+  covers the user's corrections in one session; `agent-friendly-audit` covers repeated code mistakes.
 
 ## What runs without asking
 

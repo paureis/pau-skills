@@ -27,6 +27,10 @@ const COPIES = [
   ['skills/verification/launch-readiness/PRODUCTION-RULES.md', 'skills/session-discipline/project-setup/PRODUCTION-RULES.md'],
   ['skills/verification/launch-readiness/PRODUCTION-RULES.md', 'skills/guards/rule-to-hook/PRODUCTION-RULES.md'],
   ['skills/verification/launch-readiness/PRODUCTION-RULES.md', 'skills/agent-orchestration/geppetto/PRODUCTION-RULES.md'],
+  ['skills/planning/agent-friendly-audit/mine-transcripts.mjs', 'skills/session-discipline/friction-review/mine-transcripts.mjs'],
+  ['skills/planning/agent-friendly-audit/mine-redact.mjs', 'skills/session-discipline/friction-review/mine-redact.mjs'],
+  ['skills/planning/agent-friendly-audit/mine-commits.mjs', 'skills/session-discipline/friction-review/mine-commits.mjs'],
+  ['skills/verification/skill-eval/skill-eval-core.mjs', 'skills/session-discipline/friction-review/skill-eval-core.mjs'],
 ];
 
 function skills() {
@@ -91,7 +95,7 @@ test('relative links in a skill stay inside its folder', () => {
 });
 
 // Skills from elsewhere that skills here mention; a mention of one needs the same "if it is installed" fallback.
-const OUTSIDE = ['html-plan'];
+const OUTSIDE = ['html-plan', 'writing-for-agents'];
 
 test('a skill that names another skill says what to do if that skill is not installed', () => {
   const names = [...ALL.map((s) => s.name), ...OUTSIDE];

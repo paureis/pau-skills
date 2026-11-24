@@ -15,6 +15,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
 - **[retrospective](../skills/session-discipline/retrospective/SKILL.md)**: Turns a session's corrections into rule, memory or skill edits, gated by `audit.mjs`; drops
   an edit that would not change what a future agent does, and catches decisions that were right for the wrong reason;
   `--stale` finds rules that cite files that are gone.
+- **[friction-review](../skills/session-discipline/friction-review/SKILL.md)** (adapted, typed only): Counts the friction
+  that repeats across this project's last sessions (search churn, costly tool calls, failed access, unwired checks, no
+  guardrail), proposes changes by severity and makes only the ones you pick.
 - **[session-close](../skills/session-discipline/session-close/SKILL.md)** (typed only): Closes a session in a fixed order: clean tree, retrospective, roadmap and log, handoff, commit
   and push.
 - **[handoff](../skills/session-discipline/handoff/SKILL.md)**: Writes a handoff the next session can resume from, after a retrospective gate, with a

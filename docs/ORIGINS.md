@@ -37,6 +37,7 @@ Cursor's plugin repository. pstack is a single snapshot, so there is no history 
 - [Roadmap hook, `hooks/session-discipline/roadmap.mjs`](origins/session-discipline/roadmap.md): Original
 - [instructions-audit and `scan.mjs`](origins/session-discipline/instructions-audit.md): Original
 - [which-skill](origins/session-discipline/which-skill.md): Original
+- [friction-review](origins/session-discipline/friction-review.md): Adapted from [mattpocock/skills `retro`](https://github.com/mattpocock/skills/tree/abeeaf95660ba9e8b7c753eb38f441ca707a8823/skills/engineering/retro)
 - [Branch-context hook, `hooks/session-discipline/branch-context.mjs`](origins/session-discipline/branch-context.md): Original
 - [Compact-snapshot hook, `hooks/session-discipline/compact-snapshot.mjs`](origins/session-discipline/compact-snapshot.md): Original
 - [Skill-usage hook, `hooks/session-discipline/skill-usage.mjs`](origins/session-discipline/skill-usage.md): Original
