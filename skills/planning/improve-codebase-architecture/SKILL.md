@@ -31,7 +31,7 @@ Key principles:
 - **The interface is the test surface.** Callers and tests cross the same seam.
 - **One adapter = hypothetical seam. Two adapters = real seam.** Don't introduce a seam unless something actually varies across it.
 
-This skill is informed by the project's domain model. If a `CONTEXT.md` exists, the domain language gives names to good seams. If `docs/adr/` exists, ADRs record decisions this skill should not re-litigate.
+This skill is informed by the project's domain model. The project's glossary is `GLOSSARY.md`, or `CONTEXT.md` under its older name: read both when both exist, and write new or sharpened terms to the one that exists (`GLOSSARY.md` when both do). If neither exists, create `GLOSSARY.md` lazily, when the first term is settled. The domain language in it gives names to good seams. If `docs/adr/` exists, ADRs record decisions this skill should not re-litigate.
 
 ## Process
 
@@ -72,7 +72,7 @@ Present a numbered list of deepening opportunities. For each candidate:
 - **Solution**: plain English description of what would change, and what it removes: branches, duplicated rules, invalid states, a layer, reachable internals. An abstraction that adds indirection and removes none of these is not a candidate.
 - **Benefits**: explained in terms of locality and leverage, in how tests would improve, and in what the reader-load test would gain (layers or state removed)
 
-Use `CONTEXT.md` vocabulary for the domain, and LANGUAGE.md vocabulary for the architecture.
+Use the project's glossary vocabulary for the domain, and LANGUAGE.md vocabulary for the architecture.
 
 **ADR conflicts**: if a candidate contradicts an existing ADR, only surface it when the friction is real enough to warrant revisiting the ADR. Mark it clearly.
 
@@ -84,8 +84,8 @@ Once the user picks a candidate, drop into a grilling conversation. Walk the des
 
 Side effects happen inline as decisions crystallize:
 
-- **Naming a deepened module after a concept not in `CONTEXT.md`?** Add the term to `CONTEXT.md`. Create the file lazily if it doesn't exist.
-- **Sharpening a fuzzy term during the conversation?** Update `CONTEXT.md` right there.
+- **Naming a deepened module after a concept not in the project's glossary?** Add the term to the project's glossary. Create `GLOSSARY.md` lazily if neither file exists.
+- **Sharpening a fuzzy term during the conversation?** Update the project's glossary right there.
 - **User rejects the candidate with a load-bearing reason?** Offer an ADR so future reviews don't re-suggest it.
 - **Want to explore alternative interfaces?** Use the INTERFACE-DESIGN.md process in this skill's directory: write multiple radically different interface designs and compare by depth, locality, and seam placement.
 
@@ -97,7 +97,7 @@ Then follow `${CLAUDE_SKILL_DIR}/EXECUTION.md`: on a clean tree and a branch of 
 
 ## Rules
 
-- **No code before step 4.** Steps 1 to 3 produce recommendations, `CONTEXT.md` and ADRs only.
-- **Domain language first.** If `CONTEXT.md` defines "Order," talk about "the Order intake module," not "the FooBarHandler."
+- **No code before step 4.** Steps 1 to 3 produce recommendations, the project's glossary and ADRs only.
+- **Domain language first.** If the project's glossary defines "Order," talk about "the Order intake module," not "the FooBarHandler."
 - **Respect ADRs.** Don't re-litigate documented decisions unless the friction is genuinely severe.
 - **Be opinionated.** The user wants a strong read on their architecture, not a menu of equally weighted options.

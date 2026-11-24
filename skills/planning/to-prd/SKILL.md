@@ -3,7 +3,7 @@ name: to-prd
 description: "Write a PRD (product requirements document) from what the conversation and the code already settled, without interviewing, and save it as a markdown file. Use when the user says 'write a PRD', 'make this into a PRD', or wants an agreed feature, plan or finished grilling session written up as a spec or requirements doc."
 license: MIT (adapted from mattpocock/skills; see NOTICE)
 metadata:
-  upstream: https://github.com/mattpocock/skills/tree/main/skills/engineering/to-prd
+  upstream: https://github.com/mattpocock/skills/tree/abeeaf95660ba9e8b7c753eb38f441ca707a8823/skills/engineering/to-spec
 ---
 
 # To PRD
@@ -12,7 +12,7 @@ This skill takes the current conversation context and codebase understanding and
 
 ## Process
 
-1. **Explore the repo** to understand the current state of the codebase, if you haven't already.
+1. **Explore the repo** to understand the current state of the codebase, if you haven't already. Use the project's words from its domain glossary (`GLOSSARY.md`, or `CONTEXT.md` under its older name; both when both exist) throughout the PRD, and respect the ADRs in the area (`docs/adr/`), if they exist.
 
 2. **Sketch out the major modules** you will need to build or modify to complete the implementation. Actively look for opportunities to extract deep modules: modules that encapsulate a lot of functionality behind a simple, testable interface that rarely changes.
 
@@ -56,6 +56,8 @@ A list of implementation decisions that were made. This can include:
 
 Do NOT include specific file paths or code snippets. They may end up being outdated very quickly.
 
+Exception: if a prototype produced a snippet that encodes a decision more precisely than prose (state machine, reducer, schema, type shape), inline it in the decision it belongs to, trimmed to the part that decides, and note it came from a prototype.
+
 ### Testing Decisions
 
 A list of testing decisions that were made. Include:
@@ -76,5 +78,5 @@ Any further notes about the feature.
 
 - **No interviewing.** This skill synthesizes: it doesn't interrogate. If the plan is not decided yet, settle the open decisions with the user first (use `grill-me` for this if it is installed), then run this one.
 - **Module depth matters.** When sketching modules, flag shallow modules (interface nearly as complex as implementation) and suggest deepening them.
-- **No file paths or code snippets in the PRD.** These go stale immediately. Describe modules by what they do, not where they live.
+- **No file paths or code snippets in the PRD.** These go stale immediately. Describe modules by what they do, not where they live. The one exception is a snippet a prototype produced, inlined in its decision (see Implementation Decisions).
 - **User stories should be exhaustive.** If you can think of 10, write 20. Cover happy paths, error states, edge cases, and accessibility.
