@@ -3,6 +3,36 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-24: Q30, small additions from Matt Pocock's newer skills
+
+- From mattpocock/skills at abeeaf9 (MIT), a few lines each, in our own words. `bug-fix` lists nine ways to build an
+  automated check that goes red on the bug and minimises the repro one element at a time. `tdd` names the tautological
+  test and has you note what each test surface catches and misses. `to-issues` slices a wide refactor as expand and
+  contract, sizes each issue to one fresh context window, uses the tracker's own blocking links and names the frontier.
+  `to-prd` allows a snippet a prototype produced. `to-issues`, `to-prd` and `improve-codebase-architecture` read
+  `GLOSSARY.md` as well as `CONTEXT.md`, and the `upstream:` links of `to-issues` and `to-prd` are pinned to
+  `to-tickets` and `to-spec`.
+- `grill-me` asks in rounds (every decision whose prerequisites are settled, worded so "yes" accepts the
+  recommendation), may send a long fact search to the read-only Explore agent, and offers a questionnaire for whoever
+  can answer what you cannot. `handoff` gains a Start now mode that starts the next session in the background
+  (`claude --bg`), only when you ask for it and say yes to the command; it explains that the new session works in its
+  own worktree.
+- `instructions-audit` weighs context load against cognitive load when it proposes moving material behind a pointer,
+  and docs/ADDING-A-SKILL.md names the same trade for typed-only skills. `lean-subagent-dev` says what a pull request
+  body holds: a before and an after, the triage table, and whether merging is a one-way or a two-way door.
+- The versions bumped for Q28 cover these changes. No hook changed.
+
+## 2026-11-24: Q29, friction-review
+
+- A new typed-only skill, `friction-review` (session-discipline). Type `/friction-review` to count the friction that
+  repeats across this project's last 30 sessions (or a number you give, or one session by id): searches before the
+  first edit, empty searches, repeated reads and commands, big tool results, failed calls by class, check commands
+  that no session ran or that no CI, pre-commit or hook runs, and "no guardrail". It knows package.json, Make,
+  pyproject, Cargo and Go. It proposes a change per candidate by severity and makes only the ones you pick, one commit
+  each. The script reads only this repository's transcript folders, redacts secrets, emails, passwords in commands and
+  home paths, and never prints a tool result or a message you typed. Adapted from mattpocock/skills `retro`, which
+  reviews one session.
+
 ## 2026-11-24: Q28, some skills typed only again
 
 - Seven skills now start only when you type them: `session-close`, `lean-subagent-dev`, `overnight-run`,
@@ -17,9 +47,9 @@ the plugin they installed is bumped.
   moved to `HOOKS.md`. `scripts/new-skill.mjs --typed-only` scaffolds a typed-only skill, and
   `tests/typed-only-list.mjs` decides the list, checked against the frontmatter, the README, `which-skill` and every
   mention. Typed-only skills have no trigger request list.
-- Versions: session-discipline 0.14.0, verification 0.16.0, agent-orchestration 0.14.0, guards 0.11.0, planning
-  0.11.0, the bundle 0.22.0. No hook changed. After the upload, check one typed-only skill in the terminal too: the
-  claude.ai test covered the desktop app.
+- Versions for the whole batch (Q28 to Q31): session-discipline 0.14.0, verification 0.16.0, agent-orchestration
+  0.14.0, guards 0.11.0, planning 0.11.0, the bundle 0.22.0. No hook changed. After the upload, check one typed-only
+  skill in the terminal too: the claude.ai test covered the desktop app.
 
 ## 2026-11-24: Q27, Claude Ship and our skills
 
