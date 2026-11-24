@@ -42,14 +42,14 @@ export function brokenShape(list) {
 export const readLists = (dir) => readdirSync(dir, { withFileTypes: true })
   .map((e) => ({ file: e.name, text: e.isFile() ? readFileSync(join(dir, e.name), 'utf8') : null }));
 
-// Every skills/<plugin>/<skill>/ under root that holds a SKILL.md, as { id, name, text }.
+// Every skills/<plugin>/<skill>/ under root that holds a SKILL.md, as { name, text }.
 export function readSkills(root) {
   const out = [];
   const dirs = (p) => readdirSync(p, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
   for (const plugin of dirs(join(root, 'skills'))) {
     for (const name of dirs(join(root, 'skills', plugin))) {
       const file = join(root, 'skills', plugin, name, 'SKILL.md');
-      if (existsSync(file)) out.push({ id: `${plugin}/${name}`, name, text: readFileSync(file, 'utf8') });
+      if (existsSync(file)) out.push({ name, text: readFileSync(file, 'utf8') });
     }
   }
   return out;

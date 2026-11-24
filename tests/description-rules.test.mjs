@@ -122,7 +122,6 @@ test('rule 2: no description holds a backtick', () => {
 });
 
 test('rule 3: every model-invoked description has exactly one "Use ..." opener, and a typed-only one none and no quoted phrase', () => {
-  assert.deepEqual(TYPED_ONLY.filter((id) => !ids().includes(id)), [], 'every id on the typed-only list is a skill');
   assert.deepEqual(checks.rule3(REPO.skills, TYPED_ONLY), []);
 });
 

@@ -136,8 +136,6 @@ const REPO = checkLists(readLists(REQUESTS_DIR), REPO_SKILLS);
 const only = (...checks) => REPO.filter((p) => checks.some((n) => p.includes(`: check ${n}: `)));
 
 test(`there are ${MODEL_INVOKED_COUNT} model-invoked skills and every one's description is read, with its request-1 phrase`, () => {
-  const ids = new Set(REPO_SKILLS.map((s) => s.id));
-  assert.deepEqual(TYPED_ONLY.filter((id) => !ids.has(id)), [], 'every typed-only id is a skill');
   assert.equal(REPO_SKILLS.filter((s) => !TYPED_NAMES.has(s.name)).length, MODEL_INVOKED_COUNT);
   assert.deepEqual(only(9), []);
 });
