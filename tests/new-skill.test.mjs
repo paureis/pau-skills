@@ -28,8 +28,9 @@ test('creates the skill, the ORIGINS stub file and index line in its group, and 
 
   const skill = readFileSync(join(dir, 'skills', 'guards', 'port-lock', 'SKILL.md'), 'utf8');
   assert.match(skill, /^---\nname: port-lock\ndescription: TODO\(new-skill\)/);
-  // Every skill loads on its own (docs/ADDING-A-SKILL.md, step 2), so the scaffold never hides one from the model.
+  // A skill loads on its own unless it is made typed only with --typed-only (docs/ADDING-A-SKILL.md, step 2).
   assert.doesNotMatch(skill, /disable-model-invocation/);
+  assert.doesNotMatch(r.stdout, /TYPED_ONLY/);
 
   const stub = readFileSync(stubPath(dir, 'guards', 'port-lock'), 'utf8').split('\n');
   assert.equal(stub[0], '# port-lock (TODO(new-skill): Original | Adapted from <upstream link>)');
@@ -49,6 +50,25 @@ test('creates the skill, the ORIGINS stub file and index line in its group, and 
   assert.ok(/^(- \*\*|  \S)/.test(lines[i - 1]) && /^- Hooks?:/.test(lines[i + 1]), 'after the last skill (or its continuation line), before the hooks line');
 
   assert.equal(readFileSync(join(dir, 'README.md'), 'utf8'), readme, 'the README is not changed');
+});
+
+test('--typed-only writes the flag after the description, a typed-only placeholder, and the list to add it to', () => {
+  const dir = fixture();
+  const r = runNode(SCRIPT, { args: ['guards', 'port-lock', '--typed-only', '--root', dir] });
+  assert.equal(r.code, 0, r.stderr);
+  const lines = readFileSync(join(dir, 'skills', 'guards', 'port-lock', 'SKILL.md'), 'utf8').split('\n');
+  assert.deepEqual(lines.slice(0, 2), ['---', 'name: port-lock']);
+  assert.match(lines[2], /^description: TODO\(new-skill\): .*typed/);
+  assert.doesNotMatch(lines[2], /Use when/);
+  assert.equal(lines[3], 'disable-model-invocation: true');
+  assert.equal(lines.filter((l) => l.includes('disable-model-invocation')).length, 1);
+  assert.equal(lines[4], '---');
+  assert.match(r.stdout, /Next:.*add guards\/port-lock to TYPED_ONLY in tests\/typed-only-list\.mjs/s);
+  assert.match(r.stdout, /Skills you type/);
+  // The flag goes anywhere among the arguments.
+  const before = runNode(SCRIPT, { args: ['--typed-only', 'guards', 'port-key', '--root', dir] });
+  assert.equal(before.code, 0, before.stderr);
+  assert.match(readFileSync(join(dir, 'skills', 'guards', 'port-key', 'SKILL.md'), 'utf8'), /\ndisable-model-invocation: true\n---\n/);
 });
 
 test('refuses an existing name in any plugin, an unknown plugin and a bad name, changing nothing', () => {

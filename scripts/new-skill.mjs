@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // Scaffold a new skill in one of the marketplace's plugins.
 //
-//   node scripts/new-skill.mjs <plugin> <skill-name> [--root <repo dir>]
+//   node scripts/new-skill.mjs <plugin> <skill-name> [--typed-only] [--root <repo dir>]
+//
+// --typed-only makes a skill that starts only when the user types it: its frontmatter gets
+// `disable-model-invocation: true` and a typed-only description placeholder (docs/ADDING-A-SKILL.md, step 2).
 //
 // Creates skills/<plugin>/<skill-name>/SKILL.md with frontmatter and the ORIGINS stub file
 // docs/origins/<plugin>/<skill-name>.md, adds a line linking that file at the end of the plugin's list in the
@@ -17,8 +20,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const MARK = 'TODO(new-skill)';
 
-/** Plan the four edits without touching the disk. Returns { files: [{ path, text }] } or throws with the reason. */
-export function plan(root, pluginName, skill) {
+/**
+ * Plan the four edits without touching the disk. Returns { files: [{ path, text }] } or throws with the reason.
+ * typedOnly: the skill starts only when the user types it.
+ */
+export function plan(root, pluginName, skill, { typedOnly = false } = {}) {
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(skill || '')) throw new Error(`the skill name must be kebab-case (a-z, 0-9, single dashes): ${skill}`);
   // claude.ai refuses to upload a skill whose name contains either word anywhere.
   if (/claude|anthropic/.test(skill)) throw new Error(`names containing "claude" or "anthropic" are reserved: ${skill}`);
@@ -72,12 +78,16 @@ export function plan(root, pluginName, skill) {
   if (insert < 0) throw new Error(`docs/REFERENCE.md: no skill list under "## ${pluginName}"`);
   lines.splice(insert, 0, `- **[${skill}](../skills/${pluginName}/${skill}/SKILL.md)**: ${MARK}: one line on what it does (add " (adapted)" after the name if it is).`);
 
+  // A model-invoked skill's description is in every session's context: one sentence, then the phrases a user would
+  // actually say, at most 400 characters. A typed-only skill's shows only in the / menu: one sentence of at most 160
+  // characters, with no "Use when" and no quoted phrase (docs/ADDING-A-SKILL.md, step 2).
+  const frontmatter = typedOnly
+    ? [`description: ${MARK}: one sentence on what the skill does, for the / menu of a typed-only skill (at most 160 characters).`, 'disable-model-invocation: true']
+    : [`description: ${MARK}: one sentence on what the skill does, then "Use when ..." with the phrases a user would actually say.`];
   const skillMd = [
     '---',
     `name: ${skill}`,
-    // Every skill loads on its own, so the description is in every session's context: one sentence, then the phrases
-    // a user would actually say, at most 400 characters (docs/ADDING-A-SKILL.md, step 2).
-    `description: ${MARK}: one sentence on what the skill does, then "Use when ..." with the phrases a user would actually say.`,
+    ...frontmatter,
     '---',
     '',
     `# ${skill}`,
@@ -111,22 +121,28 @@ function listEnd(lines, head, isItem) {
   return insert;
 }
 
-function main(argv) {
+function main(args) {
+  const typedOnly = args.includes('--typed-only');
+  const argv = args.filter((a) => a !== '--typed-only');
   const i = argv.indexOf('--root');
   const root = i >= 0 ? argv[i + 1] : join(dirname(fileURLToPath(import.meta.url)), '..');
   const rest = i >= 0 ? argv.filter((_, k) => k !== i && k !== i + 1) : argv;
   if (rest.length !== 2 || !root) {
-    console.error('Usage: node scripts/new-skill.mjs <plugin> <skill-name> [--root <repo dir>]');
+    console.error('Usage: node scripts/new-skill.mjs <plugin> <skill-name> [--typed-only] [--root <repo dir>]');
     return 2;
   }
   let p;
-  try { p = plan(root, rest[0], rest[1]); } catch (e) { console.error('NOT CREATED: ' + e.message); return 2; }
+  try { p = plan(root, rest[0], rest[1], { typedOnly }); } catch (e) { console.error('NOT CREATED: ' + e.message); return 2; }
   for (const f of p.files) {
     if (f.create) mkdirSync(dirname(f.path), { recursive: true });
     writeFileSync(f.path, f.text);
     console.log((f.create ? 'created  ' : 'updated  ') + f.path);
   }
   console.log(`\nNext: fill every ${MARK} placeholder, then follow docs/ADDING-A-SKILL.md (the scrub check fails until none is left).`);
+  if (typedOnly) {
+    console.log(`Next, for a typed-only skill: add ${rest[0]}/${rest[1]} to TYPED_ONLY in tests/typed-only-list.mjs, and name it in`
+      + ' the typed paragraph of the README section "What loads on its own" and under "Skills you type" in which-skill.');
+  }
   return 0;
 }
 
