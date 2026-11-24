@@ -30,7 +30,8 @@ Examples, a check command and a guardrail for each:
   pre-commit command.
 
 A Claude Code hook (a `hooks` key in `.claude/settings.json`) can run a check during the session; if `rule-to-hook` is
-installed, use it to write one. It does not count as a guardrail for "no guardrail", since it does not run in CI.
+installed, use it to write one, and without it write the hook entry by hand. It does not count as a guardrail for "no
+guardrail", since it does not run in CI.
 
 ## Coding standards
 
@@ -38,8 +39,9 @@ Use when the same kind of mistake shows up in several sessions and a reviewer sh
 - A mechanical rule (a banned call, an import shape, a file location, a fixed pattern) becomes a deterministic check:
   a rule in the project's linter, a pre-commit hook or a CI job, whichever its tooling makes cheapest.
 - A judgment call (consistency across files, "matches the code around it") goes to review, not to the implementing
-  agent: the folder's `REVIEW.md`, the roster `reviewer` agent's brief, or the `.claude/review-rules.json` checklist
-  that `review-triage` reads, if it is installed.
+  agent: the folder's `REVIEW.md`, the brief of the reviewer agent the project uses (such as the reviewer from the
+  roster that `/geppetto` installs, if it is installed), or the `.claude/review-rules.json` checklist that
+  `review-triage` reads, if it is installed. With none of them, `REVIEW.md` in the folder is enough.
 
 The script does not count this kind: read the pointers of the failure and repeat signals for it.
 

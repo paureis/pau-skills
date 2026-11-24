@@ -56,7 +56,13 @@ lines, the thresholds), then two parts:
 - **Sessions**: per kind, each signal as "n in k of N sessions" with up to three pointers. A pointer is
   `<folder>/<file>:<line>`, the tool and its target; a step from a subagent ends with `(subagent: <agent type>)`.
 
-Coding standards and no-ops in steering files are not counted: they need reading.
+A transcript is the main session file or one subagent file. Searches before the first edit, repeated reads and
+repeated commands are counted per transcript, since each agent has its own context. Coding standards and no-ops in
+steering files are not counted: they need reading.
+
+If the header shows 0 sessions, or says no transcript folder matches this repository, check that you ran it from the
+project root (or pass `--repo`) and that the sessions live in the projects folder it names (`CLAUDE_CONFIG_DIR` moves
+it; pass `--projects`). If there are still none, report the project part alone and say no session was read.
 
 ## 3. Check each count
 
@@ -88,7 +94,8 @@ or without that tool, ask a plain numbered question.
 
 - One commit per change, following the project's own rules for commits, tests and checks.
 - A new check: prove it on a synthetic reproduction first (it fails on input that shows the friction, and passes once
-  the input is fixed). If `rule-to-hook` is installed, use it for a check that becomes a Claude Code hook.
+  the input is fixed). If `rule-to-hook` is installed, use it for a check that becomes a Claude Code hook; without
+  it, add the hook to `.claude/settings.json` by hand and prove it the same way.
 - A judgment rule for review: if `review-triage` is installed, use its checklist format; see KINDS.md.
 - When a change adds text an agent reads (a pointer, a doc, a skill), use `writing-for-agents` for the style if it is
   installed; otherwise keep it short and literal.
