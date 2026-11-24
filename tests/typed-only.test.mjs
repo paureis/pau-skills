@@ -4,7 +4,7 @@
 //   ask for);
 // - no skill starts a typed-only skill: a paragraph of a skill's Markdown that names a typed-only skill X as `X` also
 //   holds `/X`, the name the user can type. A paragraph that holds only `/X` is fine. The router (which-skill) and X's
-//   own folder are not read;
+//   own folder are not read, except a folder in it that is installed apart (APART below);
 // - the README ("What loads on its own") and which-skill ("Skills you type") name exactly the skills on the list.
 // What the start check cannot catch: a mention without backticks, text in a file that is not Markdown, and a
 // namespaced form such as `/pau-skills:X`, which it does not count as the typed form (write `/X` next to it).
@@ -25,6 +25,10 @@ const EXCEPTIONS = [
   { file: 'skills/guards/rule-to-hook/MUTATION.md', name: 'lean-subagent-dev', holds: 'review-scope.mjs' },
   { file: 'skills/planning/lazy-senior/REVIEW.md', name: 'lean-subagent-dev', holds: 'review-scope.mjs' },
 ];
+
+// Folders inside a typed-only skill that are installed apart from it, so they are read even for the skill's own name:
+// geppetto installs each roster file as an agent of its own, which cannot start geppetto either.
+const APART = { 'agent-orchestration/geppetto': ['roster/'] };
 
 const bare = (id) => id.split('/')[1];
 const tick = (s) => String.fromCharCode(0x60) + s + String.fromCharCode(0x60);
@@ -60,13 +64,14 @@ function readRepo(root) {
 const checks = {
   unknown: (skills, typed) => typed.filter((id) => !skills.includes(id)),
   confirmed: (typed, confirm) => typed.filter((id) => confirm.includes(id)),
-  starts: (files, typed, exceptions = EXCEPTIONS) => files.flatMap(({ skill, file, text }) => {
+  starts: (files, typed, exceptions = EXCEPTIONS, apart = APART) => files.flatMap(({ skill, file, text }) => {
     if (skill === ROUTER) return [];
     const out = [];
+    const own = (id) => skill === id && !(apart[id] ?? []).some((sub) => file.startsWith(`skills/${id}/${sub}`));
     text.split(/\n\s*\n/).forEach((para) => {
       for (const id of typed) {
         const name = bare(id);
-        if (skill === id || !para.includes(tick(name)) || para.includes(tick(`/${name}`))) continue;
+        if (own(id) || !para.includes(tick(name)) || para.includes(tick(`/${name}`))) continue;
         if (exceptions.some((e) => e.file === file && e.name === name && para.includes(e.holds))) continue;
         out.push(`${file}: names ${name} in backticks with no typed /${name} in the same paragraph`);
       }
@@ -105,6 +110,9 @@ test('every exception is still needed: its file names the skill for the script i
     assert.ok(f, `${e.file} exists`);
     assert.equal(checks.starts([f], TYPED_ONLY, []).length, 1, `${e.file} still names ${e.name}`);
   }
+  for (const [id, subs] of Object.entries(APART)) {
+    for (const sub of subs) assert.ok(REPO.files.some((f) => f.file.startsWith(`skills/${id}/${sub}`)), `skills/${id}/${sub} holds Markdown`);
+  }
 });
 
 test('the README names exactly the typed-only skills in "What loads on its own", before the ask-first list', () => {
@@ -142,6 +150,12 @@ test('each check catches its case on fixtures and passes a good one', () => {
   assert.deepEqual(checks.starts([script], typed, except), []);
   assert.equal(checks.starts([{ ...script, file: 'skills/p/other/X.md' }], typed, except).length, 1);
   assert.equal(checks.starts([{ ...script, text: script.text.replace('tool.mjs', 'tool') }], typed, except).length, 1);
+  // A folder of the skill's own that is installed apart is read, even for the skill's own name.
+  const apart = { 'p/closer': ['roster/'] };
+  const agent = file('p/closer', `Then run ${tick('closer')} again.\n`, 'roster/lead.md');
+  assert.deepEqual(checks.starts([agent], typed, [], apart), [`${agent.file}: names closer in backticks with no typed /closer in the same paragraph`]);
+  assert.deepEqual(checks.starts([{ ...agent, file: 'skills/p/closer/rosters.md' }], typed, [], apart), []);
+  assert.deepEqual(checks.starts([agent], typed, [], {}), []);
 
   const doc = `# T\n\n## Skills you type\n\n${tick('closer')} and ${tick('/other')} and ${tick('nope')}.\n\n## Next\n\n${tick('other')}.\n`;
   assert.deepEqual(namedSkills(doc, '## Skills you type', '\n## ', skills), ['closer']);
