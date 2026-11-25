@@ -175,21 +175,12 @@
             ]
           }
         ],
-        "UserPromptSubmit": [
+        "UserPromptExpansion": [
           {
             "hooks": [
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/skill-usage.mjs\"",
-                "timeout": 5
-              }
-            ]
-          },
-          {
-            "hooks": [
-              {
-                "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
                 "timeout": 5
               }
             ]
@@ -221,6 +212,17 @@
         "PostToolUseFailure": [
           {
             "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "UserPromptSubmit": [
+          {
             "hooks": [
               {
                 "type": "command",
@@ -428,21 +430,12 @@
             ]
           }
         ],
-        "UserPromptSubmit": [
+        "UserPromptExpansion": [
           {
             "hooks": [
               {
                 "type": "command",
                 "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/skill-usage.mjs\"",
-                "timeout": 5
-              }
-            ]
-          },
-          {
-            "hooks": [
-              {
-                "type": "command",
-                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
                 "timeout": 5
               }
             ]
@@ -474,6 +467,17 @@
         "PostToolUseFailure": [
           {
             "matcher": "*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-orchestration/subagent-watchdog.mjs\"",
+                "timeout": 5
+              }
+            ]
+          }
+        ],
+        "UserPromptSubmit": [
+          {
             "hooks": [
               {
                 "type": "command",
@@ -596,7 +600,7 @@
             ]
           }
         ],
-        "UserPromptSubmit": [
+        "UserPromptExpansion": [
           {
             "hooks": [
               {

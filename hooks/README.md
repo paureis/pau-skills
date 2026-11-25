@@ -59,7 +59,7 @@ To remove every hook from one plugin, disable the plugin: `claude plugin disable
 | [`roadmap`](session-discipline/roadmap.mjs) | session-discipline | SessionStart | Prints the current, next and blocked roadmap items and open questions | No |
 | [`branch-context`](session-discipline/branch-context.mjs) | session-discipline | SessionStart | Prints branch, ahead/behind, uncommitted files, stashes, an unfinished merge or rebase, and a warning on a protected branch | No |
 | [`compact-snapshot`](session-discipline/compact-snapshot.mjs) | session-discipline | PreCompact, SessionStart (compact) | Saves your last messages, edited files, recent commands and the todo list before a compaction, and prints them after | No |
-| [`skill-usage`](session-discipline/skill-usage.mjs) | session-discipline | PreToolUse (Skill), UserPromptSubmit | Records each skill start (time, name, typed or by the agent) for which-skill's usage report, and never the prompt | No |
+| [`skill-usage`](session-discipline/skill-usage.mjs) | session-discipline | PreToolUse (Skill), UserPromptExpansion | Records each skill start (time, name, typed or by the agent) for which-skill's usage report, and never the prompt | No |
 | [`lazy-senior`](planning/lazy-senior.mjs) | planning | SessionStart (startup, resume, clear, compact), SubagentStart | Adds the lazy-senior ruleset (the smallest complete change; never cut validation, error handling, security or accessibility; the project's instructions come first) to every session and every subagent as start-up context | No |
 | [`no-idle`](agent-orchestration/no-idle.mjs) | agent-orchestration | SubagentStart; PreToolUse (Agent, Task) only with `rewritePrompt` | Adds "never end your turn waiting" to every subagent as start-up context | No |
 | [`subagent-watchdog`](agent-orchestration/subagent-watchdog.mjs) | agent-orchestration | PreToolUse, PostToolUse, PostToolUseFailure, UserPromptSubmit, SubagentStart, SubagentStop | Inside a subagent, a note and then an ask when the same command reruns with no edit in between or many tool calls pass with no edit; in the main session, one line per running subagent when one looks stuck or wasteful, at most every 5 minutes. Never stops an agent | Asks |
@@ -207,15 +207,18 @@ is tab-separated: the time (ISO 8601, UTC), the skill name as given, and `agent`
 prompt or its arguments, the folder, the session or the transcript. Past 1,000,000 bytes the log keeps the newest
 whole lines that fit in 500,000 bytes, written to a temporary file next to it and renamed over it.
 
-A start by the agent (the Skill tool) is always recorded. A typed `/name` is recorded only when the prompt starts with
-it, followed by a space or the end, and a `SKILL.md` exists for the bare name (the part after the last colon) in one
-of four folders: `~/.claude/skills/<name>/`, `~/.claude/skills/synced/<any>/<name>/`, the project's
-`.claude/skills/<name>/`, or this marketplace's own plugin skills. A built-in or custom command (`/clear`, a
-`.claude/commands` file) has no `SKILL.md` and is not recorded. A skill typed with another marketplace's prefix, such
-as `/other:name`, is recorded when its bare name is a skill in one of the four folders, or when the synced plugin
-folder of that prefix holds it (`~/.claude/plugins/synced/<any>/<prefix>/skills/<name>/`); the synced folder of every
-account on the machine is read. Any other skill from another marketplace's plugin is not recorded. A prompt that does
-not start with `/` returns at once.
+A start by the agent (the Skill tool) is always recorded. A typed start is recorded from the `UserPromptExpansion`
+event, under the name Claude Code resolved, whatever folder or plugin the skill comes from: `/humanizer` is logged as
+`anthropic-skills:humanizer`, and a plugin skill typed without its prefix under `<plugin>:<name>`. A built-in such as
+`/init` is not recorded, and neither is an MCP prompt. A `.claude/commands` file in the scope Claude Code names is not
+recorded: `~/.claude/commands/<name>.md` for a user command, the project's `.claude/commands/<name>.md` for a project
+command, each colon in the name a folder (`/front:probe-nest` is `front/probe-nest.md`). A skill and a command file
+with the same name in one scope are therefore not recorded. Only those two folders are checked, so a command in a
+parent folder, in another worktree's main checkout, in an `--add-dir` folder, in the managed folder, under
+`CLAUDE_CONFIG_DIR`, or written as `<commands>/<name>/SKILL.md` is recorded as typed. A plugin's own command cannot be
+told from a plugin skill by the hook input, and is recorded as typed. The prompt itself is never read, and an input
+the start check rejects returns at once, before any config or other file is read. On a Claude Code without
+`UserPromptExpansion` no typed line is written.
 
 `usage-report.mjs` in the `which-skill` skill reads the log: starts per skill, typed and by the agent, and the skills
 never started in the last 30 days.
