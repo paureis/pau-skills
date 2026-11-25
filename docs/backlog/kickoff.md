@@ -2,42 +2,42 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twenty-first batch (Q32, pull request 85) is done. Next, in this order: **Q33** context in fewer calls, splitting
-files only where it helps. Read "Things that bit the twenty-first batch" (`docs/backlog/things-that-bit/batch-21.md`)
-and the twentieth's first.
+The twenty-second batch (Q33, pull request 88) is done. Next, in this order: **Q35** `wizard`, a guided script for
+the steps only a person can do. Read "Things that bit the twenty-second batch"
+(`docs/backlog/things-that-bit/batch-22.md`) and the twenty-first's first.
 
-Q33 changes a skill (`friction-review`'s counts), two hooks (`file-size-guard`'s message, the `lazy-senior` hook) and
-the `lazy-senior` skill, so it splits into slices with disjoint files. Its step 1 measures before anything else
-changes: no change to the default size limit until `friction-review` has numbers.
+Q35 is a new skill adapted from upstream (or written fresh, if the diff says so), so it starts from upstream's files
+at a pinned commit, and it asks the owner one question before any brief: typed only or model-invoked.
 
 The owner starts the batch with this message:
 
 ```text
-You are the orchestrator for the twenty-second batch in this repository: Q33 (context in fewer calls: splitting
-files only where it helps). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer)
-and integrate their work. Type /lean-subagent-dev first (it is typed only since Q28).
+You are the orchestrator for the twenty-third batch in this repository: Q35 (wizard, a guided script for the steps
+only a person can do). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
+integrate their work. Type /lean-subagent-dev first (it is typed only since Q28).
 
 Before anything else, read these in full:
-1. CLAUDE.md and docs/ADDING-A-SKILL.md.
-2. docs/backlog/q33.md, decisions 29, 31 and 32 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md
-   ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
-   docs/backlog/things-that-bit/batch-20.md and batch-21.md.
-3. hooks/guards/file-size-guard.mjs and its tests, hooks/planning/lazy-senior.mjs and skills/planning/lazy-senior/,
-   and skills/session-discipline/friction-review/ with its tests.
+1. CLAUDE.md and docs/ADDING-A-SKILL.md (a new skill: scaffold, origins, NOTICE, REFERENCE, which-skill, README,
+   the typed-only and confirm-list rules).
+2. docs/backlog/q35.md and q30.md, decisions 29, 31 and 32 (docs/backlog/decisions.md),
+   docs/backlog/how-to-run-a-batch.md ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
+   docs/backlog/things-that-bit/batch-21.md and batch-22.md.
+3. Upstream's wizard at a pinned commit (step 1 of "How to work an item" in docs/BACKLOG.md), fetched once into the
+   scratchpad.
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
   builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds.
-- Get real input first: run friction-review's scripts on this repository's own transcripts (or a fixture built from
-  real ones) and record what it counts today, and the file-size-guard's refusal text from a real refused edit. Take
-  shapes from the real tools, not made-up ones.
+- Ask me: typed only or model-invoked, with your recommendation, and whether it joins the confirm list.
+- Read the base commit before you write it into any brief.
 - Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone and tries
-  mutations of its own, and a fresh reviewer per slice. Commits carry the harness's two attribution trailers.
+  mutations of its own, a fresh reviewer per slice, and a cold run (headless, empty HOME, --max-budget-usd) of the
+  finished skill on a fixture with two human-only steps. Commits carry the harness's two attribution trailers.
 
 Rules that matter most:
 - Every skill works on its own; a mention of a typed-only skill holds /name in the same paragraph. Plain English, no
   em or en dashes; Node standard library only; no tracked file over its size limit, and no file split only to fit it.
-- A hook exits 0 on input it does not understand and checks hookEnabled(). A hook change bumps pau-skills-hooks.
+- The wizard never reads, prints or logs a secret's value; a test plants one and checks.
 - Every new test fails without the change: prove each with mutate.sh and report every "# tests" line.
 - Run npm test before every commit, docs included. Write docs/releases/v<bundle version>.md for the batch and run its
   pre-merge check.
