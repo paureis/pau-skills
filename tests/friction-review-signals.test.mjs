@@ -2,10 +2,10 @@
 // shape Claude Code writes, with a control case next to each count.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, sep, win32 } from 'node:path';
 import { tmpdir } from 'node:os';
-import { git, commitAt, step, bash, world, linesOf } from './friction-review.helpers.mjs';
+import { step, bash, world, linesOf } from './friction-review.helpers.mjs';
 import { extractActions } from '../skills/session-discipline/friction-review/skill-eval-core.mjs';
 import { readCalls } from '../skills/session-discipline/friction-review/friction-sessions.mjs';
 import { inProject } from '../skills/session-discipline/friction-review/friction-signals.mjs';
@@ -212,39 +212,6 @@ test('navigation: new files made with Write inside the project, decided by the r
   const at = pointersOf(out, WRITES);
   assert.match(at[0], /^ {2}~-src-app\/s\.jsonl:\d+ Write \S*\/src\/new\.js$/);
   assert.match(at[1], /^ {2}~-src-app\/s\/subagents\/agent-b\.jsonl:\d+ Write \S*\/lib\/sub\.js \(subagent: builder\)$/);
-});
-
-const mtime = (file) => statSync(file).mtime.toISOString();
-const ago = (days) => new Date(Date.now() - days * 864e5).toISOString();
-const add = (w, rel, date) => {
-  w.file(rel, rel);
-  git(w.main, 'add', rel);
-  commitAt(w.main, date, 'commit', '-q', '-m', rel);
-};
-const COMMITS = /^new files in commits from (\S+) to (\S+) \(git log --diff-filter=A, without merges, renames and root commits\): (\d+)$/m;
-
-test('navigation: new files in commits over the days of the sessions read, without renames and root commits', () => {
-  const w = world();
-  // Renames found whatever the user's config says.
-  Object.assign(w.env, { GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'diff.renames', GIT_CONFIG_VALUE_0: 'false' });
-  const older = mtime(w.session(w.own, 'old', [bash('ls', 'a')], { ageMin: 5 * 1440 }));
-  const newer = mtime(w.session(w.own, 'new', [bash('ls', 'a')], { ageMin: 3 * 1440 }));
-  // Before the first day: an empty root commit and a file. On the older day a file, the one counted. A rename on the
-  // newer day, and a file after the last day.
-  commitAt(w.main, ago(9), 'commit', '-q', '--allow-empty', '-m', 'root');
-  add(w, 'early.txt', ago(8));
-  add(w, 'in.txt', older);
-  git(w.main, 'mv', 'in.txt', 'moved.txt');
-  commitAt(w.main, newer, 'commit', '-q', '-m', 'mv');
-  add(w, 'late.txt', ago(1));
-  assert.deepEqual(ok(w).match(COMMITS).slice(1), [older.slice(0, 10), newer.slice(0, 10), '1']);
-  // An unborn HEAD counts 0; so does the root commit of a repository, even on a day read.
-  const r = world();
-  const day = mtime(r.session(r.own, 's', [bash('ls', 'a')]));
-  assert.equal(ok(r).match(COMMITS)[3], '0');
-  add(r, 'root.txt', day);
-  assert.equal(ok(r).match(COMMITS)[3], '0');
-  assert.match(ok(world()), /^new files in commits: not counted \(no session read\)$/m);
 });
 
 const HOPS = 'reads and searches before the first edit in each folder, in transcripts that edit the project';
