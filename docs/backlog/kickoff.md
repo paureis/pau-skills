@@ -2,42 +2,44 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twenty-second batch (Q33, pull request 88) is done. Next, in this order: **Q35** `wizard`, a guided script for
-the steps only a person can do. Read "Things that bit the twenty-second batch"
+The twenty-second batch (Q33, pull request 88) is done. Next, in this order: **Q37** reframe and sharpen from pstack,
+close to word for word (decision 33), then Q35 `wizard`, Q34 and Q36. Read "Things that bit the twenty-second batch"
 (`docs/backlog/things-that-bit/batch-22.md`) and the twenty-first's first.
 
-Q35 is a new skill adapted from upstream (or written fresh, if the diff says so), so it starts from upstream's files
-at a pinned commit, and it asks the owner one question before any brief: typed only or model-invoked.
+Q37 copies two short typed-only skills from cursor/plugins pstack at a pinned commit. The owner already decided the
+open questions (decision 33): `reframe` is new, upstream's `sharpen` replaces ours, both typed only, bodies word for
+word, only the descriptions and attribution lines change. It is one slice, or two with disjoint files.
 
 The owner starts the batch with this message:
 
 ```text
-You are the orchestrator for the twenty-third batch in this repository: Q35 (wizard, a guided script for the steps
-only a person can do). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
+You are the orchestrator for the twenty-third batch in this repository: Q37 (reframe and sharpen from pstack, close
+to word for word). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
 integrate their work. Type /lean-subagent-dev first (it is typed only since Q28).
 
 Before anything else, read these in full:
-1. CLAUDE.md and docs/ADDING-A-SKILL.md (a new skill: scaffold, origins, NOTICE, REFERENCE, which-skill, README,
-   the typed-only and confirm-list rules).
-2. docs/backlog/q35.md and q30.md, decisions 29, 31 and 32 (docs/backlog/decisions.md),
-   docs/backlog/how-to-run-a-batch.md ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
+1. CLAUDE.md and docs/ADDING-A-SKILL.md (a new skill and a replaced one: scaffold, origins, NOTICE, REFERENCE,
+   which-skill, README, the typed-only rules).
+2. docs/backlog/q37.md, decisions 29, 32 and 33 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md
+   ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
    docs/backlog/things-that-bit/batch-21.md and batch-22.md.
-3. Upstream's wizard at a pinned commit (step 1 of "How to work an item" in docs/BACKLOG.md), fetched once into the
-   scratchpad.
+3. Upstream at the pinned commit in q37.md: pstack/skills/reframe/SKILL.md and pstack/skills/sharpen/SKILL.md from
+   cursor/plugins, fetched once into the scratchpad (a sparse git clone works from a session), and our current
+   skills/planning/sharpen/ with every file that mentions it.
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
   builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds.
-- Ask me: typed only or model-invoked, with your recommendation, and whether it joins the confirm list.
 - Read the base commit before you write it into any brief.
 - Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone and tries
-  mutations of its own, a fresh reviewer per slice, and a cold run (headless, empty HOME, --max-budget-usd) of the
-  finished skill on a fixture with two human-only steps. Commits carry the harness's two attribution trailers.
+  mutations of its own, a fresh reviewer per slice, and a cold run (headless, empty HOME, --max-budget-usd) that types
+  /reframe and /sharpen on a short fixture task. Commits carry the harness's two attribution trailers.
 
 Rules that matter most:
+- The skill bodies stay word for word as upstream; only the descriptions (typed-only rules: one sentence, at most 160
+  characters, no "Use for" opener) and the attribution lines change. If a test objects to a body line, stop and ask me.
 - Every skill works on its own; a mention of a typed-only skill holds /name in the same paragraph. Plain English, no
-  em or en dashes; Node standard library only; no tracked file over its size limit, and no file split only to fit it.
-- The wizard never reads, prints or logs a secret's value; a test plants one and checks.
+  em or en dashes; Node standard library only; no tracked file over its size limit.
 - Every new test fails without the change: prove each with mutate.sh and report every "# tests" line.
 - Run npm test before every commit, docs included. Write docs/releases/v<bundle version>.md for the batch and run its
   pre-merge check.

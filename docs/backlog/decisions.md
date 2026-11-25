@@ -127,3 +127,15 @@ Decisions 1 to 21 (2026-10-17 to 2026-11-04) are in [decisions-1-to-21.md](decis
      characters, outside the 14,000 total, with no trigger list. The confirm list drops from 14 to 9.
    - `session-close` no longer starts itself at a context warning and offers the full `retrospective` when its short
      one finds a correction. `overnight-run`'s headless turns read a copy of its SKILL.md.
+
+## Decisions taken (2026-11-25)
+
+33. **reframe and sharpen from pstack, close to word for word (Q37), next.** The owner wants both because nothing here
+   does the same job, and wants them nearly exact copies because they work as written. Each as recommended:
+   - `reframe` is new; upstream's `sharpen` replaces ours (adapted from an older pstack version, never started in
+     the owner's last 30 days). Both are typed only, as upstream has them.
+   - This overrides decision 32's rule that a skill another skill starts stays model-invoked, for `sharpen` only: the
+     two skills that start or offer it now say the user can type `/sharpen`.
+   - These are published here even though they are close to unmodified: the owner installs skills from this
+     repository's zips. Only the descriptions (our typed-only rules) and the attribution lines change.
+   - Order: Q37 goes ahead of Q35 `wizard`, at the owner's request (decision 29 allows it with the owner's reason).
