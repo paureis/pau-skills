@@ -13,14 +13,17 @@ const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8',
 
 let next = 0;
 
-/** One tool call and its result, as the two lines a session file holds. */
-function step(name, input, text = 'ok', { isError, persisted, sidechain } = {}) {
+/**
+ * One tool call and its result, as the two lines a session file holds. The toolUseResult is the Bash shape unless the
+ * options pass one (a Write create in a main file) or pass it as undefined (a subagent line, which has none).
+ */
+function step(name, input, text = 'ok', { isError, persisted, sidechain, ...more } = {}) {
   const id = `toolu_${++next}`;
   const side = sidechain ? { isSidechain: true } : {};
   const use = { type: 'assistant', ...side, timestamp: '2026-11-01T10:00:00Z', message: { model: 'some-model', role: 'assistant', content: [{ type: 'tool_use', id, name, input }] } };
   const res = { type: 'tool_result', tool_use_id: id, content: text };
   if (isError !== undefined) res.is_error = isError;
-  const toolUseResult = persisted ? { persistedOutputSize: persisted, persistedOutputPath: '/x/tool-results/out.txt' } : isError ? `Error: ${text}` : { stdout: text, stderr: '' };
+  const toolUseResult = 'toolUseResult' in more ? more.toolUseResult : persisted ? { persistedOutputSize: persisted, persistedOutputPath: '/x/tool-results/out.txt' } : isError ? `Error: ${text}` : { stdout: text, stderr: '' };
   return [use, { type: 'user', ...side, timestamp: '2026-11-01T10:00:01Z', message: { role: 'user', content: [res] }, toolUseResult }];
 }
 

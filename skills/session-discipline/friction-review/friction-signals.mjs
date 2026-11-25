@@ -1,5 +1,6 @@
 // The session part of friction.mjs, counting: each signal of friction that repeats, per kind, with a few pointers
 // (<folder>/<file>:<line>) to where it happened. A count is a lead, not evidence.
+import { resolve, sep } from 'node:path';
 import {
   READ_REPEAT_MIN, SHELL_REPEAT_MIN, POINTERS_PER_SIGNAL, BIG_RESULT_CHARS, FAILURE_CHARS, TARGETED, show, plural,
 } from './friction-show.mjs';
@@ -61,10 +62,19 @@ export function failureLine(text) {
 
 const signal = () => ({ n: 0, sessions: new Set(), pointers: [] });
 
+const fold = (p) => (process.platform === 'win32' ? p.toLowerCase() : p);
+/** A path resolved against the repository (roots[0]), or null when it is not inside one of the roots. */
+export function inProject(roots, path) {
+  if (typeof path !== 'string' || !path) return null;
+  const full = resolve(roots[0], path);
+  const f = fold(full);
+  return roots.some((r) => f === fold(r) || f.startsWith(fold(r.endsWith(sep) ? r : r + sep))) ? full : null;
+}
+
 /** Every signal over the sessions read (readSession) and the check commands the project defines (readProject). */
-export function countSignals(sessions, checks) {
+export function countSignals(sessions, checks, roots) {
   const s = {
-    N: sessions.length, searchFirst: signal(), emptySearch: signal(), readRepeat: signal(), noCheck: signal(), big: signal(), shellRepeat: signal(),
+    N: sessions.length, searchFirst: signal(), emptySearch: signal(), readRepeat: signal(), pieces: signal(), noCheck: signal(), big: signal(), shellRepeat: signal(),
     classes: new Map(CLASS_NAMES.map((c) => [c, signal()])), runs: new Map(checks.map((c) => [c, { ...signal(), failed: 0 }])),
     failedByTool: new Map(), calls: [],
   };
@@ -82,6 +92,7 @@ export function countSignals(sessions, checks) {
       const editAt = t.calls.findIndex((c) => EDITS.has(c.tool));
       const reads = new Map();
       const repeats = new Map();
+      const ranges = new Map();
       t.calls.forEach((c, i) => {
         calls++;
         const at = (line, note = '') => ({ where: t.where, line, tool: c.tool, target: c.target, agent: t.agent, note });
@@ -95,6 +106,12 @@ export function countSignals(sessions, checks) {
           const k = [c.input.file_path, c.input.offset ?? '', c.input.limit ?? ''].join('\0');
           reads.set(k, (reads.get(k) || 0) + 1);
           if (reads.get(k) === READ_REPEAT_MIN) hit(s.readRepeat, key, at(c.line));
+          const file = inProject(roots, c.input.file_path);
+          if (file && (c.input.offset != null || c.input.limit != null)) {
+            const seen = ranges.get(file) || new Set();
+            ranges.set(file, seen.add(`${c.input.offset ?? ''}\0${c.input.limit ?? ''}`));
+            if (seen.size === 2) hit(s.pieces, key, at(c.line));
+          }
         }
         if (EDITS.has(c.tool)) {
           firstEdit ||= at(c.line);
@@ -149,6 +166,7 @@ export function printSignals(s, project, out) {
   count('searches before the first edit, in transcripts that edit', s.searchFirst);
   count('searches that found nothing', s.emptySearch);
   count(`same file and range read ${READ_REPEAT_MIN} or more times in one transcript`, s.readRepeat);
+  count('files read in pieces (2 or more Read ranges of one file, in one transcript)', s.pieces);
   out('## automated checks');
   if (!s.runs.size) out('runs of checks: the project defines no check command this script knows');
   for (const [check, sig] of s.runs) count(`runs of ${check.cmd}`, sig, `; failed: at least ${sig.failed} (a lower bound: only is_error counts, and a pipe hides the exit code)`);

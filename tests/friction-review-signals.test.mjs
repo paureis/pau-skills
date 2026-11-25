@@ -3,6 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { step, bash, world, linesOf } from './friction-review.helpers.mjs';
 import { extractActions } from '../skills/session-discipline/friction-review/skill-eval-core.mjs';
 import { readCalls } from '../skills/session-discipline/friction-review/friction-sessions.mjs';
@@ -153,4 +154,36 @@ test('extractActions reads the steps of a session file as Claude Code writes it'
   assert.equal(x.model, 'some-model');
   assert.equal(x.badLines, 1);
   assert.deepEqual(x.steps.map((s) => [s.tool, s.target, s.failed]), [['Grep', 'p', null], ['Bash', 'false', 'Exit code 1'], ['Edit', '/x/a.js', null]]);
+});
+
+// The pointers printed under the line that starts with label, up to the next line that is not a pointer.
+const pointersOf = (out, label) => {
+  const lines = out.split('\n');
+  const at = lines.findIndex((l) => l.startsWith(label));
+  const end = lines.findIndex((l, i) => i > at && !l.startsWith('  '));
+  return lines.slice(at + 1, end);
+};
+const ok = (w) => {
+  const r = w.run();
+  assert.equal(r.code, 0, r.stderr);
+  return r.stdout;
+};
+const PIECES = 'files read in pieces (2 or more Read ranges of one file, in one transcript): ';
+
+test('navigation: a file of the project read in 2 or more ranges in one transcript', () => {
+  const w = world();
+  const [a, b, c, d, e] = ['a.md', 'b.js', 'c.js', 'd.js', 'e.js'].map((f) => join(w.main, 'src', f));
+  const away = join(w.home, 'notes.md');
+  w.session(w.own, 's', [
+    read(a, { offset: 1, limit: 70 }), read(a, { offset: 190, limit: 40 }),
+    read(b, { limit: 23 }), read(b, { offset: 116, limit: 20 }),
+    // Controls: the same range twice, a whole read and one range, a range here and one in the subagent, a file outside.
+    read(c, { offset: 5, limit: 5 }), read(c, { offset: 5, limit: 5 }),
+    read(d), read(d, { offset: 3, limit: 3 }),
+    read(e, { offset: 1, limit: 9 }),
+    read(away, { offset: 1, limit: 9 }), read(away, { offset: 20, limit: 9 }),
+  ], { subagents: [{ name: 'b', agentType: 'builder', steps: [read(e, { offset: 20, limit: 9 })] }] });
+  const out = ok(w);
+  assert.deepEqual(linesOf(out, PIECES), ['2 in 1 of 1 session']);
+  assert.deepEqual(pointersOf(out, PIECES).map((l) => l.replace(/^ {2}~-src-app\/s\.jsonl:\d+ Read .*\/src\//, '')), ['a.md', 'b.js']);
 });

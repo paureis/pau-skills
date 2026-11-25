@@ -92,7 +92,7 @@ export function main(argv, out = console.log, err = console.error) {
     if (pick.recent) say(`# left out ${plural(pick.recent, 'recent session')}, probably the one running now (--keep-recent reads it)`);
     if (pick.skipped) say(`# left out ${plural(pick.skipped, 'session')} named by --skip`);
     printProject(project, say);
-    printSignals(countSignals(read, project.checks), project, say);
+    printSignals(countSignals(read, project.checks, listed.roots), project, say);
     say('# not counted: coding standards and no-ops in steering files; they need reading, not counting');
     for (const l of lines) out(l);
     return 0;
