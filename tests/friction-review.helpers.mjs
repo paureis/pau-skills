@@ -11,6 +11,10 @@ const SCRIPT = repo('skills', 'session-discipline', 'friction-review', 'friction
 
 const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
 
+/** A git command that makes a commit, dated at date (an ISO time) and with no signing or author from the user's config. */
+const commitAt = (cwd, date, ...args) => execFileSync('git', ['-c', 'user.email=test@example.com', '-c', 'user.name=Test', '-c', 'commit.gpgsign=false', ...args],
+  { cwd, env: { ...process.env, GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date }, stdio: 'ignore' });
+
 let next = 0;
 
 /**
@@ -92,4 +96,4 @@ function world() {
 /** The lines of a run's output that start with prefix, without it. */
 const linesOf = (stdout, prefix) => stdout.split('\n').filter((l) => l.startsWith(prefix)).map((l) => l.slice(prefix.length));
 
-export { SCRIPT, git, step, bash, world, setAge, linesOf, encodeProjectPath };
+export { SCRIPT, git, commitAt, step, bash, world, setAge, linesOf, encodeProjectPath };

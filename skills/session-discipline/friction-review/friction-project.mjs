@@ -149,6 +149,25 @@ export function readProject(root) {
   return { checks, guardrails: g, noGuardrail: !g.ci.length && !g.pre.length, instructions: instructionFiles(root), problems };
 }
 
+/**
+ * The distinct paths added by the commits from day `from` to day `to` (UTC days, both read whole), or 0 with an unborn
+ * HEAD. Merges, renames and commits with no parent are left out: a shallow clone's edge commit lists every file as
+ * added. git log --since stops at the first commit older than the date.
+ */
+export function newFilesInCommits(root, from, to) {
+  const git = (args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 28 });
+  try { git(['rev-parse', '-q', '--verify', 'HEAD']); } catch { return 0; }
+  const until = new Date(Date.parse(`${to}T00:00:00Z`) + 864e5).toISOString().slice(0, 10);
+  const log = git(['log', '--no-merges', '--find-renames', '--diff-filter=A', '--name-only', '--format=%x00%P',
+    `--since=${from}T00:00:00Z`, `--until=${until}T00:00:00Z`, 'HEAD']);
+  const paths = new Set();
+  for (const commit of log.split('\0').slice(1)) {
+    const [parents, ...names] = commit.split('\n');
+    if (parents.trim()) for (const name of names) if (name) paths.add(name);
+  }
+  return paths.size;
+}
+
 const list = (names) => (names.length ? names.map((n) => show(n, 200)).join(', ') : 'none');
 
 export function printProject(p, out) {

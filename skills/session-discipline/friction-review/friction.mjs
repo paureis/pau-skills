@@ -27,7 +27,7 @@ import { Refusal } from './mine-redact.mjs';
 import { gitRoot } from './mine-commits.mjs';
 import { READ_REPEAT_MIN, SHELL_REPEAT_MIN, POINTERS_PER_SIGNAL, BIG_RESULT_CHARS, DEFAULT_LAST, show, plural } from './friction-show.mjs';
 import { ID, listSessions, pickSessions, readSession } from './friction-sessions.mjs';
-import { readProject, printProject } from './friction-project.mjs';
+import { readProject, printProject, newFilesInCommits } from './friction-project.mjs';
 import { countSignals, printSignals } from './friction-signals.mjs';
 
 class Usage extends Error {}
@@ -61,10 +61,15 @@ export function parseArgs(argv) {
 }
 
 const day = (ms) => new Date(ms).toISOString().slice(0, 10);
+/** The first and last UTC day of the sessions read, from their modification times, or null when none is read. */
+function days(pick) {
+  const times = pick.picked.map((s) => s.mtime);
+  return times.length ? { from: day(Math.min(...times)), to: day(Math.max(...times)) } : null;
+}
 
 function header(listed, pick, read) {
-  const times = pick.picked.map((s) => s.mtime);
-  const range = times.length ? ` from ${day(Math.min(...times))} to ${day(Math.max(...times))}` : '';
+  const d = days(pick);
+  const range = d ? ` from ${d.from} to ${d.to}` : '';
   const sum = (k) => read.reduce((n, r) => n + r[k], 0);
   const badFiles = sum('badFiles');
   return `# friction-review: ${plural(read.length, 'session')}${range} in ${show(resolve(listed.base), 200)}; `
@@ -92,7 +97,9 @@ export function main(argv, out = console.log, err = console.error) {
     if (pick.recent) say(`# left out ${plural(pick.recent, 'recent session')}, probably the one running now (--keep-recent reads it)`);
     if (pick.skipped) say(`# left out ${plural(pick.skipped, 'session')} named by --skip`);
     printProject(project, say);
-    printSignals(countSignals(read, project.checks, listed.roots), project, say);
+    const d = days(pick);
+    const commits = d && { ...d, n: newFilesInCommits(root, d.from, d.to) };
+    printSignals(countSignals(read, project.checks, listed.roots), project, say, commits);
     say('# not counted: coding standards and no-ops in steering files; they need reading, not counting');
     for (const l of lines) out(l);
     return 0;
