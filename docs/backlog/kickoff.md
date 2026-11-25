@@ -2,39 +2,41 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twentieth batch (Q28 to Q31, pull request 83) is done. Next, in this order: **Q32** skill-usage logs typed starts
-as the agent's. Read "Things that bit the twentieth batch" (`docs/backlog/things-that-bit/batch-20.md`) first.
+The twenty-first batch (Q32, pull request 85) is done. Next, in this order: **Q33** context in fewer calls, splitting
+files only where it helps. Read "Things that bit the twenty-first batch" (`docs/backlog/things-that-bit/batch-21.md`)
+and the twentieth's first.
 
-Q32 starts from evidence the owner can give: a real transcript or a headless run that shows what `UserPromptSubmit`
-and the Skill tool receive when a skill is typed as `/name` and as `/anthropic-skills:name`. Typed-only skills now
-make this easier to see: they can only start typed.
+Q33 changes a skill (`friction-review`'s counts), two hooks (`file-size-guard`'s message, the `lazy-senior` hook) and
+the `lazy-senior` skill, so it splits into slices with disjoint files. Its step 1 measures before anything else
+changes: no change to the default size limit until `friction-review` has numbers.
 
 The owner starts the batch with this message:
 
 ```text
-You are the orchestrator for the twenty-first batch in this repository: Q32 (skill-usage logs typed starts as the
-agent's). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and integrate
-their work. Type /lean-subagent-dev first (it is typed only since Q28).
+You are the orchestrator for the twenty-second batch in this repository: Q33 (context in fewer calls: splitting
+files only where it helps). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer)
+and integrate their work. Type /lean-subagent-dev first (it is typed only since Q28).
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md.
-2. docs/backlog/q32.md, decisions 31 and 32 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md ("With
-   the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md and
-   docs/backlog/things-that-bit/batch-20.md.
-3. hooks/session-discipline/skill-usage.mjs, its tests, and skills/session-discipline/which-skill/usage-report.mjs.
+2. docs/backlog/q33.md, decisions 29, 31 and 32 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md
+   ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
+   docs/backlog/things-that-bit/batch-20.md and batch-21.md.
+3. hooks/guards/file-size-guard.mjs and its tests, hooks/planning/lazy-senior.mjs and skills/planning/lazy-senior/,
+   and skills/session-discipline/friction-review/ with its tests.
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
   builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds.
-- Get the real hook input first: a headless run with a hook that logs every event (an empty HOME,
-  --max-budget-usd), typing a skill as /name and as /<plugin>:name, and the Skill tool start. Read the transcript,
-  not the answer.
+- Get real input first: run friction-review's scripts on this repository's own transcripts (or a fixture built from
+  real ones) and record what it counts today, and the file-size-guard's refusal text from a real refused edit. Take
+  shapes from the real tools, not made-up ones.
 - Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone and tries
   mutations of its own, and a fresh reviewer per slice. Commits carry the harness's two attribution trailers.
 
 Rules that matter most:
 - Every skill works on its own; a mention of a typed-only skill holds /name in the same paragraph. Plain English, no
-  em or en dashes; Node standard library only; no tracked file over its size limit.
+  em or en dashes; Node standard library only; no tracked file over its size limit, and no file split only to fit it.
 - A hook exits 0 on input it does not understand and checks hookEnabled(). A hook change bumps pau-skills-hooks.
 - Every new test fails without the change: prove each with mutate.sh and report every "# tests" line.
 - Run npm test before every commit, docs included. Write docs/releases/v<bundle version>.md for the batch and run its
