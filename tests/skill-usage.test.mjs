@@ -197,14 +197,18 @@ test('a log path that is a folder is a silent exit 0', () => {
   assert.deepEqual(readdirSync(ctx.log), []);
 });
 
-test('hooks.json registers the hook under PreToolUse for Skill and under UserPromptSubmit', () => {
+test('hooks.json registers the hook once under PreToolUse for Skill and once under UserPromptExpansion, never UserPromptSubmit', () => {
   const hooks = JSON.parse(readFileSync(HOOKS_JSON, 'utf8')).hooks;
   const command = 'node "${CLAUDE_PLUGIN_ROOT}/hooks/session-discipline/skill-usage.mjs"';
-  const pre = (hooks.PreToolUse || []).filter((g) => g.hooks.some((h) => h.command === command));
+  const groups = (event) => (hooks[event] || []).filter((g) => g.hooks.some((h) => h.command === command));
+  const pre = groups('PreToolUse');
   assert.equal(pre.length, 1);
   assert.equal(pre[0].matcher, 'Skill');
-  const prompt = (hooks.UserPromptSubmit || []).filter((g) => g.hooks.some((h) => h.command === command));
-  assert.equal(prompt.length, 1);
-  assert.equal(prompt[0].matcher, undefined);
-  for (const g of [...pre, ...prompt]) assert.deepEqual(g.hooks, [{ type: 'command', command, timeout: 5 }]);
+  const expansion = groups('UserPromptExpansion');
+  assert.equal(expansion.length, 1);
+  assert.equal(expansion[0].matcher, undefined);
+  assert.deepEqual(groups('UserPromptSubmit'), []);
+  const all = Object.values(hooks).flat().filter((g) => g.hooks.some((h) => h.command === command));
+  assert.equal(all.length, 2, 'registered under no other event');
+  for (const g of all) assert.deepEqual(g.hooks, [{ type: 'command', command, timeout: 5 }]);
 });
