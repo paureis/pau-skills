@@ -8,7 +8,7 @@ import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync } from 
 import { join } from 'node:path';
 import { repo, tempDir } from './helpers.mjs';
 
-export const HOOK = repo('hooks', 'session-discipline', 'skill-usage.mjs');
+const HOOK = repo('hooks', 'session-discipline', 'skill-usage.mjs');
 export const ISO = /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z/.source;
 
 export function setup() {
@@ -78,13 +78,13 @@ export const TYPED = {
 };
 
 /** Typed prompts that fire no expansion: an unknown command, and a nested command typed without its folder. */
-export const SUBMIT_ONLY = {
+const SUBMIT_ONLY = {
   ev13: [submit('/nosuch-thing hi')],
   ev61: [submit('/probe-nest')],
 };
 
 /** Agent starts: UserPromptSubmit, PreToolUse Skill, PostToolUse Skill. */
-export const AGENT = {
+const AGENT = {
   ev22: agentStart('anthropic-skills:humanizer', 'Use the Skill tool to start the humanizer skill, then reply with the word DONE only.', 'toolu_019JWM7LguBn6CGmgHbWt5eu'),
   ev5: agentStart('probe-note', 'Please use the Skill tool to start the probe-note skill now.', 'toolu_01Kg9K2sh4S3J7V2iSXvnjgx', undefined, 11),
   ev6: agentStart('probeplug:probe-plug', 'Please use the Skill tool to start the probeplug:probe-plug skill now.', 'toolu_01GHKB34X5Y8KsoyHqpbhMmZ', undefined, 11),

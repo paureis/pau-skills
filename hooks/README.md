@@ -212,12 +212,13 @@ event, under the name Claude Code resolved, whatever folder or plugin the skill 
 `anthropic-skills:humanizer`, and a plugin skill typed without its prefix under `<plugin>:<name>`. A built-in such as
 `/init` is not recorded, and neither is an MCP prompt. A `.claude/commands` file in the scope Claude Code names is not
 recorded: `~/.claude/commands/<name>.md` for a user command, the project's `.claude/commands/<name>.md` for a project
-command, each colon in the name a folder (`/front:probe-nest` is `front/probe-nest.md`). Only those two folders are
-checked, so a command in a parent folder, in another worktree's main checkout, in an `--add-dir` folder, in the
-managed folder, under `CLAUDE_CONFIG_DIR`, or written as `<commands>/<name>/SKILL.md` is recorded as typed. A
-plugin's own command cannot be told from a plugin skill by the hook input, and is recorded as typed. The prompt
-itself is never read, and an input that records nothing returns at once, before any config file is read. On a Claude
-Code without `UserPromptExpansion` no typed line is written; starts by the agent are still recorded.
+command, each colon in the name a folder (`/front:probe-nest` is `front/probe-nest.md`). A skill and a command file
+with the same name in one scope are therefore not recorded. Only those two folders are checked, so a command in a
+parent folder, in another worktree's main checkout, in an `--add-dir` folder, in the managed folder, under
+`CLAUDE_CONFIG_DIR`, or written as `<commands>/<name>/SKILL.md` is recorded as typed. A plugin's own command cannot be
+told from a plugin skill by the hook input, and is recorded as typed. The prompt itself is never read, and an input
+the start check rejects returns at once, before any config or other file is read. On a Claude Code without
+`UserPromptExpansion` no typed line is written.
 
 `usage-report.mjs` in the `which-skill` skill reads the log: starts per skill, typed and by the agent, and the skills
 never started in the last 30 days.

@@ -15,14 +15,15 @@
 //     (/humanizer typed gives anthropic-skills:humanizer), marked typed. Nothing when command_source is not a string,
 //     or is builtin (/init) or mcp. Nothing for a custom command file: with source userSettings when
 //     <home>/.claude/commands/<name>.md exists, with projectSettings when <project>/.claude/commands/<name>.md exists,
-//     each colon in the name a folder (front:probe-nest is front/probe-nest.md). No other source reads a file.
+//     each colon in the name a folder (front:probe-nest is front/probe-nest.md). A skill and a command file with the
+//     same name in one scope are therefore not recorded. No other source reads a file.
 //     shortcut: only those two folders are checked, so a command in a parent folder, in another worktree's main
 //     checkout, in an --add-dir folder, in the managed folder, under CLAUDE_CONFIG_DIR, or written as
 //     <commands>/<name>/SKILL.md is recorded as typed, and so is a plugin's own command (the input cannot tell it
 //     from a plugin skill); check more folders if those show up in the report.
 //   UserPromptSubmit and every other event: nothing.
 // A name is at most 200 characters of A-Z, a-z, 0-9, ".", "_", ":" and "-"; a typed name's every colon-separated part
-// also starts with a letter or digit, so ".." or "a::b" never becomes a path. Every input that records nothing
+// also starts with a letter or digit, so ".." or "a::b" never becomes a path. An input the start check rejects
 // returns before any config file or other file is read: the hook runs on every typed command.
 //
 // Past 1,000,000 bytes the log keeps the newest whole lines that fit in 500,000 bytes, written to a temporary file
