@@ -245,3 +245,35 @@ test('navigation: new files in commits over the days of the sessions read, witho
   assert.equal(ok(r).match(COMMITS)[3], '0');
   assert.match(ok(world()), /^new files in commits: not counted \(no session read\)$/m);
 });
+
+const HOPS = 'reads and searches before the first edit in each folder, in transcripts that edit the project';
+
+test('navigation: reads and searches before the first edit in each folder, the count reset by each edit of the project', () => {
+  const w = world();
+  const p = (...f) => join(w.main, ...f);
+  w.session(w.own, 's', [
+    read(p('README.md')), step('Grep', { pattern: 'x' }, 'a.js'),
+    bash('cat hooks/session-discipline/skill-usage.mjs; ls tests | grep -i usage', 'x'),
+    edit(p('src', 'a.js')),
+    read(p('src', 'b.js')), edit(p('src', 'b.js')),
+    bash('sed -n 65,140p docs/notes.md', 'x'),
+    // Not reads: a check whose output is cut or filtered, and sed -i. A file made outside the project is not an edit.
+    bash('npm test 2>&1 | tail -5', 'ok'), bash('npm test 2>&1 | grep pass', 'ok'),
+    mainCreate(join(tmpdir(), 'scratch', 'plan.md')),
+    bash('sed -i s/a/b/ x.js', ''),
+    mainCreate(p('docs', 'new.md')),
+  ], { subagents: [{ name: 'b', agentType: 'builder', steps: [read(p('a.js')), read(p('b.js')), step('Grep', { pattern: 'y' }, 'a.js'), step('Glob', { pattern: '*' }, 'a.js'), edit(p('lib', 'x.js'))] }] });
+  const out = ok(w);
+  assert.deepEqual(linesOf(out, `${HOPS}: `), ['median 3, maximum 4, over 3 folders in 1 of 1 session']);
+  assert.deepEqual(pointersOf(out, HOPS).map((l) => l.replace(/^ {2}\S+:\d+ /, '').replace(/ \S*\/(\w+\/\w+\.\w+)/, ' $1')), [
+    'Edit lib/x.js (reads and searches before it: 4) (subagent: builder)',
+    'Edit src/a.js (reads and searches before it: 3)',
+    'Write docs/new.md (reads and searches before it: 1)',
+  ]);
+  // The new lines follow the repeated reads, in this order.
+  const order = ['same file and range', 'files read in pieces', 'new files made', 'new files in commits', HOPS, '## automated'].map((l) => out.indexOf(`\n${l}`));
+  assert.deepEqual([...order].sort((a, b) => a - b), order);
+  const none = world();
+  none.session(none.own, 's', [read(join(none.main, 'a.js')), edit()]);
+  assert.deepEqual(linesOf(ok(none), HOPS), [': none']);
+});

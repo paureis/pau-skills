@@ -1,6 +1,6 @@
 // The session part of friction.mjs, counting: each signal of friction that repeats, per kind, with a few pointers
 // (<folder>/<file>:<line>) to where it happened. A count is a lead, not evidence.
-import { resolve, sep } from 'node:path';
+import { dirname, resolve, sep } from 'node:path';
 import {
   READ_REPEAT_MIN, SHELL_REPEAT_MIN, POINTERS_PER_SIGNAL, BIG_RESULT_CHARS, FAILURE_CHARS, TARGETED, show, plural,
 } from './friction-show.mjs';
@@ -32,6 +32,15 @@ export function commandParts(command) {
 }
 
 const isSearch = (words) => SEARCHES.has(words[0]);
+const READERS = new Set(['cat', 'head', 'tail', 'nl']);
+/**
+ * Whether a shell command reads or searches: the first command of some | chain is a search, a reader or sed -n. So
+ * "npm test 2>&1 | tail -5" is not a read. The searches-before-the-first-edit signal keeps its own rule.
+ */
+export const readsOrSearches = (command) => String(command ?? '').split(/&&|\|\||;|\n/).some((piece) => {
+  const w = commandParts(piece.split('|')[0])[0] || [];
+  return isSearch(w) || READERS.has(w[0]) || (w[0] === 'sed' && w.includes('-n'));
+});
 /** Whether a part runs the check: it starts with one of the check's spellings, and holds the word the check needs. */
 export const runsCheck = (words, c) => c.spellings.some((sp) => sp.every((t, i) => words[i] === t)) && (!c.need || words.includes(c.need));
 
@@ -76,7 +85,7 @@ export function inProject(roots, path) {
 /** Every signal over the sessions read (readSession) and the check commands the project defines (readProject). */
 export function countSignals(sessions, checks, roots) {
   const s = {
-    N: sessions.length, searchFirst: signal(), emptySearch: signal(), readRepeat: signal(), pieces: signal(), created: signal(), noCheck: signal(), big: signal(), shellRepeat: signal(),
+    N: sessions.length, searchFirst: signal(), emptySearch: signal(), readRepeat: signal(), pieces: signal(), created: signal(), hops: [], noCheck: signal(), big: signal(), shellRepeat: signal(),
     classes: new Map(CLASS_NAMES.map((c) => [c, signal()])), runs: new Map(checks.map((c) => [c, { ...signal(), failed: 0 }])),
     failedByTool: new Map(), calls: [],
   };
@@ -95,6 +104,8 @@ export function countSignals(sessions, checks, roots) {
       const reads = new Map();
       const repeats = new Map();
       const ranges = new Map();
+      const folders = new Set();
+      let looked = 0;
       t.calls.forEach((c, i) => {
         calls++;
         const at = (line, note = '') => ({ where: t.where, line, tool: c.tool, target: c.target, agent: t.agent, note });
@@ -114,6 +125,16 @@ export function countSignals(sessions, checks, roots) {
             ranges.set(file, seen.add(`${c.input.offset ?? ''}\0${c.input.limit ?? ''}`));
             if (seen.size === 2) hit(s.pieces, key, at(c.line));
           }
+        }
+        if (c.tool === 'Read' || c.tool === 'Grep' || c.tool === 'Glob' || (c.tool === 'Bash' && readsOrSearches(c.input.command))) looked++;
+        // An edit of the project, whatever its result: the first one in a folder records the reads and searches before
+        // it, and every one starts the count again. An edit outside the project (a scratch file) does neither.
+        const edited = EDITS.has(c.tool) && inProject(roots, c.tool === 'NotebookEdit' ? c.input.notebook_path : c.input.file_path);
+        if (edited) {
+          const folder = fold(dirname(edited));
+          if (!folders.has(folder)) s.hops.push({ key, n: looked, p: at(c.line, `(reads and searches before it: ${looked})`) });
+          folders.add(folder);
+          looked = 0;
         }
         // A subagent line has no toolUseResult when a Write succeeds, so the result text decides.
         if (c.tool === 'Write' && text?.startsWith(CREATED) && inProject(roots, c.input.file_path)) hit(s.created, key, at(c.line));
@@ -175,6 +196,14 @@ export function printSignals(s, project, out, commits) {
   count('new files made with Write, inside the project', s.created);
   out(commits ? `new files in commits from ${show(commits.from, 10)} to ${show(commits.to, 10)} (git log --diff-filter=A, without merges, renames and root commits): ${commits.n}`
     : 'new files in commits: not counted (no session read)');
+  const hops = 'reads and searches before the first edit in each folder, in transcripts that edit the project';
+  if (!s.hops.length) out(`${hops}: none`);
+  else {
+    const ns = s.hops.map((h) => h.n);
+    out(`${hops}: median ${median(ns)}, maximum ${ns.reduce((a, b) => Math.max(a, b))}, over ${plural(ns.length, 'folder')} in ${new Set(s.hops.map((h) => h.key)).size} of ${plural(s.N, 'session')}`);
+    // Most first; sort is stable, so ties stay in file order.
+    for (const h of [...s.hops].sort((a, b) => b.n - a.n).slice(0, POINTERS_PER_SIGNAL)) out(pointerLine(h.p));
+  }
   out('## automated checks');
   if (!s.runs.size) out('runs of checks: the project defines no check command this script knows');
   for (const [check, sig] of s.runs) count(`runs of ${check.cmd}`, sig, `; failed: at least ${sig.failed} (a lower bound: only is_error counts, and a pipe hides the exit code)`);
