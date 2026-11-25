@@ -54,6 +54,12 @@ Be lazy about the solution, never about the change.
   change, after searching the whole tree for it, tests, fixtures, config and string references included. An exported
   API, a command-line flag or a config key may have callers outside the repository: leave a public interface alone
   unless the user asks to remove it.
+- A new file needs a reason: a new responsibility, a public interface, or a file the language or the project's layout
+  requires (a test file where the runner looks, a handler where the others are). Size alone is not one. Extend the
+  nearest existing file first, and keep code that changes together in one place. When a file nears a size limit the
+  project sets (a lint rule, a CI check, a hook) and has no real boundary to split along, ask the user to raise the
+  limit for that file rather than moving code into a file that exists only to stay under it. A file you do split keeps
+  one line that says where each part went.
 - The ladder never removes a guard. Checks on input that crosses a trust boundary (a request, an upload, a file, a
   message from another service), error handling that keeps data from being lost, security, accessibility, the
   calibration real hardware needs, and every part the user asked for all stay, even when they are most of the code.

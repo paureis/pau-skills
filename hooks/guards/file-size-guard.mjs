@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // PreToolUse guard for Write, Edit and MultiEdit: refuse a change that leaves a file in the project over its token
-// limit and larger than it was, and say how to split the file instead.
+// limit and larger than it was, and say how to split the file instead: only along a real boundary, with a pointer left
+// in the old file, or with no boundary, by asking the user for a per-path limit.
 //
 // Why: agents read big files in pieces and pay for every token, and the Read tool stops at 25,000 tokens. Agents also
 // keep appending to the file they already have open, so a file grows until nobody can read it in one go.
@@ -200,17 +201,26 @@ const fmt = (n) => n.toLocaleString('en-US');
 
 /** The refusal message. A file of 0 bytes before is worded as a new file. */
 export function message(rel, bytesAfter, bytesBefore, limit) {
-  const [label, splitRecipe, newRecipe] = RECIPES[kindOf(rel)];
+  const kind = kindOf(rel);
+  const [label, splitRecipe, newRecipe] = RECIPES[kind];
+  // The data recipe never splits, so it gets neither boundary line.
+  const boundary = (text) => (kind === 'data' ? '' : `${text}\n`);
   const suggest = Math.ceil(tokensOf(bytesAfter) / 1000) * 1000;
   const head = `[file-size-guard] ${rel} would be `;
   const limitText = `the limit is ${fmt(limit)} tokens (bytes / 4). Agents read big files in pieces`;
   const what = bytesBefore === 0
     ? `${head}a new file of ${fmt(tokensOf(bytesAfter))} tokens (${fmt(bytesAfter)} bytes); ${limitText}, so write it as several smaller files instead, or generate it.\n` +
       `For a new ${label}: ${newRecipe}\n` +
+      boundary('Write several files only along a real boundary (the one named above, a responsibility, a layer, a public ' +
+        'interface), with one line in the main file that says where the others are. With no such boundary, ask the user ' +
+        'for a per-path limit instead of writing a file that exists only to stay under the limit, such as a helpers file of leftovers.') +
       'If several files are not what the user asked for, tell the user and offer that or a per-path limit, instead of deciding on your own.\n'
     : `${head}${fmt(tokensOf(bytesAfter))} tokens after this change (${fmt(tokensOf(bytesBefore))} now; ${fmt(bytesAfter)} bytes, up from ` +
       `${fmt(bytesBefore)}); ${limitText}, so split it instead of growing it.\n` +
       `To split this ${label}: ${splitRecipe}\n` +
+      boundary('Split only along a real boundary (the one named above, a responsibility, a layer, a public interface), and ' +
+        'leave one line in the old file that says where each part went. With no such boundary, ask the user for a per-path ' +
+        'limit instead of moving part of it into a file that exists only to stay under the limit, such as a helpers file of leftovers.') +
       'If splitting is not part of the task the user gave, tell the user and offer the split or a per-path limit, ' +
       'instead of starting a large refactor unasked.\n';
   const scope = rel.includes('/')
