@@ -1,7 +1,7 @@
 // Shared helpers for the skill-usage tests, and the hook inputs recorded from headless runs of Claude Code 2.1.332 and
 // 2.1.302. Every start lists its events in the order Claude Code fired them. The fields every event carries (session,
-// transcript, folder, permission mode, prompt id) were dropped when recorded and are added back by `event`; args text
-// and ids are stand-ins.
+// transcript, folder, permission mode, prompt id) were dropped when recorded and are added back by `event`; the args
+// text of ev20 and the prompt ids are stand-ins.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync } from 'node:fs';
@@ -86,8 +86,8 @@ export const SUBMIT_ONLY = {
 /** Agent starts: UserPromptSubmit, PreToolUse Skill, PostToolUse Skill. */
 export const AGENT = {
   ev22: agentStart('anthropic-skills:humanizer', 'Use the Skill tool to start the humanizer skill, then reply with the word DONE only.', 'toolu_019JWM7LguBn6CGmgHbWt5eu'),
-  ev5: agentStart('probe-note', 'Please use the Skill tool to start the probe-note skill now.', 'toolu_01Ab5ProbeNoteStandIn00'),
-  ev6: agentStart('probeplug:probe-plug', 'Please use the Skill tool to start the probeplug:probe-plug skill now.', 'toolu_01Ab6ProbePlugStandIn00'),
+  ev5: agentStart('probe-note', 'Please use the Skill tool to start the probe-note skill now.', 'toolu_01Kg9K2sh4S3J7V2iSXvnjgx', undefined, 11),
+  ev6: agentStart('probeplug:probe-plug', 'Please use the Skill tool to start the probeplug:probe-plug skill now.', 'toolu_01GHKB34X5Y8KsoyHqpbhMmZ', undefined, 11),
   ev71: agentStart('probe-fork', 'Use the Skill tool to start the probe-fork skill.', 'toolu_01C8L22JdCvkMvg1e5vQDRSS',
     JSON.stringify({ success: true, commandName: 'probe-fork', status: 'forked', agentId: 'a6c082a2450d39587', result: 'OLIVE' }), 931),
 };
