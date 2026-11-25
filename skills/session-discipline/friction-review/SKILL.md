@@ -60,6 +60,21 @@ A transcript is the main session file or one subagent file. Searches before the 
 repeated commands are counted per transcript, since each agent has its own context. Coding standards and no-ops in
 steering files are not counted: they need reading.
 
+Four navigation lines show whether scattered or oversized files cost turns:
+- **Files read in pieces**: a file of the project read in 2 or more Read ranges (an offset, a limit or both) in one
+  transcript. The same range read twice is a repeated read, not a second piece.
+- **New files made with Write**: a Write inside the project whose result says it created the file.
+- **New files in commits**: the paths that `git log --diff-filter=A` lists over the days of the sessions read. The
+  days are UTC days taken from the modification times of the session files, not from when the work started. Merges,
+  renames and commits with no parent are not counted: the edge commit of a shallow clone lists every file as added.
+  When the history cannot be read (a missing object, for example), the line says so and the rest still prints.
+- **Reads and searches before the first edit in each folder**: per transcript, the Read, Grep and Glob calls and the
+  shell commands that read or search (the first command of a pipe chain is a search, `cat`, `head`, `tail`, `nl` or
+  `sed -n`), counted until the first edit in a folder that transcript has not edited yet. A command that writes a file
+  is not a read: an output redirection (`>` or `>>`, but not `2>&1`, `>&2` or one for errors only), a heredoc
+  (`cat > notes.md <<'EOF'`) or `sed -i`. Every edit of the project starts the count again. An edit call counts
+  whatever its result, and edits made through the shell (`sed -i`, a heredoc) are not seen.
+
 If the header shows 0 sessions, or says no transcript folder matches this repository, check that you ran it from the
 project root (or pass `--repo`) and that the sessions live in the projects folder it names (`CLAUDE_CONFIG_DIR` moves
 it; pass `--projects`). If there are still none, report the project part alone and say no session was read.

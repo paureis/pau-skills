@@ -3,9 +3,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { join, sep, win32 } from 'node:path';
+import { tmpdir } from 'node:os';
 import { step, bash, world, linesOf } from './friction-review.helpers.mjs';
 import { extractActions } from '../skills/session-discipline/friction-review/skill-eval-core.mjs';
 import { readCalls } from '../skills/session-discipline/friction-review/friction-sessions.mjs';
+import { inProject } from '../skills/session-discipline/friction-review/friction-signals.mjs';
 
 const NPM_TEST = 'cd /x && npm test 2>&1 | tail -5';
 const edit = (f = '/x/a.js') => step('Edit', { file_path: f, old_string: 'a', new_string: 'b' });
@@ -153,4 +156,112 @@ test('extractActions reads the steps of a session file as Claude Code writes it'
   assert.equal(x.model, 'some-model');
   assert.equal(x.badLines, 1);
   assert.deepEqual(x.steps.map((s) => [s.tool, s.target, s.failed]), [['Grep', 'p', null], ['Bash', 'false', 'Exit code 1'], ['Edit', '/x/a.js', null]]);
+});
+
+// The pointers printed under the line that starts with label, up to the next line that is not a pointer.
+const pointersOf = (out, label) => {
+  const lines = out.split('\n');
+  const at = lines.findIndex((l) => l.startsWith(label));
+  const end = lines.findIndex((l, i) => i > at && !l.startsWith('  '));
+  return lines.slice(at + 1, end);
+};
+const ok = (w) => {
+  const r = w.run();
+  assert.equal(r.code, 0, r.stderr);
+  return r.stdout;
+};
+const PIECES = 'files read in pieces (2 or more Read ranges of one file, in one transcript): ';
+
+test('navigation: a file of the project read in 2 or more ranges in one transcript', () => {
+  const w = world();
+  const [a, b, c, d, e] = ['a.md', 'b.js', 'c.js', 'd.js', 'e.js'].map((f) => join(w.main, 'src', f));
+  const away = join(w.home, 'notes.md');
+  w.session(w.own, 's', [
+    read(a, { offset: 1, limit: 70 }), read(a, { offset: 190, limit: 40 }),
+    read(b, { limit: 23 }), read(b, { offset: 116, limit: 20 }),
+    // A third range of a counts no more.
+    read(a, { offset: 300, limit: 10 }),
+    // Controls: the same range twice, a whole read and one range, a range here and one in the subagent, a file outside.
+    read(c, { offset: 5, limit: 5 }), read(c, { offset: 5, limit: 5 }),
+    read(d), read(d, { offset: 3, limit: 3 }),
+    read(e, { offset: 1, limit: 9 }),
+    read(away, { offset: 1, limit: 9 }), read(away, { offset: 20, limit: 9 }),
+  ], { subagents: [{ name: 'b', agentType: 'builder', steps: [read(e, { offset: 20, limit: 9 })] }] });
+  const out = ok(w);
+  assert.deepEqual(linesOf(out, PIECES), ['2 in 1 of 1 session']);
+  assert.deepEqual(pointersOf(out, PIECES).map((l) => l.replace(/^ {2}~-src-app\/s\.jsonl:\d+ Read .*\/src\//, '')), ['a.md', 'b.js']);
+});
+
+// The result text Claude Code writes for a Write that made a file. The real text has an em dash, written as its escape.
+const created = (f) => `File created successfully at: ${f} (file state is current in your context \u2014 no need to Read it back)`;
+const write = (f, text = created(f), opts = {}) => step('Write', { file_path: f, content: 'x' }, text, opts);
+// A main-session line also carries this toolUseResult; a subagent line has none.
+const mainCreate = (f) => write(f, created(f), { toolUseResult: { type: 'create', filePath: f, content: 'x', structuredPatch: [], originalFile: null, userModified: false } });
+const WRITES = 'new files made with Write, inside the project: ';
+
+test('navigation: new files made with Write inside the project, decided by the result text', () => {
+  const w = world();
+  const updated = join(w.main, 'old.js');
+  w.session(w.own, 's', [
+    mainCreate(join(w.main, 'src', 'new.js')),
+    // Controls: a Write over a file, a file made in a temp folder, and one in a folder that only starts like the project.
+    write(updated, `The file ${updated} has been updated successfully.`),
+    mainCreate(join(tmpdir(), 'scratch', 'x.md')),
+    mainCreate(`${w.main}-other${sep}b.js`),
+  ], { subagents: [{ name: 'b', agentType: 'builder', steps: [write(join(w.main, 'lib', 'sub.js'), undefined, { toolUseResult: undefined })] }] });
+  const out = ok(w);
+  assert.deepEqual(linesOf(out, WRITES), ['2 in 1 of 1 session']);
+  const at = pointersOf(out, WRITES);
+  assert.match(at[0], /^ {2}~-src-app\/s\.jsonl:\d+ Write \S*\/src\/new\.js$/);
+  assert.match(at[1], /^ {2}~-src-app\/s\/subagents\/agent-b\.jsonl:\d+ Write \S*\/lib\/sub\.js \(subagent: builder\)$/);
+});
+
+const HOPS = 'reads and searches before the first edit in each folder, in transcripts that edit the project';
+
+test('navigation: reads and searches before the first edit in each folder, the count reset by each edit of the project', () => {
+  const w = world();
+  const p = (...f) => join(w.main, ...f);
+  w.session(w.own, 's', [
+    read(p('README.md')), step('Grep', { pattern: 'x' }, 'a.js'),
+    bash('cat hooks/session-discipline/skill-usage.mjs; ls tests | grep -i usage', 'x'),
+    // A relative path resolves against the root.
+    edit('src/a.js'),
+    // Same folder: no record, but the count starts again. NotebookEdit names its file notebook_path.
+    read(p('src', 'b.js')), step('NotebookEdit', { notebook_path: p('src', 'n.ipynb'), new_source: 'x', edit_mode: 'replace' }),
+    bash('sed -n 65,140p docs/notes.md', 'x'), bash('cat docs/a.md', 'x'), bash('head -n 3 docs/b.md 2>&1', 'x'), bash('nl -ba docs/c.md >&2', 'x'),
+    bash('npm run build\ncat docs/d.md', 'x'), bash('ls docs 2>/dev/null', 'x'), bash('grep -n "=>" docs/e.md', 'x'),
+    // Not reads: a check whose output is cut or filtered, sed -i or without -n, and commands that write a file (a heredoc body is
+    // not commands). A file made outside the project is not an edit.
+    bash('npm test 2>&1 | tail -5', 'ok'), bash('npm test 2>&1 | grep pass', 'ok'), bash('sed -i s/a/b/ x.js', ''), bash('sed s/a/b/ x.js', ''),
+    bash("cat > notes.md <<'EOF'\nfind the loader\nls -la\nEOF", ''), bash('cat >> x.log', ''), bash('tail -n 5 a.log > b.log', ''),
+    bash('sed -i -n 1p x.js', ''),
+    mainCreate(join(tmpdir(), 'scratch', 'plan.md')),
+    mainCreate(p('docs', 'new.md')),
+  ], { subagents: [{ name: 'b', agentType: 'builder', steps: [read(p('a.js')), read(p('b.js')), step('Grep', { pattern: 'y' }, 'a.js'), step('Glob', { pattern: '*' }, 'a.js'),
+    // An edit call counts whatever its result.
+    step('Edit', { replace_all: false, file_path: p('lib', 'x.js'), old_string: 'a', new_string: 'b' }, '<tool_use_error>String to replace not found in file.\nString: a</tool_use_error>', { isError: true })] }] });
+  const out = ok(w);
+  assert.deepEqual(linesOf(out, `${HOPS}: `), ['median 4, maximum 7, over 3 folders in 1 of 1 session']);
+  assert.deepEqual(pointersOf(out, HOPS).map((l) => l.replace(/^ {2}\S+:\d+ /, '').replace(/ \S*\/(\w+\/\w+\.\w+)/, ' $1')), [
+    'Write docs/new.md (reads and searches before it: 7)',
+    'Edit lib/x.js (reads and searches before it: 4) (subagent: builder)',
+    'Edit src/a.js (reads and searches before it: 3)',
+  ]);
+  // The new lines follow the repeated reads, in this order.
+  const order = ['same file and range', 'files read in pieces', 'new files made', 'new files in commits', HOPS, '## automated'].map((l) => out.indexOf(`\n${l}`));
+  assert.deepEqual([...order].sort((a, b) => a - b), order);
+  const none = world();
+  none.session(none.own, 's', [read(join(none.main, 'a.js')), edit()]);
+  assert.deepEqual(linesOf(ok(none), HOPS), [': none']);
+});
+
+test('inside the project on Windows: a root with forward slashes, a backslash path, a drive letter in other case, a relative path', () => {
+  // Git for Windows prints the root with forward slashes. Built at runtime so that no tracked file holds a machine path.
+  const root = ['C:', 'Users', 'ana', 'repo'].join('/');
+  const file = ['C:', 'Users', 'ana', 'repo', 'src', 'a.js'].join('\\');
+  const at = (p) => inProject([root], p, win32, 'win32');
+  assert.equal(at(file), file);
+  assert.equal(at(`c${file.slice(1)}`), `c${file.slice(1)}`);
+  assert.equal(at('src\\a.js'), file);
+  assert.equal(at(['C:', 'Users', 'ana', 'repo-other', 'b.js'].join('\\')), null);
 });
