@@ -228,11 +228,11 @@ test('navigation: reads and searches before the first edit in each folder, the c
     edit('src/a.js'),
     // Same folder: no record, but the count starts again. NotebookEdit names its file notebook_path.
     read(p('src', 'b.js')), step('NotebookEdit', { notebook_path: p('src', 'n.ipynb'), new_source: 'x', edit_mode: 'replace' }),
-    bash('sed -n 65,140p docs/notes.md', 'x'), bash('cat docs/a.md', 'x'), bash('head -n 3 docs/b.md 2>&1', 'x'), bash('nl -ba docs/c.md', 'x'),
-    bash('npm run build\ncat docs/d.md', 'x'), bash('ls docs 2>/dev/null', 'x'),
-    // Not reads: a check whose output is cut or filtered, sed -i, and commands that write a file (a heredoc body is
+    bash('sed -n 65,140p docs/notes.md', 'x'), bash('cat docs/a.md', 'x'), bash('head -n 3 docs/b.md 2>&1', 'x'), bash('nl -ba docs/c.md >&2', 'x'),
+    bash('npm run build\ncat docs/d.md', 'x'), bash('ls docs 2>/dev/null', 'x'), bash('grep -n "=>" docs/e.md', 'x'),
+    // Not reads: a check whose output is cut or filtered, sed -i or without -n, and commands that write a file (a heredoc body is
     // not commands). A file made outside the project is not an edit.
-    bash('npm test 2>&1 | tail -5', 'ok'), bash('npm test 2>&1 | grep pass', 'ok'), bash('sed -i s/a/b/ x.js', ''),
+    bash('npm test 2>&1 | tail -5', 'ok'), bash('npm test 2>&1 | grep pass', 'ok'), bash('sed -i s/a/b/ x.js', ''), bash('sed s/a/b/ x.js', ''),
     bash("cat > notes.md <<'EOF'\nfind the loader\nls -la\nEOF", ''), bash('cat >> x.log', ''), bash('tail -n 5 a.log > b.log', ''),
     bash('sed -i -n 1p x.js', ''),
     mainCreate(join(tmpdir(), 'scratch', 'plan.md')),
@@ -241,9 +241,9 @@ test('navigation: reads and searches before the first edit in each folder, the c
     // An edit call counts whatever its result.
     step('Edit', { replace_all: false, file_path: p('lib', 'x.js'), old_string: 'a', new_string: 'b' }, '<tool_use_error>String to replace not found in file.\nString: a</tool_use_error>', { isError: true })] }] });
   const out = ok(w);
-  assert.deepEqual(linesOf(out, `${HOPS}: `), ['median 4, maximum 6, over 3 folders in 1 of 1 session']);
+  assert.deepEqual(linesOf(out, `${HOPS}: `), ['median 4, maximum 7, over 3 folders in 1 of 1 session']);
   assert.deepEqual(pointersOf(out, HOPS).map((l) => l.replace(/^ {2}\S+:\d+ /, '').replace(/ \S*\/(\w+\/\w+\.\w+)/, ' $1')), [
-    'Write docs/new.md (reads and searches before it: 6)',
+    'Write docs/new.md (reads and searches before it: 7)',
     'Edit lib/x.js (reads and searches before it: 4) (subagent: builder)',
     'Edit src/a.js (reads and searches before it: 3)',
   ]);
