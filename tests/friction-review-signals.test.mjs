@@ -179,6 +179,8 @@ test('navigation: a file of the project read in 2 or more ranges in one transcri
   w.session(w.own, 's', [
     read(a, { offset: 1, limit: 70 }), read(a, { offset: 190, limit: 40 }),
     read(b, { limit: 23 }), read(b, { offset: 116, limit: 20 }),
+    // A third range of a counts no more.
+    read(a, { offset: 300, limit: 10 }),
     // Controls: the same range twice, a whole read and one range, a range here and one in the subagent, a file outside.
     read(c, { offset: 5, limit: 5 }), read(c, { offset: 5, limit: 5 }),
     read(d), read(d, { offset: 3, limit: 3 }),
