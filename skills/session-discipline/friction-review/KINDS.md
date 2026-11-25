@@ -7,9 +7,18 @@ the agent reads when it needs it, and a pointer over a line in CLAUDE.md or AGEN
 ## Navigation
 
 Use when the agent took long to find a file or a fact: many searches before the first edit, searches that found
-nothing, the same file and range read again and again. The change is a navigation pointer: one line in CLAUDE.md,
-AGENTS.md or a doc that says where the thing lives ("the config loader is src/config/load.ts; every module reads
-settings through it"). Look for an existing doc to point at before writing a new one.
+nothing, the same file and range read again and again, files read in pieces, many reads before the first edit in a
+folder. The change is a navigation pointer: one line in CLAUDE.md, AGENTS.md or a doc that says where the thing lives
+("the config loader is src/config/load.ts; every module reads settings through it"). Look for an existing doc to point
+at before writing a new one.
+
+Files read in pieces, and many reads and searches before the first edit in a folder, point at the layout: a file too
+large to read in one call, or code spread over so many files that the agent hops between them to find it. Open the
+pointers first. For a file read in pieces again and again, the change is a pointer to the part each task needs, or a
+split along a real boundary (a responsibility, a layer, a public interface). For many reads before the first edit in
+a folder, a pointer to where the code lives, or code that changes together moved to one place. The counts of new
+files (made with Write, and added in commits) show how fast the code spreads: compare them with the reads before the
+first edit over two reviews before you change the layout.
 
 ## Automated checks
 

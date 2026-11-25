@@ -1,5 +1,5 @@
 // friction-review's friction.mjs: which sessions it reads (only this repository's folders, the newest by modification
-// time, one by id, the live one left out) and its exit codes, on temporary folders.
+// time, one by id, the live one left out) and its exit codes, on temporary folders. The rest of its tests: friction-review-signals.test.mjs (the session signals), friction-review-project.test.mjs (the project part), friction-review-privacy.test.mjs (what it never prints), friction-review-redact.test.mjs (its redaction and the refusal and network classes), with the shared setup in friction-review.helpers.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, mkdirSync, symlinkSync } from 'node:fs';
