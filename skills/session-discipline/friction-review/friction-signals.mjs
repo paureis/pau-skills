@@ -188,7 +188,7 @@ function median(ns) {
   return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
 }
 
-/** commits: { from, to, n } from newFilesInCommits (friction-project.mjs), or null when no session was read. */
+/** commits: { from, to, n } with n from newFilesInCommits (friction-project.mjs), or null when no session was read. */
 export function printSignals(s, project, out, commits) {
   const count = (label, sig, extra = '') => {
     out(`${label}: ${sig.n} in ${sig.sessions.size} of ${plural(s.N, 'session')}${extra}`);
@@ -200,8 +200,9 @@ export function printSignals(s, project, out, commits) {
   count(`same file and range read ${READ_REPEAT_MIN} or more times in one transcript`, s.readRepeat);
   count('files read in pieces (2 or more Read ranges of one file, in one transcript)', s.pieces);
   count('new files made with Write, inside the project', s.created);
-  out(commits ? `new files in commits from ${show(commits.from, 10)} to ${show(commits.to, 10)} (git log --diff-filter=A, without merges, renames and root commits): ${commits.n}`
-    : 'new files in commits: not counted (no session read)');
+  if (!commits) out('new files in commits: not counted (no session read)');
+  else if (commits.n === null) out('new files in commits: not counted (git log failed)');
+  else out(`new files in commits from ${show(commits.from, 10)} to ${show(commits.to, 10)} (git log --diff-filter=A, without merges, renames and root commits): ${commits.n}`);
   const hops = 'reads and searches before the first edit in each folder, in transcripts that edit the project';
   if (!s.hops.length) out(`${hops}: none`);
   else {

@@ -3,7 +3,7 @@
 // uses (new files in commits, the roots of the project), on temporary repositories.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, mkdirSync, writeFileSync, statSync } from 'node:fs';
+import { chmodSync, mkdirSync, writeFileSync, statSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { git, commitAt, bash, world, linesOf } from './friction-review.helpers.mjs';
 
@@ -158,4 +158,18 @@ test('navigation: new files in commits over the days of the sessions read, witho
   add(r, 'root.txt', day);
   assert.equal(ok(r).match(COMMITS)[3], '0');
   assert.match(ok(world()), /^new files in commits: not counted \(no session read\)$/m);
+});
+
+test('a git log that fails leaves the commits line not counted, and the rest of the report prints', () => {
+  const w = world();
+  const day = mtime(w.session(w.own, 's', [bash('ls', 'a')]));
+  add(w, 'a.txt', day);
+  add(w, 'b.txt', day);
+  // HEAD still resolves, so rev-parse passes; log fails when it walks to the deleted parent.
+  const first = git(w.main, 'rev-list', '--max-parents=0', 'HEAD');
+  rmSync(join(w.main, '.git', 'objects', first.slice(0, 2), first.slice(2)));
+  const out = ok(w);
+  assert.deepEqual(linesOf(out, 'new files in commits'), [': not counted (git log failed)']);
+  assert.match(out, /^## automated checks$/m);
+  assert.match(out, /^# not counted: coding standards/m);
 });

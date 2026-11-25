@@ -150,16 +150,19 @@ export function readProject(root) {
 }
 
 /**
- * The distinct paths added by the commits from day `from` to day `to` (UTC days, both read whole), or 0 with an unborn
- * HEAD. Merges, renames and commits with no parent are left out: a shallow clone's edge commit lists every file as
+ * The distinct paths added by the commits from day `from` to day `to` (UTC days, both read whole), 0 with an unborn
+ * HEAD, or null when git log fails (a missing object, say), so that one count does not end the report. Merges, renames and commits with no parent are left out: a shallow clone's edge commit lists every file as
  * added. git log --since stops at the first commit older than the date.
  */
 export function newFilesInCommits(root, from, to) {
   const git = (args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 28 });
   try { git(['rev-parse', '-q', '--verify', 'HEAD']); } catch { return 0; }
   const until = new Date(Date.parse(`${to}T00:00:00Z`) + 864e5).toISOString().slice(0, 10);
-  const log = git(['log', '--no-merges', '--find-renames', '--diff-filter=A', '--name-only', '--format=%x00%P',
-    `--since=${from}T00:00:00Z`, `--until=${until}T00:00:00Z`, 'HEAD']);
+  let log;
+  try {
+    log = git(['log', '--no-merges', '--find-renames', '--diff-filter=A', '--name-only', '--format=%x00%P',
+      `--since=${from}T00:00:00Z`, `--until=${until}T00:00:00Z`, 'HEAD']);
+  } catch { return null; }
   const paths = new Set();
   for (const commit of log.split('\0').slice(1)) {
     const [parents, ...names] = commit.split('\n');

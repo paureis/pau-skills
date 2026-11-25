@@ -67,6 +67,7 @@ Four navigation lines show whether scattered or oversized files cost turns:
 - **New files in commits**: the paths that `git log --diff-filter=A` lists over the days of the sessions read. The
   days are UTC days taken from the modification times of the session files, not from when the work started. Merges,
   renames and commits with no parent are not counted: the edge commit of a shallow clone lists every file as added.
+  When the history cannot be read (a missing object, for example), the line says so and the rest still prints.
 - **Reads and searches before the first edit in each folder**: per transcript, the Read, Grep and Glob calls and the
   shell commands that read or search (the first command of a pipe chain is a search, `cat`, `head`, `tail`, `nl` or
   `sed -n`), counted until the first edit in a folder that transcript has not edited yet. Every edit of the project
