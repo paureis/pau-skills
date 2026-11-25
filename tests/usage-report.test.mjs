@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, readFileSync, readdirSync, realpathSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo, tempDir } from './helpers.mjs';
+import { eventsOf } from './skill-usage.helpers.mjs';
 
 const REPORT = repo('skills', 'session-discipline', 'which-skill', 'usage-report.mjs');
 const HOOK = repo('hooks', 'session-discipline', 'skill-usage.mjs');
@@ -189,21 +190,19 @@ test('bad usage exits 2; --days 1 and --days 3650 are accepted', () => {
   for (const days of ['1', '3650']) assert.equal(report(ctx, ['--days', days, '--project', ctx.project]).code, 0, days);
 });
 
-test('end to end: the real hook writes the log and the report reads it', () => {
+test('end to end: the real hook writes the log from the recorded inputs and the report reads it', () => {
   const ctx = setup();
-  skill(join(ctx.project, '.claude', 'skills'), 'deploy-notes');
+  skill(join(ctx.project, '.claude', 'skills'), 'probe-proj');
   const run = (input) => {
     const r = spawnSync(process.execPath, [HOOK], { input: JSON.stringify(input), encoding: 'utf8', env: envOf(ctx), timeout: 10000 });
     assert.equal(r.status, 0);
     assert.equal(r.stdout + r.stderr, '');
   };
-  run({ hook_event_name: 'PreToolUse', tool_name: 'Skill', tool_input: { skill: 'pau-skills:tdd' }, cwd: ctx.project });
-  run({ hook_event_name: 'PreToolUse', tool_name: 'Skill', tool_input: { skill: 'deploy-notes' }, cwd: ctx.project });
-  run({ hook_event_name: 'UserPromptSubmit', prompt: '/deploy-notes v2', cwd: ctx.project });
+  for (const id of ['ev11', 'ev20', 'ev22', 'ev3', 'ev6']) for (const e of eventsOf(ctx, id)) run(e);
   assert.deepEqual(readdirSync(ctx.realHome), []);
   const r = report(ctx);
   assert.equal(r.code, 0, r.err);
-  assert.deepEqual(rows(r.out), [['deploy-notes', [2, 1, 1]], ['tdd', [1, 1, 0]]]);
+  assert.deepEqual(rows(r.out), [['humanizer', [2, 1, 1]], ['probe-plug', [2, 1, 1]], ['probe-proj', [1, 0, 1]]]);
 });
 
 test('the script imports node: modules only', () => {
