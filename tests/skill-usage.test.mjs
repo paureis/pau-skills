@@ -3,45 +3,15 @@
 // writes the prompt, and exits 0 on every input.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { repo, tempDir } from './helpers.mjs';
+import { ISO, setup, run, lines, names, skill } from './skill-usage.helpers.mjs';
 
-const HOOK = repo('hooks', 'session-discipline', 'skill-usage.mjs');
 const HOOKS_JSON = repo('hooks', 'session-discipline', 'hooks.json');
-const ISO = /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z/.source;
 
-function setup() {
-  const home = tempDir(); // PAU_SKILLS_HOME: where the hook must write
-  const realHome = tempDir(); // HOME and USERPROFILE: must stay empty
-  const project = tempDir();
-  return { home, realHome, project, dir: join(home, '.claude', 'pau-skills'), log: join(home, '.claude', 'pau-skills', 'skill-usage.tsv') };
-}
-
-function run(ctx, input, { env = {}, timeout = 10000, nodeArgs = [] } = {}) {
-  const text = typeof input === 'string' ? input : JSON.stringify(input);
-  const r = spawnSync(process.execPath, [...nodeArgs, HOOK], {
-    input: text,
-    encoding: 'utf8',
-    timeout,
-    env: { ...process.env, PAU_SKILLS_HOME: ctx.home, HOME: ctx.realHome, USERPROFILE: ctx.realHome, CLAUDE_PROJECT_DIR: ctx.project, PAU_SKILLS_DISABLE: '', ...env },
-  });
-  assert.equal(r.status, 0, `exit ${r.status} ${r.signal || ''}`);
-  assert.equal(r.stdout, '');
-  assert.equal(r.stderr, '');
-  assert.deepEqual(readdirSync(ctx.realHome), [], 'the hook wrote under HOME instead of PAU_SKILLS_HOME');
-  return r;
-}
-
-const lines = (ctx) => (existsSync(ctx.log) ? readFileSync(ctx.log, 'utf8').split('\n').filter(Boolean) : []);
-const names = (ctx) => lines(ctx).map((l) => l.split('\t').slice(1).join('\t'));
-
-function skill(dir, name) {
-  mkdirSync(join(dir, name), { recursive: true });
-  writeFileSync(join(dir, name, 'SKILL.md'), `---\nname: ${name}\ndescription: test skill\n---\n`);
-}
 const agent = (ctx, name, extra = {}) => ({ hook_event_name: 'PreToolUse', tool_name: 'Skill', tool_input: { skill: name }, session_id: 'sess-7f3a91', cwd: ctx.project, transcript_path: join(ctx.project, 'transcript-file.jsonl'), ...extra });
 const typed = (ctx, prompt) => ({ hook_event_name: 'UserPromptSubmit', prompt, session_id: 'sess-7f3a91', cwd: ctx.project, transcript_path: join(ctx.project, 'transcript-file.jsonl') });
 
