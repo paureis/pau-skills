@@ -33,13 +33,20 @@ export function commandParts(command) {
 
 const isSearch = (words) => SEARCHES.has(words[0]);
 const READERS = new Set(['cat', 'head', 'tail', 'nl']);
+// A heredoc's body is text, not commands: only its first line is kept.
+const HEREDOC = /(<<-?\s*(['"]?)([A-Za-z_]\w*)\2[^\n]*)\n(?:[\s\S]*?\n)?[ \t]*\3[ \t]*(?=\n|$)/g;
+// A command that writes a file: a heredoc, or an output redirection once quotes, 2>&1, >&2 and stderr-only ones are gone.
+const writes = (text) => /<<|>/.test(text.replace(/'[^']*'|"[^"]*"/g, '').replace(/\d*>&\d+|(^|\s)2>>?\s*\S+/g, ''));
 /**
- * Whether a shell command reads or searches: the first command of some | chain is a search, a reader or sed -n. So
- * "npm test 2>&1 | tail -5" is not a read. The searches-before-the-first-edit signal keeps its own rule.
+ * Whether a shell command reads or searches: the first command of some | chain is a search, a reader or sed -n, and
+ * does not write a file. So "npm test 2>&1 | tail -5", "cat > notes.md <<'EOF'" and "sed -i -n ..." are not reads.
+ * The searches-before-the-first-edit signal keeps its own rule.
  */
-export const readsOrSearches = (command) => String(command ?? '').split(/&&|\|\||;|\n/).some((piece) => {
-  const w = commandParts(piece.split('|')[0])[0] || [];
-  return isSearch(w) || READERS.has(w[0]) || (w[0] === 'sed' && w.includes('-n'));
+const readsOrSearches = (command) => String(command ?? '').replace(HEREDOC, '$1').split(/&&|\|\||;|\n/).some((piece) => {
+  const first = piece.split('|')[0];
+  const w = commandParts(first)[0] || [];
+  if (writes(first)) return false;
+  return isSearch(w) || READERS.has(w[0]) || (w[0] === 'sed' && w.includes('-n') && !w.some((x) => /^-[A-Za-z]*i|^--in-place/.test(x)));
 });
 /** Whether a part runs the check: it starts with one of the check's spellings, and holds the word the check needs. */
 export const runsCheck = (words, c) => c.spellings.some((sp) => sp.every((t, i) => words[i] === t)) && (!c.need || words.includes(c.need));

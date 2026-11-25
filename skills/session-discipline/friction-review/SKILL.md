@@ -70,9 +70,10 @@ Four navigation lines show whether scattered or oversized files cost turns:
   When the history cannot be read (a missing object, for example), the line says so and the rest still prints.
 - **Reads and searches before the first edit in each folder**: per transcript, the Read, Grep and Glob calls and the
   shell commands that read or search (the first command of a pipe chain is a search, `cat`, `head`, `tail`, `nl` or
-  `sed -n`), counted until the first edit in a folder that transcript has not edited yet. Every edit of the project
-  starts the count again. An edit call counts whatever its result, and edits made through the shell (`sed -i`, a
-  heredoc) are not seen.
+  `sed -n`), counted until the first edit in a folder that transcript has not edited yet. A command that writes a file
+  is not a read: an output redirection (`>` or `>>`, but not `2>&1`, `>&2` or one for errors only), a heredoc
+  (`cat > notes.md <<'EOF'`) or `sed -i`. Every edit of the project starts the count again. An edit call counts
+  whatever its result, and edits made through the shell (`sed -i`, a heredoc) are not seen.
 
 If the header shows 0 sessions, or says no transcript folder matches this repository, check that you ran it from the
 project root (or pass `--repo`) and that the sessions live in the projects folder it names (`CLAUDE_CONFIG_DIR` moves

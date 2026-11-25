@@ -222,21 +222,28 @@ test('navigation: reads and searches before the first edit in each folder, the c
   w.session(w.own, 's', [
     read(p('README.md')), step('Grep', { pattern: 'x' }, 'a.js'),
     bash('cat hooks/session-discipline/skill-usage.mjs; ls tests | grep -i usage', 'x'),
-    edit(p('src', 'a.js')),
-    read(p('src', 'b.js')), edit(p('src', 'b.js')),
-    bash('sed -n 65,140p docs/notes.md', 'x'),
-    // Not reads: a check whose output is cut or filtered, and sed -i. A file made outside the project is not an edit.
-    bash('npm test 2>&1 | tail -5', 'ok'), bash('npm test 2>&1 | grep pass', 'ok'),
+    // A relative path resolves against the root.
+    edit('src/a.js'),
+    // Same folder: no record, but the count starts again. NotebookEdit names its file notebook_path.
+    read(p('src', 'b.js')), step('NotebookEdit', { notebook_path: p('src', 'n.ipynb'), new_source: 'x', edit_mode: 'replace' }),
+    bash('sed -n 65,140p docs/notes.md', 'x'), bash('cat docs/a.md', 'x'), bash('head -n 3 docs/b.md 2>&1', 'x'), bash('nl -ba docs/c.md', 'x'),
+    bash('npm run build\ncat docs/d.md', 'x'), bash('ls docs 2>/dev/null', 'x'),
+    // Not reads: a check whose output is cut or filtered, sed -i, and commands that write a file (a heredoc body is
+    // not commands). A file made outside the project is not an edit.
+    bash('npm test 2>&1 | tail -5', 'ok'), bash('npm test 2>&1 | grep pass', 'ok'), bash('sed -i s/a/b/ x.js', ''),
+    bash("cat > notes.md <<'EOF'\nfind the loader\nls -la\nEOF", ''), bash('cat >> x.log', ''), bash('tail -n 5 a.log > b.log', ''),
+    bash('sed -i -n 1p x.js', ''),
     mainCreate(join(tmpdir(), 'scratch', 'plan.md')),
-    bash('sed -i s/a/b/ x.js', ''),
     mainCreate(p('docs', 'new.md')),
-  ], { subagents: [{ name: 'b', agentType: 'builder', steps: [read(p('a.js')), read(p('b.js')), step('Grep', { pattern: 'y' }, 'a.js'), step('Glob', { pattern: '*' }, 'a.js'), edit(p('lib', 'x.js'))] }] });
+  ], { subagents: [{ name: 'b', agentType: 'builder', steps: [read(p('a.js')), read(p('b.js')), step('Grep', { pattern: 'y' }, 'a.js'), step('Glob', { pattern: '*' }, 'a.js'),
+    // An edit call counts whatever its result.
+    step('Edit', { replace_all: false, file_path: p('lib', 'x.js'), old_string: 'a', new_string: 'b' }, '<tool_use_error>String to replace not found in file.\nString: a</tool_use_error>', { isError: true })] }] });
   const out = ok(w);
-  assert.deepEqual(linesOf(out, `${HOPS}: `), ['median 3, maximum 4, over 3 folders in 1 of 1 session']);
+  assert.deepEqual(linesOf(out, `${HOPS}: `), ['median 4, maximum 6, over 3 folders in 1 of 1 session']);
   assert.deepEqual(pointersOf(out, HOPS).map((l) => l.replace(/^ {2}\S+:\d+ /, '').replace(/ \S*\/(\w+\/\w+\.\w+)/, ' $1')), [
+    'Write docs/new.md (reads and searches before it: 6)',
     'Edit lib/x.js (reads and searches before it: 4) (subagent: builder)',
     'Edit src/a.js (reads and searches before it: 3)',
-    'Write docs/new.md (reads and searches before it: 1)',
   ]);
   // The new lines follow the repeated reads, in this order.
   const order = ['same file and range', 'files read in pieces', 'new files made', 'new files in commits', HOPS, '## automated'].map((l) => out.indexOf(`\n${l}`));
