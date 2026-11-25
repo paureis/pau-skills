@@ -10,6 +10,8 @@ const SEARCHES = new Set(['grep', 'rg', 'find', 'fd', 'ag', 'ls']);
 // What Grep and Glob return when nothing matched, and what a Bash search that found nothing leaves.
 const EMPTY_TOOL = new Set(['No matches found', 'No files found']);
 const EMPTY_BASH = new Set(['(Bash completed with no output)', '0']);
+// How a Write that made a new file starts its result; a Write over a file says "The file ... has been updated".
+const CREATED = 'File created successfully at:';
 // Words in front of the command that do not change which command it is.
 const RUNNERS = [['npx'], ['python', '-m'], ['python3', '-m'], ['uv', 'run'], ['poetry', 'run'], ['pnpm', 'exec'], ['time']];
 
@@ -74,7 +76,7 @@ export function inProject(roots, path) {
 /** Every signal over the sessions read (readSession) and the check commands the project defines (readProject). */
 export function countSignals(sessions, checks, roots) {
   const s = {
-    N: sessions.length, searchFirst: signal(), emptySearch: signal(), readRepeat: signal(), pieces: signal(), noCheck: signal(), big: signal(), shellRepeat: signal(),
+    N: sessions.length, searchFirst: signal(), emptySearch: signal(), readRepeat: signal(), pieces: signal(), created: signal(), noCheck: signal(), big: signal(), shellRepeat: signal(),
     classes: new Map(CLASS_NAMES.map((c) => [c, signal()])), runs: new Map(checks.map((c) => [c, { ...signal(), failed: 0 }])),
     failedByTool: new Map(), calls: [],
   };
@@ -113,6 +115,8 @@ export function countSignals(sessions, checks, roots) {
             if (seen.size === 2) hit(s.pieces, key, at(c.line));
           }
         }
+        // A subagent line has no toolUseResult when a Write succeeds, so the result text decides.
+        if (c.tool === 'Write' && text?.startsWith(CREATED) && inProject(roots, c.input.file_path)) hit(s.created, key, at(c.line));
         if (EDITS.has(c.tool)) {
           firstEdit ||= at(c.line);
           repeats.clear();
@@ -167,6 +171,7 @@ export function printSignals(s, project, out) {
   count('searches that found nothing', s.emptySearch);
   count(`same file and range read ${READ_REPEAT_MIN} or more times in one transcript`, s.readRepeat);
   count('files read in pieces (2 or more Read ranges of one file, in one transcript)', s.pieces);
+  count('new files made with Write, inside the project', s.created);
   out('## automated checks');
   if (!s.runs.size) out('runs of checks: the project defines no check command this script knows');
   for (const [check, sig] of s.runs) count(`runs of ${check.cmd}`, sig, `; failed: at least ${sig.failed} (a lower bound: only is_error counts, and a pipe hides the exit code)`);

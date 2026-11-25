@@ -3,7 +3,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
+import { tmpdir } from 'node:os';
 import { step, bash, world, linesOf } from './friction-review.helpers.mjs';
 import { extractActions } from '../skills/session-discipline/friction-review/skill-eval-core.mjs';
 import { readCalls } from '../skills/session-discipline/friction-review/friction-sessions.mjs';
@@ -186,4 +187,28 @@ test('navigation: a file of the project read in 2 or more ranges in one transcri
   const out = ok(w);
   assert.deepEqual(linesOf(out, PIECES), ['2 in 1 of 1 session']);
   assert.deepEqual(pointersOf(out, PIECES).map((l) => l.replace(/^ {2}~-src-app\/s\.jsonl:\d+ Read .*\/src\//, '')), ['a.md', 'b.js']);
+});
+
+// The result text Claude Code writes for a Write that made a file. The real text has an em dash, written as its escape.
+const created = (f) => `File created successfully at: ${f} (file state is current in your context \u2014 no need to Read it back)`;
+const write = (f, text = created(f), opts = {}) => step('Write', { file_path: f, content: 'x' }, text, opts);
+// A main-session line also carries this toolUseResult; a subagent line has none.
+const mainCreate = (f) => write(f, created(f), { toolUseResult: { type: 'create', filePath: f, content: 'x', structuredPatch: [], originalFile: null, userModified: false } });
+const WRITES = 'new files made with Write, inside the project: ';
+
+test('navigation: new files made with Write inside the project, decided by the result text', () => {
+  const w = world();
+  const updated = join(w.main, 'old.js');
+  w.session(w.own, 's', [
+    mainCreate(join(w.main, 'src', 'new.js')),
+    // Controls: a Write over a file, a file made in a temp folder, and one in a folder that only starts like the project.
+    write(updated, `The file ${updated} has been updated successfully.`),
+    mainCreate(join(tmpdir(), 'scratch', 'x.md')),
+    mainCreate(`${w.main}-other${sep}b.js`),
+  ], { subagents: [{ name: 'b', agentType: 'builder', steps: [write(join(w.main, 'lib', 'sub.js'), undefined, { toolUseResult: undefined })] }] });
+  const out = ok(w);
+  assert.deepEqual(linesOf(out, WRITES), ['2 in 1 of 1 session']);
+  const at = pointersOf(out, WRITES);
+  assert.match(at[0], /^ {2}~-src-app\/s\.jsonl:\d+ Write \S*\/src\/new\.js$/);
+  assert.match(at[1], /^ {2}~-src-app\/s\/subagents\/agent-b\.jsonl:\d+ Write \S*\/lib\/sub\.js \(subagent: builder\)$/);
 });
