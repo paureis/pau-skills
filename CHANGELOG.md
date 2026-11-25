@@ -3,6 +3,18 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-25: Q32, skill-usage counts typed starts right
+
+- The `skill-usage` hook (session-discipline) records a typed skill from the `UserPromptExpansion` event, under the
+  name Claude Code resolved, instead of reading the prompt and looking for a `SKILL.md` in four folders. A plugin
+  skill typed without its prefix, a skill from another marketplace and a synced skill whose `SKILL.md` is not in
+  those folders are now counted: `/humanizer` is logged as `anthropic-skills:humanizer`, and a plugin skill typed
+  bare as `<plugin>:<name>`. A built-in, an MCP prompt and a `.claude/commands` file in the scope Claude Code names
+  are not counted; a plugin's own command and a command in a folder the hook does not check are counted as typed
+  (`hooks/README.md` lists them). The hook left `UserPromptSubmit`, so it no longer runs on every prompt. On a Claude
+  Code without `UserPromptExpansion` no typed line is written. The tests replay hook input recorded from headless runs
+  of Claude Code 2.1.332 and 2.1.302. `session-discipline` 0.14.1, `pau-skills-hooks` 0.6.1, `pau-skills` 0.22.1.
+
 ## 2026-11-24: Q30, small additions from Matt Pocock's newer skills
 
 - From mattpocock/skills at abeeaf9 (MIT), a few lines each, in our own words. `bug-fix` lists nine ways to build an
