@@ -139,3 +139,8 @@ Decisions 1 to 21 (2026-10-17 to 2026-11-04) are in [decisions-1-to-21.md](decis
    - These are published here even though they are close to unmodified: the owner installs skills from this
      repository's zips. Only the descriptions (our typed-only rules) and the attribution lines change.
    - Order: Q37 goes ahead of Q35 `wizard`, at the owner's request (decision 29 allows it with the owner's reason).
+
+34. **subagent-watchdog fixes (Q38) go right after Q37.** The owner reported what one orchestrated session showed and
+   left the place in the order to the orchestrator. Q38 goes ahead of Q35 because its first finding is a defect, not a
+   feature: an edit in a sibling worktree or the scratchpad does not count, so a healthy background writer can be
+   stopped by an ask nobody answers. Q37 keeps its place, since its kickoff is written and it is small.

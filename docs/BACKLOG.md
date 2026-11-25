@@ -67,7 +67,7 @@ under "Work items" below.
 - [How to run a batch](backlog/how-to-run-a-batch.md): the 10 steps and "With the roster".
 - [Kickoff for the next session](backlog/kickoff.md): the next session's kickoff, and the fifth batch's kickoff as a
   template.
-- [Decisions](backlog/decisions.md): decisions 22 to 33, taken from 2026-11-06 to 2026-11-25, and
+- [Decisions](backlog/decisions.md): decisions 22 to 34, taken from 2026-11-06 to 2026-11-25, and
   [decisions 1 to 21](backlog/decisions-1-to-21.md), from 2026-10-17 to 2026-11-04.
 - [Context budget](backlog/context-budget.md): the facts and the policy since P0.5.
 - [Things that bit the first batch](backlog/things-that-bit/batch-1.md)
@@ -152,6 +152,7 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q35 wizard, a guided script for the steps only a person can do](backlog/q35.md)
 - [Q36 what Q33 left: the split rule in more places](backlog/q36.md)
 - [Q37 reframe and sharpen from pstack, close to word for word](backlog/q37.md)
+- [Q38 subagent-watchdog: what one orchestrated session showed](backlog/q38.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -196,8 +197,8 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 27. Done: the twenty-first batch, Q32 skill-usage typed starts (pull request 85).
 28. Done: the twenty-second batch, Q33 context in fewer calls (pull request 88).
 29. **Next:** Q37 reframe and sharpen from pstack (the owner's request of 2026-11-25, decision 33); the kickoff is in
-    [backlog/kickoff.md](backlog/kickoff.md). Then Q35 `wizard`, a guided script for the steps only a person can do
-    (from Q30), then Q34 rule-to-hook knows UserPromptExpansion (found in Q32), then Q36 what Q33 left (found in Q33). Parked: Q25 Claude Code mods
+    [backlog/kickoff.md](backlog/kickoff.md). Then Q38 subagent-watchdog fixes (the owner's report, decision 34), then
+    Q35 `wizard`, a guided script for the steps only a person can do (from Q30), then Q34 rule-to-hook knows UserPromptExpansion (found in Q32), then Q36 what Q33 left (found in Q33). Parked: Q25 Claude Code mods
     (decision 27) and Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
