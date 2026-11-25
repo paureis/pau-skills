@@ -117,6 +117,8 @@ const NEW_FILE_RULE = 'A new file needs a reason, such as a new responsibility o
   'extend the nearest existing file first, code that changes together stays together, and a file you split says in one ' +
   'line where its parts went.';
 
+const FORBIDS_NEW_FILES = /\b(never|do not|don't|avoid|no)\b[^.:;,]{0,24}\bnew files?\b/i;
+
 test('the ruleset says a new file needs a reason, after "Add no layer" and before the test line', () => {
   const lines = RULESET.split('\n');
   assert.equal(lines.filter((l) => l === NEW_FILE_RULE).length, 1, 'exactly one line is the new-file rule');
@@ -127,7 +129,7 @@ test('the ruleset says a new file needs a reason, after "Add no layer" and befor
 
 test('no ruleset line forbids new files', () => {
   for (const line of RULESET.split('\n')) {
-    assert.doesNotMatch(line, /\b(never|do not|don't|avoid|no)\b[^.:;,]{0,24}\bnew files?\b/i);
+    assert.doesNotMatch(line, FORBIDS_NEW_FILES);
   }
 });
 
@@ -136,6 +138,12 @@ test("BUILD.md's Finish the change section says a new file needs a reason", () =
   const section = build.split(/^## /m).find((s) => s.startsWith('Finish the change\n'));
   assert.ok(section, 'a "## Finish the change" section');
   assert.match(section, /^- A new file needs a reason/m);
+  const bullet = section.split(/^(?=- )/m).find((b) => b.startsWith('- A new file needs a reason'));
+  assert.match(bullet.replace(/\s+/g, ' '), /Size alone is not one\./);
+  assert.doesNotMatch(bullet.replace(/\s+/g, ' '), FORBIDS_NEW_FILES, 'the bullet does not forbid new files');
+  // The skill works without the hooks, so BUILD.md names neither the guard nor its option.
+  assert.doesNotMatch(build, /file-size-guard/);
+  assert.doesNotMatch(build, /pathLimits/);
 });
 
 test('the signing line names both off switches exactly', () => {

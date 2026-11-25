@@ -150,6 +150,14 @@ const NEW_LINE = 'Write several files only along a real boundary (the one named 
   'interface), with one line in the main file that says where the others are. With no such boundary, ask the user for a ' +
   'per-path limit instead of writing a file that exists only to stay under the limit, such as a helpers file of leftovers.';
 const has = (reason, line) => reason.split('\n').includes(line);
+/** Asserts that `line` occurs exactly once, right after the one line that starts with `prefix`. */
+const onceAfter = (reason, line, prefix) => {
+  const lines = reason.split('\n');
+  assert.equal(lines.filter((l) => l === line).length, 1, `exactly once: ${line.slice(0, 40)}`);
+  const anchors = lines.flatMap((l, i) => (l.startsWith(prefix) ? [i] : []));
+  assert.equal(anchors.length, 1, `one "${prefix}" line`);
+  assert.equal(lines.indexOf(line), anchors[0] + 1, `right after "${prefix}"`);
+};
 
 describe('file-size guard: split only along a real boundary', () => {
   for (const [kind, paths] of Object.entries(KINDS)) {
@@ -158,9 +166,11 @@ describe('file-size guard: split only along a real boundary', () => {
       const g = grown(paths[0]);
       assert.ok(has(g, GROWN_LINE), 'grown: the split line');
       assert.ok(!has(g, NEW_LINE), 'grown: not the new-file line');
+      onceAfter(g, GROWN_LINE, 'To split this ');
       const c = created(paths[0]);
       assert.ok(has(c, NEW_LINE), 'new: the several-files line');
       assert.ok(!has(c, GROWN_LINE), 'new: not the split line');
+      onceAfter(c, NEW_LINE, 'For a new ');
     });
   }
 
