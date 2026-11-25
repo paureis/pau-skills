@@ -3,11 +3,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync } from 'node:fs';
-import { join, sep } from 'node:path';
+import { join, sep, win32 } from 'node:path';
 import { tmpdir } from 'node:os';
 import { git, commitAt, step, bash, world, linesOf } from './friction-review.helpers.mjs';
 import { extractActions } from '../skills/session-discipline/friction-review/skill-eval-core.mjs';
 import { readCalls } from '../skills/session-discipline/friction-review/friction-sessions.mjs';
+import { inProject } from '../skills/session-discipline/friction-review/friction-signals.mjs';
 
 const NPM_TEST = 'cd /x && npm test 2>&1 | tail -5';
 const edit = (f = '/x/a.js') => step('Edit', { file_path: f, old_string: 'a', new_string: 'b' });
@@ -276,4 +277,15 @@ test('navigation: reads and searches before the first edit in each folder, the c
   const none = world();
   none.session(none.own, 's', [read(join(none.main, 'a.js')), edit()]);
   assert.deepEqual(linesOf(ok(none), HOPS), [': none']);
+});
+
+test('inside the project on Windows: a root with forward slashes, a backslash path, a drive letter in other case, a relative path', () => {
+  // Git for Windows prints the root with forward slashes. Built at runtime so that no tracked file holds a machine path.
+  const root = ['C:', 'Users', 'ana', 'repo'].join('/');
+  const file = ['C:', 'Users', 'ana', 'repo', 'src', 'a.js'].join('\\');
+  const at = (p) => inProject([root], p, win32, 'win32');
+  assert.equal(at(file), file);
+  assert.equal(at(`c${file.slice(1)}`), `c${file.slice(1)}`);
+  assert.equal(at('src\\a.js'), file);
+  assert.equal(at(['C:', 'Users', 'ana', 'repo-other', 'b.js'].join('\\')), null);
 });

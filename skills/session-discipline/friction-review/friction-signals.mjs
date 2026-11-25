@@ -1,6 +1,6 @@
 // The session part of friction.mjs, counting: each signal of friction that repeats, per kind, with a few pointers
 // (<folder>/<file>:<line>) to where it happened. A count is a lead, not evidence.
-import { dirname, resolve, sep } from 'node:path';
+import nodePath from 'node:path';
 import {
   READ_REPEAT_MIN, SHELL_REPEAT_MIN, POINTERS_PER_SIGNAL, BIG_RESULT_CHARS, FAILURE_CHARS, TARGETED, show, plural,
 } from './friction-show.mjs';
@@ -73,13 +73,19 @@ export function failureLine(text) {
 
 const signal = () => ({ n: 0, sessions: new Set(), pointers: [] });
 
-const fold = (p) => (process.platform === 'win32' ? p.toLowerCase() : p);
-/** A path resolved against the repository (roots[0]), or null when it is not inside one of the roots. */
-export function inProject(roots, path) {
+const fold = (p, platform = process.platform) => (platform === 'win32' ? p.toLowerCase() : p);
+/**
+ * A path resolved against the repository (roots[0]), or null when it is not inside one of the roots. Every root is
+ * resolved with the same path API first: Git for Windows prints a root with forward slashes. A test passes path.win32.
+ */
+export function inProject(roots, path, api = nodePath, platform = process.platform) {
   if (typeof path !== 'string' || !path) return null;
-  const full = resolve(roots[0], path);
-  const f = fold(full);
-  return roots.some((r) => f === fold(r) || f.startsWith(fold(r.endsWith(sep) ? r : r + sep))) ? full : null;
+  const full = api.resolve(roots[0], path);
+  const f = fold(full, platform);
+  return roots.some((r) => {
+    const root = fold(api.resolve(r), platform);
+    return f === root || f.startsWith(root.endsWith(api.sep) ? root : root + api.sep);
+  }) ? full : null;
 }
 
 /** Every signal over the sessions read (readSession) and the check commands the project defines (readProject). */
@@ -131,7 +137,7 @@ export function countSignals(sessions, checks, roots) {
         // it, and every one starts the count again. An edit outside the project (a scratch file) does neither.
         const edited = EDITS.has(c.tool) && inProject(roots, c.tool === 'NotebookEdit' ? c.input.notebook_path : c.input.file_path);
         if (edited) {
-          const folder = fold(dirname(edited));
+          const folder = fold(nodePath.dirname(edited));
           if (!folders.has(folder)) s.hops.push({ key, n: looked, p: at(c.line, `(reads and searches before it: ${looked})`) });
           folders.add(folder);
           looked = 0;
