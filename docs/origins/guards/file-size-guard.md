@@ -15,3 +15,8 @@ how to split in its message. No text is shared; this version is a Claude Code ho
 written, and adds the per-kind recipes, the skip rules and the repository test.
 
 **Changes for this release.** None; written for this release (Q4 in `docs/backlog/q4.md`).
+
+**Q33 (2026-11-25).** The refusal adds one line after each recipe (every kind but data, whose recipe never splits):
+split only along a real boundary and leave one line saying where each part went, and with no such boundary ask the
+user for a per-path limit instead of a file that exists only to stay under the limit. The twentieth batch had split
+files only to fit the limit; this says not to.

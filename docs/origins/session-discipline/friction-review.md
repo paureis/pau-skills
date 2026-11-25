@@ -28,3 +28,10 @@ default), names no path and has no script, so a one-off looks the same as fricti
 - Upstream's Reference section (implementation against review, which file holds what) is folded into `KINDS.md`.
 
 **Why.** One session shows what went wrong once; the owner wanted what keeps going wrong, with counts.
+
+**Q33 (2026-11-25).** Four more navigation lines, to measure whether scattered or oversized files cost turns: files
+read in pieces (2 or more Read ranges of one project file in one transcript), new files made with Write inside the
+project, new files in commits over the days of the sessions read (git, without merges, renames and root commits, so a
+shallow clone does not count every file), and the reads and searches before the first edit in each folder. A shell
+command that writes a file is not a read, and a failing git log leaves the commits line "not counted" instead of
+ending the report.

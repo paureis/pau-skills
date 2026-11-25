@@ -12,7 +12,10 @@ export const ID = /^[A-Za-z0-9_-]+$/;
 const RECENT_MS = 10 * 60 * 1000;
 const listDir = (d) => { try { return readdirSync(d, { withFileTypes: true }); } catch { return []; } };
 
-/** The main session files in this repository's transcript folders and its worktrees', newest first. */
+/**
+ * The main session files in this repository's transcript folders and its worktrees', newest first, and the roots of
+ * the project: the repository and each worktree that has a transcript folder.
+ */
 export function listSessions({ repo, projects }) {
   const { projects: base, found } = findFolders({ repo, projects });
   const sessions = [];
@@ -24,7 +27,7 @@ export function listSessions({ repo, projects }) {
     }
   }
   sessions.sort((a, b) => b.mtime - a.mtime || (a.path < b.path ? -1 : 1));
-  return { base, folders: found.length, sessions };
+  return { base, folders: found.length, sessions, roots: [repo, ...found.map((f) => f.worktree)] };
 }
 
 /**

@@ -1,10 +1,11 @@
 // friction-review's friction.mjs, the project part: the check commands of each ecosystem, the guardrails and which
-// check each names, a file that does not parse, and the size of the instruction files, on temporary repositories.
+// check each names, a file that does not parse, the size of the instruction files, and the git facts the session part
+// uses (new files in commits, the roots of the project), on temporary repositories.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, writeFileSync, statSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { world, linesOf } from './friction-review.helpers.mjs';
+import { git, commitAt, step, bash, world, linesOf, encodeProjectPath } from './friction-review.helpers.mjs';
 
 const project = (files, args = []) => {
   const w = world();
@@ -119,4 +120,72 @@ test('instruction files with their size in tokens (bytes / 4), the home folder a
     ['CLAUDE.md, 100 tokens', 'AGENTS.md, 3 tokens', '.claude/CLAUDE.md, 2 tokens', '.claude/rules/style.md, 10 tokens', '~/.claude/CLAUDE.md, 3 tokens']);
   w.file('AGENTS.md', 'x');
   assert.match(w.run().stdout, /^instructions: AGENTS\.md, 1 token$/m);
+});
+
+const ok = (w) => {
+  const r = w.run();
+  assert.equal(r.code, 0, r.stderr);
+  return r.stdout;
+};
+const mtime = (file) => statSync(file).mtime.toISOString();
+const ago = (days) => new Date(Date.now() - days * 864e5).toISOString();
+const add = (w, rel, date) => {
+  w.file(rel, rel);
+  git(w.main, 'add', rel);
+  commitAt(w.main, date, 'commit', '-q', '-m', rel);
+};
+const COMMITS = /^new files in commits from (\S+) to (\S+) \(git log --diff-filter=A, without merges, renames and root commits\): (\d+)$/m;
+
+test('navigation: new files in commits over the days of the sessions read, without renames and root commits', () => {
+  const w = world();
+  // Renames found whatever the user's config says.
+  Object.assign(w.env, { GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'diff.renames', GIT_CONFIG_VALUE_0: 'false' });
+  const older = mtime(w.session(w.own, 'old', [bash('ls', 'a')], { ageMin: 5 * 1440 }));
+  const newer = mtime(w.session(w.own, 'new', [bash('ls', 'a')], { ageMin: 3 * 1440 }));
+  // Before the first day: an empty root commit, a file, and a file on a side branch. On the older day a file, counted.
+  // On the newer day a rename, the merge of the side branch, and a file late in the day, counted. A file after it.
+  commitAt(w.main, ago(9), 'commit', '-q', '--allow-empty', '-m', 'root');
+  add(w, 'early.txt', ago(8));
+  git(w.main, 'switch', '-q', '-c', 'side');
+  add(w, 'side.txt', ago(7));
+  git(w.main, 'switch', '-q', 'main');
+  add(w, 'in.txt', older);
+  git(w.main, 'mv', 'in.txt', 'moved.txt');
+  commitAt(w.main, newer, 'commit', '-q', '-m', 'mv');
+  commitAt(w.main, newer, 'merge', '-q', '--no-ff', '-m', 'merge', 'side');
+  add(w, 'last-day.txt', `${newer.slice(0, 10)}T23:59:59Z`);
+  add(w, 'late.txt', ago(1));
+  assert.deepEqual(ok(w).match(COMMITS).slice(1), [older.slice(0, 10), newer.slice(0, 10), '2']);
+  // An unborn HEAD counts 0; so does the root commit of a repository, even on a day read.
+  const r = world();
+  const day = mtime(r.session(r.own, 's', [bash('ls', 'a')]));
+  assert.equal(ok(r).match(COMMITS)[3], '0');
+  add(r, 'root.txt', day);
+  assert.equal(ok(r).match(COMMITS)[3], '0');
+  assert.match(ok(world()), /^new files in commits: not counted \(no session read\)$/m);
+});
+
+test('a git log that fails leaves the commits line not counted, and the rest of the report prints', () => {
+  const w = world();
+  const day = mtime(w.session(w.own, 's', [bash('ls', 'a')]));
+  add(w, 'a.txt', day);
+  add(w, 'b.txt', day);
+  // HEAD still resolves, so rev-parse passes; log fails when it walks to the deleted parent.
+  const first = git(w.main, 'rev-list', '--max-parents=0', 'HEAD');
+  rmSync(join(w.main, '.git', 'objects', first.slice(0, 2), first.slice(2)));
+  const out = ok(w);
+  assert.deepEqual(linesOf(out, 'new files in commits'), [': not counted (git log failed)']);
+  assert.match(out, /^## automated checks$/m);
+  assert.match(out, /^# not counted: coding standards/m);
+});
+
+test('a worktree of the repository is a root of the project: an edit there counts, outside the repository folder', () => {
+  const w = world();
+  add(w, 'a.txt', ago(2));
+  const wt = `${w.main}-wt`;
+  git(w.main, 'worktree', 'add', '-q', wt);
+  w.session(join(w.projects, encodeProjectPath(wt)), 's', [step('Read', { file_path: join(wt, 'a.txt') }, 'a'),
+    step('Edit', { replace_all: false, file_path: join(wt, 'src', 'a.js'), old_string: 'a', new_string: 'b' })]);
+  assert.deepEqual(linesOf(ok(w), 'reads and searches before the first edit in each folder, in transcripts that edit the project: '),
+    ['median 1, maximum 1, over 1 folder in 1 of 1 session']);
 });

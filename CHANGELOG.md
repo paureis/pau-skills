@@ -3,6 +3,24 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-25: Q33, context in fewer calls
+
+- `friction-review` (session-discipline) prints four more navigation lines: files read in pieces (2 or more Read
+  ranges of one project file in one transcript), new files made with Write inside the project, new files in commits
+  over the days of the sessions read (without merges, renames and root commits), and the reads and searches before the
+  first edit in each folder, with the median, the maximum and the edits with the most. A shell command that writes a
+  file is not counted as a read; Windows paths are compared after resolving the roots; a failing git log leaves that
+  line "not counted". KINDS.md says what to do with the numbers.
+- `file-size-guard` (guards) says to split only along a real boundary (the one its recipe names, a responsibility, a
+  layer, a public interface) and to leave one line in the old file that says where each part went; with no such
+  boundary, to ask the user for a per-path limit instead of a file that exists only to stay under the limit. The data
+  recipe never splits and is unchanged. The default limit is unchanged.
+- `lazy-senior` (planning, hook and skill) adds one rule: a new file needs a reason, never size alone; extend the
+  nearest existing file first, keep code that changes together in one place, and a split file says where its parts
+  went. It is not a rule against new files. The hook's context is now 1,772 characters (caps raised to 1,650 and 1,800
+  with the owner's yes).
+- `session-discipline` 0.15.0, `guards` 0.12.0, `planning` 0.12.0, `pau-skills-hooks` 0.7.0, `pau-skills` 0.23.0.
+
 ## 2026-11-25: Q32, skill-usage counts typed starts right
 
 - The `skill-usage` hook (session-discipline) records a typed skill from the `UserPromptExpansion` event, under the

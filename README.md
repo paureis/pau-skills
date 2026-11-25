@@ -94,9 +94,10 @@ green by skipping the failing test.
   repeat, and proposes a fix for each at the highest layer it can live in (architecture, types, a lint or CI check, a
   test, then prose), proven on a past instance.
 - `friction-review` counts the friction that repeats across your last sessions (searches before the first edit,
-  reruns, failed access, big tool results, checks nobody runs or wires in) and proposes a fix for each.
+  reruns, failed access, big tool results, checks nobody runs or wires in, files read in pieces, new files, reads
+  before the first edit in each folder) and proposes a fix for each.
 - `file-size-guard` (hook) blocks a change that grows a file past 5,000 tokens, the file an agent keeps appending to,
-  and says how to split it.
+  and says how to split it along a real boundary, or to ask you for a per-path limit when there is none.
 - `skill-eval` checks whether a change to a skill or prompt changes what the agent actually does, with blind runs,
   and its trigger mode checks which skill starts for which request.
 
@@ -142,8 +143,8 @@ context was compacted.
 - `engineering-principles` gives a name to each rule a design or code decision is made by ("apply build the lever"),
   so one phrase steers the work and every citation says which decision it changed.
 - `lazy-senior` writes the smallest complete change: first whether it needs to exist, then the codebase, the
-  standard library and the installed dependencies, without ever cutting validation, security or a needed test. It
-  reviews a change or a whole repository with bugs first and bloat last, and lists the `shortcut:` comments that mark
+  standard library and the installed dependencies, without ever cutting validation, security or a needed test. A new
+  file needs a reason, and size alone is not one. It reviews a change or a whole repository with bugs first and bloat last, and lists the `shortcut:` comments that mark
   a known limit. Its hook, on by default, adds the rules to every session and subagent. Adapted from ponytail.
 
 ### 6. Several agents in one repository

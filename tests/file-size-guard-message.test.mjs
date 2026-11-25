@@ -140,3 +140,51 @@ describe('file-size guard: the refusal message', () => {
     assert.match(r.stderr, /\[file-size-guard\].*src\/a\.js/s);
   });
 });
+
+// From docs/backlog/q33.md, item 2: split only along a real boundary and leave a pointer in the old file; with no
+// boundary, ask for a per-path limit instead of a file that exists only to stay under the limit.
+const GROWN_LINE = 'Split only along a real boundary (the one named above, a responsibility, a layer, a public interface), ' +
+  'and leave one line in the old file that says where each part went. With no such boundary, ask the user for a per-path ' +
+  'limit instead of moving part of it into a file that exists only to stay under the limit, such as a helpers file of leftovers.';
+const NEW_LINE = 'Write several files only along a real boundary (the one named above, a responsibility, a layer, a public ' +
+  'interface), with one line in the main file that says where the others are. With no such boundary, ask the user for a ' +
+  'per-path limit instead of writing a file that exists only to stay under the limit, such as a helpers file of leftovers.';
+const has = (reason, line) => reason.split('\n').includes(line);
+/** Asserts that `line` occurs exactly once, right after the one line that starts with `prefix`. */
+const onceAfter = (reason, line, prefix) => {
+  const lines = reason.split('\n');
+  assert.equal(lines.filter((l) => l === line).length, 1, `exactly once: ${line.slice(0, 40)}`);
+  const anchors = lines.flatMap((l, i) => (l.startsWith(prefix) ? [i] : []));
+  assert.equal(anchors.length, 1, `one "${prefix}" line`);
+  assert.equal(lines.indexOf(line), anchors[0] + 1, `right after "${prefix}"`);
+};
+
+describe('file-size guard: split only along a real boundary', () => {
+  for (const [kind, paths] of Object.entries(KINDS)) {
+    if (kind === 'data') continue;
+    test(`${kind}: a grown file gets the split line, a new file the several-files line`, () => {
+      const g = grown(paths[0]);
+      assert.ok(has(g, GROWN_LINE), 'grown: the split line');
+      assert.ok(!has(g, NEW_LINE), 'grown: not the new-file line');
+      onceAfter(g, GROWN_LINE, 'To split this ');
+      const c = created(paths[0]);
+      assert.ok(has(c, NEW_LINE), 'new: the several-files line');
+      assert.ok(!has(c, GROWN_LINE), 'new: not the split line');
+      onceAfter(c, NEW_LINE, 'For a new ');
+    });
+  }
+
+  test('data: the recipe never splits, so neither line', () => {
+    for (const reason of [grown(KINDS.data[0]), created(KINDS.data[0])]) {
+      assert.ok(!has(reason, GROWN_LINE));
+      assert.ok(!has(reason, NEW_LINE));
+    }
+  });
+
+  test('the hook prints the split line on stderr for a real Write', () => {
+    const p = makeRepo(); put(p, 'src/a.js', 'x');
+    const r = hook(p, write(p, 'src/a.js', big));
+    assert.equal(r.code, 2);
+    assert.ok(has(r.stderr, GROWN_LINE), r.stderr);
+  });
+});

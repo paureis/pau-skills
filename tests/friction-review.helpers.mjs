@@ -11,16 +11,23 @@ const SCRIPT = repo('skills', 'session-discipline', 'friction-review', 'friction
 
 const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
 
+/** A git command that makes a commit, dated at date (an ISO time) and with no signing or author from the user's config. */
+const commitAt = (cwd, date, ...args) => execFileSync('git', ['-c', 'user.email=test@example.com', '-c', 'user.name=Test', '-c', 'commit.gpgsign=false', ...args],
+  { cwd, env: { ...process.env, GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date }, stdio: 'ignore' });
+
 let next = 0;
 
-/** One tool call and its result, as the two lines a session file holds. */
-function step(name, input, text = 'ok', { isError, persisted, sidechain } = {}) {
+/**
+ * One tool call and its result, as the two lines a session file holds. The toolUseResult is the Bash shape unless the
+ * options pass one (a Write create in a main file) or pass it as undefined (a subagent line, which has none).
+ */
+function step(name, input, text = 'ok', { isError, persisted, sidechain, ...more } = {}) {
   const id = `toolu_${++next}`;
   const side = sidechain ? { isSidechain: true } : {};
   const use = { type: 'assistant', ...side, timestamp: '2026-11-01T10:00:00Z', message: { model: 'some-model', role: 'assistant', content: [{ type: 'tool_use', id, name, input }] } };
   const res = { type: 'tool_result', tool_use_id: id, content: text };
   if (isError !== undefined) res.is_error = isError;
-  const toolUseResult = persisted ? { persistedOutputSize: persisted, persistedOutputPath: '/x/tool-results/out.txt' } : isError ? `Error: ${text}` : { stdout: text, stderr: '' };
+  const toolUseResult = 'toolUseResult' in more ? more.toolUseResult : persisted ? { persistedOutputSize: persisted, persistedOutputPath: '/x/tool-results/out.txt' } : isError ? `Error: ${text}` : { stdout: text, stderr: '' };
   return [use, { type: 'user', ...side, timestamp: '2026-11-01T10:00:01Z', message: { role: 'user', content: [res] }, toolUseResult }];
 }
 
@@ -89,4 +96,4 @@ function world() {
 /** The lines of a run's output that start with prefix, without it. */
 const linesOf = (stdout, prefix) => stdout.split('\n').filter((l) => l.startsWith(prefix)).map((l) => l.slice(prefix.length));
 
-export { SCRIPT, git, step, bash, world, setAge, linesOf, encodeProjectPath };
+export { SCRIPT, git, commitAt, step, bash, world, setAge, linesOf, encodeProjectPath };

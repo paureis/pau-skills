@@ -88,14 +88,16 @@ would be over its limit after the change and larger than before (a new file coun
 keeps an old big file the same size or smaller passes. Only files inside the project count. Always skipped: lockfiles
 (`package-lock.json`, `yarn.lock`, `Cargo.lock`, `poetry.lock`, `go.sum` and others), notebooks, `*.min.*`, binaries,
 files with `@generated` or `DO NOT EDIT` in their first 5 lines, paths marked `linguist-generated` or
-`linguist-vendored` in `.gitattributes`, and git-ignored paths. The two git rules run only for a change that would
-be refused; without git they do not apply. An edit the tool itself would refuse passes: an `old_string` that is not in
+`linguist-vendored` in `.gitattributes`, and git-ignored paths. The two git rules run only for a change that would be
+refused; without git they do not apply. An edit the tool itself would refuse passes: an `old_string` that is not in
 the file, or is in it more than once without `replace_all`. Claude Code's Edit may match after turning CRLF line
 endings into LF; such an edit is not measured and passes. The message gives a recipe for the file's kind (code, test
 file, long document, log, SKILL.md, data file), worded for a new file or for one that grows, and asks the agent to
-tell you, instead of starting a large refactor, when splitting is not part of your task. It also gives the
-`pathLimits` entry and the off switch as whole JSON files. A `pathLimits` glob without a `/` matches that file name
-in every folder, so a limit for the root `README.md` covers every `README.md`.
+tell you, instead of starting a large refactor, when splitting is not part of your task. It says to split only along a
+real boundary (the one its recipe names, a responsibility, a layer, a public interface), with one line in the old file
+that says where the parts went, and with none to ask you for a per-path limit instead. It also gives the `pathLimits`
+entry and the off switch as whole JSON files. A `pathLimits` glob without a `/` matches that file name in every
+folder, so a limit for the root `README.md` covers every `README.md`.
 
 It sees only the Write, Edit and MultiEdit tools. A file written by a Bash command (a heredoc, a redirect, or a
 generator script) is not checked; a check in CI, like this repository's `tests/file-size.test.mjs`, catches those.
@@ -242,7 +244,7 @@ Options `repeatNote`, `repeatAsk`, `noEditNote`, `noEditAsk` and `readOnlyAgents
 
 No options. On by default: installing the `planning` plugin, `pau-skills-hooks` or the bundle turns it on. Turn it
 off with `"hooks": {"lazy-senior": false}` in `.claude/pau-skills.json` (the user file or the project file), or for one
-session with `PAU_SKILLS_DISABLE=lazy-senior`. It adds about 1,500 characters to every session start and every
+session with `PAU_SKILLS_DISABLE=lazy-senior`. It adds about 1,800 characters to every session start and every
 subagent start. The text is the `lazy-senior` skill's `RULES.md`; a test keeps the two copies the same.
 
 ### roadmap, merge-guard, inline-backtick-guard

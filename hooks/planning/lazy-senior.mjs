@@ -42,6 +42,9 @@ export const RULESET = [
   'Never cut validation at a trust boundary, error handling that prevents data loss, security, accessibility, the ' +
     'calibration real hardware needs, or anything the user asked for.',
   'Add no layer, wrapper, option or config nobody asked for; deleting beats adding.',
+  'A new file needs a reason, such as a new responsibility or a public interface, never size alone: extend the ' +
+    'nearest existing file first, code that changes together stays together, and a file you split says in one line ' +
+    'where its parts went.',
   'Non-trivial logic and every bug fix leave a small test of the edge cases they turn on.',
   'Comment a known limit as shortcut: <the limit>, <when to upgrade>.',
   'End with what you skipped or did not check, and any risk.',
