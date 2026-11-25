@@ -3,17 +3,15 @@
 // writes the prompt, and exits 0 on every input.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { repo, tempDir } from './helpers.mjs';
-import { ISO, setup, run, lines, names, skill } from './skill-usage.helpers.mjs';
+import { ISO, setup, run, lines, names } from './skill-usage.helpers.mjs';
 
 const HOOKS_JSON = repo('hooks', 'session-discipline', 'hooks.json');
 
 const agent = (ctx, name, extra = {}) => ({ hook_event_name: 'PreToolUse', tool_name: 'Skill', tool_input: { skill: name }, session_id: 'sess-7f3a91', cwd: ctx.project, transcript_path: join(ctx.project, 'transcript-file.jsonl'), ...extra });
-const typed = (ctx, prompt) => ({ hook_event_name: 'UserPromptSubmit', prompt, session_id: 'sess-7f3a91', cwd: ctx.project, transcript_path: join(ctx.project, 'transcript-file.jsonl') });
 
 test('an agent start is one three-field line, with no session id, folder or transcript path', () => {
   const ctx = setup();
@@ -24,73 +22,6 @@ test('an agent start is one three-field line, with no session id, folder or tran
   const when = Date.parse(text.split('\t')[0]);
   assert.ok(when >= before - 1000 && when <= Date.now() + 1000, 'the time is now');
   for (const s of ['sess-7f3a91', ctx.project, 'transcript-file']) assert.ok(!text.includes(s), s);
-});
-
-test('a typed project skill is recorded as typed, without its arguments', () => {
-  const ctx = setup();
-  skill(join(ctx.project, '.claude', 'skills'), 'deploy-notes');
-  run(ctx, typed(ctx, '/deploy-notes ship the v2 build zebrafruit'));
-  const text = readFileSync(ctx.log, 'utf8');
-  assert.match(text, new RegExp(`^${ISO}\\tdeploy-notes\\ttyped\\n$`));
-  assert.ok(!text.includes('zebrafruit') && !text.includes('ship'));
-});
-
-test('a typed home skill, a synced skill and this repository\'s own plugin skill are recorded', () => {
-  const ctx = setup();
-  skill(join(ctx.home, '.claude', 'skills'), 'home-notes');
-  skill(join(ctx.home, '.claude', 'skills', 'synced', 'acct-1'), 'synced-notes');
-  run(ctx, typed(ctx, '/home-notes'));
-  run(ctx, typed(ctx, '/synced-notes now'));
-  run(ctx, typed(ctx, '/pau-skills:tdd add a parser'));
-  assert.deepEqual(names(ctx), ['home-notes\ttyped', 'synced-notes\ttyped', 'pau-skills:tdd\ttyped']);
-});
-
-test('a typed skill of a synced plugin is recorded only under its own prefix', () => {
-  const ctx = setup();
-  skill(join(ctx.home, '.claude', 'plugins', 'synced', 'acct-2', 'design', 'skills'), 'ux-copy');
-  skill(join(ctx.home, '.claude', 'plugins', 'synced', 'skills'), 'escaped'); // what acct-2/../skills would reach
-  run(ctx, typed(ctx, '/..:escaped'));
-  run(ctx, typed(ctx, '/other:ux-copy'));
-  run(ctx, typed(ctx, '/design:ux-copy the signup page'));
-  assert.deepEqual(names(ctx), ['design:ux-copy\ttyped']);
-});
-
-test('built-in and custom commands are not recorded', () => {
-  const ctx = setup();
-  mkdirSync(join(ctx.project, '.claude', 'commands'), { recursive: true });
-  writeFileSync(join(ctx.project, '.claude', 'commands', 'review.md'), 'Review the diff.\n');
-  for (const p of ['/clear', '/compact keep the plan', '/review']) run(ctx, typed(ctx, p));
-  assert.equal(existsSync(ctx.log), false);
-});
-
-test('/.. is not recorded, even with a SKILL.md one folder up', () => {
-  const ctx = setup();
-  mkdirSync(join(ctx.home, '.claude'), { recursive: true });
-  writeFileSync(join(ctx.home, '.claude', 'SKILL.md'), 'x\n');
-  mkdirSync(join(ctx.project, '.claude'), { recursive: true });
-  writeFileSync(join(ctx.project, '.claude', 'SKILL.md'), 'x\n');
-  run(ctx, typed(ctx, '/..'));
-  run(ctx, typed(ctx, '/.. now'));
-  assert.equal(existsSync(ctx.log), false);
-});
-
-test('a name followed by something other than a space or the end is not recorded', () => {
-  const ctx = setup();
-  skill(join(ctx.project, '.claude', 'skills'), 'deploy-notes');
-  run(ctx, typed(ctx, '/deploy-notes/readme.md is broken'));
-  run(ctx, typed(ctx, '/deploy-notes,now'));
-  assert.equal(existsSync(ctx.log), false);
-  run(ctx, typed(ctx, '/deploy-notes'));
-  assert.deepEqual(names(ctx), ['deploy-notes\ttyped'], 'control: the bare name is recorded');
-});
-
-test('a prompt that does not start with / is not recorded, even when it names a skill', () => {
-  const ctx = setup();
-  skill(join(ctx.project, '.claude', 'skills'), 'deploy-notes');
-  run(ctx, typed(ctx, 'deploy-notes please'));
-  run(ctx, typed(ctx, ' /deploy-notes'));
-  run(ctx, typed(ctx, 'run /deploy-notes'));
-  assert.equal(existsSync(ctx.log), false);
 });
 
 test('another tool, and another event, record nothing', () => {
@@ -125,16 +56,15 @@ test('a name of 200 characters is recorded and one of 201 is not', () => {
   assert.deepEqual(names(ctx), [`${'a'.repeat(200)}\tagent`]);
 });
 
+// A typed start that is off: tests/skill-usage-typed.test.mjs, case i.
 test('the hook is off by the project config, and off by PAU_SKILLS_DISABLE', () => {
   const ctx = setup();
-  skill(join(ctx.project, '.claude', 'skills'), 'deploy-notes');
   const conf = join(ctx.project, '.claude', 'pau-skills.json');
+  mkdirSync(join(ctx.project, '.claude'), { recursive: true });
   writeFileSync(conf, JSON.stringify({ hooks: { 'skill-usage': false } }));
   run(ctx, agent(ctx, 'tdd'));
-  run(ctx, typed(ctx, '/deploy-notes'));
   writeFileSync(conf, '{}');
   run(ctx, agent(ctx, 'tdd'), { env: { PAU_SKILLS_DISABLE: 'skill-usage' } });
-  run(ctx, typed(ctx, '/deploy-notes'), { env: { PAU_SKILLS_DISABLE: 'skill-usage' } });
   assert.equal(existsSync(ctx.log), false);
   run(ctx, agent(ctx, 'tdd'));
   assert.deepEqual(names(ctx), ['tdd\tagent'], 'control: on again');
@@ -265,15 +195,6 @@ test('a log path that is a folder is a silent exit 0', () => {
   mkdirSync(ctx.log, { recursive: true });
   run(ctx, agent(ctx, 'tdd'));
   assert.deepEqual(readdirSync(ctx.log), []);
-});
-
-test('a prompt without / returns before reading any config file', { skip: process.platform === 'win32' }, () => {
-  const ctx = setup();
-  for (const d of [ctx.home, ctx.project]) {
-    mkdirSync(join(d, '.claude'), { recursive: true });
-    execFileSync('mkfifo', [join(d, '.claude', 'pau-skills.json')]);
-  }
-  run(ctx, typed(ctx, 'hello'), { timeout: 3000 });
 });
 
 test('hooks.json registers the hook under PreToolUse for Skill and under UserPromptSubmit', () => {
