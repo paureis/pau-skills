@@ -59,3 +59,9 @@ model.
 reports a `Checklist:` line. BUILD.md's Tests section adds property tests for parsers, money and data writes: the four
 properties and the seed rule in short, the project's own library or a small seeded loop, and a pointer to `tdd`'s
 PROPERTIES.md if it is installed.
+
+**Q33 (2026-11-25).** One ruleset line and one BUILD.md bullet: a new file needs a reason (a new responsibility, a
+public interface, or a file the language or layout requires), never size alone; extend the nearest existing file
+first, keep code that changes together in one place, and a split file says where its parts went. It is not a rule
+against new files. The ruleset grows to 1,640 characters and the hook's context to 1,772, under caps the owner raised
+to 1,650 and 1,800.

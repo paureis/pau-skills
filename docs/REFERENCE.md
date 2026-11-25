@@ -16,8 +16,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   an edit that would not change what a future agent does, and catches decisions that were right for the wrong reason;
   `--stale` finds rules that cite files that are gone.
 - **[friction-review](../skills/session-discipline/friction-review/SKILL.md)** (adapted, typed only): Counts the friction
-  that repeats across this project's last sessions (search churn, costly tool calls, failed access, unwired checks, no
-  guardrail), proposes changes by severity and makes only the ones you pick.
+  that repeats across this project's last sessions (search churn, files read in pieces, new files, reads before the
+  first edit in each folder, costly tool calls, failed access, unwired checks, no guardrail), proposes changes by
+  severity and makes only the ones you pick.
 - **[session-close](../skills/session-discipline/session-close/SKILL.md)** (typed only): Closes a session in a fixed order: clean tree, retrospective, roadmap and log, handoff, commit
   and push.
 - **[handoff](../skills/session-discipline/handoff/SKILL.md)**: Writes a handoff the next session can resume from, after a retrospective gate, with a
@@ -149,7 +150,8 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   the read-only mining, with redaction. Writes nothing without your yes.
 - **[lazy-senior](../skills/planning/lazy-senior/SKILL.md)** (adapted): Writes the smallest complete change by a
   six-rung ladder (does it need to exist, the codebase, the standard library, an installed dependency, one clear line,
-  the least code), reviews a change or a repository in the order correct, safe, holds under load, tested, fast, lean,
+  the least code), with a new file only for a reason other than size, reviews a change or a repository in the order
+  correct, safe, holds under load, tested, fast, lean,
   and lists `shortcut:` comments with `debt.mjs`. Hook: [`lazy-senior`](../hooks/planning/lazy-senior.mjs), which adds
   the ruleset to every session and subagent.
 - **[engineering-principles](../skills/planning/engineering-principles/SKILL.md)** (adapted): An index of eleven named
