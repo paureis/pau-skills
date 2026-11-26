@@ -14,8 +14,8 @@
 //     types skip this rule, and get repeat notes but no repeat asks.
 //   - An exempt call (an edit, a git commit, SubagentHandback, SendMessage) may get a note but never an ask, so a
 //     loop of failing edits or commits is still noticed.
-//   - An edit is Edit, Write, MultiEdit or NotebookEdit on a path inside the project or inside the agent's own
-//     working folder (insideProject from verify-before-done), or a git commit (found with commands() from
+//   - An edit is Edit, Write, MultiEdit or NotebookEdit with a path of 1 to 4,096 characters, wherever the file is (a
+//     sibling worktree, the scratchpad: q38.md item 1), or a git commit (found with commands() from
 //     hooks/lib/shell.mjs, which also looks inside bash -c). It counts at PostToolUse, so a refused edit is no edit;
 //     PostToolUseFailure only ends the call in flight.
 //   - The note is additionalContext and blocks nothing. The ask is permissionDecision "ask": interactive, the owner
@@ -42,7 +42,6 @@
 // the new state, the output or null, and which agents to write or remove; the hook does the I/O.
 import { createHash } from 'node:crypto';
 import { commands, gitSubcommand } from '../lib/shell.mjs';
-import { insideProject } from '../verification/verify-before-done.mjs';
 
 export const NAME = 'subagent-watchdog';
 export const DEFAULTS = Object.freeze({
@@ -98,17 +97,15 @@ function isCommit(command) {
 }
 
 /**
- * True when the tool call is an edit: an edit tool on a path inside the project or the agent's cwd (where.cwd, else
- * the input's), or a shell command that runs git commit. A path over 4,096 characters is not an edit.
+ * True when the tool call is an edit: an edit tool with a path of 1 to 4,096 characters, wherever the file is, or a
+ * shell command that runs git commit.
  */
-export function isEdit(input, where = {}) {
+export function isEdit(input) {
   const tool = input.tool_name;
   const ti = isObject(input.tool_input) ? input.tool_input : {};
   if (EDIT_TOOLS.has(tool)) {
     const p = tool === 'NotebookEdit' ? ti.notebook_path : ti.file_path;
-    if (typeof p !== 'string' || p === '' || p.length > LIMITS.path) return false;
-    const cwd = typeof where.cwd === 'string' ? where.cwd : input.cwd;
-    return insideProject(p, { project: where.project, cwd }) || (typeof cwd === 'string' && cwd !== '' && insideProject(p, { project: cwd, cwd }));
+    return typeof p === 'string' && p !== '' && p.length <= LIMITS.path;
   }
   return SHELL_TOOLS.has(tool) && typeof ti.command === 'string' && isCommit(ti.command);
 }
@@ -197,7 +194,7 @@ const askText = (type, id, parts) =>
   'say so in one line and go on: only this one call was refused. To the owner: allowing lets the agent go on, and ' +
   `denying refuses only this one call. Turn the watchdog off with ${OFF} in .claude/pau-skills.json.`;
 
-function subagent(state, input, id, now, o, where) {
+function subagent(state, input, id, now, o) {
   const event = input.hook_event_name;
   if (event === 'SubagentStop') return removed(state, id);
   const type = typeof input.agent_type === 'string' ? input.agent_type.slice(0, LIMITS.type) : '';
@@ -216,7 +213,7 @@ function subagent(state, input, id, now, o, where) {
     a.flight = null;
     const ended = waitId(input.tool_use_id);
     if (ended !== null) a.waits = a.waits.filter((w) => w.id !== ended);
-    if (event === 'PostToolUse' && isEdit(input, where)) Object.assign(a, { sinceEdit: 0, runs: {}, top: null, edit: now, noted: false, asked: 0 });
+    if (event === 'PostToolUse' && isEdit(input)) Object.assign(a, { sinceEdit: 0, runs: {}, top: null, edit: now, noted: false, asked: 0 });
     return done();
   }
   // PreToolUse
@@ -237,7 +234,7 @@ function subagent(state, input, id, now, o, where) {
     n = a.runs[key] = (a.runs[key] || 0) + 1;
     if (!a.top || n > a.top.n) a.top = { n, cmd: norm.slice(0, LIMITS.shown) };
   }
-  const exempt = QUIET_TOOLS.has(tool) || isEdit(input, where);
+  const exempt = QUIET_TOOLS.has(tool) || isEdit(input);
   const readOnly = isReadOnly(a.type, o.readOnlyAgents);
   const k = a.sinceEdit;
   const level = Math.floor(k / o.noEditAsk);
@@ -314,14 +311,13 @@ function status(state, input, now, o) {
 }
 
 /**
- * One event. where is { project, cwd }, the folders an edit may be in. Returns { state, output, write, remove, shown,
- * changed }: write lists the agents whose state to save, remove the agents whose state to delete, shown whether to
- * save state.shownAt.
+ * One event. Returns { state, output, write, remove, shown, changed }: write lists the agents whose state to save,
+ * remove the agents whose state to delete, shown whether to save state.shownAt.
  */
-export function step(state, input, { now = Date.now(), options = resolveOptions({}), where = {} } = {}) {
+export function step(state, input, { now = Date.now(), options = resolveOptions({}) } = {}) {
   const r = route(input);
   if (r === null) return nothing(state);
-  if (r.who === 'sub') return subagent(state, input, r.id, now, options, where);
+  if (r.who === 'sub') return subagent(state, input, r.id, now, options);
   if (r.stop !== undefined) return removed(state, r.stop);
   return status(state, input, now, options);
 }

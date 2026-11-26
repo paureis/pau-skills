@@ -28,11 +28,11 @@ per agent, commands cut to 120 characters in a message and 80 in the status.
 
 - **A repeat** is the same shell command (Bash or PowerShell), with every run of white space read as one space, run
   again with no edit in between. Case, quotes and every other character make another command.
-- **An edit** is Edit, Write, MultiEdit or NotebookEdit on a file inside the project or inside the agent's own working
-  folder (a worktree counts), any file type, Markdown included; or a shell command that runs `git commit`, also
-  inside `bash -c`. It counts when the call ran (PostToolUse): a refused edit, or one that failed
-  (PostToolUseFailure), is no edit. A path over 4,096 characters is not an edit. Edits made through the shell, such
-  as `sed -i`, do not count.
+- **An edit** is Edit, Write, MultiEdit or NotebookEdit on any file, wherever it is (the project, a sibling worktree,
+  the scratchpad or another temp folder), any file type, Markdown included; or a shell command that runs
+  `git commit`, also inside `bash -c`. It counts when the call ran (PostToolUse): a refused edit, or one that failed
+  (PostToolUseFailure), is no edit. An empty path or one over 4,096 characters is not an edit. Edits made through
+  the shell, such as `sed -i`, do not count.
 - **The note** is context added to the agent's tool call; it blocks nothing. It gives the count and the command, and
   says to change something or report what you have and what blocks you, and to go on if the run is healthy.
 - **The ask** is a permission prompt for that one call. Interactive, the owner is asked: allowing lets the agent go

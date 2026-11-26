@@ -12,7 +12,7 @@ const O = resolveOptions({});
 const SEC = 1000;
 const prompt = main('UserPromptSubmit', { prompt: 'how is it going?' });
 const stateOf = (entries, shownAt = 0) => ({ shownAt, agents: new Map(entries) });
-const at = (state, now, input = prompt) => step(state, input, { now, options: O, where: { project: P, cwd: P } });
+const at = (state, now, input = prompt) => step(state, input, { now, options: O });
 const ctx = (r) => (r.output === null ? null : r.output.hookSpecificOutput.additionalContext);
 const lineOf = (r, id) => ctx(r).split('\n').filter((l) => l.includes(` ${id}:`));
 const quiet = (r, state, why) => {

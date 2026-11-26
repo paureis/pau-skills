@@ -1,4 +1,6 @@
-// Shared helpers for the subagent-watchdog tests: a small simulator that feeds events to step() with a clock.
+// Shared helpers for the subagent-watchdog tests: a small simulator that feeds events to step() with a clock, and the
+// recorded hook input of a real run.
+import { readFileSync } from 'node:fs';
 import { step, emptyState, resolveOptions } from '../hooks/agent-orchestration/subagent-watchdog-logic.mjs';
 
 export const SID = 'session-1';
@@ -11,7 +13,7 @@ export function sim({ project, options = {}, now = T0, state = emptyState() } = 
   const s = { state, now, project };
   s.send = (input, dt = 1000) => {
     s.now += dt;
-    const r = step(s.state, input, { now: s.now, options: o, where: { project, cwd: input.cwd } });
+    const r = step(s.state, input, { now: s.now, options: o });
     s.state = r.state;
     return r;
   };
@@ -48,3 +50,18 @@ export const agentEntry = (over = {}) => ({
   type: 'builder', start: T0, last: T0, calls: 0, sinceEdit: 0, edit: 0, runs: {}, top: null, flight: null,
   waits: [], noted: false, asked: 0, ...over,
 });
+
+/**
+ * The events of one headless run (Claude Code 2.1.332, 2026-11-26): a project agent `lector` (file lector-file.md,
+ * tools Read, Bash, Write) that read a file in the project, then wrote one file in a sibling folder and one in another
+ * temp folder. In order: SubagentStart, Read, Write {{sibling}}/src/a.js, Write {{ostmp}}/data.txt (a PreToolUse and a
+ * PostToolUse each), SubagentStop. Paths and ids are placeholders, each {{name}} replaced by values[name].
+ */
+export function probeEvents(values) {
+  const fill = (v) => {
+    if (typeof v === 'string') return v.replace(/\{\{(\w+)\}\}/g, (m, k) => (Object.hasOwn(values, k) ? values[k] : m));
+    if (Array.isArray(v)) return v.map(fill);
+    return v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fill(x)])) : v;
+  };
+  return fill(JSON.parse(readFileSync(new URL('./fixtures/subagent-watchdog/probe-events.json', import.meta.url), 'utf8')));
+}

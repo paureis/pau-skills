@@ -157,7 +157,7 @@ export function update(input, { now = Date.now(), env = process.env, io = fs, tm
   if (where === 'bad') return null;
   const needs = r.who === 'sub' ? r.id : r.status ? null : undefined;
   const state = where === 'ok' && needs !== undefined ? read(p, needs, io) : emptyState();
-  const res = step(state, input, { now, options, where: { project, cwd: input.cwd } });
+  const res = step(state, input, { now, options });
   for (const id of res.write) write(p, p.agent(id), serializeAgent(res.state.agents.get(id)), io);
   if (res.remove.length && folders(p, io) === 'ok') for (const id of res.remove) unlink(p.agent(id), io);
   if (res.shown) write(p, p.shown, String(res.state.shownAt), io);
