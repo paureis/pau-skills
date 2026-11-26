@@ -3,6 +3,18 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-26: Q38, watchdog fixes and a compaction count
+
+- `subagent-watchdog` (Q38 items 1 to 4): an edit resets the counts wherever the file is, so a builder in another
+  worktree is no longer asked if it is stuck. A project or user agent whose definition lists tools but none of Edit,
+  MultiEdit or NotebookEdit is read-only and skips the no-edit rule; `readOnlyAgents` now adds to the defaults. A call
+  in flight for two hours is dropped as lost, not counted as a wait. The main-session status shows a top repeat only
+  when it repeated, under the header "running or just finished".
+- `compact-snapshot` (Q38 item 5, decision 35) counts the session's compactions and, from the second (option
+  `handoffAfter`, default 2, 0 off), tells the session to finish the step and hand off. Another session's snapshot is
+  neither shown nor counted.
+- `agent-orchestration` 0.15.0, `session-discipline` 0.16.0, `pau-skills-hooks` 0.8.0, `pau-skills` 0.25.0.
+
 ## 2026-11-26: Q37, reframe and sharpen from pstack
 
 - `reframe` (planning, new, typed only) teaches the expert words for what you are building, and a new `sharpen`

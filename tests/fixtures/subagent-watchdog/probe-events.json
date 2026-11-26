@@ -1,0 +1,186 @@
+[
+ {
+  "session_id": "{{session}}",
+  "transcript_path": "{{transcript}}",
+  "cwd": "{{project}}",
+  "scratchpad_dir": "{{scratchpad}}",
+  "prompt_id": "{{prompt}}",
+  "agent_id": "{{agent}}",
+  "agent_type": "lector",
+  "hook_event_name": "SubagentStart"
+ },
+ {
+  "session_id": "{{session}}",
+  "transcript_path": "{{transcript}}",
+  "cwd": "{{project}}",
+  "scratchpad_dir": "{{scratchpad}}",
+  "prompt_id": "{{prompt}}",
+  "permission_mode": "default",
+  "agent_id": "{{agent}}",
+  "agent_type": "lector",
+  "effort": {
+   "level": "medium"
+  },
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Read",
+  "tool_input": {
+   "file_path": "{{project}}/notes.txt"
+  },
+  "tool_use_id": "toolu_Lk8o"
+ },
+ {
+  "session_id": "{{session}}",
+  "transcript_path": "{{transcript}}",
+  "cwd": "{{project}}",
+  "scratchpad_dir": "{{scratchpad}}",
+  "prompt_id": "{{prompt}}",
+  "permission_mode": "default",
+  "agent_id": "{{agent}}",
+  "agent_type": "lector",
+  "effort": {
+   "level": "medium"
+  },
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Read",
+  "tool_input": {
+   "file_path": "{{project}}/notes.txt"
+  },
+  "tool_response": {
+   "type": "text",
+   "file": {
+    "filePath": "{{project}}/notes.txt",
+    "content": "hello from the probe\n",
+    "numLines": 2,
+    "startLine": 1,
+    "totalLines": 2
+   }
+  },
+  "tool_use_id": "toolu_Lk8o",
+  "duration_ms": 6
+ },
+ {
+  "session_id": "{{session}}",
+  "transcript_path": "{{transcript}}",
+  "cwd": "{{project}}",
+  "scratchpad_dir": "{{scratchpad}}",
+  "prompt_id": "{{prompt}}",
+  "permission_mode": "default",
+  "agent_id": "{{agent}}",
+  "agent_type": "lector",
+  "effort": {
+   "level": "medium"
+  },
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Write",
+  "tool_input": {
+   "file_path": "{{sibling}}/src/a.js",
+   "content": "export const a = 1;"
+  },
+  "tool_use_id": "toolu_UnPq"
+ },
+ {
+  "session_id": "{{session}}",
+  "transcript_path": "{{transcript}}",
+  "cwd": "{{project}}",
+  "scratchpad_dir": "{{scratchpad}}",
+  "prompt_id": "{{prompt}}",
+  "permission_mode": "default",
+  "agent_id": "{{agent}}",
+  "agent_type": "lector",
+  "effort": {
+   "level": "medium"
+  },
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Write",
+  "tool_input": {
+   "file_path": "{{sibling}}/src/a.js",
+   "content": "export const a = 1;"
+  },
+  "tool_response": {
+   "type": "create",
+   "filePath": "{{sibling}}/src/a.js",
+   "content": "export const a = 1;",
+   "structuredPatch": [],
+   "originalFile": null,
+   "userModified": false
+  },
+  "tool_use_id": "toolu_UnPq",
+  "duration_ms": 5
+ },
+ {
+  "session_id": "{{session}}",
+  "transcript_path": "{{transcript}}",
+  "cwd": "{{project}}",
+  "scratchpad_dir": "{{scratchpad}}",
+  "prompt_id": "{{prompt}}",
+  "permission_mode": "default",
+  "agent_id": "{{agent}}",
+  "agent_type": "lector",
+  "effort": {
+   "level": "medium"
+  },
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Write",
+  "tool_input": {
+   "file_path": "{{ostmp}}/data.txt",
+   "content": "x=1"
+  },
+  "tool_use_id": "toolu_V585"
+ },
+ {
+  "session_id": "{{session}}",
+  "transcript_path": "{{transcript}}",
+  "cwd": "{{project}}",
+  "scratchpad_dir": "{{scratchpad}}",
+  "prompt_id": "{{prompt}}",
+  "permission_mode": "default",
+  "agent_id": "{{agent}}",
+  "agent_type": "lector",
+  "effort": {
+   "level": "medium"
+  },
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Write",
+  "tool_input": {
+   "file_path": "{{ostmp}}/data.txt",
+   "content": "x=1"
+  },
+  "tool_response": {
+   "type": "create",
+   "filePath": "{{ostmp}}/data.txt",
+   "content": "x=1",
+   "structuredPatch": [],
+   "originalFile": null,
+   "userModified": false
+  },
+  "tool_use_id": "toolu_V585",
+  "duration_ms": 5
+ },
+ {
+  "session_id": "{{session}}",
+  "transcript_path": "{{transcript}}",
+  "cwd": "{{project}}",
+  "scratchpad_dir": "{{scratchpad}}",
+  "prompt_id": "{{prompt}}",
+  "permission_mode": "default",
+  "agent_id": "{{agent}}",
+  "agent_type": "lector",
+  "effort": {
+   "level": "medium"
+  },
+  "hook_event_name": "SubagentStop",
+  "stop_hook_active": false,
+  "agent_transcript_path": "{{transcript}}",
+  "last_assistant_message": "All three steps succeeded.",
+  "background_tasks": [
+   {
+    "id": "{{agent}}",
+    "type": "subagent",
+    "status": "running",
+    "description": "Lector: read notes and write probe files",
+    "agent_type": "lector"
+   }
+  ],
+  "session_crons": []
+ }
+]

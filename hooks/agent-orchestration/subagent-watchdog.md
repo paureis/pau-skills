@@ -18,21 +18,44 @@ Under `"subagent-watchdog"` in `.claude/pau-skills.json`:
 | `repeatAsk` | `5` | An ask on this run, and on every multiple of it after (10, 15, ...). |
 | `noEditNote` | `40` | One note on the first tool call at or past this many calls since the last edit. |
 | `noEditAsk` | `80` | An ask on the first call at or past this many calls since the last edit, then at or past each multiple of it (160, 240, ...). |
-| `readOnlyAgents` | `["reviewer", "Explore", "Plan", "claude-code-guide", "web-fetch", "eng-lead"]` | Agent types that are not expected to edit. They skip the no-edit rule, and get repeat notes but no repeat asks. A type such as `plugin:reviewer` matches by the part after its last `:`. A list replaces the default; entries that are not strings are dropped. |
+| `readOnlyAgents` | `["reviewer", "Explore", "Plan", "claude-code-guide", "web-fetch", "eng-lead"]` | Agent types that are not expected to edit. They skip the no-edit rule, and get repeat notes but no repeat asks. A type such as `plugin:reviewer` matches by the part after its last `:`. A list adds to the default, without duplicates; entries that are not strings are dropped. |
+
+A project's own agent type is read-only too when its definition says so: see [Read-only agent types](#read-only-agent-types).
 
 A number that is not a whole number above 0 keeps its default. Fixed: 10 minutes for "looks stuck", 30 minutes for
-a long call, 5 minutes between two status messages, 60 minutes before a silent agent is dropped, 200 commands kept
-per agent, commands cut to 120 characters in a message and 80 in the status.
+a long call, 5 minutes between two status messages, 60 minutes before a silent agent is dropped, 120 minutes before
+an agent with a call in flight that is not a wait is dropped, 200 commands kept per agent, commands cut to 120
+characters in a message and 80 in the status.
+
+## Read-only agent types
+
+A type is read-only when it is in `readOnlyAgents`, or when its definition lists tools and none of Edit, MultiEdit or
+NotebookEdit: a reader or critic with `tools: Read, Bash, Write` reads for many calls and writes one report at the
+end, by design. At SubagentStart the watchdog reads `<project>/.claude/agents/*.md`, then
+`~/.claude/agents/*.md` (the home folder is `PAU_SKILLS_HOME` when it is set, as for the config file), finds the file
+whose frontmatter `name:` is the agent's type (the file name does not matter), and keeps the answer in the agent's
+state. The project's definition wins when both folders have the name.
+
+- `tools:` may be a comma list (`tools: Read, Bash, Write`), a flow list (`[Read, Grep]`) or a block list (one
+  `- Read` per line). A `(...)` suffix, as in `Bash(git commit:*)`, is ignored. `*` counts as every tool.
+- No `tools:` field means the agent gets every tool, so it is not read-only; `tools: null`, `tools: ~` and an empty
+  `tools:` read the same. Nor is an agent limited only by `disallowedTools`.
+- Not read: plugin agents, a folder set with `CLAUDE_CONFIG_DIR`, subfolders, links, a file over 64 KB, and the files
+  past the first 200 `.md` files of a folder (by name). A `.md` file that is over 64 KB, cannot be read or does
+  not parse might be the type's own definition: when one comes before the match (the project folder first, each
+  folder by name), the type is not read-only.
+- The no-edit note, the no-edit ask and the main-session no-edit flag name `readOnlyAgents` under
+  `subagent-watchdog` in `.claude/pau-skills.json` as the way out for a type the watchdog cannot see is read-only.
 
 ## Inside a subagent
 
 - **A repeat** is the same shell command (Bash or PowerShell), with every run of white space read as one space, run
   again with no edit in between. Case, quotes and every other character make another command.
-- **An edit** is Edit, Write, MultiEdit or NotebookEdit on a file inside the project or inside the agent's own working
-  folder (a worktree counts), any file type, Markdown included; or a shell command that runs `git commit`, also
-  inside `bash -c`. It counts when the call ran (PostToolUse): a refused edit, or one that failed
-  (PostToolUseFailure), is no edit. A path over 4,096 characters is not an edit. Edits made through the shell, such
-  as `sed -i`, do not count.
+- **An edit** is Edit, Write, MultiEdit or NotebookEdit on any file, wherever it is (the project, a sibling worktree,
+  the scratchpad or another temp folder), any file type, Markdown included; or a shell command that runs
+  `git commit`, also inside `bash -c`. It counts when the call ran (PostToolUse): a refused edit, or one that failed
+  (PostToolUseFailure), is no edit. An empty path or one over 4,096 characters is not an edit. Edits made through
+  the shell, such as `sed -i`, do not count.
 - **The note** is context added to the agent's tool call; it blocks nothing. It gives the count and the command, and
   says to change something or report what you have and what blocks you, and to go on if the run is healthy.
 - **The ask** is a permission prompt for that one call. Interactive, the owner is asked: allowing lets the agent go
@@ -47,22 +70,26 @@ per agent, commands cut to 120 characters in a message and 80 in the status.
 ## In the main session
 
 On your message and on the main session's tool calls, when at least one subagent is flagged, the watchdog adds one
-line per running subagent, oldest first: type, id, minutes running, tool calls, calls since the last edit, the top
-repeat, and the call in flight. At most once every 5 minutes. An agent is flagged when:
+line per subagent, oldest first, under the header "Subagents running or just finished": an agent that sent its final
+message is listed until its SubagentStop arrives. Each line has the type, id, minutes running, tool calls, calls since
+the last edit, the top repeat ("top repeat N runs of ..." only for a command run 2 or more times, else "no
+repeats"), and the call in flight. At most once every 5 minutes. An agent is flagged when:
 
 - it looks stuck: no tool call started or finished for 10 minutes and none in flight;
 - a call has been in flight for 30 minutes ("running `npm test` for 31 minutes");
 - a command reached the repeat note, or (for a type that is not read-only) the calls since the last edit reached the
-  no-edit note.
+  no-edit note; that flag names `readOnlyAgents`.
 
 An agent waiting on its own subagents is never flagged stuck or long-running for it, and never dropped: its
 subagents are watched on their own. Each Agent or Task call is tracked by its `tool_use_id` until the PostToolUse or
 PostToolUseFailure with the same id (at most 32 per agent, the oldest dropped), so an agent that started several in
 one message reads "waiting on 2 subagents for N minutes" while any of them runs. An Agent or Task call with no
 `tool_use_id` reads "waiting on a subagent for N minutes" while it is the call in flight. A refused Agent call (a
-PreToolUse with no PostToolUse) leaves its wait until the day-old prune. An agent that dies in the middle of a call
-shows "running <command> for N minutes" until the day-old prune. An agent with no call in flight, no wait and no
-event for 60 minutes is dropped from the status with a last line saying so: it may have ended without a stop event. A TaskStop that ran in
+PreToolUse with no PostToolUse) leaves its wait until the day-old prune. An agent with no call in flight, no wait
+and no event for 60 minutes is dropped from the status with a last line saying so: it may have ended without a stop
+event. An agent that dies in the middle of a call, as after a power cut, shows "running <command> for N minutes"
+until its call has been in flight for 120 minutes, counted from the start of the call; then, unless it waits on a
+subagent, it is dropped with a line that says "a call in flight for N minutes with no result". A TaskStop that ran in
 the main session removes the agent it names, because an agent stopped with TaskStop gets no SubagentStop.
 
 ## The state
@@ -86,4 +113,5 @@ Both ids must be 1 to 128 letters, digits, `_` or `-`; any other event is ignore
 
 The hook prints at most one line of JSON, nothing on stderr, and exits 0 on every input. It uses no network and
 starts no processes. The script is [`subagent-watchdog.mjs`](subagent-watchdog.mjs); the decisions are in
-[`subagent-watchdog-logic.mjs`](subagent-watchdog-logic.mjs).
+[`subagent-watchdog-logic.mjs`](subagent-watchdog-logic.mjs), and the main-session status in
+[`subagent-watchdog-status.mjs`](subagent-watchdog-status.mjs).

@@ -146,8 +146,8 @@ const t = process.hrtime.bigint();
 if (which === 'session') h.SESSION_ID.test(text);
 else if (which.startsWith('pattern:')) m.PATTERNS[which.slice(8)].test(text);
 else if (which === 'normalize') m.normalizeCommand(text);
-else if (which === 'bash') m.isEdit({ tool_name: 'Bash', tool_input: { command: text }, cwd: project }, { project, cwd: project });
-else if (which === 'path') m.isEdit({ tool_name: 'Edit', tool_input: { file_path: text }, cwd: project }, { project, cwd: project });
+else if (which === 'bash') m.isEdit({ tool_name: 'Bash', tool_input: { command: text }, cwd: project });
+else if (which === 'path') m.isEdit({ tool_name: 'Edit', tool_input: { file_path: text }, cwd: project });
 process.stdout.write(String(Number(process.hrtime.bigint() - t) / 1e6));
 `;
 
