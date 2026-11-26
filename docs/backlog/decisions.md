@@ -144,3 +144,8 @@ Decisions 1 to 21 (2026-10-17 to 2026-11-04) are in [decisions-1-to-21.md](decis
    left the place in the order to the orchestrator. Q38 goes ahead of Q35 because its first finding is a defect, not a
    feature: an edit in a sibling worktree or the scratchpad does not count, so a healthy background writer can be
    stopped by an ask nobody answers. Q37 keeps its place, since its kickoff is written and it is small.
+
+35. **The compaction count goes into Q38.** With auto compaction at 40% of the window, the context meter no longer
+   tells a session when to end. The owner asked to fold a fix into Q38, since that batch already changes hooks:
+   `compact-snapshot` counts the compactions and, from the second, tells the session to finish the step and hand off
+   (Q38 item 5). Q38 keeps its place in the order.
