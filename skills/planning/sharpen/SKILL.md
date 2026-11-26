@@ -1,43 +1,19 @@
 ---
 name: sharpen
-description: "Restate a task before doing it: the goal, the problem behind it, how an expert would approach it, what is missing, one outside check of the result; confirm in a few lines, then do the work. Use when the user says 'sharpen this', 'think before you start', 'make sure you understand the task', wants your reading of the task first, or when a task is vague or was misread. One confirm, no interview."
-argument-hint: "[the task, or nothing to use the last message]"
+description: "Make a task deeper, not bigger, then rewrite the prompt."
+disable-model-invocation: true
 license: MIT (adapted from cursor/plugins pstack; see NOTICE)
 metadata:
-  upstream: https://github.com/cursor/plugins/tree/09d06eb4b97a1020ab31e84030e38baf1099c7dc/pstack/skills/sharpen
+  upstream: https://github.com/cursor/plugins/tree/41e400932eca14f289e7db717a70455256b6d388/pstack/skills/sharpen
 ---
 
-# Sharpen
+I want a deeper version of this task, not a bigger one. Before rewriting it, do four things:
 
-The task: $ARGUMENTS (if empty, the user's last message)
+1. Say what a top professional in this field would do here that I'm not asking for.
+2. Name the rawest material they would start from instead of what has already been digested for me.
+3. Name the specific methods and tools they would use.
+4. Say what, other than you or me, would show the result is right.
 
-Before starting:
+Then rewrite my prompt to ask for exactly that.
 
-1. Restate in your own words what the user is after and the problem they are trying to solve: why they want it.
-2. Ask how a top expert would approach this task: their raw sources, their real methods, and an outside check that
-   the result is right.
-3. Say whether the task is over- or under-specified. Loosen constraints that don't serve the goal as readily as you
-   add ones that do. Leave choices that are the user's to make open instead of deciding them.
-4. Check the task against the prompt checklist below and note what is missing.
-5. Fold in only what makes the work better, not bigger, but always keep one outside check that the result is right.
-
-Then confirm, in this shape and no longer, and ask with AskUserQuestion (or a plain question) whether that is the
-task:
-
-```
-Goal: <what the user is after, in your words>
-Why: <the problem behind it>
-Outside check: <how the result will be shown to be right>
-Missing: <what the prompt checklist finds missing, or "none">
-Loosen or add: <constraints you would drop or add, or "none">
-Your call: <choices left to the user, as a question, or "none">
-```
-
-These lines check your understanding; they are not a new prompt, so do not hand back a rewritten one. The confirm
-takes the place of working silently ("without narrating the framing", in the original): show the framing once, here,
-and do not narrate it again while you work. On a yes, do the work; on a correction, restate again.
-
-**Prompt checklist.** Put in: the goal (what is wrong or what the user wants); the done check, which can pass or
-fail; the proof to show (real command output, the stored value, a before and after number); what the user already
-knows (a symptom, a repro step, a log); the real constraints ("repro first", "zero behavior change"). Leave out:
-the how; a list of skills or steps; "the user's theory of the cause, until the agent restates the problem".
+Have the rewritten prompt ask the agent to prototype any choice an experiment can settle and recommend an option based on what it observed. Leave product or preference choices that no experiment can settle for me to make.

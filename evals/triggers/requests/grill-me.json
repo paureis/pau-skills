@@ -12,7 +12,7 @@
     },
     {
       "request": "Repeat this ticket back to me in plain terms and confirm the goal before you start coding",
-      "expect": "sharpen"
+      "expect": "none"
     }
   ]
 }

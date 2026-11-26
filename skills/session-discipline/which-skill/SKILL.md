@@ -37,9 +37,9 @@ Keep the answer short. A list of every skill is not an answer.
 ## Skills you type
 
 These start only when the user types them: `session-close`, `lean-subagent-dev`, `overnight-run`, `skill-eval`,
-`agent-friendly-audit`, `geppetto`, `launch-readiness`, `friction-review`. Typed as `/pau-skills:session-close`,
-for example, or `/anthropic-skills:session-close` when uploaded to claude.ai. Neither you nor a skill can start one:
-when one fits, give the user the exact name to type.
+`agent-friendly-audit`, `geppetto`, `launch-readiness`, `friction-review`, `reframe`, `sharpen`. Typed as
+`/pau-skills:session-close`, for example, or `/anthropic-skills:session-close` when uploaded to claude.ai. Neither you
+nor a skill can start one: when one fits, give the user the exact name to type.
 
 ## Which skills ask first
 
