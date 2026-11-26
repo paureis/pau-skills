@@ -23,8 +23,9 @@ Under `"subagent-watchdog"` in `.claude/pau-skills.json`:
 A project's own agent type is read-only too when its definition says so: see [Read-only agent types](#read-only-agent-types).
 
 A number that is not a whole number above 0 keeps its default. Fixed: 10 minutes for "looks stuck", 30 minutes for
-a long call, 5 minutes between two status messages, 60 minutes before a silent agent is dropped, 200 commands kept
-per agent, commands cut to 120 characters in a message and 80 in the status.
+a long call, 5 minutes between two status messages, 60 minutes before a silent agent is dropped, 120 minutes before
+an agent with a call in flight that is not a wait is dropped, 200 commands kept per agent, commands cut to 120
+characters in a message and 80 in the status.
 
 ## Read-only agent types
 
@@ -68,8 +69,10 @@ state. The project's definition wins when both folders have the name.
 ## In the main session
 
 On your message and on the main session's tool calls, when at least one subagent is flagged, the watchdog adds one
-line per running subagent, oldest first: type, id, minutes running, tool calls, calls since the last edit, the top
-repeat, and the call in flight. At most once every 5 minutes. An agent is flagged when:
+line per subagent, oldest first, under the header "Subagents running or just finished": an agent that sent its final
+message is listed until its SubagentStop arrives. Each line has the type, id, minutes running, tool calls, calls since
+the last edit, the top repeat ("top repeat N runs of ..." only for a command run 2 or more times, else "no
+repeats"), and the call in flight. At most once every 5 minutes. An agent is flagged when:
 
 - it looks stuck: no tool call started or finished for 10 minutes and none in flight;
 - a call has been in flight for 30 minutes ("running `npm test` for 31 minutes");
@@ -81,9 +84,11 @@ subagents are watched on their own. Each Agent or Task call is tracked by its `t
 PostToolUseFailure with the same id (at most 32 per agent, the oldest dropped), so an agent that started several in
 one message reads "waiting on 2 subagents for N minutes" while any of them runs. An Agent or Task call with no
 `tool_use_id` reads "waiting on a subagent for N minutes" while it is the call in flight. A refused Agent call (a
-PreToolUse with no PostToolUse) leaves its wait until the day-old prune. An agent that dies in the middle of a call
-shows "running <command> for N minutes" until the day-old prune. An agent with no call in flight, no wait and no
-event for 60 minutes is dropped from the status with a last line saying so: it may have ended without a stop event. A TaskStop that ran in
+PreToolUse with no PostToolUse) leaves its wait until the day-old prune. An agent with no call in flight, no wait
+and no event for 60 minutes is dropped from the status with a last line saying so: it may have ended without a stop
+event. An agent that dies in the middle of a call, as after a power cut, shows "running <command> for N minutes"
+until its call has been in flight for 120 minutes, counted from the start of the call; then, unless it waits on a
+subagent, it is dropped with a line that says "a call in flight for N minutes with no result". A TaskStop that ran in
 the main session removes the agent it names, because an agent stopped with TaskStop gets no SubagentStop.
 
 ## The state

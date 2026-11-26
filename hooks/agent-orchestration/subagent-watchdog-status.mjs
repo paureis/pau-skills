@@ -6,7 +6,7 @@ import { LIMITS, READ_ONLY_HINT, WAIT_TOOLS, isReadOnly, minutes, normalizeComma
 
 const oneLine = (s, n) => normalizeCommand(s).slice(0, n);
 
-/** The flags of one agent at `now`, in words, and whether it is dropped. */
+/** The flags of one agent at `now`, in words, and whether it is dropped (lost: for a call in flight 2 hours, not a wait). */
 export function judge(a, now, o) {
   const flags = [];
   const idle = now - a.last;
@@ -15,12 +15,13 @@ export function judge(a, now, o) {
   if (a.flight !== null && !waiting && now - a.flight.at >= LIMITS.long) flags.push(`one call has run for ${minutes(now - a.flight.at)} minutes`);
   if (a.top && a.top.n >= o.repeatNote) flags.push(`the same command ran ${a.top.n} times with no edit in between`);
   if (!a.ro && !isReadOnly(a.type, o.readOnlyAgents) && a.sinceEdit >= o.noEditNote) flags.push(`${a.sinceEdit} tool calls with no edit (${READ_ONLY_HINT})`);
-  return { flags, drop: a.flight === null && !waiting && idle >= LIMITS.drop, waiting };
+  const lost = a.flight !== null && !waiting && now - a.flight.at >= LIMITS.lost;
+  return { flags, drop: lost || (a.flight === null && !waiting && idle >= LIMITS.drop), lost, waiting };
 }
 
 function line(id, a, now, { flags, waiting }) {
   const bits = [`${oneLine(a.type, LIMITS.type) || '(no type)'} ${id}: ${minutes(now - a.start)} minutes, ${a.calls} tool calls, ${a.sinceEdit} since the last edit`];
-  bits.push(a.top ? `top repeat ${a.top.n} runs of \`${oneLine(a.top.cmd, LIMITS.shown)}\`` : 'no repeats');
+  bits.push(a.top && a.top.n >= 2 ? `top repeat ${a.top.n} runs of \`${oneLine(a.top.cmd, LIMITS.shown)}\`` : 'no repeats');
   if (a.flight !== null) {
     const m = minutes(now - a.flight.at);
     const what = a.flight.cmd !== null ? `\`${oneLine(a.flight.cmd, LIMITS.shown)}\`` : oneLine(a.flight.tool, LIMITS.type);
@@ -44,9 +45,9 @@ export function status(state, input, now, o) {
   const kept = rows.filter((r) => !r.drop);
   const gone = rows.filter((r) => r.drop);
   const text = [
-    `[subagent-watchdog] Subagents running now, at least one flagged (shown at most once every 5 minutes):`,
+    `[subagent-watchdog] Subagents running or just finished, at least one flagged (shown at most once every 5 minutes):`,
     ...kept.map((r) => line(r.id, r.a, now, r)),
-    ...gone.map((r) => `- dropped ${oneLine(r.a.type, LIMITS.type) || '(no type)'} ${r.id}: no event for ${minutes(now - r.a.last)} minutes (it may have ended without a stop event).`),
+    ...gone.map((r) => `- dropped ${oneLine(r.a.type, LIMITS.type) || '(no type)'} ${r.id}: ${r.lost ? `a call in flight for ${minutes(now - r.a.flight.at)} minutes with no result` :`no event for ${minutes(now - r.a.last)} minutes`} (it may have ended without a stop event).`),
     'The watchdog never stops an agent. Stopping one with TaskStop is the orchestrator\'s or the owner\'s choice, after checking on it.',
   ].join('\n');
   const agents = new Map(state.agents);

@@ -27,13 +27,17 @@
 //     is asked; headless (claude -p), that one call is refused with the reason and the agent carries on. The hook
 //     cannot tell which, so the reason speaks to both, and tells a healthy run how to go on.
 // In the main session (no agent_id): on UserPromptSubmit and PreToolUse, when at least one subagent is flagged, one
-// line per running subagent, at most once every 5 minutes. Flags: looks stuck (no tool call started or finished for
+// line per subagent running or just finished (its final message sent, its SubagentStop not yet in), at most once
+// every 5 minutes; "top repeat" only for a command run 2 or more times. Flags: looks stuck (no tool call started or finished for
 // 10 minutes and none in flight), a command in flight for 30 minutes, a repeat at the note, no edit at the note. An
 // Agent or Task call with a tool_use_id is a wait until the PostToolUse or PostToolUseFailure with the same id (at
 // most 32, oldest dropped), so parallel Agent calls are tracked one by one; an agent with a wait, or with an Agent or
 // Task call in flight, reads "waiting" and is never flagged stuck or long-running, nor dropped. An agent with no call
 // in flight, no wait and no event for 60 minutes is dropped from the state: it may have ended with no stop event, as
-// an agent stopped with TaskStop does. A main-session PostToolUse for TaskStop removes the agent it names.
+// an agent stopped with TaskStop does. So is one whose call in flight, not a wait, started 120 minutes ago (from
+// flight.at, since SubagentStart moves last): an agent that died in a call, as after a power cut, where TaskStop
+// answers "No task found" and fires no PostToolUseFailure (q38.md item 3). A main-session PostToolUse for TaskStop
+// removes the agent it names.
 //
 // Facts it rests on, from two headless prototypes (decision 23, and Claude Code 2.1.330 on 2026-11-23): subagent hook
 // events carry the main session's session_id and their own agent_id and agent_type; main-session events carry no
@@ -56,7 +60,7 @@ export const DEFAULTS = Object.freeze({
 });
 const MINUTE = 60 * 1000;
 export const LIMITS = Object.freeze({
-  stuck: 10 * MINUTE, long: 30 * MINUTE, throttle: 5 * MINUTE, drop: 60 * MINUTE, day: 24 * 60 * MINUTE,
+  stuck: 10 * MINUTE, long: 30 * MINUTE, throttle: 5 * MINUTE, drop: 60 * MINUTE, lost: 120 * MINUTE, day: 24 * 60 * MINUTE,
   keys: 200, shown: 80, message: 120, path: 4096, type: 200, waits: 32, waitId: 128,
 });
 // Every regular expression in this file. id: a session id or an agent id, also the file name of an agent's state.
