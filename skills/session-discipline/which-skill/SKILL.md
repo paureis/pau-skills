@@ -100,7 +100,8 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | "Show me the plan as a page", a plan with several decisions to answer at once | `html-plan` (an outside skill, if it is installed) | `grill-me` on what the response leaves open |
 | A question about how the codebase works, or why it is built that way | `codebase-oracle` (agent-orchestration) | `grill-me` if it leads to a change |
 | "The code is getting messy", hard-to-test modules | `improve-codebase-architecture` (planning) | `grill-me` on the candidate picked |
-| A task about to start, "make sure you understand this", "restate this first", a vague or over-constrained request | `sharpen` (planning) | the skill that fits the task |
+| A task about to start, "make this deeper", "what would an expert do here", a prompt to rewrite before the work | `sharpen` (planning; typed only, so tell the user to type `/sharpen`) | the skill that fits the task |
+| "What is this called", the expert terms for what the user is building, a description to put in the field's words | `reframe` (planning; typed only, so tell the user to type `/reframe`) | `/sharpen` on the rewritten description |
 | "Make it faster", "make it smaller", improve a number (run time, bundle size, memory, a score) over many attempts with proof for each step | `hillclimb` (verification) | `bug-fix` if a step uncovers a bug |
 | "Write the simplest version", "this is over-engineered", "review for bloat", "what can I delete", a list of the `shortcut:` comments | `lazy-senior` (planning): build for new code, review for a change, audit for a folder or the repository, debt for the comment list | `engineering-principles` to name the principle behind one decision, `improve-codebase-architecture` for a deeper refactor of existing modules |
 | "Apply build the lever", "which principle applies here", a design choice such as a second flag, a new type or one edit across many files | `engineering-principles` (planning) | `architect` for new code, `improve-codebase-architecture` for existing code |
@@ -129,9 +130,9 @@ When the user asks how to phrase a task for the agent, a good request names the 
 fail, what counts as proof, the facts already known, and the real constraints. It leaves out the step-by-step how. It
 names a skill only when the user wants that one (naming it is also the yes a skill under "Which skills ask first"
 waits for). A theory of the cause goes in as a lead to test, not as the answer, or the agent follows it instead of
-testing it. For a task the agent is about to do in this session, offer to run `sharpen` if it is installed: it
-restates the task this way and confirms it before starting the work. For wording to paste elsewhere, give the
-checklist above.
+testing it. For a task the agent is about to do in this session, if `sharpen` is installed, tell the user they can
+type `/sharpen`: it makes the task deeper and rewrites the prompt before the work starts; you cannot start it. For
+wording to paste elsewhere, give the checklist above.
 
 ## Improving the agent's environment
 

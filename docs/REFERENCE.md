@@ -142,8 +142,14 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   goal in at most three questions, shows 8 to 12 options from named lenses in 3 or 4 clusters with its own picks
   marked, takes one round where you accept them with an "ok" or pick your own, then converges on 3 or 4 rated without
   a score, with a premortem each, and a short summary for `grill-me`.
-- **[sharpen](../skills/planning/sharpen/SKILL.md)** (adapted): Before a task, restates the goal and the problem behind
-  it, asks how an expert would check the result, and confirms in six lines before working.
+- **[sharpen](../skills/planning/sharpen/SKILL.md)** (adapted, typed only): Makes a task deeper, not bigger: what a top
+  professional would do that you did not ask for, the rawest material, the methods and tools, and what outside check
+  would show the result is right; then rewrites your prompt to ask for that, prototyping what an experiment can settle
+  and leaving product and preference choices to you.
+- **[reframe](../skills/planning/reframe/SKILL.md)** (adapted, typed only): Teaches the expert words for what you are
+  building: 8 to 12 terms ranked by how much each changes what gets built, each with a real project, paper or system
+  and a link it has opened and confirmed, two or three neighboring fields that solved the same problem, what you did
+  not mention, and your description rewritten with the new words.
 - **[agent-friendly-audit](../skills/planning/agent-friendly-audit/SKILL.md)** (adapted, typed only): Mines review comments, fix and
   revert commits, this project's transcripts and instruction files for the mistakes agents repeat, and proposes a fix
   for each at the highest layer (architecture, types, lint, test, prose), proven on a past instance; `mine.mjs` does

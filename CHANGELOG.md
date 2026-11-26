@@ -3,6 +3,17 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-26: Q37, reframe and sharpen from pstack
+
+- `reframe` (planning, new, typed only) teaches the expert words for what you are building, and a new `sharpen`
+  (planning, typed only) makes a task deeper, not bigger, then rewrites the prompt. Both come from pstack at 41e4009
+  with the body word for word; only the description and the license and upstream lines are ours.
+  `tests/pstack-verbatim.test.mjs` checks both bodies against committed copies of upstream. Decision 33.
+- The old `sharpen` (restate, confirm in six lines, then work) is gone. `agent-friendly-audit` and `which-skill` now say
+  the user can type `/sharpen`; its trigger list is removed and the model-invoked descriptions drop from 11,382 to
+  10,986 characters.
+- `planning` 0.13.0, `session-discipline` 0.15.1, `pau-skills` 0.24.0.
+
 ## 2026-11-26: eng-lead and reviewer at high effort
 
 - geppetto roster 7 (agent-orchestration 0.14.1): `eng-lead` and `reviewer` run at `effort: high` instead of `xhigh`,

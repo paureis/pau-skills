@@ -9,7 +9,7 @@
     {
       "name": "pau-skills",
       "description": "Everything in this marketplace as one plugin: every skill and every hook from session-discipline, verification, agent-orchestration, guards and planning. Install this or the individual plugins, not both.",
-      "version": "0.23.1",
+      "version": "0.24.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -528,7 +528,7 @@
     {
       "name": "session-discipline",
       "description": "Start every session from the written roadmap and the git state, keep the facts a compaction loses, and close in a fixed order: retrospective, roadmap and log, handoff, commit. Plus an instruction-file audit, a guided project setup for new users, a router over every skill, and a log and report of which skills you actually use.",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -858,8 +858,8 @@
     },
     {
       "name": "planning",
-      "description": "Turn an idea into decided, sliced work: a brainstorm that widens the options first, a task restated before it starts, a relentless design interview, PRD synthesis, vertical-slice issues, architecture deepening, design sketches compared before any code is written, an audit of the mistakes agents repeat in a project, with a fix for each at the highest layer, and the smallest complete change with a bugs-first review and a shortcut ledger, plus a hook that adds its rules to every session. Adapted from mattpocock/skills, lazy-senior from DietrichGebert/ponytail, and architect, sharpen and agent-friendly-audit from pstack.",
-      "version": "0.12.0",
+      "description": "Turn an idea into decided, sliced work: a brainstorm that widens the options first, a task made deeper and its prompt rewritten, the expert words for what you are building, a relentless design interview, PRD synthesis, vertical-slice issues, architecture deepening, design sketches compared before any code is written, an audit of the mistakes agents repeat in a project, with a fix for each at the highest layer, and the smallest complete change with a bugs-first review and a shortcut ledger, plus a hook that adds its rules to every session. Adapted from mattpocock/skills, lazy-senior from DietrichGebert/ponytail, and architect, agent-friendly-audit, reframe and sharpen from pstack.",
+      "version": "0.13.0",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
