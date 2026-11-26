@@ -7,8 +7,8 @@ guided script for the steps only a person can do (from Q30), then Q34, Q36 and Q
 twenty-fourth batch" (`docs/backlog/things-that-bit/batch-24.md`) and the twenty-third's first.
 
 Q35 is a new skill with a Node script. Upstream (mattpocock/skills) has a `wizard` in bash; read it at a pinned commit
-before deciding adapted or original. Whether it is typed only or model-invoked is the owner's call; ask before the
-brief. The script must never read, print or log a secret's value, and a test plants one to prove it.
+and record what changes. The owner settled both open questions (decision 37): it is model-invoked, and adapted from
+upstream. The script must never read, print or log a secret's value, and a test plants one to prove it.
 
 The owner starts the batch with this message:
 
@@ -19,7 +19,7 @@ integrate their work. Type /lean-subagent-dev first (it is typed only since Q28)
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md (new skill steps, the confirm list rules, description limits).
-2. docs/backlog/q35.md, decisions 31 and 33 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md ("With
+2. docs/backlog/q35.md, decisions 31, 33 and 37 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md ("With
    the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and docs/backlog/things-that-bit/batch-22.md,
    batch-23.md and batch-24.md.
 3. Upstream's wizard at a pinned commit (step 1 of "How to work an item" in docs/BACKLOG.md): what it does, its
@@ -29,8 +29,8 @@ First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3) and CLAUDE_AUTOCOMPACT_PCT_OVERRIDE (it should read
   40), and tell me both values. Tell eng-lead to hand back at once with the builders' agent IDs if they run in the
   background; you start the reviewers and send the fix rounds.
-- Ask me: typed only or model-invoked, and adapted from upstream or original, each with your recommendation and the
-  diff that backs it.
+- It is model-invoked and adapted from upstream (decision 37): check the description budget and the confirm list
+  rules before the brief, and record upstream's license and what we change.
 - Read the base commit before you write it into any brief, and push the working branch at it before dispatch.
 - Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone and tries
   mutations of its own, a fresh reviewer per slice, and a cold run (headless, empty HOME, --max-budget-usd) that
