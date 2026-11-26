@@ -58,11 +58,11 @@ To remove every hook from one plugin, disable the plugin: `claude plugin disable
 | [`verify-before-done`](verification/verify-before-done.mjs) | verification | Stop | Sends the agent back once when it edited code in the project since your last message and ran no test, build, lint or type check after the last edit; a check script, a Lua tool check or a check listed in `.claude/review-rules.json` counts | Once |
 | [`roadmap`](session-discipline/roadmap.mjs) | session-discipline | SessionStart | Prints the current, next and blocked roadmap items and open questions | No |
 | [`branch-context`](session-discipline/branch-context.mjs) | session-discipline | SessionStart | Prints branch, ahead/behind, uncommitted files, stashes, an unfinished merge or rebase, and a warning on a protected branch | No |
-| [`compact-snapshot`](session-discipline/compact-snapshot.mjs) | session-discipline | PreCompact, SessionStart (compact) | Saves your last messages, edited files, recent commands and the todo list before a compaction, and prints them after | No |
+| [`compact-snapshot`](session-discipline/compact-snapshot.mjs) | session-discipline | PreCompact, SessionStart (compact) | Saves your last messages, edited files, recent commands and the todo list before a compaction, and prints them after. From the second compaction, tells the session to hand off | No |
 | [`skill-usage`](session-discipline/skill-usage.mjs) | session-discipline | PreToolUse (Skill), UserPromptExpansion | Records each skill start (time, name, typed or by the agent) for which-skill's usage report, and never the prompt | No |
 | [`lazy-senior`](planning/lazy-senior.mjs) | planning | SessionStart (startup, resume, clear, compact), SubagentStart | Adds the lazy-senior ruleset (the smallest complete change; never cut validation, error handling, security or accessibility; the project's instructions come first) to every session and every subagent as start-up context | No |
 | [`no-idle`](agent-orchestration/no-idle.mjs) | agent-orchestration | SubagentStart; PreToolUse (Agent, Task) only with `rewritePrompt` | Adds "never end your turn waiting" to every subagent as start-up context | No |
-| [`subagent-watchdog`](agent-orchestration/subagent-watchdog.mjs) | agent-orchestration | PreToolUse, PostToolUse, PostToolUseFailure, UserPromptSubmit, SubagentStart, SubagentStop | Inside a subagent, a note and then an ask when the same command reruns with no edit in between or many tool calls pass with no edit; in the main session, one line per running subagent when one looks stuck or wasteful, at most every 5 minutes. Never stops an agent | Asks |
+| [`subagent-watchdog`](agent-orchestration/subagent-watchdog.mjs) | agent-orchestration | PreToolUse, PostToolUse, PostToolUseFailure, UserPromptSubmit, SubagentStart, SubagentStop | Inside a subagent, a note and then an ask when the same command reruns with no edit in between or many tool calls pass with no edit (an edit anywhere counts; read-only agents skip the no-edit rule); in the main session, one line per subagent running or just finished when one looks stuck or wasteful, at most every 5 minutes. Never stops an agent | Asks |
 
 ## Options per hook
 
@@ -197,6 +197,7 @@ your message, so the edits made before it still need a check.
 |---|---|---|
 | `dir` | `.claude/pau-skills/snapshots` | Where snapshots go, relative to the project. The folder gets its own `.gitignore`. |
 | `keep` | `10` | How many snapshots to keep. |
+| `handoffAfter` | `2` | From this compaction on, the note tells the session to finish the step, write a handoff and tell you to start a new session. A whole number; `0` turns it off. Another session's snapshot is not shown or counted. |
 
 ### skill-usage
 
@@ -237,7 +238,7 @@ background, in a worktree and as a fork. `NO_IDLE_RULE` replaces the rule text; 
 
 ### subagent-watchdog
 
-Options `repeatNote`, `repeatAsk`, `noEditNote`, `noEditAsk` and `readOnlyAgents`, the state files and every rule:
+Options `repeatNote`, `repeatAsk`, `noEditNote`, `noEditAsk` and `readOnlyAgents` (adds to the defaults), how an agent's definition makes it read-only, the state files and every rule:
 [agent-orchestration/subagent-watchdog.md](agent-orchestration/subagent-watchdog.md).
 
 ### lazy-senior
