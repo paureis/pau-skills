@@ -6,6 +6,13 @@ The twenty-second batch (Q33, pull request 88) is done. Next, in this order: **Q
 close to word for word (decision 33), then Q38 subagent-watchdog fixes and a compaction count (decisions 34 and 35), Q35 `wizard`, Q34 and Q36. Read "Things that bit the twenty-second batch"
 (`docs/backlog/things-that-bit/batch-22.md`) and the twenty-first's first.
 
+Since then, between batches (pull requests 92 to 94): the repository's `.claude/settings.json` sets
+`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` to 40, so a long session compacts early and `compact-snapshot` hands the facts back;
+`eng-lead` and `reviewer` run at `effort: high` and `lean-subagent-dev`'s generous budget never sets `xhigh`
+(geppetto roster 7, bundle 0.23.1, decision 36). On pull request 93, `test (macos-latest, 20)` once killed the
+`timing: many (pwsh -ep x, 300,000 characters` test at its 10 s limit while the code under test took about 5 ms; one
+re-run passed. If it fails again, the fix is in the test (a wider limit for the child process start), not the hook.
+
 Q37 copies two short typed-only skills from cursor/plugins pstack at a pinned commit. The owner already decided the
 open questions (decision 33): `reframe` is new, upstream's `sharpen` replaces ours, both typed only, bodies word for
 word, only the descriptions and attribution lines change. It is one slice, or two with disjoint files.
@@ -28,7 +35,8 @@ Before anything else, read these in full:
    skills/planning/sharpen/ with every file that mentions it.
 
 First, before any brief:
-- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3). Tell eng-lead to hand back at once with the
+- Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3) and CLAUDE_AUTOCOMPACT_PCT_OVERRIDE (it should read
+  40), and tell me both values. Tell eng-lead to hand back at once with the
   builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds.
 - Read the base commit before you write it into any brief.
 - Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone and tries
