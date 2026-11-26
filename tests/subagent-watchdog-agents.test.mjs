@@ -38,6 +38,7 @@ test('A2 tools: a comma list, a flow list or a block list with no Edit, MultiEdi
     ['tools: Read # Edit comes later', true],
     ['tools: "Read, Edit"', false],
     ['tools: Read, Bash(echo, Edit)', true],
+    ["tools: Read, Bash(echo, 'x')", true],
   ];
   for (const [front, want] of cases) assert.equal(ro(def(`name: x\n${front}`)), want, front);
 });
@@ -99,7 +100,7 @@ test('A7 the folders: matched by the name line, not the file name; the project f
   for (const type of ['', undefined, 7]) assert.equal(definedReadOnly(type, folders({ 'a.md': def('name: \ntools: Read') })), false, String(type));
 });
 
-test('A8 not read: a subfolder, a file that is not .md, a file over 64 KB, files past the first 200 (by name), a link to a file; a file that does not parse is skipped', () => {
+test('A8 not read: a subfolder, a file that is not .md, a file over 64 KB, files past the first 200 (by name), a link to a file', () => {
   const reader = def('name: lector\ntools: Read');
   assert.equal(definedReadOnly('lector', folders({ 'sub/a.md': reader })), false);
   assert.equal(definedReadOnly('lector', folders({ 'a.txt': reader, 'b.md.bak': reader })), false);
@@ -108,13 +109,31 @@ test('A8 not read: a subfolder, a file that is not .md, a file over 64 KB, files
   const many = Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`a${String(i).padStart(3, '0')}.md`, def(`name: n${i}\ntools: Read`)]));
   assert.equal(definedReadOnly('lector', folders({ ...many, 'b.md': reader })), false, 'the 201st file');
   assert.equal(definedReadOnly('n199', folders({ ...many, 'b.md': reader })), true, 'the 200th file');
-  assert.equal(definedReadOnly('lector', folders({ 'a.md': 'not a definition', 'b.md': reader })), true);
   if (!WIN) {
     const f = folders();
     writeFileSync(join(f.home, 'real.md'), reader);
     symlinkSync(join(f.home, 'real.md'), join(f.project, '.claude', 'agents', 'link.md'));
     assert.equal(definedReadOnly('lector', f), false, 'a link');
   }
+});
+
+test('A14 a file that cannot be read in full or does not parse, seen before the match, makes the answer not read-only: in the project folder before the home one, and in one folder; a match seen first still counts', () => {
+  const reader = def('name: builder2\ntools: Read, Bash');
+  const big = def('name: builder2\ntools: Read, Edit, Bash') + 'x'.repeat(70 * 1024);
+  const bad = '---\nname: builder2\ntools: [Read,\n---\n';
+  assert.equal(definedReadOnly('builder2', folders({}, { 'old.md': reader })), true, 'control: the home definition alone');
+  assert.equal(definedReadOnly('builder2', folders({ 'builder2.md': big }, { 'old.md': reader })), false, 'a 70 KB project file');
+  assert.equal(definedReadOnly('builder2', folders({ 'builder2.md': bad }, { 'old.md': reader })), false, 'a project file that does not parse');
+  assert.equal(definedReadOnly('builder2', folders({ 'a.md': 'not a definition', 'b.md': reader })), false, 'one folder, no frontmatter first');
+  assert.equal(definedReadOnly('builder2', folders({ 'a.md': big, 'b.md': reader })), false, 'one folder, too big first');
+  assert.equal(definedReadOnly('builder2', folders({ 'a.md': reader, 'z.md': bad })), true, 'the match comes first');
+});
+
+test('A15 tools: null, Null, NULL or ~ is no tools field, so not read-only; so is an empty tools: value', () => {
+  for (const v of ['null', 'Null', 'NULL', '~', '~ # none', '']) {
+    assert.deepEqual(parseDefinition(def(`name: x\ntools: ${v}`)), { name: 'x', readOnly: false }, v);
+  }
+  assert.equal(parseDefinition(def('name: x\ntools: ~\ntools: Read')), null, 'still a duplicate key');
 });
 
 test('A9 readOnlyAgents adds to the six defaults without duplicates, drops entries that are not strings, and anything but an array keeps the defaults', () => {

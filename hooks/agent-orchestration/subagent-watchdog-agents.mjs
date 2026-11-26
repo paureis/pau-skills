@@ -11,13 +11,15 @@
 // subfolders, links, a file over 64 KB, files past the first 200 .md files of a folder (sorted by name). Facts from a
 // headless run (Claude Code 2.1.332, 2026-11-26): SubagentStart's agent_type is the name line ("lector" from the file
 // lector-file.md), and the input names no definition file. Any read or parse error means "not read-only", which is
-// the rule as it was before.
+// the rule as it was before: a .md file over 64 KB, unreadable or not parsing, seen before the match, might be the
+// type's own definition, so it makes the answer false. tools: null or ~ counts as no tools field.
 import * as fs from 'node:fs';
 import { join } from 'node:path';
 
 const EDIT_TOOLS = new Set(['Edit', 'MultiEdit', 'NotebookEdit']);
 const MAX_FILES = 200;
 const MAX_BYTES = 64 * 1024;
+const NULLS = new Set(['null', 'Null', 'NULL', '~']);
 
 /** A YAML scalar: the text inside quotes, or the plain text before a comment. undefined for text after a quote. */
 function scalar(v) {
@@ -101,7 +103,9 @@ export function parseDefinition(text) {
     block = null;
     if (fields.has(key[1])) return null;
     const value = rest.trim();
-    if (key[1] === 'tools') {
+    if (key[1] === 'tools' && !/^["']/.test(value) && NULLS.has(scalar(value))) {
+      fields.set('tools', undefined); // tools: null or ~ (unquoted) is no tools field
+    } else if (key[1] === 'tools') {
       const tools = value === '' ? (block = []) : inlineTools(value);
       if (tools === undefined) return null;
       fields.set('tools', tools);
@@ -126,9 +130,14 @@ function definition(file, io) {
   }
 }
 
-/** True when the agent type's definition, in the project's agents folder or else the home one, is read-only. */
+/**
+ * True when the agent type's definition, in the project's agents folder or else the home one, is read-only. A file
+ * seen before the match that is over 64 KB, cannot be read or does not parse might be the type's own definition, so
+ * it makes the answer false.
+ */
 export function definedReadOnly(type, { project, home, io = fs } = {}) {
   if (typeof type !== 'string' || type === '') return false;
+  let unknown = false;
   for (const root of [project, home]) {
     if (typeof root !== 'string' || root === '') continue;
     const dir = join(root, '.claude', 'agents');
@@ -140,7 +149,8 @@ export function definedReadOnly(type, { project, home, io = fs } = {}) {
     }
     for (const name of names.sort().slice(0, MAX_FILES)) {
       const d = definition(join(dir, name), io);
-      if (d !== null && d.name === type) return d.readOnly;
+      if (d === null) unknown = true;
+      else if (d.name === type) return !unknown && d.readOnly;
     }
   }
   return false;

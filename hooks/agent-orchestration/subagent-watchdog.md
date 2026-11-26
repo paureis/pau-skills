@@ -38,11 +38,12 @@ state. The project's definition wins when both folders have the name.
 
 - `tools:` may be a comma list (`tools: Read, Bash, Write`), a flow list (`[Read, Grep]`) or a block list (one
   `- Read` per line). A `(...)` suffix, as in `Bash(git commit:*)`, is ignored. `*` counts as every tool.
-- No `tools:` field means the agent gets every tool, so it is not read-only. Nor is an agent limited only by
-  `disallowedTools`, or one whose `tools:` list is empty.
+- No `tools:` field means the agent gets every tool, so it is not read-only; `tools: null`, `tools: ~` and an empty
+  `tools:` read the same. Nor is an agent limited only by `disallowedTools`.
 - Not read: plugin agents, a folder set with `CLAUDE_CONFIG_DIR`, subfolders, links, a file over 64 KB, and the files
-  past the first 200 `.md` files of a folder (by name). A file that cannot be read or parsed counts as not
-  read-only.
+  past the first 200 `.md` files of a folder (by name). A `.md` file that is over 64 KB, cannot be read or does
+  not parse might be the type's own definition: when one comes before the match (the project folder first, each
+  folder by name), the type is not read-only.
 - The no-edit note, the no-edit ask and the main-session no-edit flag name `readOnlyAgents` under
   `subagent-watchdog` in `.claude/pau-skills.json` as the way out for a type the watchdog cannot see is read-only.
 
