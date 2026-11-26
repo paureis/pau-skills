@@ -86,4 +86,5 @@ Both ids must be 1 to 128 letters, digits, `_` or `-`; any other event is ignore
 
 The hook prints at most one line of JSON, nothing on stderr, and exits 0 on every input. It uses no network and
 starts no processes. The script is [`subagent-watchdog.mjs`](subagent-watchdog.mjs); the decisions are in
-[`subagent-watchdog-logic.mjs`](subagent-watchdog-logic.mjs).
+[`subagent-watchdog-logic.mjs`](subagent-watchdog-logic.mjs), and the main-session status in
+[`subagent-watchdog-status.mjs`](subagent-watchdog-status.mjs).

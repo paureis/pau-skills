@@ -3,8 +3,8 @@
 // runs again with no edit in between, or when a long stretch of tool calls passes with no edit. In the main session,
 // when at least one subagent is flagged, it adds one line per running subagent (minutes, tool calls, repeats, "looks
 // stuck" or a long-running command), at most once every 5 minutes. It never stops an agent: stopping one with
-// TaskStop stays the orchestrator's or the owner's choice. Every decision is in subagent-watchdog-logic.mjs; this file
-// reads stdin and the config, keeps the state files and prints the output.
+// TaskStop stays the orchestrator's or the owner's choice. Every decision is in subagent-watchdog-logic.mjs and
+// subagent-watchdog-status.mjs; this file reads stdin and the config, keeps the state files and prints the output.
 //
 // Why: a subagent sometimes spends half an hour rerunning tests for a one-line change, loops, or stalls, and nobody
 // notices until it reports. A stalled agent makes no tool calls, so its own hooks never fire; only the main session
