@@ -12,12 +12,20 @@
 //   - the last ten shell commands,
 //   - the latest todo list, if the agent kept one,
 //   - git branch and short status.
-// The folder gets a .gitignore of "*", so snapshots never reach a commit. Only the newest ten are kept.
+// The snapshot also records which compaction this is ("compaction: N" under the title): the compact_boundary lines
+// in the transcript plus one, since the new boundary cannot exist yet. The folder gets a .gitignore of "*", so
+// snapshots never reach a commit. Only the newest ten are kept.
 //
 // SessionStart with source "compact": prints the newest snapshot (if it is under an hour old) as additional context,
-// so the facts are back in the window the moment the compacted session resumes.
+// so the facts are back in the window the moment the compacted session resumes. It also works out which compaction
+// this is from the transcript (see compactionNumber) and takes the larger of that and the snapshot's count. From the
+// handoffAfter-th compaction on (default 2), it puts a line first that tells the session to finish the current step,
+// write a handoff or the next kickoff and tell the user to start a new session: after two compactions the session
+// works from a summary of a summary. No readable transcript, no line.
 //
-// Option in .claude/pau-skills.json: { "compact-snapshot": { "dir": ".claude/pau-skills/snapshots", "keep": 10 } }
+// Options in .claude/pau-skills.json:
+//   { "compact-snapshot": { "dir": ".claude/pau-skills/snapshots", "keep": 10, "handoffAfter": 2 } }
+// handoffAfter is a whole number of 0 or more; 0 turns the line off, any other value keeps 2.
 // Exits 0 always and never blocks compaction.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, realpathSync, statSync, unlinkSync, writeFileSync, existsSync } from 'node:fs';
@@ -35,6 +43,47 @@ function parseTranscript(text) {
     try { out.push(JSON.parse(line)); } catch { /* partial line */ }
   }
   return out;
+}
+
+// The compact_boundary lines in the main thread, and whether an assistant line comes after the last one.
+function boundaries(entries) {
+  let count = 0;
+  let assistantAfter = false;
+  for (const e of entries) {
+    if (!e || typeof e !== 'object' || e.isSidechain === true) continue;
+    if (e.type === 'system' && e.subtype === 'compact_boundary') { count++; assistantAfter = false; }
+    else if (e.type === 'assistant') assistantAfter = true;
+  }
+  return { count, assistantAfter };
+}
+
+/** Which compaction this is, at SessionStart "compact", from the transcript text. Pure. */
+export function compactionNumber(text) {
+  const { count, assistantAfter } = boundaries(parseTranscript(text));
+  if (count === 0) return 1;
+  // Claude Code writes the transcript late, so whether this compaction's boundary is on disk when SessionStart fires
+  // is a race: a probe found it missing (the line was stamped 38 ms before the hook ran), another machine may find it
+  // there. An assistant line after the last boundary means work went on after it, so that boundary is an earlier
+  // compaction and the new one is not written yet. Nothing after it but its summary means it is this compaction.
+  return assistantAfter ? count + 1 : count;
+}
+
+/** The handoffAfter option: a whole number of 0 or more, else 2. */
+export function handoffAfter(opts) {
+  const h = opts?.handoffAfter;
+  return Number.isInteger(h) && h >= 0 ? h : 2;
+}
+
+/** The text SessionStart "compact" prints: the hand-off line when due, then the snapshot. '' for nothing. Pure. */
+export function compactNote({ transcript, snap, opts }) {
+  const parts = [];
+  const after = handoffAfter(opts);
+  if (typeof transcript === 'string' && after > 0) {
+    const n = Math.max(compactionNumber(transcript), snap ? snap.compaction : 0);
+    if (n >= after) parts.push(`[compact-snapshot] This is compaction ${n} in this session. Finish the current step, then write a handoff or the next kickoff and tell the user to start a new session.`);
+  }
+  if (snap) parts.push(`[compact-snapshot] The conversation was just compacted. These facts were saved from before it (${snap.path}); treat them as exact where the summary is vague:\n\n${snap.text.slice(0, 6000)}`);
+  return parts.join('\n\n');
 }
 
 const trim = (s, n) => { const t = String(s).replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 3) + '...' : t; };
@@ -75,8 +124,9 @@ export function extract(entries) {
 }
 
 /** The snapshot markdown. Pure. */
-export function render(facts, { when, trigger = 'auto', git = '' }) {
+export function render(facts, { when, trigger = 'auto', git = '', compaction }) {
   const out = [`# Pre-compaction snapshot (${when}, ${trigger})`, ''];
+  if (compaction) out.push(`compaction: ${compaction}`, '');
   out.push('## The user\'s last messages, oldest first', '');
   if (facts.prompts.length) facts.prompts.forEach((p, i) => out.push(`${i + 1}. ${trim(p, 600)}`));
   else out.push('(none found)');
@@ -104,7 +154,9 @@ export function writeSnapshot({ dir, transcript, trigger, git, now = new Date(),
   const ignore = join(dir, '.gitignore');
   if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
   const file = join(dir, `${stamp(now)}.md`);
-  writeFileSync(file, render(extract(parseTranscript(transcript)), { when: now.toISOString(), trigger, git }));
+  const entries = parseTranscript(transcript);
+  // At PreCompact the new boundary cannot be in the file yet, so this compaction is the next one.
+  writeFileSync(file, render(extract(entries), { when: now.toISOString(), trigger, git, compaction: boundaries(entries).count + 1 }));
   const all = readdirSync(dir).filter((f) => f.endsWith('.md')).sort();
   for (const old of all.slice(0, Math.max(0, all.length - keep))) { try { unlinkSync(join(dir, old)); } catch { /* ignore */ } }
   return file;
@@ -118,7 +170,9 @@ export function latestSnapshot(dir, now = Date.now()) {
   const path = join(dir, last);
   try {
     if (now - statSync(path).mtimeMs > MAX_AGE_MS) return null;
-    return { path, text: readFileSync(path, 'utf8') };
+    const text = readFileSync(path, 'utf8');
+    const m = /^# Pre-compaction snapshot [^\n]*\r?\n\r?\ncompaction: (\d+)\r?\n/.exec(text);
+    return { path, text, compaction: m ? Number(m[1]) : 0 };
   } catch { return null; }
 }
 
@@ -136,11 +190,12 @@ if (isMain) {
           const transcript = readFileSync(input.transcript_path, 'utf8');
           writeSnapshot({ dir, transcript, trigger: input.trigger || 'auto', git: gitSummary(root), keep: Number(opts.keep) > 0 ? Number(opts.keep) : 10 });
         } else if (input.hook_event_name === 'SessionStart' && input.source === 'compact') {
-          const snap = latestSnapshot(dir);
-          if (snap) {
-            const text = `[compact-snapshot] The conversation was just compacted. These facts were saved from before it (${snap.path}); treat them as exact where the summary is vague:\n\n${snap.text.slice(0, 6000)}`;
-            process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text } }) + '\n');
+          let transcript = null;
+          if (typeof input.transcript_path === 'string') {
+            try { transcript = readFileSync(input.transcript_path, 'utf8'); } catch { /* no transcript, no count */ }
           }
+          const text = compactNote({ transcript, snap: latestSnapshot(dir), opts });
+          if (text) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text } }) + '\n');
         }
       } catch { /* never block compaction or a session */ }
     }
