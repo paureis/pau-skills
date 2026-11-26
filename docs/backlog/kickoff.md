@@ -2,62 +2,60 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twenty-second batch (Q33, pull request 88) is done. Next, in this order: **Q37** reframe and sharpen from pstack,
-close to word for word (decision 33), then Q38 subagent-watchdog fixes and a compaction count (decisions 34 and 35), Q35 `wizard`, Q34 and Q36. Read "Things that bit the twenty-second batch"
-(`docs/backlog/things-that-bit/batch-22.md`) and the twenty-first's first.
+The twenty-third batch (Q37, pull request 96, release v0.24.0) is done. Next, in this order: **Q38** subagent-watchdog
+fixes and a compaction count (decisions 34 and 35), then Q35 `wizard`, Q34 and Q36. Read "Things that bit the
+twenty-third batch" (`docs/backlog/things-that-bit/batch-23.md`) and the twenty-second's first.
 
-Since then, between batches (pull requests 92 to 94): the repository's `.claude/settings.json` sets
-`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` to 40, so a long session compacts early and `compact-snapshot` hands the facts back;
-`eng-lead` and `reviewer` run at `effort: high` and `lean-subagent-dev`'s generous budget never sets `xhigh`
-(geppetto roster 7, bundle 0.23.1, decision 36). On pull request 93, `test (macos-latest, 20)` once killed the
-`timing: many (pwsh -ep x, 300,000 characters` test at its 10 s limit while the code under test took about 5 ms; one
-re-run passed. If it fails again, the fix is in the test (a wider limit for the child process start), not the hook.
-
-Q37 copies two short typed-only skills from cursor/plugins pstack at a pinned commit. The owner already decided the
-open questions (decision 33): `reframe` is new, upstream's `sharpen` replaces ours, both typed only, bodies word for
-word, only the descriptions and attribution lines change. It is one slice, or two with disjoint files.
+Q38 changes hooks. Items 1 to 4 are all in `hooks/agent-orchestration/subagent-watchdog-logic.mjs` (edits outside the
+project root, a project's own read-only agents, an agent that died with a call in flight, two small status lines);
+item 5 is `compact-snapshot` (a compaction count and a hand-off line). They touch disjoint files, so they can be two
+slices in parallel. Every fix is built on real hook input: a headless run with an empty HOME and a hook that logs
+every event, `--max-budget-usd`, a small model (batch 21 and decision 30). A hook change bumps `pau-skills-hooks` as
+well, and the owner updates the plugin on each computer.
 
 The owner starts the batch with this message:
 
 ```text
-You are the orchestrator for the twenty-third batch in this repository: Q37 (reframe and sharpen from pstack, close
-to word for word). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
+You are the orchestrator for the twenty-fourth batch in this repository: Q38 (subagent-watchdog fixes and a
+compaction count). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
 integrate their work. Type /lean-subagent-dev first (it is typed only since Q28).
 
 Before anything else, read these in full:
-1. CLAUDE.md and docs/ADDING-A-SKILL.md (a new skill and a replaced one: scaffold, origins, NOTICE, REFERENCE,
-   which-skill, README, the typed-only rules).
-2. docs/backlog/q37.md, decisions 29, 32 and 33 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md
-   ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
-   docs/backlog/things-that-bit/batch-21.md and batch-22.md.
-3. Upstream at the pinned commit in q37.md: pstack/skills/reframe/SKILL.md and pstack/skills/sharpen/SKILL.md from
-   cursor/plugins, fetched once into the scratchpad (a sparse git clone works from a session), and our current
-   skills/planning/sharpen/ with every file that mentions it.
+1. CLAUDE.md and docs/ADDING-A-SKILL.md (hooks: hookEnabled, exit 0 on input a hook does not understand, the
+   hooks/README.md options section, build-marketplace after a hooks.json change).
+2. docs/backlog/q38.md, decisions 22, 23, 30, 34 and 35 (docs/backlog/decisions.md),
+   docs/backlog/how-to-run-a-batch.md ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
+   docs/backlog/things-that-bit/batch-21.md, batch-22.md and batch-23.md.
+3. hooks/agent-orchestration/subagent-watchdog-logic.mjs and its tests, and the compact-snapshot hook and its tests.
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3) and CLAUDE_AUTOCOMPACT_PCT_OVERRIDE (it should read
-  40), and tell me both values. Tell eng-lead to hand back at once with the
-  builders' agent IDs if they run in the background; you start the reviewers and send the fix rounds.
-- Read the base commit before you write it into any brief.
+  40), and tell me both values. Tell eng-lead to hand back at once with the builders' agent IDs if they run in the
+  background; you start the reviewers and send the fix rounds.
+- Read the base commit before you write it into any brief, and push the working branch at it before dispatch.
+- Settle the facts q38.md leaves open with a probe before planning: whether the new compact_boundary line is already in
+  the transcript when SessionStart compact fires, and the real failure text of a TaskStop on an agent that is gone.
+  Use headless runs with an empty HOME, a hook that logs every event, --max-budget-usd and a small model.
 - Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone and tries
-  mutations of its own, a fresh reviewer per slice, and a cold run (headless, empty HOME, --max-budget-usd) that types
-  /reframe and /sharpen on a short fixture task. Commits carry the harness's two attribution trailers.
+  mutations of its own, a fresh reviewer per slice, and a cold run (headless, empty HOME, --max-budget-usd) that
+  shows a sibling-worktree edit resets the no-edit count and a second compaction prints the hand-off line. Commits
+  carry the harness's two attribution trailers.
 
 Rules that matter most:
-- The skill bodies stay word for word as upstream; only the descriptions (typed-only rules: one sentence, at most 160
-  characters, no "Use for" opener) and the attribution lines change. If a test objects to a body line, stop and ask me.
-- Every skill works on its own; a mention of a typed-only skill holds /name in the same paragraph. Plain English, no
-  em or en dashes; Node standard library only; no tracked file over its size limit.
-- Every new test fails without the change: prove each with mutate.sh and report every "# tests" line.
-- Run npm test before every commit, docs included. Write docs/releases/v<bundle version>.md for the batch and run its
-  pre-merge check.
+- Hooks use the Node standard library only, exit 0 on input they do not understand, check hookEnabled(), and never
+  block where q38.md says they never block. Plain English, no em or en dashes; no tracked file over its size limit
+  (README.md is 7 bytes under its limit: make room before adding to it).
+- Every new test fails without the change: prove each with mutate.sh (it prints RESULT: CAUGHT) and report every
+  "# tests" line.
+- Run npm test before every commit, docs included. Bump pau-skills-hooks, agent-orchestration, session-discipline and
+  the bundle; write docs/releases/v<bundle version>.md for the batch and run its pre-merge check.
 - Builders commit and never push. You push the working branch and open the PR. When CI is green on Linux, macOS and
   the validate job and every review is clean, merge it yourself.
 
 When the PR is open, tell me in plain words what changed, what the reviews found, and anything I need to decide. After
 the merge, check the Release run, give me the zips of every changed skill (node scripts/pack-skills.mjs --since <main
-before the batch>), mark the items done in docs/backlog/ with what worked and what did not, and write the next kickoff
-here.
+before the batch>) and the hook update commands, mark the items done in docs/backlog/ with what worked and what did
+not, and write the next kickoff here.
 ```
 
 ## The fifth batch's kickoff, as a template

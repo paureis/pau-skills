@@ -93,6 +93,7 @@ under "Work items" below.
 - [Things that bit the twentieth batch](backlog/things-that-bit/batch-20.md)
 - [Things that bit the twenty-first batch](backlog/things-that-bit/batch-21.md)
 - [Things that bit the twenty-second batch](backlog/things-that-bit/batch-22.md)
+- [Things that bit the twenty-third batch](backlog/things-that-bit/batch-23.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not; the first six batches are in
   [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md), and the seventh to twelfth in
   [done-2026-10-20-to-25.md](backlog/done-2026-10-20-to-25.md).
@@ -151,7 +152,7 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q34 rule-to-hook knows UserPromptExpansion](backlog/q34.md)
 - [Q35 wizard, a guided script for the steps only a person can do](backlog/q35.md)
 - [Q36 what Q33 left: the split rule in more places](backlog/q36.md)
-- [Q37 reframe and sharpen from pstack, close to word for word](backlog/q37.md)
+- [Q37 reframe and sharpen from pstack, close to word for word](backlog/q37.md) (done)
 - [Q38 subagent-watchdog: what one orchestrated session showed, and a compaction count](backlog/q38.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
@@ -196,9 +197,9 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
     patch notes (pull request 83); its scope was decisions 31 and 32.
 27. Done: the twenty-first batch, Q32 skill-usage typed starts (pull request 85).
 28. Done: the twenty-second batch, Q33 context in fewer calls (pull request 88).
-29. **Next:** Q37 reframe and sharpen from pstack (the owner's request of 2026-11-25, decision 33); the kickoff is in
-    [backlog/kickoff.md](backlog/kickoff.md). Then Q38 subagent-watchdog fixes and a compaction count (decisions 34 and 35), then
-    Q35 `wizard`, a guided script for the steps only a person can do (from Q30), then Q34 rule-to-hook knows UserPromptExpansion (found in Q32), then Q36 what Q33 left (found in Q33). Parked: Q25 Claude Code mods
+29. Done: the twenty-third batch, Q37 reframe and sharpen from pstack (pull request 96); its scope was decision 33.
+30. **Next:** Q38 subagent-watchdog fixes and a compaction count (decisions 34 and 35); the kickoff is in
+    [backlog/kickoff.md](backlog/kickoff.md). Then Q35 `wizard`, a guided script for the steps only a person can do (from Q30), then Q34 rule-to-hook knows UserPromptExpansion (found in Q32), then Q36 what Q33 left (found in Q33). Parked: Q25 Claude Code mods
     (decision 27) and Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
