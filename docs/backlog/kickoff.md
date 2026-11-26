@@ -3,7 +3,7 @@
 [Back to the backlog index](../BACKLOG.md)
 
 The twenty-second batch (Q33, pull request 88) is done. Next, in this order: **Q37** reframe and sharpen from pstack,
-close to word for word (decision 33), then Q38 subagent-watchdog fixes (decision 34), Q35 `wizard`, Q34 and Q36. Read "Things that bit the twenty-second batch"
+close to word for word (decision 33), then Q38 subagent-watchdog fixes and a compaction count (decisions 34 and 35), Q35 `wizard`, Q34 and Q36. Read "Things that bit the twenty-second batch"
 (`docs/backlog/things-that-bit/batch-22.md`) and the twenty-first's first.
 
 Q37 copies two short typed-only skills from cursor/plugins pstack at a pinned commit. The owner already decided the
