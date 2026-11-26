@@ -1,7 +1,7 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 40](https://img.shields.io/badge/skills-40-informational)
+![Skills: 41](https://img.shields.io/badge/skills-41-informational)
 ![Hooks: 16](https://img.shields.io/badge/hooks-16-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
@@ -129,8 +129,8 @@ context was compacted.
 
 ### 5. Building before the plan is decided
 
-- `sharpen` restates a task in its own words, with the problem behind it and one outside check, and confirms before
-  starting.
+- `sharpen` (type `/sharpen`) makes a task deeper, not bigger, then rewrites the prompt.
+- `reframe` (type `/reframe`) teaches the expert words for what you are building and rewrites your description.
 - `brainstorm` widens the options before `grill-me` narrows them, so the first idea is not the only one considered.
 - `grill-me` interviews you in rounds of ready questions until every branch of the plan is decided.
 - `to-prd` and `to-issues` turn the decided plan into a spec and vertical-slice issues.
@@ -215,9 +215,9 @@ for this", "is this test any good"), and you can type any as `/pau-skills:<skill
 description is in every session's context, so it is a short list of the phrases that should start it: at most 400
 characters, 14,000 in all (`tests/context-budget.test.mjs`).
 
-Eight start only when typed and cost no context: `session-close`, `lean-subagent-dev`, `overnight-run`,
-`skill-eval`, `agent-friendly-audit`, `geppetto`, `launch-readiness`, `friction-review`. A request in words, the
-agent and other skills cannot start them. `tests/typed-only-list.mjs` holds the list.
+Ten start only when typed and cost no context: `session-close`, `lean-subagent-dev`, `overnight-run`, `skill-eval`,
+`agent-friendly-audit`, `geppetto`, `launch-readiness`, `friction-review`, `reframe`, `sharpen`. A request in words,
+the agent and other skills cannot start them. `tests/typed-only-list.mjs` holds the list.
 
 Some skills cost something when they run (subagents, headless runs, a commit, push or install with no other check,
 or a new way of working), and nothing else in them asks first. When the agent starts one on its own, without you
@@ -276,8 +276,8 @@ To bring a new skill into the repository, start with `node scripts/new-skill.mjs
   written for Cursor; the versions here are rewritten for Claude Code and generalised, and
   [docs/ORIGINS.md](docs/ORIGINS.md) records what each one changes.
   - Adapted from it, sharing its text or structure: `arena`, `architect`, `bug-fix`, `verify-app`, `hillclimb`,
-    `skill-eval`, `agent-friendly-audit`, `sharpen`, `codebase-oracle`, `overnight-run` and
-    `engineering-principles`.
+    `skill-eval`, `agent-friendly-audit`, `codebase-oracle`, `overnight-run` and `engineering-principles`.
+  - Word for word but the description: `reframe` and `sharpen`.
   - Taking parts of their text from it: `tdd`, `review-triage`, `lean-subagent-dev`, `rule-to-hook` and
     `improve-codebase-architecture`.
   - Taking ideas from it, in new words: `retrospective`, `handoff`, `which-skill`, `mutation-test`, `evaluator`,

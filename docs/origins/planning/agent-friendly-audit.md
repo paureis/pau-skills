@@ -26,7 +26,7 @@ more sentence in an instruction file that nothing enforces.
   (`.agent-audit-scratch/`, each copy its own repository, removed before any run on the current code from the project
   root); a pattern with live copies becomes a ratchet; a check that allows exceptions must fail on an expired one.
   Open questions are answered with a prototype.
-  The prompt is confirmed first, with `/sharpen` as an optional extra.
+  The prompt is confirmed first; if `sharpen` is installed, the user can type `/sharpen` to make it deeper first.
 - Privacy rules are new: pointers instead of raw excerpts, synthetic inputs for proofs, approvals recorded by role or
   handle, never a person's name.
 - `mine.mjs` is new and read only: `commits` lists fix and revert commits with their files; `transcripts` prints only

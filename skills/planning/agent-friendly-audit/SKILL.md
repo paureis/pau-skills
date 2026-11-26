@@ -61,9 +61,9 @@ Before mining, restate the audit in a few lines and confirm it with the user (As
 - the sources you will read, from step 2, and any you cannot reach;
 - constraints that change the work ("only the code we own", "no new tooling", "report only").
 
-Leave out how to fix things and any guess at the cause; the evidence decides those. If `sharpen` is installed, you
-can run it on the audit prompt first; it does this check in more depth. Ask nothing else up front: an open design
-question is answered later with a prototype (step 6).
+Leave out how to fix things and any guess at the cause; the evidence decides those. If `sharpen` is installed, the
+user can type `/sharpen` on the audit prompt first to make it deeper and rewrite it; you cannot start it. Ask nothing
+else up front: an open design question is answered later with a prototype (step 6).
 
 **No one to answer** (a headless `claude -p` run, a scheduled job): do not assume a yes. Such a run starts this
 skill by typing it, with `/agent-friendly-audit <focus>` as the prompt. If the prompt that started the run already
