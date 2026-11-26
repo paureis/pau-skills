@@ -27,7 +27,7 @@ person more than to the project; set it once in the `env` block of your user `se
 |---|---|---|---|---|
 | tight | changes of 5+ files | the session's; a smaller one for mechanical work only on your yes, never for risky paths | builder `medium` | the orchestrator's own checks |
 | normal | any change in behaviour or tests, and changes of 3+ files | the session's | builder and plan checker `high` | checks plus a read of every risky file |
-| generous | any change in behaviour or tests, and changes of 2+ files | the session's | builder `high`, plan checker and reviewer `xhigh` | plus a reviewer subagent on risky files |
+| generous | any change in behaviour or tests, and changes of 2+ files | the session's | builder, plan checker and reviewer `high` | plus a reviewer subagent on risky files |
 
 The rest of `.claude/review-rules.json` (must-fix list, risky paths, checks, and `delegation.minFiles` and
 `delegation.log`) is described in [the verification README](../verification/README.md#review-triage-configuration).

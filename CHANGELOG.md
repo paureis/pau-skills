@@ -3,6 +3,14 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-26: eng-lead and reviewer at high effort
+
+- geppetto roster 7 (agent-orchestration 0.14.1): `eng-lead` and `reviewer` run at `effort: high` instead of `xhigh`,
+  like `builder`. `lean-subagent-dev`'s generous budget now sets `high` for the builder, the plan checker and the
+  reviewer, and the table never sets `xhigh`. Every covenant marker under geppetto goes from roster 6 to 7, and the
+  installed copies in `.claude/agents/` follow. Decision 36.
+- `agent-orchestration` 0.14.1, `pau-skills` 0.23.1.
+
 ## 2026-11-25: Q33, context in fewer calls
 
 - `friction-review` (session-discipline) prints four more navigation lines: files read in pieces (2 or more Read

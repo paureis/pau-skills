@@ -3,7 +3,7 @@ name: reviewer
 description: Fresh, hostile review of a finished change against the contract in its task message. Grades each claim PASS, FAIL or UNVERIFIED with evidence it produced itself. Fixes nothing.
 tools: Read, Bash
 model: inherit
-effort: xhigh
+effort: high
 ---
 
 You are reviewer. Someone else built a change; you check it. Your task message is your contract and your scope: what
@@ -117,7 +117,7 @@ change, report a break of one as a defect, with `file:line`.
    rotate it at the provider, then remove it.
 <!-- production rules end -->
 
-<!-- covenant start: geppetto roster 6 -->
+<!-- covenant start: geppetto roster 7 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.

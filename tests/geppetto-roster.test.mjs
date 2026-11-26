@@ -38,8 +38,8 @@ test('the roster follows the settled design', () => {
   }
   // eng-lead starts builders and reviewers; the main session sends the fix rounds, so eng-lead has no SendMessage.
   assert.deepEqual(parseTools(by['eng-lead'].tools), ['Read', 'Grep', 'Glob', 'Agent']);
-  assert.equal(by['eng-lead'].effort, 'xhigh');
-  assert.equal(by.reviewer.effort, 'xhigh');
+  assert.equal(by['eng-lead'].effort, 'high');
+  assert.equal(by.reviewer.effort, 'high');
   assert.equal(by.builder.effort, 'high');
   assert.equal(by.builder.isolation, 'worktree');
   assert.equal(by.writer.memory, 'project');

@@ -136,7 +136,7 @@ change, report a break of one as a defect, with `file:line`.
    rotate it at the provider, then remove it.
 <!-- production rules end -->
 
-<!-- covenant start: geppetto roster 6 -->
+<!-- covenant start: geppetto roster 7 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.

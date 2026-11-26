@@ -31,7 +31,7 @@ can be judged after a week; and "when to step up" to the heavier methods.
 adapted text is in `TRIAGE.md`, the identical copy of [review-triage's](../verification/review-triage.md) (see there). What this version changes:
 - The budget table gets a "Subagent effort" row, set through the Agent tool's `effort` field. setup-pstack gives every
   role one level per budget (medium, high, xhigh, max) and never uses low. Here the builder gets medium, high and
-  high, the plan checker high then xhigh, and the reviewer xhigh. The split is this skill's choice: the builder's work
+  high, and the plan checker and reviewer high (the generous budget gave them xhigh until 2026-11-26, decision 36). The split is this skill's choice: the builder's work
   goes through the orchestrator's four checks, while the plan checker and reviewer are the check. low and max are not
   used. Effort is left out when unsure, on a smaller model, or for a fork.
 - "Never write a slug you have not confirmed" (setup-pstack) becomes "never name a model that has not been confirmed
