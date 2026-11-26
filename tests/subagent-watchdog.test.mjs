@@ -194,15 +194,15 @@ test('W13 outputs: the note is additionalContext with no permissionDecision; the
   assert.match(textOf(r[79]), /builder agent-1/);
 });
 
-test('W14 options: positive whole numbers replace the defaults; 0, -1, 1.5, "5", null and a missing value keep them; readOnlyAgents replaces the list, drops entries that are not strings, and anything but an array keeps the default', () => {
+test('W14 options: positive whole numbers replace the defaults; 0, -1, 1.5, "5", null and a missing value keep them; readOnlyAgents adds to the list, drops entries that are not strings, and anything but an array keeps the default', () => {
   const defaults = { repeatNote: 3, repeatAsk: 5, noEditNote: 40, noEditAsk: 80, readOnlyAgents: READ_ONLY };
   for (const raw of [{}, null, undefined, [], 'x', 7]) assert.deepEqual(resolveOptions(raw), defaults);
   assert.deepEqual(resolveOptions({ repeatNote: 2, repeatAsk: 7, noEditNote: 1, noEditAsk: 100 }), { ...defaults, repeatNote: 2, repeatAsk: 7, noEditNote: 1, noEditAsk: 100 });
   for (const bad of [0, -1, 1.5, '5', null, undefined, true, NaN, Infinity]) {
     assert.deepEqual(resolveOptions({ repeatNote: bad, repeatAsk: bad, noEditNote: bad, noEditAsk: bad }), defaults, String(bad));
   }
-  assert.deepEqual(resolveOptions({ readOnlyAgents: [3, 'a', null, 'b', {}] }).readOnlyAgents, ['a', 'b']);
-  assert.deepEqual(resolveOptions({ readOnlyAgents: [] }).readOnlyAgents, []);
+  assert.deepEqual(resolveOptions({ readOnlyAgents: [3, 'a', null, 'b', {}] }).readOnlyAgents, [...READ_ONLY, 'a', 'b']);
+  assert.deepEqual(resolveOptions({ readOnlyAgents: [] }).readOnlyAgents, READ_ONLY);
   for (const bad of ['reviewer', {}, null, 1]) assert.deepEqual(resolveOptions({ readOnlyAgents: bad }).readOnlyAgents, READ_ONLY);
   assert.deepEqual(runs(sim({ project: P, options: { repeatNote: 2 } }), 'npm test', 3), ['-', 'note', '-']);
   assert.deepEqual(reads(sim({ project: P, options: { readOnlyAgents: ['builder'] } }), 40), Array(40).fill('-'));

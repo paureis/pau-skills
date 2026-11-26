@@ -2,7 +2,7 @@
 // Pure, like subagent-watchdog-logic.mjs, whose step() calls status() for a main-session UserPromptSubmit or
 // PreToolUse. The two modules import each other; each uses the other's bindings only inside functions, never while
 // it loads, so either can be imported first. The rules are in the logic file's header comment.
-import { LIMITS, WAIT_TOOLS, isReadOnly, minutes, normalizeCommand, nothing } from './subagent-watchdog-logic.mjs';
+import { LIMITS, READ_ONLY_HINT, WAIT_TOOLS, isReadOnly, minutes, normalizeCommand, nothing } from './subagent-watchdog-logic.mjs';
 
 const oneLine = (s, n) => normalizeCommand(s).slice(0, n);
 
@@ -14,7 +14,7 @@ export function judge(a, now, o) {
   if (a.flight === null && !waiting && idle >= LIMITS.stuck) flags.push(`looks stuck: no tool call for ${minutes(idle)} minutes`);
   if (a.flight !== null && !waiting && now - a.flight.at >= LIMITS.long) flags.push(`one call has run for ${minutes(now - a.flight.at)} minutes`);
   if (a.top && a.top.n >= o.repeatNote) flags.push(`the same command ran ${a.top.n} times with no edit in between`);
-  if (!isReadOnly(a.type, o.readOnlyAgents) && a.sinceEdit >= o.noEditNote) flags.push(`${a.sinceEdit} tool calls with no edit`);
+  if (!a.ro && !isReadOnly(a.type, o.readOnlyAgents) && a.sinceEdit >= o.noEditNote) flags.push(`${a.sinceEdit} tool calls with no edit (${READ_ONLY_HINT})`);
   return { flags, drop: a.flight === null && !waiting && idle >= LIMITS.drop, waiting };
 }
 

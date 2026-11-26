@@ -1,6 +1,7 @@
 // Subagent watchdog, the pure part: the decisions inside a subagent, the state format and step(), with no file I/O, so
 // the tests can call it directly. The main-session status is in subagent-watchdog-status.mjs, also pure. The hook
-// itself (subagent-watchdog.mjs) reads stdin and the config, keeps the state files and prints the output.
+// itself (subagent-watchdog.mjs) reads stdin, the config and the agent definitions (subagent-watchdog-agents.mjs),
+// keeps the state files and prints the output.
 //
 // What it watches, and why: a subagent sometimes spends half an hour rerunning the same tests for a one-line change,
 // loops, or stalls, and nobody notices until it reports. Decision 22 sets the limits: never cut off a healthy long
@@ -12,7 +13,10 @@
 //     between. A note on the 3rd run, an ask on the 5th and every 5th after it.
 //   - No progress is a stretch of tool calls with no edit: one note on the first call at or past 40, an ask on the
 //     first call at or past 80, 160, ... (the last level asked is kept; both reset at an edit). Read-only agent
-//     types skip this rule, and get repeat notes but no repeat asks.
+//     types skip this rule, and get repeat notes but no repeat asks. A type is read-only when it is in readOnlyAgents
+//     (the six defaults, plus the option's entries), or when its definition, read by the hook at SubagentStart and
+//     kept as ro in the state, lists tools and none of Edit, MultiEdit or NotebookEdit (q38.md item 2). The no-edit
+//     note and ask name readOnlyAgents as the way out.
 //   - An exempt call (an edit, a git commit, SubagentHandback, SendMessage) may get a note but never an ask, so a
 //     loop of failing edits or commits is still noticed.
 //   - An edit is Edit, Write, MultiEdit or NotebookEdit with a path of 1 to 4,096 characters, wherever the file is (a
@@ -37,8 +41,8 @@
 // next event. A failed shell command fires PostToolUseFailure. TaskStop's task_id is the agent_id the agent's own
 // hooks carry, and a stopped agent gets no SubagentStop.
 //
-// The state of one agent is { type, start, last, calls, sinceEdit, edit, runs, top, flight, waits, noted, asked },
-// times in Date.now() milliseconds; runs maps a key ("h" and 16 characters of the command's SHA-256) to its count, at most 200 keys. The
+// The state of one agent is { type, start, last, calls, sinceEdit, edit, runs, top, flight, waits, noted, asked, ro },
+// times in Date.now() milliseconds; ro is a boolean, false when missing or not a boolean; runs maps a key ("h" and 16 characters of the command's SHA-256) to its count, at most 200 keys. The
 // main session's state is { shownAt, agents: Map }; a Map, so an id such as __proto__ is a plain entry. step() returns
 // the new state, the output or null, and which agents to write or remove; the hook does the I/O.
 import { createHash } from 'node:crypto';
@@ -70,7 +74,7 @@ const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 const whole = (v, fallback) => (Number.isInteger(v) && v > 0 ? v : fallback);
 export const minutes = (ms) => Math.floor(ms / MINUTE);
 
-/** The options, from the "subagent-watchdog" object of the config. A value that is not valid keeps its default. */
+/** The options, from the "subagent-watchdog" object of the config. A value that is not valid keeps its default; readOnlyAgents adds to it. */
 export function resolveOptions(raw) {
   const o = isObject(raw) ? raw : {};
   return {
@@ -78,7 +82,7 @@ export function resolveOptions(raw) {
     repeatAsk: whole(o.repeatAsk, DEFAULTS.repeatAsk),
     noEditNote: whole(o.noEditNote, DEFAULTS.noEditNote),
     noEditAsk: whole(o.noEditAsk, DEFAULTS.noEditAsk),
-    readOnlyAgents: Array.isArray(o.readOnlyAgents) ? o.readOnlyAgents.filter((s) => typeof s === 'string') : [...DEFAULTS.readOnlyAgents],
+    readOnlyAgents: [...new Set([...DEFAULTS.readOnlyAgents, ...(Array.isArray(o.readOnlyAgents) ? o.readOnlyAgents.filter((s) => typeof s === 'string') : [])])],
   };
 }
 
@@ -114,7 +118,7 @@ export function isEdit(input) {
 
 export const emptyState = () => ({ shownAt: 0, agents: new Map() });
 const newAgent = (type, now) => ({
-  type, start: now, last: now, calls: 0, sinceEdit: 0, edit: 0, runs: {}, top: null, flight: null, waits: [], noted: false, asked: 0,
+  type, start: now, last: now, calls: 0, sinceEdit: 0, edit: 0, runs: {}, top: null, flight: null, waits: [], noted: false, asked: 0, ro: false,
 });
 /** A tool_use_id that can key a wait: a string of 1 to 128 characters. */
 const waitId = (v) => (typeof v === 'string' && v.length >= 1 && v.length <= LIMITS.waitId ? v : null);
@@ -152,13 +156,13 @@ export function parseAgent(text) {
   if (typeof noted !== 'boolean' || !Number.isInteger(asked) || asked < 0) return null;
   return {
     type: v.type.slice(0, LIMITS.type), start: v.start, last: v.last, calls: v.calls, sinceEdit: v.sinceEdit, edit: v.edit, runs, top, flight,
-    waits: waits.slice(-LIMITS.waits).map((w) => ({ id: w.id, at: w.at })), noted, asked,
+    waits: waits.slice(-LIMITS.waits).map((w) => ({ id: w.id, at: w.at })), noted, asked, ro: v.ro === true,
   };
 }
 
 export const serializeAgent = (a) => JSON.stringify({
   type: a.type, start: a.start, last: a.last, calls: a.calls, sinceEdit: a.sinceEdit, edit: a.edit, runs: a.runs, top: a.top, flight: a.flight,
-  waits: a.waits, noted: a.noted, asked: a.asked,
+  waits: a.waits, noted: a.noted, asked: a.asked, ro: a.ro,
 });
 
 /** The main session's last status time from the "shown" file's text, or 0. */
@@ -187,6 +191,7 @@ const removed = (state, id) => {
 };
 
 const SOFT = 'If it is (a poll, a fix made through the shell, a mutation run), go on.';
+export const READ_ONLY_HINT = 'a type that is not meant to edit can be listed in "readOnlyAgents" under "subagent-watchdog" in .claude/pau-skills.json';
 const noteText = (parts) =>
   `[subagent-watchdog] ${parts.join(' ')} If this is not getting you anywhere, change something, or report what you ` +
   `have and what blocks you. ${SOFT}`;
@@ -196,7 +201,7 @@ const askText = (type, id, parts) =>
   'say so in one line and go on: only this one call was refused. To the owner: allowing lets the agent go on, and ' +
   `denying refuses only this one call. Turn the watchdog off with ${OFF} in .claude/pau-skills.json.`;
 
-function subagent(state, input, id, now, o) {
+function subagent(state, input, id, now, o, ro) {
   const event = input.hook_event_name;
   if (event === 'SubagentStop') return removed(state, id);
   const type = typeof input.agent_type === 'string' ? input.agent_type.slice(0, LIMITS.type) : '';
@@ -207,6 +212,7 @@ function subagent(state, input, id, now, o) {
   const done = (output = null) => ({ state: { ...state, agents }, output, write: [id], remove: [], shown: false, changed: true });
   if (event === 'SubagentStart') {
     a.type = type;
+    a.ro = ro === true;
     a.last = now;
     return done();
   }
@@ -237,7 +243,7 @@ function subagent(state, input, id, now, o) {
     if (!a.top || n > a.top.n) a.top = { n, cmd: norm.slice(0, LIMITS.shown) };
   }
   const exempt = QUIET_TOOLS.has(tool) || isEdit(input);
-  const readOnly = isReadOnly(a.type, o.readOnlyAgents);
+  const readOnly = a.ro || isReadOnly(a.type, o.readOnlyAgents);
   const k = a.sinceEdit;
   const level = Math.floor(k / o.noEditAsk);
   const repeatAsk = shell && !exempt && !readOnly && n >= o.repeatAsk && (n - o.repeatAsk) % o.repeatAsk === 0;
@@ -251,7 +257,7 @@ function subagent(state, input, id, now, o) {
   const shown = norm.slice(0, LIMITS.message);
   const parts = [];
   if (repeat) parts.push(`the same command ran ${n} times with no edit in between: \`${shown}\`.`);
-  if (noEdit) parts.push(`${k} tool calls since the last edit.`);
+  if (noEdit) parts.push(`${k} tool calls since the last edit (${READ_ONLY_HINT}).`);
   if (repeatAsk || noEditAsk) {
     return done({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: askText(a.type, id, parts) } });
   }
@@ -261,13 +267,14 @@ function subagent(state, input, id, now, o) {
 // The main-session status (judge, line, status) is in subagent-watchdog-status.mjs.
 
 /**
- * One event. Returns { state, output, write, remove, shown, changed }: write lists the agents whose state to save,
- * remove the agents whose state to delete, shown whether to save state.shownAt.
+ * One event. ro: at SubagentStart, whether the agent's definition is read-only (the hook reads it). Returns { state,
+ * output, write, remove, shown, changed }: write lists the agents whose state to save, remove the agents whose state
+ * to delete, shown whether to save state.shownAt.
  */
-export function step(state, input, { now = Date.now(), options = resolveOptions({}) } = {}) {
+export function step(state, input, { now = Date.now(), options = resolveOptions({}), ro = false } = {}) {
   const r = route(input);
   if (r === null) return nothing(state);
-  if (r.who === 'sub') return subagent(state, input, r.id, now, options);
+  if (r.who === 'sub') return subagent(state, input, r.id, now, options, ro);
   if (r.stop !== undefined) return removed(state, r.stop);
   return status(state, input, now, options);
 }

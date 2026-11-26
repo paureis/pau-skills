@@ -11,7 +11,7 @@
 // can see a stall. Decision 22: never cut off a healthy long run; stopping needs a yes; a hook in pau-skills-hooks
 // that needs no skill and works in cloud sessions. Decision 23 is the design, decision 30 the owner's four answers.
 //
-// Events: SubagentStart (add the agent, then prune), PreToolUse (count, then note or ask in a subagent; the status in
+// Events: SubagentStart (read the agent's definition, add the agent, then prune), PreToolUse (count, then note or ask in a subagent; the status in
 // the main session), PostToolUse (end the call in flight; an edit resets the counts; in the main session, TaskStop
 // removes the agent it names), PostToolUseFailure (end the call in flight, reset nothing), UserPromptSubmit (the
 // status), SubagentStop (remove the agent). Facts from two headless prototypes (decision 23, and Claude Code 2.1.330
@@ -19,6 +19,13 @@
 // session events carry no agent_id; "ask" in claude -p refuses that one call, the reason reaches the agent and it goes
 // on; a refused call has no PostToolUse; a failed command fires PostToolUseFailure; an agent stopped with TaskStop gets
 // no SubagentStop, and TaskStop's task_id is that agent's agent_id.
+//
+// Agent definitions, at SubagentStart only (subagent-watchdog-agents.mjs): <project>/.claude/agents/*.md, then
+// <home>/.claude/agents/*.md, home being PAU_SKILLS_HOME or else the user's home, the same home as the config. The
+// type is matched to the frontmatter name line; a definition that lists tools and none of Edit, MultiEdit or
+// NotebookEdit makes the type read-only, stored as ro in its state. Top level of each folder only, at most 200 files
+// and 64 KB a file; plugin agents, CLAUDE_CONFIG_DIR and subfolders are not read. A run with Claude Code 2.1.332
+// (2026-11-26) showed that agent_type is the name line and that CLAUDE_PROJECT_DIR is set for hooks.
 //
 // State: <os.tmpdir()>/pau-skills-watchdog-<uid>/<session_id>/<agent_id>.json (no -<uid> where the platform has no
 // user ids), one file per agent, and a file "shown" with the main session's last status time. Both ids must match
@@ -35,8 +42,9 @@
 // and shown file more than a day old. Links are never followed.
 //
 // Options in .claude/pau-skills.json: {"subagent-watchdog": {"repeatNote": 3, "repeatAsk": 5, "noEditNote": 40,
-// "noEditAsk": 80, "readOnlyAgents": [...]}}. Off with {"hooks": {"subagent-watchdog": false}}. At most one line of
-// JSON on stdout, nothing on stderr, exit 0 on every input. No network and no child processes.
+// "noEditAsk": 80, "readOnlyAgents": [...]}}; readOnlyAgents adds to the six defaults. Off with
+// {"hooks": {"subagent-watchdog": false}}. At most one line of JSON on stdout, nothing on stderr, exit 0 on every
+// input. No network and no child processes.
 import * as fs from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { homedir, tmpdir } from 'node:os';
@@ -46,6 +54,7 @@ import { loadConfig, hookEnabled, hookOptions, projectDir, readStdin, parseInput
 import {
   NAME, LIMITS, PATTERNS, emptyState, parseAgent, parseShown, resolveOptions, route, serializeAgent, step, validId,
 } from './subagent-watchdog-logic.mjs';
+import { definedReadOnly } from './subagent-watchdog-agents.mjs';
 
 export const SESSION_ID = PATTERNS.id;
 const SHOWN = 'shown';
@@ -149,7 +158,8 @@ export function update(input, { now = Date.now(), env = process.env, io = fs, tm
   const r = route(input);
   if (r === null) return null;
   const project = projectDir(input, env);
-  const config = loadConfig({ project, home: env.PAU_SKILLS_HOME || homedir() });
+  const home = env.PAU_SKILLS_HOME || homedir();
+  const config = loadConfig({ project, home });
   if (!hookEnabled(NAME, config, env)) return null;
   const options = resolveOptions(hookOptions(NAME, config));
   const p = paths(input.session_id, tmp);
@@ -157,7 +167,8 @@ export function update(input, { now = Date.now(), env = process.env, io = fs, tm
   if (where === 'bad') return null;
   const needs = r.who === 'sub' ? r.id : r.status ? null : undefined;
   const state = where === 'ok' && needs !== undefined ? read(p, needs, io) : emptyState();
-  const res = step(state, input, { now, options });
+  const ro = r.who === 'sub' && input.hook_event_name === 'SubagentStart' && definedReadOnly(input.agent_type, { project, home, io });
+  const res = step(state, input, { now, options, ro });
   for (const id of res.write) write(p, p.agent(id), serializeAgent(res.state.agents.get(id)), io);
   if (res.remove.length && folders(p, io) === 'ok') for (const id of res.remove) unlink(p.agent(id), io);
   if (res.shown) write(p, p.shown, String(res.state.shownAt), io);

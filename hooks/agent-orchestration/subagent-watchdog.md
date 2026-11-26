@@ -18,11 +18,32 @@ Under `"subagent-watchdog"` in `.claude/pau-skills.json`:
 | `repeatAsk` | `5` | An ask on this run, and on every multiple of it after (10, 15, ...). |
 | `noEditNote` | `40` | One note on the first tool call at or past this many calls since the last edit. |
 | `noEditAsk` | `80` | An ask on the first call at or past this many calls since the last edit, then at or past each multiple of it (160, 240, ...). |
-| `readOnlyAgents` | `["reviewer", "Explore", "Plan", "claude-code-guide", "web-fetch", "eng-lead"]` | Agent types that are not expected to edit. They skip the no-edit rule, and get repeat notes but no repeat asks. A type such as `plugin:reviewer` matches by the part after its last `:`. A list replaces the default; entries that are not strings are dropped. |
+| `readOnlyAgents` | `["reviewer", "Explore", "Plan", "claude-code-guide", "web-fetch", "eng-lead"]` | Agent types that are not expected to edit. They skip the no-edit rule, and get repeat notes but no repeat asks. A type such as `plugin:reviewer` matches by the part after its last `:`. A list adds to the default, without duplicates; entries that are not strings are dropped. |
+
+A project's own agent type is read-only too when its definition says so: see [Read-only agent types](#read-only-agent-types).
 
 A number that is not a whole number above 0 keeps its default. Fixed: 10 minutes for "looks stuck", 30 minutes for
 a long call, 5 minutes between two status messages, 60 minutes before a silent agent is dropped, 200 commands kept
 per agent, commands cut to 120 characters in a message and 80 in the status.
+
+## Read-only agent types
+
+A type is read-only when it is in `readOnlyAgents`, or when its definition lists tools and none of Edit, MultiEdit or
+NotebookEdit: a reader or critic with `tools: Read, Bash, Write` reads for many calls and writes one report at the
+end, by design. At SubagentStart the watchdog reads `<project>/.claude/agents/*.md`, then
+`~/.claude/agents/*.md` (the home folder is `PAU_SKILLS_HOME` when it is set, as for the config file), finds the file
+whose frontmatter `name:` is the agent's type (the file name does not matter), and keeps the answer in the agent's
+state. The project's definition wins when both folders have the name.
+
+- `tools:` may be a comma list (`tools: Read, Bash, Write`), a flow list (`[Read, Grep]`) or a block list (one
+  `- Read` per line). A `(...)` suffix, as in `Bash(git commit:*)`, is ignored. `*` counts as every tool.
+- No `tools:` field means the agent gets every tool, so it is not read-only. Nor is an agent limited only by
+  `disallowedTools`, or one whose `tools:` list is empty.
+- Not read: plugin agents, a folder set with `CLAUDE_CONFIG_DIR`, subfolders, links, a file over 64 KB, and the files
+  past the first 200 `.md` files of a folder (by name). A file that cannot be read or parsed counts as not
+  read-only.
+- The no-edit note, the no-edit ask and the main-session no-edit flag name `readOnlyAgents` under
+  `subagent-watchdog` in `.claude/pau-skills.json` as the way out for a type the watchdog cannot see is read-only.
 
 ## Inside a subagent
 
@@ -53,7 +74,7 @@ repeat, and the call in flight. At most once every 5 minutes. An agent is flagge
 - it looks stuck: no tool call started or finished for 10 minutes and none in flight;
 - a call has been in flight for 30 minutes ("running `npm test` for 31 minutes");
 - a command reached the repeat note, or (for a type that is not read-only) the calls since the last edit reached the
-  no-edit note.
+  no-edit note; that flag names `readOnlyAgents`.
 
 An agent waiting on its own subagents is never flagged stuck or long-running for it, and never dropped: its
 subagents are watched on their own. Each Agent or Task call is tracked by its `tool_use_id` until the PostToolUse or
