@@ -156,3 +156,9 @@ Decisions 1 to 21 (2026-10-17 to 2026-11-04) are in [decisions-1-to-21.md](decis
    and eng-lead used about a quarter of the session's tokens and the main session more than half. The generous
    budget keeps its plan check of every brief and its fresh reviewer per item; only the effort drops. Geppetto roster
    7, agent-orchestration 0.14.1.
+
+37. **wizard (Q35) is model-invoked and adapted from upstream.** The owner settled both open questions on 2026-11-26:
+   the agent offers `wizard` when it reaches a step only a person can do, so it is model-invoked (not on the typed-only
+   list), and it is adapted from upstream's `wizard` in mattpocock/skills, rewritten in Node with the standard library
+   only. The batch still reads upstream at a pinned commit and records its license and what changes. Check the
+   description budget and the confirm list rules in `docs/ADDING-A-SKILL.md` before the brief.
