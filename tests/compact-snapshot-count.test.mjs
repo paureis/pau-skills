@@ -31,7 +31,7 @@ describe('compact-snapshot: the compaction number', () => {
     assert.equal(compactionNumber(t(B, S, side(A))), 1);
     assert.equal(compactionNumber(t(side(B), A)), 1);
   });
-  test('a partial boundary line at the end is skipped', () => assert.equal(compactionNumber(t(B, S, A) + B.slice(0, 60)), 2));
+  test('a partial boundary line at the end is skipped', () => assert.equal(compactionNumber(t(B, S) + B.slice(0, 60)), 1));
   test('a line that only mentions compact_boundary in a command is not a boundary', () => {
     assert.equal(compactionNumber(t(FAKE, B, S)), 1);
     assert.equal(compactionNumber(t(FAKE, A)), 1);
@@ -61,9 +61,22 @@ describe('compact-snapshot: the hand-off line', () => {
     assert.equal(line(text), null);
     assert.match(text, /^\[compact-snapshot\] The conversation was just compacted/);
   });
-  test('the larger of the transcript count and the snapshot count wins', () => {
-    assert.equal(line(compactNote({ transcript: one, snap: { path: '/s.md', text: '', compaction: 3 }, opts: {} })), 3);
-    assert.equal(line(compactNote({ transcript: t(B, S, A, B, S, A), snap: { path: '/s.md', text: '', compaction: 2 }, opts: {} })), 3);
+  test('the larger of the transcript count and the snapshot count wins, for the same session', () => {
+    assert.equal(line(compactNote({ transcript: one, snap: { path: '/s.md', text: '', compaction: 3, session: 'S1' }, opts: {}, session: 'S1' })), 3);
+    assert.equal(line(compactNote({ transcript: t(B, S, A, B, S, A), snap: { path: '/s.md', text: '', compaction: 2, session: 'S1' }, opts: {}, session: 'S1' })), 3);
+  });
+  test('another session\'s snapshot gives neither its count nor its text', () => {
+    assert.equal(compactNote({ transcript: one, snap: { path: '/x.md', text: 'X facts', compaction: 3, session: 'X' }, opts: {}, session: 'Y' }), '');
+  });
+  test('a SessionStart with no session_id uses neither the count nor a snapshot that records a session', () => {
+    for (const session of [undefined, '', 42]) {
+      assert.equal(compactNote({ transcript: one, snap: { path: '/x.md', text: 'X facts', compaction: 3, session: 'X' }, opts: {}, session }), '');
+    }
+  });
+  test('a snapshot that records no session is still shown, and its count is not used', () => {
+    const text = compactNote({ transcript: one, snap: { path: '/old.md', text: 'old facts', compaction: 3, session: '' }, opts: {}, session: 'Y' });
+    assert.equal(line(text), null);
+    assert.match(text, /^\[compact-snapshot\] The conversation was just compacted[^\n]*\n\nold facts/);
   });
   test('handoffAfter: 0 turns the line off', () => {
     assert.equal(compactNote({ transcript: two, snap: null, opts: { handoffAfter: 0 } }), '');
@@ -97,6 +110,28 @@ describe('compact-snapshot: the count PreCompact records', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'a.md'), '# Pre-compaction snapshot (x, auto)\n\nfacts\n');
     assert.equal(latestSnapshot(dir).compaction, 0);
+    assert.equal(latestSnapshot(dir).session, '');
+  });
+  test('the snapshot records the session next to the count', () => {
+    const dir = join(tempDir(), 'snaps');
+    writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'SESSION-A' });
+    const snap = latestSnapshot(dir);
+    assert.match(snap.text, /^# Pre-compaction snapshot \([^)]*\)\n\ncompaction: 1\nsession: SESSION-A\n\n/);
+    assert.equal(snap.session, 'SESSION-A');
+    assert.equal(snap.compaction, 1);
+  });
+  test('a session_id with a line break, over 200 characters or not a string is not written', () => {
+    for (const session of ['a\nsession: b', 'a\rb', 'x'.repeat(201), '', 42, null]) {
+      const dir = join(tempDir(), 'snaps');
+      writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session });
+      const snap = latestSnapshot(dir);
+      assert.doesNotMatch(snap.text, /^session:/m, JSON.stringify(session));
+      assert.equal(snap.session, '', JSON.stringify(session));
+      assert.equal(snap.compaction, 1);
+    }
+    const dir = join(tempDir(), 'snaps');
+    writeSnapshot({ dir, transcript: '', trigger: 'auto', git: '', session: 'x'.repeat(200) });
+    assert.equal(latestSnapshot(dir).session, 'x'.repeat(200));
   });
 });
 
@@ -107,7 +142,7 @@ describe('compact-snapshot: count and hand-off as a hook', () => {
     if (config) writeFileSync(join(project, '.claude', 'pau-skills.json'), JSON.stringify({ 'compact-snapshot': config }));
     const env = { PAU_SKILLS_HOME: tempDir(), CLAUDE_PROJECT_DIR: project, PAU_SKILLS_DISABLE: '' };
     const tpath = join(project, 't.jsonl');
-    const run = (input) => runNode(SNAP, { input: JSON.stringify({ cwd: project, transcript_path: tpath, ...input }), env });
+    const run = (input) => runNode(SNAP, { input: JSON.stringify({ cwd: project, transcript_path: tpath, session_id: 'SESSION-A', ...input }), env });
     const start = () => run({ hook_event_name: 'SessionStart', source: 'compact' });
     const pre = () => run({ hook_event_name: 'PreCompact', trigger: 'manual' });
     const context = (r) => (r.stdout ? JSON.parse(r.stdout).hookSpecificOutput.additionalContext : '');
@@ -144,7 +179,27 @@ describe('compact-snapshot: count and hand-off as a hook', () => {
     writeFileSync(h.tpath, t(U, A, B, S, U));
     const w = h.pre();
     assert.equal(w.code, 0); assert.equal(w.stdout, '');
-    assert.equal(line(h.context(h.start())), 2);
+    const text = h.context(h.start());
+    assert.equal(line(text), 2);
+    assert.match(text, /The conversation was just compacted/);
+  });
+  test('another session in the same project gives neither its count nor its text', () => {
+    const h = setup();
+    const ty = join(h.project, 'y.jsonl'); const tx = join(h.project, 'x.jsonl');
+    writeFileSync(ty, t(U, A)); writeFileSync(tx, t(U, A, B, S, U, A));
+    h.run({ hook_event_name: 'PreCompact', trigger: 'auto', session_id: 'SESSION-Y', transcript_path: ty });
+    h.run({ hook_event_name: 'PreCompact', trigger: 'auto', session_id: 'SESSION-X', transcript_path: tx });
+    assert.match(latestSnapshot(h.snaps).text, /^session: SESSION-X$/m);
+    const r = h.run({ hook_event_name: 'SessionStart', source: 'compact', session_id: 'SESSION-Y', transcript_path: ty });
+    assert.equal(r.code, 0); assert.equal(r.stdout, '');
+  });
+  test('another session\'s snapshot is ignored when this session\'s PreCompact wrote nothing', () => {
+    const h = setup();
+    const tx = join(h.project, 'x.jsonl');
+    writeFileSync(tx, t(U, A, B, S, U)); writeFileSync(h.tpath, t(U, A));
+    h.run({ hook_event_name: 'PreCompact', trigger: 'auto', session_id: 'SESSION-X', transcript_path: tx });
+    const r = h.run({ hook_event_name: 'SessionStart', source: 'compact', session_id: 'SESSION-Y' });
+    assert.equal(r.code, 0); assert.equal(r.stdout, '');
   });
   test('a snapshot older than an hour is ignored for the count', () => {
     const h = setup();

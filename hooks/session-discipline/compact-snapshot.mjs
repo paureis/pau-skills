@@ -13,19 +13,22 @@
 //   - the latest todo list, if the agent kept one,
 //   - git branch and short status.
 // The snapshot also records which compaction this is ("compaction: N" under the title): the compact_boundary lines
-// in the transcript plus one, since the new boundary cannot exist yet. The folder gets a .gitignore of "*", so
-// snapshots never reach a commit. Only the newest ten are kept.
+// in the transcript plus one, since the new boundary cannot exist yet. Under it goes "session: <session_id>", so a
+// snapshot from another session in the same project is not taken for this one. The folder gets a .gitignore of "*",
+// so snapshots never reach a commit. Only the newest ten are kept.
 //
 // SessionStart with source "compact": prints the newest snapshot (if it is under an hour old) as additional context,
-// so the facts are back in the window the moment the compacted session resumes. It also works out which compaction
-// this is from the transcript (see compactionNumber) and takes the larger of that and the snapshot's count. From the
-// handoffAfter-th compaction on (default 2), it puts a line first that tells the session to finish the current step,
-// write a handoff or the next kickoff and tell the user to start a new session: after two compactions the session
-// works from a summary of a summary. No readable transcript, no line.
+// so the facts are back in the window the moment the compacted session resumes. A snapshot that records another
+// session, or any session when the input has none, is not printed; one that records no session (older) still is.
+// It also works out which compaction this is from the transcript (see compactionNumber) and takes the larger of that
+// and the count of a snapshot from the same session. From the handoffAfter-th compaction on (default 2), it puts a
+// line first that tells the session to finish the current step, write a handoff or the next kickoff and tell the
+// user to start a new session: after two compactions the session works from a summary of a summary. No readable
+// transcript, no line.
 //
 // Options in .claude/pau-skills.json:
 //   { "compact-snapshot": { "dir": ".claude/pau-skills/snapshots", "keep": 10, "handoffAfter": 2 } }
-// handoffAfter is a whole number of 0 or more; 0 turns the line off, any other value keeps 2.
+// handoffAfter is a whole number of 0 or more; 0 turns the line off; an invalid value keeps 2.
 // Exits 0 always and never blocks compaction.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, realpathSync, statSync, unlinkSync, writeFileSync, existsSync } from 'node:fs';
@@ -74,15 +77,23 @@ export function handoffAfter(opts) {
   return Number.isInteger(h) && h >= 0 ? h : 2;
 }
 
+/** A session_id fit to write on one snapshot line: a non-empty string of at most 200 characters, no line break. */
+export function sessionKey(id) {
+  return typeof id === 'string' && id.length > 0 && id.length <= 200 && !/[\r\n]/.test(id) ? id : '';
+}
+
 /** The text SessionStart "compact" prints: the hand-off line when due, then the snapshot. '' for nothing. Pure. */
-export function compactNote({ transcript, snap, opts }) {
+export function compactNote({ transcript, snap, opts, session }) {
   const parts = [];
   const after = handoffAfter(opts);
+  const sid = sessionKey(session);
+  const same = Boolean(snap && snap.session && sid && snap.session === sid);
   if (typeof transcript === 'string' && after > 0) {
-    const n = Math.max(compactionNumber(transcript), snap ? snap.compaction : 0);
+    const n = Math.max(compactionNumber(transcript), same ? snap.compaction : 0);
     if (n >= after) parts.push(`[compact-snapshot] This is compaction ${n} in this session. Finish the current step, then write a handoff or the next kickoff and tell the user to start a new session.`);
   }
-  if (snap) parts.push(`[compact-snapshot] The conversation was just compacted. These facts were saved from before it (${snap.path}); treat them as exact where the summary is vague:\n\n${snap.text.slice(0, 6000)}`);
+  // Another session's snapshot is not this session's facts; one that records no session predates the session line.
+  if (snap && (!snap.session || same)) parts.push(`[compact-snapshot] The conversation was just compacted. These facts were saved from before it (${snap.path}); treat them as exact where the summary is vague:\n\n${snap.text.slice(0, 6000)}`);
   return parts.join('\n\n');
 }
 
@@ -124,9 +135,10 @@ export function extract(entries) {
 }
 
 /** The snapshot markdown. Pure. */
-export function render(facts, { when, trigger = 'auto', git = '', compaction }) {
+export function render(facts, { when, trigger = 'auto', git = '', compaction, session }) {
   const out = [`# Pre-compaction snapshot (${when}, ${trigger})`, ''];
-  if (compaction) out.push(`compaction: ${compaction}`, '');
+  const sid = sessionKey(session);
+  if (compaction) out.push(`compaction: ${compaction}`, ...(sid ? [`session: ${sid}`] : []), '');
   out.push('## The user\'s last messages, oldest first', '');
   if (facts.prompts.length) facts.prompts.forEach((p, i) => out.push(`${i + 1}. ${trim(p, 600)}`));
   else out.push('(none found)');
@@ -149,14 +161,14 @@ function gitSummary(cwd) {
 
 const stamp = (d) => d.toISOString().replace(/[:.]/g, '-');
 
-export function writeSnapshot({ dir, transcript, trigger, git, now = new Date(), keep = 10 }) {
+export function writeSnapshot({ dir, transcript, trigger, git, now = new Date(), keep = 10, session }) {
   mkdirSync(dir, { recursive: true });
   const ignore = join(dir, '.gitignore');
   if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
   const file = join(dir, `${stamp(now)}.md`);
   const entries = parseTranscript(transcript);
   // At PreCompact the new boundary cannot be in the file yet, so this compaction is the next one.
-  writeFileSync(file, render(extract(entries), { when: now.toISOString(), trigger, git, compaction: boundaries(entries).count + 1 }));
+  writeFileSync(file, render(extract(entries), { when: now.toISOString(), trigger, git, compaction: boundaries(entries).count + 1, session }));
   const all = readdirSync(dir).filter((f) => f.endsWith('.md')).sort();
   for (const old of all.slice(0, Math.max(0, all.length - keep))) { try { unlinkSync(join(dir, old)); } catch { /* ignore */ } }
   return file;
@@ -171,8 +183,8 @@ export function latestSnapshot(dir, now = Date.now()) {
   try {
     if (now - statSync(path).mtimeMs > MAX_AGE_MS) return null;
     const text = readFileSync(path, 'utf8');
-    const m = /^# Pre-compaction snapshot [^\n]*\r?\n\r?\ncompaction: (\d+)\r?\n/.exec(text);
-    return { path, text, compaction: m ? Number(m[1]) : 0 };
+    const m = /^# Pre-compaction snapshot [^\n]*\r?\n\r?\ncompaction: (\d+)\r?\n(?:session: ([^\r\n]+)\r?\n)?/.exec(text);
+    return { path, text, compaction: m ? Number(m[1]) : 0, session: m?.[2] || '' };
   } catch { return null; }
 }
 
@@ -188,13 +200,13 @@ if (isMain) {
       try {
         if (input.hook_event_name === 'PreCompact' && typeof input.transcript_path === 'string') {
           const transcript = readFileSync(input.transcript_path, 'utf8');
-          writeSnapshot({ dir, transcript, trigger: input.trigger || 'auto', git: gitSummary(root), keep: Number(opts.keep) > 0 ? Number(opts.keep) : 10 });
+          writeSnapshot({ dir, transcript, trigger: input.trigger || 'auto', git: gitSummary(root), keep: Number(opts.keep) > 0 ? Number(opts.keep) : 10, session: input.session_id });
         } else if (input.hook_event_name === 'SessionStart' && input.source === 'compact') {
           let transcript = null;
           if (typeof input.transcript_path === 'string') {
             try { transcript = readFileSync(input.transcript_path, 'utf8'); } catch { /* no transcript, no count */ }
           }
-          const text = compactNote({ transcript, snap: latestSnapshot(dir), opts });
+          const text = compactNote({ transcript, snap: latestSnapshot(dir), opts, session: input.session_id });
           if (text) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text } }) + '\n');
         }
       } catch { /* never block compaction or a session */ }
