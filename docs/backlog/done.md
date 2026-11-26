@@ -116,6 +116,10 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
   - Did not: eng-lead's size targets were already broken at the base; builders wrote code before tests for parts of
     friction-review's CLI; `gh api markdown` is refused from a session, so emoji shortcodes were not rendered before
     the merge; an inline `node -e` payload broke on an apostrophe in the orchestrator's own CHANGELOG edit.
+- 2026-11-26: between batches, `compact-snapshot` stops a third compaction (decision 38), released as v0.26.0. Built
+  directly at the owner's request. A probe showed a PreCompact `{"decision":"block"}` stops `/compact`; a live run of
+  three `/compact` calls in one session ran two and refused the third with the reason. 2,130 tests; seven mutations,
+  all caught.
 - 2026-11-26: the twenty-fourth batch, Q38 subagent-watchdog fixes and a compaction count, merged as
   [pull request 98](https://github.com/paureis/pau-skills/pull/98) and released as v0.25.0. Hooks only. Two slices in
   parallel: S1 the watchdog (an edit counts wherever the file is, a project or user agent whose definition cannot edit

@@ -3,6 +3,14 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-26: compact-snapshot stops a third compaction
+
+- `compact-snapshot` blocks a compaction once the session has compacted `maxCompactions` times (default 2, 0 for no
+  limit), with a reason that says the session has already compacted twice. It still writes the snapshot first, since
+  Claude Code compacts anyway when the request cannot go out uncompacted. The hand-off line at the limit says the next
+  compaction will be blocked. Decision 38.
+- `session-discipline` 0.17.0, `pau-skills-hooks` 0.9.0, `pau-skills` 0.26.0.
+
 ## 2026-11-26: Q38, watchdog fixes and a compaction count
 
 - `subagent-watchdog` (Q38 items 1 to 4): an edit resets the counts wherever the file is, so a builder in another

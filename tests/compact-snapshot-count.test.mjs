@@ -54,7 +54,7 @@ describe('compact-snapshot: the hand-off line', () => {
   test('the line comes first, then the snapshot after a blank line', () => {
     const text = compactNote({ transcript: two, snap: { path: '/s.md', text: '# Pre-compaction snapshot', compaction: 0 }, opts: {} });
     assert.match(text, HANDOFF);
-    assert.match(text, /new session\.\n\n\[compact-snapshot\] The conversation was just compacted/);
+    assert.match(text, /new session\. This session has reached its limit of compactions, so the next one will be blocked\.\n\n\[compact-snapshot\] The conversation was just compacted/);
   });
   test('no readable transcript gives no line, and the snapshot is still there', () => {
     const text = compactNote({ transcript: null, snap: { path: '/s.md', text: 'facts', compaction: 5 }, opts: {} });
@@ -157,7 +157,7 @@ describe('compact-snapshot: count and hand-off as a hook', () => {
     assert.equal(r.code, 0);
     const text = h.context(r);
     assert.equal(line(text), 2);
-    assert.match(text, /new session\.\n\n\[compact-snapshot\] The conversation was just compacted/);
+    assert.match(text, /new session\. This session has reached its limit of compactions, so the next one will be blocked\.\n\n\[compact-snapshot\] The conversation was just compacted/);
   });
   test('the first compaction prints the snapshot with no line', () => {
     const h = setup();
