@@ -116,3 +116,17 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
   - Did not: eng-lead's size targets were already broken at the base; builders wrote code before tests for parts of
     friction-review's CLI; `gh api markdown` is refused from a session, so emoji shortcodes were not rendered before
     the merge; an inline `node -e` payload broke on an apostrophe in the orchestrator's own CHANGELOG edit.
+- 2026-11-26: the twenty-third batch, Q37 reframe and sharpen from pstack, merged as
+  [pull request 96](https://github.com/paureis/pau-skills/pull/96) and released as v0.24.0. `reframe` is new and
+  upstream's newer `sharpen` replaces ours, both typed only, both bodies byte for byte as pstack at 41e4009; only the
+  descriptions and the attribution lines are ours, and `tests/pstack-verbatim.test.mjs` compares the bodies with
+  committed copies of upstream. One slice: `eng-lead` planned it, a read-only plan check built it in a clone, one
+  builder, one fresh reviewer, no fix round, and a cold run of each skill (0.13 and 0.21 US dollars). 2,062 tests (2,054
+  before). With the roster:
+  - Worked: the plan check found two weak assertions (a presence-only frontmatter check, a splitter that could cut at
+    the last `---`) before the build, and both mutants were caught after it; a narrow exception that let the builder
+    edit only the two typed-skill lists kept the slice's suite green, so every mutation ran on a passing control; the
+    cold run settled that text after `/sharpen` reaches a body with no `$ARGUMENTS`.
+  - Did not: the cloud network refused every page fetch, so `reframe`'s link check was never exercised (it cut every
+    citation, as its body says); the orchestrator's README edits went 90 tokens over the file's limit and had to be
+    cut back to 7 bytes under.
