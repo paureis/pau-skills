@@ -2,59 +2,55 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twenty-third batch (Q37, pull request 96, release v0.24.0) is done. Next, in this order: **Q38** subagent-watchdog
-fixes and a compaction count (decisions 34 and 35), then Q35 `wizard`, Q34 and Q36. Read "Things that bit the
-twenty-third batch" (`docs/backlog/things-that-bit/batch-23.md`) and the twenty-second's first.
+The twenty-fourth batch (Q38, pull request 98, release v0.25.0) is done. Next, in this order: **Q35** `wizard`, a
+guided script for the steps only a person can do (from Q30), then Q34, Q36 and Q39. Read "Things that bit the
+twenty-fourth batch" (`docs/backlog/things-that-bit/batch-24.md`) and the twenty-third's first.
 
-Q38 changes hooks. Items 1 to 4 are all in `hooks/agent-orchestration/subagent-watchdog-logic.mjs` (edits outside the
-project root, a project's own read-only agents, an agent that died with a call in flight, two small status lines);
-item 5 is `compact-snapshot` (a compaction count and a hand-off line). They touch disjoint files, so they can be two
-slices in parallel. Every fix is built on real hook input: a headless run with an empty HOME and a hook that logs
-every event, `--max-budget-usd`, a small model (batch 21 and decision 30). A hook change bumps `pau-skills-hooks` as
-well, and the owner updates the plugin on each computer.
+Q35 is a new skill with a Node script. Upstream (mattpocock/skills) has a `wizard` in bash; read it at a pinned commit
+before deciding adapted or original. Whether it is typed only or model-invoked is the owner's call; ask before the
+brief. The script must never read, print or log a secret's value, and a test plants one to prove it.
 
 The owner starts the batch with this message:
 
 ```text
-You are the orchestrator for the twenty-fourth batch in this repository: Q38 (subagent-watchdog fixes and a
-compaction count). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
+You are the orchestrator for the twenty-fifth batch in this repository: Q35 (wizard, a guided script for the steps
+only a person can do). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
 integrate their work. Type /lean-subagent-dev first (it is typed only since Q28).
 
 Before anything else, read these in full:
-1. CLAUDE.md and docs/ADDING-A-SKILL.md (hooks: hookEnabled, exit 0 on input a hook does not understand, the
-   hooks/README.md options section, build-marketplace after a hooks.json change).
-2. docs/backlog/q38.md, decisions 22, 23, 30, 34 and 35 (docs/backlog/decisions.md),
-   docs/backlog/how-to-run-a-batch.md ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
-   docs/backlog/things-that-bit/batch-21.md, batch-22.md and batch-23.md.
-3. hooks/agent-orchestration/subagent-watchdog-logic.mjs and its tests, and the compact-snapshot hook and its tests.
+1. CLAUDE.md and docs/ADDING-A-SKILL.md (new skill steps, the confirm list rules, description limits).
+2. docs/backlog/q35.md, decisions 31 and 33 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md ("With
+   the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and docs/backlog/things-that-bit/batch-22.md,
+   batch-23.md and batch-24.md.
+3. Upstream's wizard at a pinned commit (step 1 of "How to work an item" in docs/BACKLOG.md): what it does, its
+   license, and what we would change.
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3) and CLAUDE_AUTOCOMPACT_PCT_OVERRIDE (it should read
   40), and tell me both values. Tell eng-lead to hand back at once with the builders' agent IDs if they run in the
   background; you start the reviewers and send the fix rounds.
+- Ask me: typed only or model-invoked, and adapted from upstream or original, each with your recommendation and the
+  diff that backs it.
 - Read the base commit before you write it into any brief, and push the working branch at it before dispatch.
-- Settle the facts q38.md leaves open with a probe before planning: whether the new compact_boundary line is already in
-  the transcript when SessionStart compact fires, and the real failure text of a TaskStop on an agent that is gone.
-  Use headless runs with an empty HOME, a hook that logs every event, --max-budget-usd and a small model.
 - Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone and tries
   mutations of its own, a fresh reviewer per slice, and a cold run (headless, empty HOME, --max-budget-usd) that
-  shows a sibling-worktree edit resets the no-edit count and a second compaction prints the hand-off line. Commits
-  carry the harness's two attribution trailers.
+  follows the skill on a fixture with two human-only steps. Commits carry the harness's two attribution trailers.
 
 Rules that matter most:
-- Hooks use the Node standard library only, exit 0 on input they do not understand, check hookEnabled(), and never
-  block where q38.md says they never block. Plain English, no em or en dashes; no tracked file over its size limit
-  (README.md is 7 bytes under its limit: make room before adding to it).
+- Every skill works on its own; a mention of a typed-only skill holds /name in the same paragraph. Scripts use the
+  Node standard library only and cover the common ecosystems. Plain English, no em or en dashes; no tracked file over
+  its size limit (README.md is 7 bytes under its limit and hooks/README.md 14: make room before adding to either).
+- No secret value is read, printed or logged: a test plants one and checks every output and log.
 - Every new test fails without the change: prove each with mutate.sh (it prints RESULT: CAUGHT) and report every
   "# tests" line.
-- Run npm test before every commit, docs included. Bump pau-skills-hooks, agent-orchestration, session-discipline and
-  the bundle; write docs/releases/v<bundle version>.md for the batch and run its pre-merge check.
+- Run npm test before every commit, docs included. Bump the plugin and the bundle; write
+  docs/releases/v<bundle version>.md for the batch and run its pre-merge check.
 - Builders commit and never push. You push the working branch and open the PR. When CI is green on Linux, macOS and
   the validate job and every review is clean, merge it yourself.
 
 When the PR is open, tell me in plain words what changed, what the reviews found, and anything I need to decide. After
 the merge, check the Release run, give me the zips of every changed skill (node scripts/pack-skills.mjs --since <main
-before the batch>) and the hook update commands, mark the items done in docs/backlog/ with what worked and what did
+before the batch>) and any hook update commands, mark the items done in docs/backlog/ with what worked and what did
 not, and write the next kickoff here.
 ```
 

@@ -116,6 +116,22 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
   - Did not: eng-lead's size targets were already broken at the base; builders wrote code before tests for parts of
     friction-review's CLI; `gh api markdown` is refused from a session, so emoji shortcodes were not rendered before
     the merge; an inline `node -e` payload broke on an apostrophe in the orchestrator's own CHANGELOG edit.
+- 2026-11-26: the twenty-fourth batch, Q38 subagent-watchdog fixes and a compaction count, merged as
+  [pull request 98](https://github.com/paureis/pau-skills/pull/98) and released as v0.25.0. Hooks only. Two slices in
+  parallel: S1 the watchdog (an edit counts wherever the file is, a project or user agent whose definition cannot edit
+  is read-only, a call in flight for two hours is dropped, two status lines), S2 `compact-snapshot` (a compaction count
+  stored at PreCompact and a hand-off line from the second compaction, option `handoffAfter`). Item 6, the ask log,
+  was not built, by decision. Probes before planning settled that the new compact_boundary line is not on disk when
+  SessionStart compact fires (manual and auto) and that SubagentStart's agent_type is the definition's `name:` line.
+  Each brief had a read-only plan check that built the slice in a clone, each slice a fresh reviewer and one fix
+  round, and one cold run covered both (empty HOME, real hooks). 2,122 tests (2,062 before). With the roster:
+  - Worked: the plan checks found real gaps before any build (S2 undercounted two compactions with no reply between
+    them, which led to storing the count at PreCompact; S1's probe as written was refused and its logic file needed a
+    split); each reviewer found one real defect (S2 a count leaking from another session, S1 a broken project
+    definition letting a home one mark an editor read-only), both fixed in one round; the cold run showed an edit
+    outside the project reset the count from 5 to 0 and the second compaction print the hand-off line.
+  - Did not: a single note per agent cannot show a reset in a live run, so the reset was read from a replay of the
+    recorded events; hooks/README.md ended 14 bytes under its limit.
 - 2026-11-26: the twenty-third batch, Q37 reframe and sharpen from pstack, merged as
   [pull request 96](https://github.com/paureis/pau-skills/pull/96) and released as v0.24.0. `reframe` is new and
   upstream's newer `sharpen` replaces ours, both typed only, both bodies byte for byte as pstack at 41e4009; only the
