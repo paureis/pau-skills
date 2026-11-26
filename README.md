@@ -215,9 +215,9 @@ for this", "is this test any good"), and you can type any as `/pau-skills:<skill
 description is in every session's context, so it is a short list of the phrases that should start it: at most 400
 characters, 14,000 in all (`tests/context-budget.test.mjs`).
 
-Eight start only when typed and cost no context: `session-close`, `lean-subagent-dev`, `overnight-run`,
-`skill-eval`, `agent-friendly-audit`, `geppetto`, `launch-readiness`, `friction-review`. A request in words, the
-agent and other skills cannot start them. `tests/typed-only-list.mjs` holds the list.
+Ten start only when typed and cost no context: `session-close`, `lean-subagent-dev`, `overnight-run`, `skill-eval`,
+`agent-friendly-audit`, `geppetto`, `launch-readiness`, `friction-review`, `reframe`, `sharpen`. A request in words,
+the agent and other skills cannot start them. `tests/typed-only-list.mjs` holds the list.
 
 Some skills cost something when they run (subagents, headless runs, a commit, push or install with no other check,
 or a new way of working), and nothing else in them asks first. When the agent starts one on its own, without you

@@ -11,7 +11,7 @@
 // yes to ask for.
 export const TYPED_ONLY = [
   'agent-orchestration/geppetto', 'agent-orchestration/lean-subagent-dev', 'agent-orchestration/overnight-run',
-  'planning/agent-friendly-audit', 'session-discipline/friction-review', 'session-discipline/session-close',
-  'verification/launch-readiness',
+  'planning/agent-friendly-audit', 'planning/reframe', 'planning/sharpen',
+  'session-discipline/friction-review', 'session-discipline/session-close', 'verification/launch-readiness',
   'verification/skill-eval',
 ];
