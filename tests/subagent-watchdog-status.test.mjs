@@ -1,5 +1,6 @@
 // subagent-watchdog in the main session: when at least one subagent is flagged, one line per running subagent, at
-// most once every 5 minutes; an agent gone quiet for an hour is dropped, and TaskStop removes the agent it names.
+// most once every 5 minutes; an agent gone quiet for an hour, or with a call in flight for 2 hours, is dropped, and
+// TaskStop removes the agent it names.
 // Pure tests over the logic module.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -12,7 +13,7 @@ const O = resolveOptions({});
 const SEC = 1000;
 const prompt = main('UserPromptSubmit', { prompt: 'how is it going?' });
 const stateOf = (entries, shownAt = 0) => ({ shownAt, agents: new Map(entries) });
-const at = (state, now, input = prompt) => step(state, input, { now, options: O, where: { project: P, cwd: P } });
+const at = (state, now, input = prompt) => step(state, input, { now, options: O });
 const ctx = (r) => (r.output === null ? null : r.output.hookSpecificOutput.additionalContext);
 const lineOf = (r, id) => ctx(r).split('\n').filter((l) => l.includes(` ${id}:`));
 const quiet = (r, state, why) => {
@@ -186,4 +187,35 @@ test('S12 an agent whose call in flight is Agent or Task reads "waiting on a sub
   }
   const bash = fresh({ last: now - 31 * MIN, flight: { tool: 'Bash', cmd: 'npm test', at: now - 31 * MIN } });
   assert.match(lineOf(at(stateOf([['agent-1', bash]]), now), 'agent-1')[0], /flagged: one call has run for 31 minutes/);
+});
+
+test('S13 a call in flight that is not a wait is dropped once 120:00 have passed since it started (kept at 119:59), even when a later SubagentStart moved last; a wait, or an Agent or Task call in flight, for 3 hours is kept', () => {
+  const now = T0 + 300 * MIN;
+  const bash = (ago, over = {}) => fresh({ last: now - ago, flight: { tool: 'Bash', cmd: 'npm test', at: now - ago }, ...over });
+  for (const [name, a] of [['3 hours', bash(180 * MIN)], ['120:00', bash(120 * MIN)], ['last moved', bash(180 * MIN, { last: now - MIN })]]) {
+    const r = at(stateOf([['agent-1', a]]), now);
+    assert.deepEqual([r.remove, r.state.agents.has('agent-1')], [['agent-1'], false], name);
+    const m = Math.floor((now - a.flight.at) / MIN);
+    assert.match(lineOf(r, 'agent-1')[0], new RegExp(`^- dropped builder agent-1: a call in flight for ${m} minutes with no result \\(it may have ended without a stop event\\)\\.$`), name);
+  }
+  const kept = at(stateOf([['agent-1', bash(120 * MIN - SEC)]]), now);
+  assert.deepEqual([kept.remove, kept.state.agents.has('agent-1')], [[], true]);
+  assert.match(lineOf(kept, 'agent-1')[0], /running `npm test` for 119 minutes/);
+  const waits = [{ id: 'toolu_1', at: now - 180 * MIN }];
+  const other = ['agent-2', fresh({ start: T0 + MIN, last: now - 20 * MIN })];
+  for (const [name, a] of [['a wait', bash(180 * MIN, { waits })], ['Agent', bash(180 * MIN, { flight: { tool: 'Agent', cmd: null, at: now - 180 * MIN } })],
+    ['Task', bash(180 * MIN, { flight: { tool: 'Task', cmd: null, at: now - 180 * MIN } })]]) {
+    const r = at(stateOf([['agent-1', a], other]), now);
+    assert.deepEqual([r.remove, r.state.agents.has('agent-1')], [[], true], name);
+    assert.match(lineOf(r, 'agent-1')[0], /waiting on/, name);
+  }
+});
+
+test('S14 the header says running or just finished; top repeat shows only for 2 or more runs, else no repeats', () => {
+  const now = T0 + 30 * MIN;
+  const r = at(stateOf([['agent-1', fresh({ last: now - 20 * MIN, top: { n: 1, cmd: 'npm test' } })], ['agent-2', fresh({ start: T0 + 1, last: now, top: { n: 2, cmd: 'npm test' } })]]), now);
+  const lines = ctx(r).split('\n');
+  assert.equal(lines[0], '[subagent-watchdog] Subagents running or just finished, at least one flagged (shown at most once every 5 minutes):');
+  assert.match(lineOf(r, 'agent-1')[0], /, 1 since the last edit, no repeats, flagged: /);
+  assert.equal(lineOf(r, 'agent-2')[0], '- builder agent-2: 29 minutes, 1 tool calls, 1 since the last edit, top repeat 2 runs of `npm test`');
 });

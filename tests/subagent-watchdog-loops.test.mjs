@@ -11,7 +11,7 @@ import { sim, sub, main, kind, call, reads, expected, agentEntry, MIN } from './
 const P = tempDir();
 const O = resolveOptions({});
 const prompt = main('UserPromptSubmit', { prompt: 'status?' });
-const status = (state, now) => step(state, prompt, { now, options: O, where: { project: P, cwd: P } });
+const status = (state, now) => step(state, prompt, { now, options: O });
 const ctx = (r) => (r.output === null ? null : r.output.hookSpecificOutput.additionalContext);
 const agentCall = (s, event, id, extra = {}) => s.send(sub(event, { tool_name: 'Agent', tool_input: { prompt: 'go' }, tool_use_id: id, cwd: P, ...extra }));
 const failingEdit = (s) => {

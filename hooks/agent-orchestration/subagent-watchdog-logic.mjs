@@ -1,5 +1,7 @@
-// Subagent watchdog, the pure part: every decision the hook makes, with no file I/O, so the tests can call it directly.
-// The hook itself (subagent-watchdog.mjs) reads stdin and the config, keeps the state files and prints the output.
+// Subagent watchdog, the pure part: the decisions inside a subagent, the state format and step(), with no file I/O, so
+// the tests can call it directly. The main-session status is in subagent-watchdog-status.mjs, also pure. The hook
+// itself (subagent-watchdog.mjs) reads stdin, the config and the agent definitions (subagent-watchdog-agents.mjs),
+// keeps the state files and prints the output.
 //
 // What it watches, and why: a subagent sometimes spends half an hour rerunning the same tests for a one-line change,
 // loops, or stalls, and nobody notices until it reports. Decision 22 sets the limits: never cut off a healthy long
@@ -11,24 +13,31 @@
 //     between. A note on the 3rd run, an ask on the 5th and every 5th after it.
 //   - No progress is a stretch of tool calls with no edit: one note on the first call at or past 40, an ask on the
 //     first call at or past 80, 160, ... (the last level asked is kept; both reset at an edit). Read-only agent
-//     types skip this rule, and get repeat notes but no repeat asks.
+//     types skip this rule, and get repeat notes but no repeat asks. A type is read-only when it is in readOnlyAgents
+//     (the six defaults, plus the option's entries), or when its definition, read by the hook at SubagentStart and
+//     kept as ro in the state, lists tools and none of Edit, MultiEdit or NotebookEdit (q38.md item 2). The no-edit
+//     note and ask name readOnlyAgents as the way out.
 //   - An exempt call (an edit, a git commit, SubagentHandback, SendMessage) may get a note but never an ask, so a
 //     loop of failing edits or commits is still noticed.
-//   - An edit is Edit, Write, MultiEdit or NotebookEdit on a path inside the project or inside the agent's own
-//     working folder (insideProject from verify-before-done), or a git commit (found with commands() from
+//   - An edit is Edit, Write, MultiEdit or NotebookEdit with a path of 1 to 4,096 characters, wherever the file is (a
+//     sibling worktree, the scratchpad: q38.md item 1), or a git commit (found with commands() from
 //     hooks/lib/shell.mjs, which also looks inside bash -c). It counts at PostToolUse, so a refused edit is no edit;
 //     PostToolUseFailure only ends the call in flight.
 //   - The note is additionalContext and blocks nothing. The ask is permissionDecision "ask": interactive, the owner
 //     is asked; headless (claude -p), that one call is refused with the reason and the agent carries on. The hook
 //     cannot tell which, so the reason speaks to both, and tells a healthy run how to go on.
 // In the main session (no agent_id): on UserPromptSubmit and PreToolUse, when at least one subagent is flagged, one
-// line per running subagent, at most once every 5 minutes. Flags: looks stuck (no tool call started or finished for
-// 10 minutes and none in flight), a command in flight for 30 minutes, a repeat at the note, no edit at the note. An
-// Agent or Task call with a tool_use_id is a wait until the PostToolUse or PostToolUseFailure with the same id (at
-// most 32, oldest dropped), so parallel Agent calls are tracked one by one; an agent with a wait, or with an Agent or
-// Task call in flight, reads "waiting" and is never flagged stuck or long-running, nor dropped. An agent with no call
-// in flight, no wait and no event for 60 minutes is dropped from the state: it may have ended with no stop event, as
-// an agent stopped with TaskStop does. A main-session PostToolUse for TaskStop removes the agent it names.
+// line per subagent running or just finished (its final message sent, its SubagentStop not yet in), at most once
+// every 5 minutes; "top repeat" only for a command run 2 or more times. Flags: looks stuck (no tool call started or
+// finished for 10 minutes and none in flight), a command in flight for 30 minutes, a repeat at the note, no edit at
+// the note. An Agent or Task call with a tool_use_id is a wait until the PostToolUse or PostToolUseFailure with the
+// same id (at most 32, oldest dropped), so parallel Agent calls are tracked one by one; an agent with a wait, or with
+// an Agent or Task call in flight, reads "waiting" and is never flagged stuck or long-running, nor dropped. An agent
+// with no call in flight, no wait and no event for 60 minutes is dropped from the state: it may have ended with no
+// stop event, as an agent stopped with TaskStop does. So is one whose call in flight, not a wait, started 120 minutes
+// ago (from flight.at, since SubagentStart moves last): an agent that died in a call, as after a power cut, where
+// TaskStop answers "No task found" and fires no PostToolUseFailure (q38.md item 3). A main-session PostToolUse for
+// TaskStop removes the agent it names.
 //
 // Facts it rests on, from two headless prototypes (decision 23, and Claude Code 2.1.330 on 2026-11-23): subagent hook
 // events carry the main session's session_id and their own agent_id and agent_type; main-session events carry no
@@ -36,13 +45,14 @@
 // next event. A failed shell command fires PostToolUseFailure. TaskStop's task_id is the agent_id the agent's own
 // hooks carry, and a stopped agent gets no SubagentStop.
 //
-// The state of one agent is { type, start, last, calls, sinceEdit, edit, runs, top, flight, waits, noted, asked },
-// times in Date.now() milliseconds; runs maps a key ("h" and 16 characters of the command's SHA-256) to its count, at most 200 keys. The
-// main session's state is { shownAt, agents: Map }; a Map, so an id such as __proto__ is a plain entry. step() returns
-// the new state, the output or null, and which agents to write or remove; the hook does the I/O.
+// The state of one agent is { type, start, last, calls, sinceEdit, edit, runs, top, flight, waits, noted, asked, ro },
+// times in Date.now() milliseconds; runs maps a key ("h" and 16 characters of the command's SHA-256) to its count, at
+// most 200 keys; ro is true only when stored as true, so an old state file reads as false. The main session's state
+// is { shownAt, agents: Map }; a Map, so an id such as __proto__ is a plain entry. step() returns the new state, the
+// output or null, and which agents to write or remove; the hook does the I/O.
 import { createHash } from 'node:crypto';
 import { commands, gitSubcommand } from '../lib/shell.mjs';
-import { insideProject } from '../verification/verify-before-done.mjs';
+import { status } from './subagent-watchdog-status.mjs';
 
 export const NAME = 'subagent-watchdog';
 export const DEFAULTS = Object.freeze({
@@ -51,7 +61,7 @@ export const DEFAULTS = Object.freeze({
 });
 const MINUTE = 60 * 1000;
 export const LIMITS = Object.freeze({
-  stuck: 10 * MINUTE, long: 30 * MINUTE, throttle: 5 * MINUTE, drop: 60 * MINUTE, day: 24 * 60 * MINUTE,
+  stuck: 10 * MINUTE, long: 30 * MINUTE, throttle: 5 * MINUTE, drop: 60 * MINUTE, lost: 120 * MINUTE, day: 24 * 60 * MINUTE,
   keys: 200, shown: 80, message: 120, path: 4096, type: 200, waits: 32, waitId: 128,
 });
 // Every regular expression in this file. id: a session id or an agent id, also the file name of an agent's state.
@@ -60,16 +70,17 @@ export const PATTERNS = Object.freeze({ id: /^[A-Za-z0-9_-]{1,128}$/, key: /^h[A
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
 const QUIET_TOOLS = new Set(['SubagentHandback', 'SendMessage']);
-const WAIT_TOOLS = new Set(['Agent', 'Task']);
+export const WAIT_TOOLS = new Set(['Agent', 'Task']);
 const SUB_EVENTS = new Set(['SubagentStart', 'PreToolUse', 'PostToolUse', 'PostToolUseFailure', 'SubagentStop']);
 const OFF = '{"hooks": {"subagent-watchdog": false}}';
 
 export const validId = (v) => typeof v === 'string' && PATTERNS.id.test(v);
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const whole = (v, fallback) => (Number.isInteger(v) && v > 0 ? v : fallback);
-const minutes = (ms) => Math.floor(ms / MINUTE);
+export const minutes = (ms) => Math.floor(ms / MINUTE);
 
 /** The options, from the "subagent-watchdog" object of the config. A value that is not valid keeps its default. */
+// readOnlyAgents adds to the defaults, so a project lists only its own types.
 export function resolveOptions(raw) {
   const o = isObject(raw) ? raw : {};
   return {
@@ -77,7 +88,7 @@ export function resolveOptions(raw) {
     repeatAsk: whole(o.repeatAsk, DEFAULTS.repeatAsk),
     noEditNote: whole(o.noEditNote, DEFAULTS.noEditNote),
     noEditAsk: whole(o.noEditAsk, DEFAULTS.noEditAsk),
-    readOnlyAgents: Array.isArray(o.readOnlyAgents) ? o.readOnlyAgents.filter((s) => typeof s === 'string') : [...DEFAULTS.readOnlyAgents],
+    readOnlyAgents: [...new Set([...DEFAULTS.readOnlyAgents, ...(Array.isArray(o.readOnlyAgents) ? o.readOnlyAgents.filter((s) => typeof s === 'string') : [])])],
   };
 }
 
@@ -98,24 +109,22 @@ function isCommit(command) {
 }
 
 /**
- * True when the tool call is an edit: an edit tool on a path inside the project or the agent's cwd (where.cwd, else
- * the input's), or a shell command that runs git commit. A path over 4,096 characters is not an edit.
+ * True when the tool call is an edit: an edit tool with a path of 1 to 4,096 characters, wherever the file is, or a
+ * shell command that runs git commit.
  */
-export function isEdit(input, where = {}) {
+export function isEdit(input) {
   const tool = input.tool_name;
   const ti = isObject(input.tool_input) ? input.tool_input : {};
   if (EDIT_TOOLS.has(tool)) {
     const p = tool === 'NotebookEdit' ? ti.notebook_path : ti.file_path;
-    if (typeof p !== 'string' || p === '' || p.length > LIMITS.path) return false;
-    const cwd = typeof where.cwd === 'string' ? where.cwd : input.cwd;
-    return insideProject(p, { project: where.project, cwd }) || (typeof cwd === 'string' && cwd !== '' && insideProject(p, { project: cwd, cwd }));
+    return typeof p === 'string' && p !== '' && p.length <= LIMITS.path;
   }
   return SHELL_TOOLS.has(tool) && typeof ti.command === 'string' && isCommit(ti.command);
 }
 
 export const emptyState = () => ({ shownAt: 0, agents: new Map() });
 const newAgent = (type, now) => ({
-  type, start: now, last: now, calls: 0, sinceEdit: 0, edit: 0, runs: {}, top: null, flight: null, waits: [], noted: false, asked: 0,
+  type, start: now, last: now, calls: 0, sinceEdit: 0, edit: 0, runs: {}, top: null, flight: null, waits: [], noted: false, asked: 0, ro: false,
 });
 /** A tool_use_id that can key a wait: a string of 1 to 128 characters. */
 const waitId = (v) => (typeof v === 'string' && v.length >= 1 && v.length <= LIMITS.waitId ? v : null);
@@ -153,13 +162,13 @@ export function parseAgent(text) {
   if (typeof noted !== 'boolean' || !Number.isInteger(asked) || asked < 0) return null;
   return {
     type: v.type.slice(0, LIMITS.type), start: v.start, last: v.last, calls: v.calls, sinceEdit: v.sinceEdit, edit: v.edit, runs, top, flight,
-    waits: waits.slice(-LIMITS.waits).map((w) => ({ id: w.id, at: w.at })), noted, asked,
+    waits: waits.slice(-LIMITS.waits).map((w) => ({ id: w.id, at: w.at })), noted, asked, ro: v.ro === true,
   };
 }
 
 export const serializeAgent = (a) => JSON.stringify({
   type: a.type, start: a.start, last: a.last, calls: a.calls, sinceEdit: a.sinceEdit, edit: a.edit, runs: a.runs, top: a.top, flight: a.flight,
-  waits: a.waits, noted: a.noted, asked: a.asked,
+  waits: a.waits, noted: a.noted, asked: a.asked, ro: a.ro,
 });
 
 /** The main session's last status time from the "shown" file's text, or 0. */
@@ -180,7 +189,7 @@ export function route(input) {
   return null;
 }
 
-const nothing = (state) => ({ state, output: null, write: [], remove: [], shown: false, changed: false });
+export const nothing = (state) => ({ state, output: null, write: [], remove: [], shown: false, changed: false });
 const removed = (state, id) => {
   const agents = new Map(state.agents);
   agents.delete(id);
@@ -188,6 +197,7 @@ const removed = (state, id) => {
 };
 
 const SOFT = 'If it is (a poll, a fix made through the shell, a mutation run), go on.';
+export const READ_ONLY_HINT = 'a type that is not meant to edit can be listed in "readOnlyAgents" under "subagent-watchdog" in .claude/pau-skills.json';
 const noteText = (parts) =>
   `[subagent-watchdog] ${parts.join(' ')} If this is not getting you anywhere, change something, or report what you ` +
   `have and what blocks you. ${SOFT}`;
@@ -197,7 +207,7 @@ const askText = (type, id, parts) =>
   'say so in one line and go on: only this one call was refused. To the owner: allowing lets the agent go on, and ' +
   `denying refuses only this one call. Turn the watchdog off with ${OFF} in .claude/pau-skills.json.`;
 
-function subagent(state, input, id, now, o, where) {
+function subagent(state, input, id, now, o, ro) {
   const event = input.hook_event_name;
   if (event === 'SubagentStop') return removed(state, id);
   const type = typeof input.agent_type === 'string' ? input.agent_type.slice(0, LIMITS.type) : '';
@@ -208,6 +218,7 @@ function subagent(state, input, id, now, o, where) {
   const done = (output = null) => ({ state: { ...state, agents }, output, write: [id], remove: [], shown: false, changed: true });
   if (event === 'SubagentStart') {
     a.type = type;
+    a.ro = ro === true;
     a.last = now;
     return done();
   }
@@ -216,7 +227,7 @@ function subagent(state, input, id, now, o, where) {
     a.flight = null;
     const ended = waitId(input.tool_use_id);
     if (ended !== null) a.waits = a.waits.filter((w) => w.id !== ended);
-    if (event === 'PostToolUse' && isEdit(input, where)) Object.assign(a, { sinceEdit: 0, runs: {}, top: null, edit: now, noted: false, asked: 0 });
+    if (event === 'PostToolUse' && isEdit(input)) Object.assign(a, { sinceEdit: 0, runs: {}, top: null, edit: now, noted: false, asked: 0 });
     return done();
   }
   // PreToolUse
@@ -237,8 +248,8 @@ function subagent(state, input, id, now, o, where) {
     n = a.runs[key] = (a.runs[key] || 0) + 1;
     if (!a.top || n > a.top.n) a.top = { n, cmd: norm.slice(0, LIMITS.shown) };
   }
-  const exempt = QUIET_TOOLS.has(tool) || isEdit(input, where);
-  const readOnly = isReadOnly(a.type, o.readOnlyAgents);
+  const exempt = QUIET_TOOLS.has(tool) || isEdit(input);
+  const readOnly = a.ro || isReadOnly(a.type, o.readOnlyAgents);
   const k = a.sinceEdit;
   const level = Math.floor(k / o.noEditAsk);
   const repeatAsk = shell && !exempt && !readOnly && n >= o.repeatAsk && (n - o.repeatAsk) % o.repeatAsk === 0;
@@ -252,76 +263,24 @@ function subagent(state, input, id, now, o, where) {
   const shown = norm.slice(0, LIMITS.message);
   const parts = [];
   if (repeat) parts.push(`the same command ran ${n} times with no edit in between: \`${shown}\`.`);
-  if (noEdit) parts.push(`${k} tool calls since the last edit.`);
+  if (noEdit) parts.push(`${k} tool calls since the last edit (${READ_ONLY_HINT}).`);
   if (repeatAsk || noEditAsk) {
     return done({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: askText(a.type, id, parts) } });
   }
   return done({ hookSpecificOutput: { hookEventName: 'PreToolUse', additionalContext: noteText(parts.map((p) => p[0].toUpperCase() + p.slice(1))) } });
 }
 
-const oneLine = (s, n) => normalizeCommand(s).slice(0, n);
-
-/** The flags of one agent at `now`, in words, and whether it is dropped. */
-export function judge(a, now, o) {
-  const flags = [];
-  const idle = now - a.last;
-  const waiting = a.waits.length > 0 || (a.flight !== null && WAIT_TOOLS.has(a.flight.tool));
-  if (a.flight === null && !waiting && idle >= LIMITS.stuck) flags.push(`looks stuck: no tool call for ${minutes(idle)} minutes`);
-  if (a.flight !== null && !waiting && now - a.flight.at >= LIMITS.long) flags.push(`one call has run for ${minutes(now - a.flight.at)} minutes`);
-  if (a.top && a.top.n >= o.repeatNote) flags.push(`the same command ran ${a.top.n} times with no edit in between`);
-  if (!isReadOnly(a.type, o.readOnlyAgents) && a.sinceEdit >= o.noEditNote) flags.push(`${a.sinceEdit} tool calls with no edit`);
-  return { flags, drop: a.flight === null && !waiting && idle >= LIMITS.drop, waiting };
-}
-
-function line(id, a, now, { flags, waiting }) {
-  const bits = [`${oneLine(a.type, LIMITS.type) || '(no type)'} ${id}: ${minutes(now - a.start)} minutes, ${a.calls} tool calls, ${a.sinceEdit} since the last edit`];
-  bits.push(a.top ? `top repeat ${a.top.n} runs of \`${oneLine(a.top.cmd, LIMITS.shown)}\`` : 'no repeats');
-  if (a.flight !== null) {
-    const m = minutes(now - a.flight.at);
-    const what = a.flight.cmd !== null ? `\`${oneLine(a.flight.cmd, LIMITS.shown)}\`` : oneLine(a.flight.tool, LIMITS.type);
-    if (!WAIT_TOOLS.has(a.flight.tool)) bits.push(`running ${what} for ${m} minutes`);
-    else if (a.waits.length === 0) bits.push(`waiting on a subagent for ${m} minutes`);
-  }
-  if (a.waits.length) {
-    const n = a.waits.length;
-    bits.push(`waiting on ${n} subagent${n === 1 ? '' : 's'} for ${minutes(now - Math.min(...a.waits.map((w) => w.at)))} minutes`);
-  }
-  if (flags.length) bits.push(`flagged: ${flags.join('; ')}`);
-  return `- ${bits.join(', ')}`;
-}
-
-function status(state, input, now, o) {
-  if (state.agents.size === 0) return nothing(state);
-  const rows = [...state.agents]
-    .sort(([x, a], [y, b]) => a.start - b.start || (x < y ? -1 : x > y ? 1 : 0))
-    .map(([id, a]) => ({ id, a, ...judge(a, now, o) }));
-  if (!rows.some((r) => r.flags.length) || now - state.shownAt < LIMITS.throttle) return nothing(state);
-  const kept = rows.filter((r) => !r.drop);
-  const gone = rows.filter((r) => r.drop);
-  const text = [
-    `[subagent-watchdog] Subagents running now, at least one flagged (shown at most once every 5 minutes):`,
-    ...kept.map((r) => line(r.id, r.a, now, r)),
-    ...gone.map((r) => `- dropped ${oneLine(r.a.type, LIMITS.type) || '(no type)'} ${r.id}: no event for ${minutes(now - r.a.last)} minutes (it may have ended without a stop event).`),
-    'The watchdog never stops an agent. Stopping one with TaskStop is the orchestrator\'s or the owner\'s choice, after checking on it.',
-  ].join('\n');
-  const agents = new Map(state.agents);
-  for (const r of gone) agents.delete(r.id);
-  return {
-    state: { shownAt: now, agents },
-    output: { hookSpecificOutput: { hookEventName: input.hook_event_name, additionalContext: text } },
-    write: [], remove: gone.map((r) => r.id), shown: true, changed: true,
-  };
-}
+// The main-session status (judge, line, status) is in subagent-watchdog-status.mjs.
 
 /**
- * One event. where is { project, cwd }, the folders an edit may be in. Returns { state, output, write, remove, shown,
- * changed }: write lists the agents whose state to save, remove the agents whose state to delete, shown whether to
- * save state.shownAt.
+ * One event. ro: at SubagentStart, whether the agent's definition is read-only (the hook reads it). Returns { state,
+ * output, write, remove, shown, changed }: write lists the agents whose state to save, remove the agents whose state
+ * to delete, shown whether to save state.shownAt.
  */
-export function step(state, input, { now = Date.now(), options = resolveOptions({}), where = {} } = {}) {
+export function step(state, input, { now = Date.now(), options = resolveOptions({}), ro = false } = {}) {
   const r = route(input);
   if (r === null) return nothing(state);
-  if (r.who === 'sub') return subagent(state, input, r.id, now, options, where);
+  if (r.who === 'sub') return subagent(state, input, r.id, now, options, ro);
   if (r.stop !== undefined) return removed(state, r.stop);
   return status(state, input, now, options);
 }

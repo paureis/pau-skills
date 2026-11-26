@@ -49,7 +49,7 @@ test('W4 repeat: Bash and PowerShell commands count; Monitor, Read and a command
   }
 });
 
-test('W5 edit: Edit, Write, MultiEdit (file_path) and NotebookEdit (notebook_path) on a file in the project, Markdown included, reset every count at PostToolUse', () => {
+test('W5 edit: Edit, Write, MultiEdit (file_path) and NotebookEdit (notebook_path) on any file, Markdown included, reset every count at PostToolUse', () => {
   const edits = [
     ['Edit', { file_path: join(P, 'src', 'a.js'), old_string: 'a', new_string: 'b' }],
     ['Write', { file_path: join(P, 'README.md'), content: 'x' }],
@@ -65,15 +65,13 @@ test('W5 edit: Edit, Write, MultiEdit (file_path) and NotebookEdit (notebook_pat
     assert.deepEqual([a.sinceEdit, a.runs, a.top, a.edit], [0, {}, null, s.now], tool);
     assert.deepEqual(runs(s, 'npm test', 3), ['-', '-', 'note'], tool);
   }
-  assert.equal(isEdit({ tool_name: 'Edit', tool_input: { file_path: pathOf(4097) }, cwd: P }, { project: P }), false);
+  assert.equal(isEdit({ tool_name: 'Edit', tool_input: { file_path: pathOf(4097) }, cwd: P }), false);
 });
 
-test('W6 edit: a PreToolUse with no PostToolUse (a denied edit), an edit outside the project and an edit with no path reset nothing', () => {
-  const outside = tempDir();
+test('W6 edit: a PreToolUse with no PostToolUse (a denied edit) and an edit with no path reset nothing', () => {
   const pre = (tool, input) => (s) => s.send(sub('PreToolUse', { tool_name: tool, tool_input: input, cwd: P }));
   const cases = {
     denied: pre('Edit', { file_path: join(P, 'a.js') }),
-    outside: (s) => call(s, 'Edit', { file_path: join(outside, 'a.js') }),
     'no path': (s) => call(s, 'Edit', { old_string: 'a' }),
     'empty path': (s) => call(s, 'Write', { file_path: '' }),
     'notebook, file_path': (s) => call(s, 'NotebookEdit', { file_path: '' }),
@@ -89,15 +87,15 @@ test('W6 edit: a PreToolUse with no PostToolUse (a denied edit), an edit outside
   }
 });
 
-test('W7 edit: a relative path resolves against the input cwd, and an edit inside the agent\'s cwd counts when the cwd is outside the project', () => {
+test('W7 edit: an edit counts wherever its path points, relative or absolute, inside or outside the project or the agent\'s cwd', () => {
   const wt = tempDir();
-  const edit = (file, cwd) => isEdit({ tool_name: 'Edit', tool_input: { file_path: file }, cwd }, { project: P });
+  const edit = (file, cwd) => isEdit({ tool_name: 'Edit', tool_input: { file_path: file }, cwd });
   assert.equal(edit('src/a.js', P), true);
   assert.equal(edit('../a.js', join(P, 'sub')), true);
-  assert.equal(edit('../../a.js', join(P, 'sub')), false);
+  assert.equal(edit('../../a.js', join(P, 'sub')), true);
   assert.equal(edit(join(wt, 'src', 'a.js'), wt), true);
   assert.equal(edit('src/a.js', wt), true);
-  assert.equal(edit(join(wt, 'src', 'a.js'), P), false);
+  assert.equal(edit(join(wt, 'src', 'a.js'), P), true);
   const s = sim({ project: P });
   runs(s, 'npm test', 2, { cwd: wt });
   call(s, 'Write', { file_path: join(wt, 'b.js') }, { cwd: wt });
@@ -196,15 +194,15 @@ test('W13 outputs: the note is additionalContext with no permissionDecision; the
   assert.match(textOf(r[79]), /builder agent-1/);
 });
 
-test('W14 options: positive whole numbers replace the defaults; 0, -1, 1.5, "5", null and a missing value keep them; readOnlyAgents replaces the list, drops entries that are not strings, and anything but an array keeps the default', () => {
+test('W14 options: positive whole numbers replace the defaults; 0, -1, 1.5, "5", null and a missing value keep them; readOnlyAgents adds to the list, drops entries that are not strings, and anything but an array keeps the default', () => {
   const defaults = { repeatNote: 3, repeatAsk: 5, noEditNote: 40, noEditAsk: 80, readOnlyAgents: READ_ONLY };
   for (const raw of [{}, null, undefined, [], 'x', 7]) assert.deepEqual(resolveOptions(raw), defaults);
   assert.deepEqual(resolveOptions({ repeatNote: 2, repeatAsk: 7, noEditNote: 1, noEditAsk: 100 }), { ...defaults, repeatNote: 2, repeatAsk: 7, noEditNote: 1, noEditAsk: 100 });
   for (const bad of [0, -1, 1.5, '5', null, undefined, true, NaN, Infinity]) {
     assert.deepEqual(resolveOptions({ repeatNote: bad, repeatAsk: bad, noEditNote: bad, noEditAsk: bad }), defaults, String(bad));
   }
-  assert.deepEqual(resolveOptions({ readOnlyAgents: [3, 'a', null, 'b', {}] }).readOnlyAgents, ['a', 'b']);
-  assert.deepEqual(resolveOptions({ readOnlyAgents: [] }).readOnlyAgents, []);
+  assert.deepEqual(resolveOptions({ readOnlyAgents: [3, 'a', null, 'b', {}] }).readOnlyAgents, [...READ_ONLY, 'a', 'b']);
+  assert.deepEqual(resolveOptions({ readOnlyAgents: [] }).readOnlyAgents, READ_ONLY);
   for (const bad of ['reviewer', {}, null, 1]) assert.deepEqual(resolveOptions({ readOnlyAgents: bad }).readOnlyAgents, READ_ONLY);
   assert.deepEqual(runs(sim({ project: P, options: { repeatNote: 2 } }), 'npm test', 3), ['-', 'note', '-']);
   assert.deepEqual(reads(sim({ project: P, options: { readOnlyAgents: ['builder'] } }), 40), Array(40).fill('-'));
@@ -275,7 +273,7 @@ test('W18 ignored: an agent_id that is not a valid id, a main-session PostToolUs
   const base = sim({ project: P });
   bash(base, 'npm test');
   const state = base.state;
-  const at = { now: base.now + 20 * MIN, options: resolveOptions({}), where: { project: P, cwd: P } };
+  const at = { now: base.now + 20 * MIN, options: resolveOptions({}) };
   const tool = { tool_name: 'Bash', tool_input: { command: 'npm test' }, cwd: P };
   const inputs = [
     ...[42, null, '', '../x', 'a/b', 'x'.repeat(129), {}, ['a']].map((agent_id) => sub('PreToolUse', { ...tool, agent_id })),
