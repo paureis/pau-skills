@@ -153,7 +153,8 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q35 wizard, a guided script for the steps only a person can do](backlog/q35.md)
 - [Q36 what Q33 left: the split rule in more places](backlog/q36.md)
 - [Q37 reframe and sharpen from pstack, close to word for word](backlog/q37.md) (done)
-- [Q38 subagent-watchdog: what one orchestrated session showed, and a compaction count](backlog/q38.md)
+- [Q38 subagent-watchdog: what one orchestrated session showed, and a compaction count](backlog/q38.md) (done)
+- [Q39 what Q38 left: the newest snapshot of the session, and stray files in an agents folder](backlog/q39.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -198,8 +199,11 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 27. Done: the twenty-first batch, Q32 skill-usage typed starts (pull request 85).
 28. Done: the twenty-second batch, Q33 context in fewer calls (pull request 88).
 29. Done: the twenty-third batch, Q37 reframe and sharpen from pstack (pull request 96); its scope was decision 33.
-30. **Next:** Q38 subagent-watchdog fixes and a compaction count (decisions 34 and 35); the kickoff is in
-    [backlog/kickoff.md](backlog/kickoff.md). Then Q35 `wizard`, a guided script for the steps only a person can do (from Q30), then Q34 rule-to-hook knows UserPromptExpansion (found in Q32), then Q36 what Q33 left (found in Q33). Parked: Q25 Claude Code mods
+30. Done: the twenty-fourth batch, Q38 subagent-watchdog fixes and a compaction count (pull request 98); its scope was
+    decisions 34 and 35.
+31. **Next:** Q35 `wizard`, a guided script for the steps only a person can do (from Q30); the kickoff is in
+    [backlog/kickoff.md](backlog/kickoff.md). Then Q34 rule-to-hook knows UserPromptExpansion (found in Q32), then Q36
+    what Q33 left (found in Q33), then Q39 what Q38 left (found in Q38). Parked: Q25 Claude Code mods
     (decision 27) and Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
