@@ -26,10 +26,16 @@
 // user to start a new session: after two compactions the session works from a summary of a summary. No readable
 // transcript, no line.
 //
+// The limit: once the session has compacted maxCompactions times (default 2), PreCompact still writes the snapshot,
+// then blocks the compaction with a reason that says so (the owner's request, decision 38). Claude Code compacts
+// anyway when the request cannot go out uncompacted, which is why the snapshot comes first. The hand-off line at
+// the limit says the next compaction will be blocked.
+//
 // Options in .claude/pau-skills.json:
-//   { "compact-snapshot": { "dir": ".claude/pau-skills/snapshots", "keep": 10, "handoffAfter": 2 } }
-// handoffAfter is a whole number of 0 or more; 0 turns the line off; an invalid value keeps 2.
-// Exits 0 always and never blocks compaction.
+//   { "compact-snapshot": { "dir": ".claude/pau-skills/snapshots", "keep": 10, "handoffAfter": 2,
+//                           "maxCompactions": 2 } }
+// handoffAfter and maxCompactions are whole numbers of 0 or more; 0 turns each off; an invalid value keeps 2.
+// Exits 0 always; it blocks a compaction only past the limit.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, realpathSync, statSync, unlinkSync, writeFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -77,6 +83,22 @@ export function handoffAfter(opts) {
   return Number.isInteger(h) && h >= 0 ? h : 2;
 }
 
+/** The maxCompactions option: a whole number of 0 or more, else 2. 0 means no limit. */
+export function maxCompactions(opts) {
+  const m = opts?.maxCompactions;
+  return Number.isInteger(m) && m >= 0 ? m : 2;
+}
+
+/** At PreCompact: the reason to block when the session has already compacted maxCompactions times, else ''. Pure. */
+export function blockReason({ transcript, opts }) {
+  const max = maxCompactions(opts);
+  // At PreCompact the boundaries on disk are the compactions already done; the new one is not written yet.
+  const done = boundaries(parseTranscript(transcript)).count;
+  if (max === 0 || done < max) return '';
+  const times = done === 2 ? 'twice' : `${done} times`;
+  return `[compact-snapshot] This session has already compacted ${times}, its limit (maxCompactions in .claude/pau-skills.json). This compaction is blocked: finish the current step, write a handoff or the next kickoff, and tell the user to start a new session.`;
+}
+
 /** A session_id fit to write on one snapshot line: a non-empty string of at most 200 characters, no line break. */
 export function sessionKey(id) {
   return typeof id === 'string' && id.length > 0 && id.length <= 200 && !/[\r\n]/.test(id) ? id : '';
@@ -90,7 +112,9 @@ export function compactNote({ transcript, snap, opts, session }) {
   const same = Boolean(snap && snap.session && sid && snap.session === sid);
   if (typeof transcript === 'string' && after > 0) {
     const n = Math.max(compactionNumber(transcript), same ? snap.compaction : 0);
-    if (n >= after) parts.push(`[compact-snapshot] This is compaction ${n} in this session. Finish the current step, then write a handoff or the next kickoff and tell the user to start a new session.`);
+    const max = maxCompactions(opts);
+    const last = max > 0 && n >= max ? ' This session has reached its limit of compactions, so the next one will be blocked.' : '';
+    if (n >= after) parts.push(`[compact-snapshot] This is compaction ${n} in this session. Finish the current step, then write a handoff or the next kickoff and tell the user to start a new session.${last}`);
   }
   // Another session's snapshot is not this session's facts; one that records no session predates the session line.
   if (snap && (!snap.session || same)) parts.push(`[compact-snapshot] The conversation was just compacted. These facts were saved from before it (${snap.path}); treat them as exact where the summary is vague:\n\n${snap.text.slice(0, 6000)}`);
@@ -201,6 +225,8 @@ if (isMain) {
         if (input.hook_event_name === 'PreCompact' && typeof input.transcript_path === 'string') {
           const transcript = readFileSync(input.transcript_path, 'utf8');
           writeSnapshot({ dir, transcript, trigger: input.trigger || 'auto', git: gitSummary(root), keep: Number(opts.keep) > 0 ? Number(opts.keep) : 10, session: input.session_id });
+          const reason = blockReason({ transcript, opts });
+          if (reason) process.stdout.write(JSON.stringify({ decision: 'block', reason }) + '\n');
         } else if (input.hook_event_name === 'SessionStart' && input.source === 'compact') {
           let transcript = null;
           if (typeof input.transcript_path === 'string') {
