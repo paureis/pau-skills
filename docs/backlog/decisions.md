@@ -162,3 +162,9 @@ Decisions 1 to 21 (2026-10-17 to 2026-11-04) are in [decisions-1-to-21.md](decis
    list), and it is adapted from upstream's `wizard` in mattpocock/skills, rewritten in Node with the standard library
    only. The batch still reads upstream at a pinned commit and records its license and what changes. Check the
    description budget and the confirm list rules in `docs/ADDING-A-SKILL.md` before the brief.
+
+38. **A session stops at two compactions.** The owner asked on 2026-11-26 that a third compaction not happen and that
+   the session say it has already compacted twice. `compact-snapshot` blocks a compaction once the session has done
+   `maxCompactions` (default 2, 0 for no limit), still writing the snapshot first, because Claude Code compacts
+   anyway when the request cannot go out uncompacted. Built directly at the owner's request, between batches, as an
+   exception to decision 29's order.

@@ -39,7 +39,7 @@ First, before any brief:
 Rules that matter most:
 - Every skill works on its own; a mention of a typed-only skill holds /name in the same paragraph. Scripts use the
   Node standard library only and cover the common ecosystems. Plain English, no em or en dashes; no tracked file over
-  its size limit (README.md is 7 bytes under its limit and hooks/README.md 14: make room before adding to either).
+  its size limit (README.md is 7 bytes under its limit and hooks/README.md 32: make room before adding to either).
 - No secret value is read, printed or logged: a test plants one and checks every output and log.
 - Every new test fails without the change: prove each with mutate.sh (it prints RESULT: CAUGHT) and report every
   "# tests" line.

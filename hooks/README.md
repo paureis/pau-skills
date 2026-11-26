@@ -4,8 +4,7 @@ Every hook in this marketplace is on as soon as its plugin is installed, and eve
 its own. Hooks run as Node.js scripts (Node 20 or later, no packages) and read one optional configuration file.
 
 Each folder here holds one plugin's hook scripts and its `hooks.json`, which registers them. `lib/` holds the code
-they share: `config.mjs` (the configuration below) and `shell.mjs` (splits a shell command into simple commands). The
-tests for every hook are in the repository's `tests/` folder.
+they share: `config.mjs` (the configuration below) and `shell.mjs` (splits a shell command into simple commands).
 
 ## Turning hooks off, and setting options
 
@@ -58,7 +57,7 @@ To remove every hook from one plugin, disable the plugin: `claude plugin disable
 | [`verify-before-done`](verification/verify-before-done.mjs) | verification | Stop | Sends the agent back once when it edited code in the project since your last message and ran no test, build, lint or type check after the last edit; a check script, a Lua tool check or a check listed in `.claude/review-rules.json` counts | Once |
 | [`roadmap`](session-discipline/roadmap.mjs) | session-discipline | SessionStart | Prints the current, next and blocked roadmap items and open questions | No |
 | [`branch-context`](session-discipline/branch-context.mjs) | session-discipline | SessionStart | Prints branch, ahead/behind, uncommitted files, stashes, an unfinished merge or rebase, and a warning on a protected branch | No |
-| [`compact-snapshot`](session-discipline/compact-snapshot.mjs) | session-discipline | PreCompact, SessionStart (compact) | Saves your last messages, edited files, recent commands and the todo list before a compaction, and prints them after. From the second compaction, tells the session to hand off | No |
+| [`compact-snapshot`](session-discipline/compact-snapshot.mjs) | session-discipline | PreCompact, SessionStart (compact) | Saves your last messages, edited files, recent commands and the todo list before a compaction, and prints them after. From the second, tells the session to hand off, and blocks a third | Blocks a third |
 | [`skill-usage`](session-discipline/skill-usage.mjs) | session-discipline | PreToolUse (Skill), UserPromptExpansion | Records each skill start (time, name, typed or by the agent) for which-skill's usage report, and never the prompt | No |
 | [`lazy-senior`](planning/lazy-senior.mjs) | planning | SessionStart (startup, resume, clear, compact), SubagentStart | Adds the lazy-senior ruleset (the smallest complete change; never cut validation, error handling, security or accessibility; the project's instructions come first) to every session and every subagent as start-up context | No |
 | [`no-idle`](agent-orchestration/no-idle.mjs) | agent-orchestration | SubagentStart; PreToolUse (Agent, Task) only with `rewritePrompt` | Adds "never end your turn waiting" to every subagent as start-up context | No |
@@ -197,7 +196,8 @@ your message, so the edits made before it still need a check.
 |---|---|---|
 | `dir` | `.claude/pau-skills/snapshots` | Where snapshots go, relative to the project. The folder gets its own `.gitignore`. |
 | `keep` | `10` | How many snapshots to keep. |
-| `handoffAfter` | `2` | From this compaction on, the note tells the session to finish the step, write a handoff and tell you to start a new session. A whole number; `0` turns it off. Another session's snapshot is not shown or counted. |
+| `handoffAfter` | `2` | From this compaction on, the note tells the session to hand off and tell you to start a new one. `0` turns it off. |
+| `maxCompactions` | `2` | After this many, the next compaction is blocked (its snapshot is still saved). `0`: no limit. |
 
 ### skill-usage
 
