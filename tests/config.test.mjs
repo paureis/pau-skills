@@ -153,9 +153,15 @@ const OFF_SWITCH = [
   },
   {
     name: 'compact-snapshot', script: ['session-discipline', 'compact-snapshot.mjs'],
-    setup: (p) => writeSnapshot({ dir: join(p, '.claude', 'pau-skills', 'snapshots'), transcript: '', trigger: 'manual', git: '' }),
-    input: (p) => ({ hook_event_name: 'SessionStart', source: 'compact', cwd: p }),
-    acts: (r) => { assert.equal(r.code, 0); assert.match(additionalContext(r), /compact-snapshot/); },
+    // A two-compaction transcript, so the hand-off line is due: the off switch must silence it too.
+    setup: (p) => {
+      writeSnapshot({ dir: join(p, '.claude', 'pau-skills', 'snapshots'), transcript: '', trigger: 'manual', git: '' });
+      const boundary = { type: 'system', subtype: 'compact_boundary' };
+      const summary = { type: 'user', isCompactSummary: true, message: { role: 'user', content: 'Summary' } };
+      writeFileSync(join(p, 't.jsonl'), jsonl([boundary, summary, { type: 'assistant', message: { content: [{ type: 'text', text: 'ok' }] } }, boundary, summary]));
+    },
+    input: (p) => ({ hook_event_name: 'SessionStart', source: 'compact', cwd: p, transcript_path: join(p, 't.jsonl') }),
+    acts: (r) => { assert.equal(r.code, 0); assert.match(additionalContext(r), /^\[compact-snapshot\] This is compaction 2 /); },
   },
   {
     name: 'roadmap', script: ['session-discipline', 'roadmap.mjs'],
