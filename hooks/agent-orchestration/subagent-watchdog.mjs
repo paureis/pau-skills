@@ -13,14 +13,15 @@
 // can see a stall. Decision 22: never cut off a healthy long run; stopping needs a yes; a hook in pau-skills-hooks
 // that needs no skill and works in cloud sessions. Decision 23 is the design, decision 30 the owner's four answers.
 //
-// Events: SubagentStart (read the agent's definition, add the agent, then prune), PreToolUse (count, then note or ask in a subagent; the status in
-// the main session), PostToolUse (end the call in flight; an edit resets the counts; in the main session, TaskStop
-// removes the agent it names), PostToolUseFailure (end the call in flight, reset nothing), UserPromptSubmit (the
-// status), SubagentStop (remove the agent). Facts from two headless prototypes (decision 23, and Claude Code 2.1.330
-// on 2026-11-23): subagent events carry the main session's session_id with their own agent_id and agent_type, main
-// session events carry no agent_id; "ask" in claude -p refuses that one call, the reason reaches the agent and it goes
-// on; a refused call has no PostToolUse; a failed command fires PostToolUseFailure; an agent stopped with TaskStop gets
-// no SubagentStop, and TaskStop's task_id is that agent's agent_id.
+// Events: SubagentStart (read the agent's definition, add the agent, then prune), PreToolUse (count, then note or
+// ask in a subagent; the status in the main session), PostToolUse (end the call in flight; an edit resets the counts;
+// in the main session, TaskStop removes the agent it names), PostToolUseFailure (end the call in flight, reset
+// nothing), UserPromptSubmit (the status), SubagentStop (remove the agent). Facts from two headless prototypes
+// (decision 23, and Claude Code 2.1.330 on 2026-11-23): subagent events carry the main session's session_id with
+// their own agent_id and agent_type, main session events carry no agent_id; "ask" in claude -p refuses that one call,
+// the reason reaches the agent and it goes on; a refused call has no PostToolUse; a failed command fires
+// PostToolUseFailure; an agent stopped with TaskStop gets no SubagentStop, and TaskStop's task_id is that agent's
+// agent_id.
 //
 // Agent definitions, at SubagentStart only (subagent-watchdog-agents.mjs): <project>/.claude/agents/*.md, then
 // <home>/.claude/agents/*.md, home being PAU_SKILLS_HOME or else the user's home, the same home as the config. The

@@ -53,7 +53,7 @@ function toolName(e) {
   return (i >= 0 ? s.slice(0, i) : s).trim();
 }
 
-/** The tools of a "tools:" value on its own line: a comma list or a flow list [a, b]. undefined when it does not parse. */
+/** The tools of a "tools:" value on its line: a comma list or a flow list [a, b]. undefined when it does not parse. */
 function inlineTools(v) {
   let s = v;
   if (s.startsWith('[')) {

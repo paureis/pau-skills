@@ -6,7 +6,7 @@ import { LIMITS, READ_ONLY_HINT, WAIT_TOOLS, isReadOnly, minutes, normalizeComma
 
 const oneLine = (s, n) => normalizeCommand(s).slice(0, n);
 
-/** The flags of one agent at `now`, in words, and whether it is dropped (lost: for a call in flight 2 hours, not a wait). */
+/** The flags of one agent at `now`, in words, and whether it is dropped (lost: a call, not a wait, in flight 2 h). */
 export function judge(a, now, o) {
   const flags = [];
   const idle = now - a.last;
