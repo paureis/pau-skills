@@ -64,7 +64,7 @@ less and spends less on review, and a generous budget delegates more and buys mo
 |---|---|---|---|
 | Delegate | Changes of 5 or more files; make smaller changes yourself | Any change in behaviour or tests, and any change of 3 or more files | Any change in behaviour or tests, and any change of 2 or more files |
 | Subagent model | The session's model; for mechanical work (renames, version bumps, docs, boilerplate), offer the user a smaller model that is confirmed available, once, and use it only on a yes | The session's model | The session's model |
-| Subagent effort | Builder `medium` | Builder and plan checker `high` | Builder `high`; plan checker and reviewer `xhigh` |
+| Subagent effort | Builder `medium` | Builder and plan checker `high` | Builder, plan checker and reviewer `high` |
 | Plan check before building | You, against the code, in a few minutes | A read-only subagent, for new behaviour | A read-only subagent, always |
 | Review round | Your verification is the review | Your verification, plus your own read of every risky file | Plus a separate reviewer subagent on risky files |
 | Fix round | Inline when small | Back to the same subagent | Back to the same subagent |
@@ -78,10 +78,12 @@ model for work in a risky path, whatever the budget.
 **Effort.** Set it from the table with the Agent tool's `effort` field: `low`, `medium`, `high`, `xhigh` or `max` (the
 `claude` command line takes the same values as `--effort`). Left out, the subagent runs at its usual effort. Not every
 model supports every level, and a forked subagent ignores the field, so when you are not sure the level is supported,
-or the subagent runs on a smaller model, leave it out. The table never uses `low` or `max`. The split by role is this
-skill's choice, not a rule from elsewhere: the builder's work goes through your four checks in step 5, so what it
-misses is caught, while the plan checker and the reviewer are the check, and what they miss nobody catches. At a
-tight budget there is no checker or reviewer subagent; the plan check and the review are yours.
+or the subagent runs on a smaller model, leave it out. The table never uses `low`, `xhigh` or `max`: `high` is the most it
+sets, since a higher level costs more usage on every turn of the agents that run longest. The split by role is this
+skill's choice, not a rule from elsewhere: the builder's work goes through your four checks in step 5, so at a tight
+budget it can run at `medium`, while the plan checker and the reviewer are the check, and what they miss nobody
+catches, so they never run below `high`. At a tight budget there is no checker or reviewer subagent; the plan check
+and the review are yours.
 
 ## 3. Before building new behaviour
 

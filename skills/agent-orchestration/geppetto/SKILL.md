@@ -187,7 +187,7 @@ Then check the draft and show it as in Create, steps 4 and 5.
    production rules block only on an agent that carries one: it must be closed, and at the bundle's roster version
    word for word the one in `PRODUCTION-RULES.md`.
 2. Add what the script cannot judge, agent by agent, from the body. For a roster agent, first diff the installed
-   copy against its bundled file and judge only the lines that differ: the bundled settings (such as `effort: xhigh`
+   copy against its bundled file and judge only the lines that differ: the bundled settings (such as `effort: high`
    on eng-lead) are the design, not findings.
    - Leftover tools: a tool in `tools` that no step of the body needs, or no `tools` list at all on an agent with a
      narrow job (it then has every tool).

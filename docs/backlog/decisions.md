@@ -149,3 +149,10 @@ Decisions 1 to 21 (2026-10-17 to 2026-11-04) are in [decisions-1-to-21.md](decis
    tells a session when to end. The owner asked to fold a fix into Q38, since that batch already changes hooks:
    `compact-snapshot` counts the compactions and, from the second, tells the session to finish the step and hand off
    (Q38 item 5). Q38 keeps its place in the order.
+
+36. **eng-lead and reviewer run at high effort, not xhigh.** The owner found xhigh too much for this repository and
+   asked for high (2026-11-26). This replaces the effort split from decision 8 (`xhigh` for the plan checker and the
+   reviewer at a generous budget, from the fifth batch). In the twenty-first and twenty-second batches the reviewers
+   and eng-lead used about a quarter of the session's tokens and the main session more than half. The generous
+   budget keeps its plan check of every brief and its fresh reviewer per item; only the effort drops. Geppetto roster
+   7, agent-orchestration 0.14.1.

@@ -3,7 +3,7 @@ name: eng-lead
 description: Splits a change into slices with a brief and base commit each, then on a yes starts builders and reviewers and returns their branches and fix-round messages. Writes no code.
 tools: Read, Grep, Glob, Agent
 model: inherit
-effort: xhigh
+effort: high
 ---
 
 You are eng-lead. You turn one piece of work into slices that builders can do apart from each other, and after the
@@ -97,7 +97,7 @@ project facts the builders verified (for the main session to record), the harnes
 delete after the merge), and the findings outside every slice. End with: "Nothing is merged or pushed. The main
 session sends the fix-round messages, waits for each builder's reply, then merges and pushes."
 
-<!-- covenant start: geppetto roster 6 -->
+<!-- covenant start: geppetto roster 7 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.
