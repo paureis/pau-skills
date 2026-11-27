@@ -48,7 +48,7 @@ test('AP1 the recorded definition in the project folder: SubagentStart stores ro
 
 test('AP2 tools: Read, Bash, Write in the PAU_SKILLS_HOME folder (not HOME) is read-only too; 40 calls get no note', () => {
   const w = world();
-  w.agents(w.user, { 'reader.md': '---\nname: lector\ntools: Read, Bash, Write\n---\nReads.\n' });
+  w.agents(w.user, { 'reader.md': '---\nname: lector\ndescription: Reads.\ntools: Read, Bash, Write\n---\nReads.\n' });
   silent(w.run(w.start));
   assert.equal(w.state().ro, true);
   assert.deepEqual(w.reads(40), Array(40).fill('-'));
@@ -56,10 +56,10 @@ test('AP2 tools: Read, Bash, Write in the PAU_SKILLS_HOME folder (not HOME) is r
 
 test('AP3 not read-only: a definition with Edit, one with no tools, the same name only under HOME, and a project definition with Edit over a read-only user one; the 40th call then gets the note', () => {
   const cases = {
-    'tools: Read, Edit': (w) => w.agents(w.project, { 'l.md': '---\nname: lector\ntools: Read, Edit\n---\n' }),
+    'tools: Read, Edit': (w) => w.agents(w.project, { 'l.md': '---\nname: lector\ndescription: Edits.\ntools: Read, Edit\n---\n' }),
     'no tools': (w) => w.agents(w.project, { 'l.md': '---\nname: lector\ndescription: reads\n---\n' }),
     'only under HOME': (w) => w.agents(w.home, { 'l.md': RECORDED }),
-    'the project wins': (w) => { w.agents(w.project, { 'z.md': '---\nname: lector\ntools: [Read, MultiEdit]\n---\n' }); w.agents(w.user, { 'a.md': RECORDED }); },
+    'the project wins': (w) => { w.agents(w.project, { 'z.md': '---\nname: lector\ndescription: Edits.\ntools: [Read, MultiEdit]\n---\n' }); w.agents(w.user, { 'a.md': RECORDED }); },
   };
   for (const [name, setup] of Object.entries(cases)) {
     const w = world();
@@ -75,7 +75,7 @@ test('AP3 not read-only: a definition with Edit, one with no tools, the same nam
 test('AP4 a 70 KB project definition with Edit and a read-only one of the same name under PAU_SKILLS_HOME: ro false, and the 40th call gets the note', () => {
   const w = world();
   w.agents(w.project, { 'builder2.md': '---\nname: builder2\ntools: Read, Edit, Bash\n---\n' + 'x'.repeat(70 * 1024) });
-  w.agents(w.user, { 'old.md': '---\nname: builder2\ntools: Read, Bash\n---\n' });
+  w.agents(w.user, { 'old.md': '---\nname: builder2\ndescription: Builds.\ntools: Read, Bash\n---\n' });
   silent(w.run({ ...w.start, agent_type: 'builder2' }));
   assert.equal(w.state().ro, false);
   assert.deepEqual(w.reads(40), [...Array(39).fill('-'), 'note']);

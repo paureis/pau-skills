@@ -11,7 +11,8 @@ This is a Claude Code plugin marketplace. Read this before changing anything.
   repository (`"source": "./"`, `"strict": false`). Never add `.claude-plugin/plugin.json`; it conflicts with that.
 - `.claude/agents/`: the roster that `geppetto` installs, used by the batches. Change a roster agent in
   `skills/agent-orchestration/geppetto/roster/` first, raise the roster number on every covenant marker, then update
-  the installed copy. Never put agent files in a root `agents/` folder: every plugin here would load it.
+  the installed copy, then set `LOCK` in `tests/geppetto-roster-lock.test.mjs` as its failure message says. Never put
+  agent files in a root `agents/` folder: every plugin here would load it.
 - `scripts/`: repository tooling. `tests/`: `node:test` suites. `docs/`: install guide, origins, rules, how to add a
   skill.
 

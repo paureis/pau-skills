@@ -9,7 +9,7 @@
     {
       "name": "pau-skills",
       "description": "Everything in this marketplace as one plugin: every skill and every hook from session-discipline, verification, agent-orchestration, guards and planning. Install this or the individual plugins, not both.",
-      "version": "0.27.1",
+      "version": "0.27.2",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -273,7 +273,7 @@
     {
       "name": "pau-skills-hooks",
       "description": "Every hook in this marketplace and no skills: the guards against destructive commands, written secrets, skipped git hooks and weakened tests, the check that work was verified before it is called done, the session-start and compaction hooks, the lazy-senior rules at every session and subagent start, a watchdog that nudges subagents that loop or go long with no edit and lists stuck ones in the main session, and a log of which skills start. Install it when your skills come from somewhere else, such as your claude.ai account. Do not install it next to pau-skills or the individual plugins, which carry the same hooks.",
-      "version": "0.9.1",
+      "version": "0.9.2",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -674,7 +674,7 @@
     {
       "name": "agent-orchestration",
       "description": "Working with subagents: a hook that stops agents from ending their turn idle, a watchdog hook that nudges a subagent that reruns a command or goes long with no edit and shows the main session which subagents look stuck, an operating methodology where no agent certifies its own work, a codebase oracle that grades the evidence for every answer, parallel work in separate git worktrees, a lean one-subagent-at-a-time way of working that adjusts to your usage budget, and an arena where a blind judge helps pick among several attempts.",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"
@@ -785,7 +785,7 @@
     {
       "name": "guards",
       "description": "Hooks that block what cannot be undone: credentials written into files, destructive commands, skipped git hooks, raw merges of stacked PRs and backticks in inline payloads. Plus a skill to turn your own rules into checks at the highest layer that holds them, with a ratchet for patterns already common, safe merging, dependency upgrades and a dependency security audit for any ecosystem.",
-      "version": "0.12.1",
+      "version": "0.12.2",
       "author": {
         "name": "Alvaro Reis",
         "url": "https://github.com/paureis"

@@ -21,7 +21,7 @@ fix order and asks for the same exception fields. Without it, start from the rul
 The rule, or where to find it: $ARGUMENTS
 
 Bundled files, open them when you reach their step:
-- `${CLAUDE_SKILL_DIR}/HOOK-EVENTS.md`: every hook event, its input, and how it blocks or informs
+- `${CLAUDE_SKILL_DIR}/HOOK-EVENTS.md`: the hook events a rule is likely to need, their input, and how each blocks or informs
 - `${CLAUDE_SKILL_DIR}/templates/pretooluse-guard.mjs`: Bash-command guard skeleton (Node.js)
 - `${CLAUDE_SKILL_DIR}/templates/pretooluse-guard.py`: the same skeleton in Python
 - `${CLAUDE_SKILL_DIR}/templates/guard.test.mjs`: test skeleton with DENY and PASS tables
