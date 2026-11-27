@@ -88,7 +88,9 @@ test('an edit to a roster file changes the hash', () => {
   assert.notEqual(rosterHash({ ...roster(8), 'c.md': '' }), a, 'a new empty file');
   const { 'b.md': moved, ...rest } = roster(8);
   assert.notEqual(rosterHash({ ...rest, 'sub/b.md': moved }), a, 'a renamed file');
-  assert.notEqual(rosterHash({ 'a.md': 'xy', 'b.md': '' }), rosterHash({ 'a.md': 'x', 'b.md': 'y' }), 'text moved between files');
+  // Each pair would hash the same bytes without the NULs between key and text and between files.
+  assert.notEqual(rosterHash({ a: 'bc' }), rosterHash({ ab: 'c' }), 'text moved into the key');
+  assert.notEqual(rosterHash({ 'a.md': 'x', 'b.md': 'y' }), rosterHash({ 'a.md': 'xb.mdy' }), 'a file folded into the one before it');
 });
 
 test('line endings, a byte order mark and the order files are read in do not change the hash', () => {
