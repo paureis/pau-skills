@@ -73,7 +73,7 @@ function findBase({ root, env }) {
   return { base, short, chosen };
 }
 
-/** The check on the tree at `root`: { ok, message, diagnostic }, where `diagnostic` names the base or why there is none. */
+/** The check on the tree at `root`: { ok, message, diagnostic }; `diagnostic` names the base or why there is none. */
 function checkLock({ root, env }) {
   const found = findBase({ root, env });
   if (found.note) return { ok: true, diagnostic: found.note };
