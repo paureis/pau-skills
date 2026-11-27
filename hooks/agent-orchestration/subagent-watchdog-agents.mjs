@@ -189,6 +189,8 @@ function tree(dir, io) {
   for (let q = 0; q < queue.length; q++) {
     const [folder, depth] = queue[q];
     let names;
+    // shortcut: a folder is listed in full before the entry cap applies; read it with opendirSync if a folder of
+    // millions of entries under .claude/agents ever shows up.
     try { names = io.readdirSync(folder); } catch { return q === 0 ? defs : null; }
     for (const name of names) {
       if (++count > MAX_ENTRIES) return null;
