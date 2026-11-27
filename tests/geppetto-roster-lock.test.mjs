@@ -58,17 +58,18 @@ function rosterHash(files) {
   return h.digest('hex');
 }
 
-/** Compares the lock line with the roster number and hash: { ok: true }, or { ok: false, message } with the fix. */
+/** Compares the lock line with the roster number and hash: { ok: true }, or { ok: false, message } with the fix. A
+ * message that gives a new line ends with it, with no period after it, so it pastes as is. */
 function verdict({ line, version, hash }) {
   const fail = (why) => ({ ok: false, message: `${HERE}: ${why}` });
   const m = /^roster (\d+) sha256:([0-9a-f]{64})$/.exec(line);
-  if (!m) return fail(`the line ${JSON.stringify(line)} does not parse; its shape is "${SHAPE}". If no roster file changed since the line was last right, set it to: roster ${version} sha256:${hash}.`);
+  if (!m) return fail(`LOCK ${JSON.stringify(line)} does not parse; its shape is "${SHAPE}". If no roster file changed since LOCK was last right, set LOCK to: roster ${version} sha256:${hash}`);
   const locked = Number(m[1]);
   const same = m[2] === hash;
-  const raise = (n) => `raise it to ${n} on every covenant marker (${WHERE}), then set the line to: roster ${n} sha256:${hash}.`;
+  const raise = (n) => `raise it to ${n} on every covenant marker (${WHERE}), then set LOCK to: roster ${n} sha256:${hash}`;
   if (version === locked) return same ? { ok: true } : fail(`a roster file changed but the roster number is still ${locked}: ${raise(locked + 1)}`);
-  if (version > locked) return fail(`the roster number went up from ${locked} to ${version}: set the line to: roster ${version} sha256:${hash}.`);
-  if (same) return fail(`the roster number went down from ${locked} to ${version}: set every covenant marker back to ${locked}; leave the line as it is.`);
+  if (version > locked) return fail(`the roster number went up from ${locked} to ${version}: set LOCK to: roster ${version} sha256:${hash}`);
+  if (same) return fail(`the roster number went down from ${locked} to ${version}: set every covenant marker back to ${locked}; leave LOCK as it is.`);
   return fail(`a roster file changed and the number went down from ${locked} to ${version}: ${raise(locked + 1)}`);
 }
 
@@ -129,24 +130,24 @@ test('a changed roster with the same number fails and says to raise it', () => {
   assert.equal(v.ok, false);
   assert.match(v.message, /a roster file changed but the roster number is still 8/);
   assert.ok(v.message.includes(`raise it to 9 on every covenant marker (${WHERE})`), v.message);
-  assert.ok(v.message.endsWith(`then set the line to: roster 9 sha256:${H('b')}.`), v.message);
+  assert.ok(v.message.endsWith(`then set LOCK to: roster 9 sha256:${H('b')}`), v.message);
 });
 
 test('a number higher than the line fails and gives the new line', () => {
   for (const hash of [H('a'), H('b')]) {
     const v = verdict({ line: `roster 8 sha256:${H('a')}`, version: 9, hash });
     assert.equal(v.ok, false);
-    assert.ok(v.message.endsWith(`the roster number went up from 8 to 9: set the line to: roster 9 sha256:${hash}.`), v.message);
+    assert.ok(v.message.endsWith(`the roster number went up from 8 to 9: set LOCK to: roster 9 sha256:${hash}`), v.message);
   }
 });
 
 test('a number lower than the line fails: set the markers back, or raise past the line', () => {
   const back = verdict({ line: `roster 8 sha256:${H('a')}`, version: 7, hash: H('a') });
   assert.equal(back.ok, false);
-  assert.ok(back.message.endsWith('the roster number went down from 8 to 7: set every covenant marker back to 8; leave the line as it is.'), back.message);
+  assert.ok(back.message.endsWith('the roster number went down from 8 to 7: set every covenant marker back to 8; leave LOCK as it is.'), back.message);
   const past = verdict({ line: `roster 8 sha256:${H('a')}`, version: 7, hash: H('b') });
   assert.equal(past.ok, false);
-  assert.ok(past.message.endsWith(`a roster file changed and the number went down from 8 to 7: raise it to 9 on every covenant marker (${WHERE}), then set the line to: roster 9 sha256:${H('b')}.`), past.message);
+  assert.ok(past.message.endsWith(`a roster file changed and the number went down from 8 to 7: raise it to 9 on every covenant marker (${WHERE}), then set LOCK to: roster 9 sha256:${H('b')}`), past.message);
 });
 
 test('a line that does not parse fails, naming the shape', () => {
@@ -154,7 +155,7 @@ test('a line that does not parse fails, naming the shape', () => {
     const v = verdict({ line, version: 8, hash: H('c') });
     assert.equal(v.ok, false, JSON.stringify(line));
     assert.ok(v.message.includes('roster <N> sha256:<64 lowercase hex>'), v.message);
-    assert.ok(v.message.includes(`set it to: roster 8 sha256:${H('c')}.`), v.message);
+    assert.ok(v.message.endsWith(`set LOCK to: roster 8 sha256:${H('c')}`), v.message);
   }
 });
 
