@@ -33,8 +33,12 @@ Read the repository first; do not ask cold. Look at:
   groups, Bitbucket repository variables, Jenkins credentials;
 - the README.
 
+Do yourself every part that needs no value from the person, for example copying `.env.example` to `.env` or
+creating a folder. A step holds only what the person must do.
+
 Show the person the ordered list of steps: for each value, where it comes from, where it goes and whether it is
-secret. Wait for their yes before you write anything. They may add, drop or reorder steps.
+secret. When a step's check needs facts you do not have yet (the repository's OWNER/REPO, an account id), ask for
+them with the list. Wait for their yes before you write anything. They may add, drop or reorder steps.
 
 ## 2. Map each step's exact path
 
@@ -44,7 +48,8 @@ Never invent UI you do not know: ask the person, or check the docs.
 
 ## 3. Write the steps file and check it
 
-Keep it ephemeral by default: a scratch folder or `scripts/`. Commit it only when the user wants a repeatable setup
+Keep it at a short path the person can type, such as `scripts/setup-steps.json`, not a long session folder. It is
+ephemeral by default: delete it when every step is done, and commit it only when the user wants a repeatable setup
 path. Copy the shape of `${CLAUDE_SKILL_DIR}/example-steps.json`:
 
 - Top level: `title` and `steps`, nothing else.
@@ -61,14 +66,20 @@ wizard runs without a shell, with its output discarded; it passes when it exits 
 run a `.cmd` or `.bat` shim (npx, many CLIs) without a shell, which the wizard never uses: point it at the real `.exe`,
 or use a `url` or `file` check.
 
+Never put a value in the steps file: not in a `command` argv, a URL or a `say` line. The wizard prints URLs and argv,
+and `check` refuses a URL whose query has a parameter named like a token, key, secret or password.
+
 A relative path in a check is read from the folder the wizard runs in, not the steps file's folder.
 
 An `env` check sees only the terminal that runs the wizard. A variable the person sets in another terminal is not
 seen there: they set it and start again, or you use an `envFile` or `command` check instead.
 
-`check` refuses a step with an empty checks list. When nothing obvious can check a step, find a check (a `command`
-such as `gh api repos/OWNER/REPO/actions/secrets/PAYMENTS_KEY`, or a `url`), or leave the step out of the file and
-ask the person about it in the chat.
+`check` refuses a step with an empty checks list. When nothing obvious can check a step, find a check: a `url`, or a
+`command` such as `gh api repos/OWNER/REPO/actions/secrets/PAYMENTS_KEY`. That one needs `gh` installed and signed in
+with access to that repository's secrets. When it is not, `status` names the check as failed, with the exit code or
+`could not start` when `gh` is missing, never a value. Never drop an approved step silently. If you still cannot
+check one, tell the person plainly which approved step is not in the file and why, and handle it with them in the
+chat.
 
 Run `node ${CLAUDE_SKILL_DIR}/wizard.mjs check <file>` until it passes. It runs nothing and names each problem by its
 place in the file.
@@ -80,8 +91,11 @@ in the chat instead, and check each one with your own commands without reading a
 file's text).
 
 Give the person the full command to type in their own terminal, from the project root, with that folder named:
-`node <absolute path to wizard.mjs> run <steps file>`. Add `--no-open` if they do not want browser tabs opened. Never
-run `run` yourself: it waits on a person. A step that already passes is passed over, so running it again resumes.
+`node ${CLAUDE_SKILL_DIR}/wizard.mjs run <steps file>`, with `${CLAUDE_SKILL_DIR}` filled in as the absolute path
+this skill shows. Never shorten it to a relative path. Add `--no-open` if they do not want browser tabs opened. Tell
+them what the prompts take: Enter when a step is done, s to skip it, q to quit, and y on a step that cannot be undone.
+Never run `run` yourself: it waits on a person. A step that already passes is passed over, so running it again
+resumes.
 
 When they say they are done, run `node ${CLAUDE_SKILL_DIR}/wizard.mjs status <file>` from the same folder and report
 the result: exit 0 means every step is done; otherwise it names each check that failed. Delete an ephemeral steps
