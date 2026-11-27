@@ -99,6 +99,7 @@ under "Work items" below.
 - [Things that bit the twenty-sixth batch](backlog/things-that-bit/batch-26.md)
 - [Things that bit the twenty-seventh batch](backlog/things-that-bit/batch-27.md)
 - [Things that bit the twenty-eighth batch](backlog/things-that-bit/batch-28.md)
+- [Things that bit the twenty-ninth batch](backlog/things-that-bit/batch-29.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not; the first six batches are in
   [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md), the seventh to twelfth in
   [done-2026-10-20-to-25.md](backlog/done-2026-10-20-to-25.md), and the thirteenth batch to Q20 in
@@ -165,7 +166,7 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q41 a roster bump forgotten everywhere at once](backlog/q41.md) (done)
 - [Q42 the watchdog reads agent folders the way Claude Code does](backlog/q42.md) (done)
 - [Q43 the roster lock checks a change against main](backlog/q43.md) (done)
-- [Q44 CI says when the roster lock base check found no base](backlog/q44.md)
+- [Q44 CI says when the roster lock base check found no base](backlog/q44.md) (done)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -218,7 +219,9 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 33. Done: the twenty-seventh batch, Q40, Q41 and Q42 (pull request 106, release v0.27.2).
 34. Done: the twenty-eighth batch, Q43 the roster lock checks a change against main (pull request 108, no release:
     tests and CI only).
-35. **Next:** Q44 CI says when the roster lock base check found no base (found in Q43), option 1 (fail in CI); the
-    kickoff in [backlog/kickoff.md](backlog/kickoff.md). Parked: Q25 and Q26.
+35. Done: the twenty-ninth batch, Q44 CI fails when the roster lock base check finds no base, option 1 (pull request
+    110, no release: tests and CI only).
+36. **Next:** no planned item. The owner picks the next work or adds an item; the kickoff in
+    [backlog/kickoff.md](backlog/kickoff.md) says what to read first. Parked: Q25 and Q26.
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
