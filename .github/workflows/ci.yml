@@ -19,14 +19,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # full history so the roster lock can read the base commit
+          fetch-depth: 0 # keep: Tests fails when ROSTER_LOCK_BASE gives no base commit, so it needs full history
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
       - name: Tests
         run: npm test
         # The base for tests/geppetto-roster-lock-base.test.mjs. On a pull request HEAD is the merge commit and HEAD^1
-        # is the base branch tip; on a push to main it is the previous main, which covers multi-commit pushes.
+        # is the base branch tip; on a push to main it is the previous main, which covers multi-commit pushes. When it
+        # gives no base commit (it does not resolve, or LOCK is not there) this step fails, so fetch-depth 0 must stay.
         env:
           ROSTER_LOCK_BASE: ${{ github.event_name == 'push' && github.event.before || 'HEAD^1' }}
       - name: Scrub check

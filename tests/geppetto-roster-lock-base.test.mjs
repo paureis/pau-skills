@@ -4,9 +4,13 @@
 // up, or when the number went down with the same hash.
 //
 // The base: ROSTER_LOCK_BASE when it is set and not empty (CI sets it: HEAD^1 on a pull request, the previous main on a
-// push), else the merge base of HEAD and refs/remotes/origin/main. It never fetches. With no base (no origin/main, a
-// value that does not resolve, no lock file or no valid LOCK at the base, git cannot run) the check passes with a
-// note: there is nothing to compare against. The lock file is read as text, never imported, so its tests run once.
+// push), else the merge base of HEAD and refs/remotes/origin/main. It never fetches. No base means no origin/main, a
+// value that starts with "-" or does not resolve, no lock file or no valid LOCK at the base, or git cannot run. With
+// the variable set and no base the check fails, because in CI that means the guard is off; with it unset or empty it
+// passes with a note, as there is nothing to compare against (docs/backlog/q44.md). Two accepted costs: a pull request
+// into a branch older than the lock file fails, and so does a change that moves the lock file or changes LOCK's
+// format, on its own runs, until this check learns the old form.
+// The lock file is read as text, never imported, so its tests run once.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -18,7 +22,8 @@ import { makeRepo, cleanEnv, plainDir, put } from './file-size-guard.helpers.mjs
 
 const LOCK_FILE = 'tests/geppetto-roster-lock.test.mjs';
 const SHAPE = 'roster <N> sha256:<64 lowercase hex>';
-// 30 seconds, not runGit's 2: a slow macOS runner can time out, and a timeout is a no-base pass.
+// 30 seconds, not runGit's 2: a slow macOS runner can time out, and a timeout gives no base, which fails the check
+// when ROSTER_LOCK_BASE is set (CI) and turns it off when it is unset.
 const TIMEOUT = 30000;
 const HERE = 'roster lock base check (tests/geppetto-roster-lock-base.test.mjs)';
 
@@ -46,13 +51,18 @@ function rule(base, here, short) {
   return { ok: true };
 }
 
-/** The base LOCK: { base, short, chosen }, or { note } saying why there is none. Never throws. */
+/** The base LOCK: { base, short, chosen }, or why there is none: { fail } if the variable is set, else { note }. */
 function findBase({ root, env }) {
   const git = (...args) => runGit(args, root, env, TIMEOUT);
-  const none = (r, why) => ({ note: `${HERE}: no base commit, so the check passes: ${r.status === null ? 'git cannot run (or timed out)' : why}. Set ROSTER_LOCK_BASE to a commit to turn the check on.` });
   let ref = env.ROSTER_LOCK_BASE;
+  const set = typeof ref === 'string' && ref !== '';
+  const none = (r, why) => {
+    const reason = r.status === null ? 'git cannot run (or timed out)' : why;
+    if (set) return { fail: `${HERE}: the check fails because ROSTER_LOCK_BASE is set (${JSON.stringify(env.ROSTER_LOCK_BASE)}) but gives no base commit: ${reason}. Set it to a commit that holds ${LOCK_FILE} with a valid LOCK, or unset it to skip the check. In CI, keep fetch-depth: 0 on actions/checkout so the base commit is fetched.` };
+    return { note: `${HERE}: no base commit, so the check passes: ${reason}. Set ROSTER_LOCK_BASE to a commit to turn the check on.` };
+  };
   let chosen = `ROSTER_LOCK_BASE ${JSON.stringify(ref)}`;
-  if (typeof ref !== 'string' || ref === '') {
+  if (!set) {
     // The full ref, so a local branch named origin/main cannot stand in for it.
     const origin = git('rev-parse', '--verify', '--quiet', 'refs/remotes/origin/main^{commit}');
     if (origin.status !== 0) return none(origin, 'ROSTER_LOCK_BASE is unset and there is no origin/main');
@@ -77,6 +87,7 @@ function findBase({ root, env }) {
 function checkLock({ root, env }) {
   const found = findBase({ root, env });
   if (found.note) return { ok: true, diagnostic: found.note };
+  if (found.fail) return { ok: false, message: found.fail, diagnostic: found.fail };
   const diagnostic = `${HERE}: base: ${found.chosen}, commit ${found.short}`;
   let text;
   try { text = readFileSync(join(root, LOCK_FILE), 'utf8'); } catch {
@@ -178,6 +189,17 @@ function noBase(root, env, why) {
   assert.ok(r.diagnostic.includes(NOTE), r.diagnostic);
   return r;
 }
+const FIX = 'fetch-depth: 0';
+/** checkLock with ROSTER_LOCK_BASE set and no base: it fails, and the message names the value, the why and the fix. */
+function setNoBase(root, env, why) {
+  const r = checkLock({ root, env });
+  assert.equal(r.ok, false, r.diagnostic);
+  assert.ok(r.message.includes(why), r.message);
+  assert.ok(r.message.includes(FIX), r.message);
+  assert.ok(r.message.includes(`ROSTER_LOCK_BASE is set (${JSON.stringify(env.ROSTER_LOCK_BASE)})`), r.message);
+  assert.ok(r.diagnostic.includes(why), r.diagnostic);
+  return r;
+}
 
 test('a base with LOCK: a same-number rewrite here fails, and a raised number passes', () => {
   const { dir, sha } = baseRepo();
@@ -193,36 +215,37 @@ test('a base with LOCK: a same-number rewrite here fails, and a raised number pa
   assert.equal(checkLock({ root: dir, env }).ok, true, 'raised');
 });
 
-test('no base: the lock file is missing at the base', () => {
+test('a set variable with no base fails: the lock file is missing at the base', () => {
   const dir = makeRepo();
   writeFileSync(join(dir, 'other.txt'), 'x\n');
   commitAll(dir, 'no lock');
   put(dir, LOCK_FILE, lockText(lockLine(8, 'a')));
-  noBase(dir, envOf({ ROSTER_LOCK_BASE: 'HEAD' }), `${LOCK_FILE} is not in`);
+  setNoBase(dir, envOf({ ROSTER_LOCK_BASE: 'HEAD' }), `${LOCK_FILE} is not in`);
 });
 
-test('no base: LOCK is missing, repeated or unparsable at the base', () => {
+test('a set variable with no base fails: LOCK is missing, repeated or unparsable at the base', () => {
   for (const [text, why] of [['const OTHER = 1;\n', 'no LOCK line'], [lockText(`${lockLine(8, 'a')}\n${lockLine(8, 'a')}`), '2 LOCK lines'], [lockText("const LOCK = 'roster 8';"), 'does not have the shape']]) {
     const dir = makeRepo();
     put(dir, LOCK_FILE, text);
     commitAll(dir, 'bad lock');
     put(dir, LOCK_FILE, lockText(lockLine(8, 'b')));
-    noBase(dir, envOf({ ROSTER_LOCK_BASE: 'HEAD' }), why);
+    setNoBase(dir, envOf({ ROSTER_LOCK_BASE: 'HEAD' }), why);
   }
 });
 
-test('no base: an unknown sha, HEAD^1 in a one-commit repository, or a value starting with "-"', () => {
+test('a set variable with no base fails: an unknown sha, HEAD^1 in a one-commit repository, or a value starting with "-"', () => {
   const { dir } = baseRepo();
   put(dir, LOCK_FILE, lockText(lockLine(8, 'b')));
-  noBase(dir, envOf({ ROSTER_LOCK_BASE: H('0').slice(0, 40) }), 'does not resolve to a commit');
-  noBase(dir, envOf({ ROSTER_LOCK_BASE: 'HEAD^1' }), '"HEAD^1" does not resolve to a commit');
-  noBase(dir, envOf({ ROSTER_LOCK_BASE: '--all' }), '"--all" starts with "-"');
+  setNoBase(dir, envOf({ ROSTER_LOCK_BASE: H('0').slice(0, 40) }), 'does not resolve to a commit');
+  setNoBase(dir, envOf({ ROSTER_LOCK_BASE: 'HEAD^1' }), '"HEAD^1" does not resolve to a commit');
+  setNoBase(dir, envOf({ ROSTER_LOCK_BASE: '--all' }), '"--all" starts with "-"');
 });
 
-test('no base: no variable and no origin/main, in a repository or in a folder that is not one', () => {
+test('no base: no variable or an empty one, and no origin/main, in a repository or in a folder that is not one', () => {
   const { dir } = baseRepo();
   put(dir, LOCK_FILE, lockText(lockLine(8, 'b')));
   noBase(dir, envOf(), 'ROSTER_LOCK_BASE is unset and there is no origin/main');
+  noBase(dir, envOf({ ROSTER_LOCK_BASE: '' }), 'ROSTER_LOCK_BASE is unset and there is no origin/main');
   git(dir, 'branch', 'origin/main'); // a local branch, refs/heads/origin/main, is not the remote ref
   noBase(dir, envOf(), 'ROSTER_LOCK_BASE is unset and there is no origin/main');
   const plain = plainDir();
@@ -238,10 +261,18 @@ test('no base: origin/main has no merge base with HEAD', () => {
   noBase(dir, envOf(), 'HEAD has no merge base with origin/main');
 });
 
-test('no base: git cannot run', () => {
+test('no base: with no variable, a merge base without the lock file passes with a note', () => {
+  const dir = makeRepo();
+  writeFileSync(join(dir, 'other.txt'), 'x\n');
+  git(dir, 'update-ref', 'refs/remotes/origin/main', commitAll(dir, 'no lock'));
+  put(dir, LOCK_FILE, lockText(lockLine(8, 'a')));
+  noBase(dir, envOf(), `${LOCK_FILE} is not in`);
+});
+
+test('git cannot run: with no variable the check passes with a note, with ROSTER_LOCK_BASE set it fails', () => {
   const { dir } = baseRepo();
   noBase(dir, { PATH: '/nonexistent' }, 'git cannot run');
-  noBase(dir, { PATH: '/nonexistent', ROSTER_LOCK_BASE: 'HEAD' }, 'git cannot run');
+  setNoBase(dir, { PATH: '/nonexistent', ROSTER_LOCK_BASE: 'HEAD' }, 'git cannot run');
 });
 
 test('with no variable, or an empty one, the merge base with origin/main is the base', () => {
