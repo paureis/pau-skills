@@ -1,0 +1,25 @@
+{
+  "title": "Payments setup",
+  "steps": [
+    {
+      "id": "payments-key",
+      "title": "Create a test API key",
+      "say": [
+        "Sign in, then go to Developers, API keys, and click Create key.",
+        "Copy the key, open .env in the project root, and add a line: PAYMENTS_KEY= followed by the key."
+      ],
+      "open": "https://dashboard.example.com/developers/api-keys",
+      "checks": [{ "envFile": ".env", "key": "PAYMENTS_KEY" }]
+    },
+    {
+      "id": "webhook-config",
+      "title": "Download the webhook config",
+      "say": [
+        "On the Webhooks page, click Add endpoint, then Download config.",
+        "Save the file as config/webhook.json in the project root."
+      ],
+      "open": "https://dashboard.example.com/developers/webhooks",
+      "checks": [{ "file": "config/webhook.json" }]
+    }
+  ]
+}
