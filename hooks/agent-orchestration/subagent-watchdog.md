@@ -41,9 +41,14 @@ state. The project's definition wins when both folders have the name.
 - No `tools:` field means the agent gets every tool, so it is not read-only; `tools: null`, `tools: ~` and an empty
   `tools:` read the same. Nor is an agent limited only by `disallowedTools`.
 - Not read: plugin agents, a folder set with `CLAUDE_CONFIG_DIR`, subfolders, links, a file over 64 KB, and the files
-  past the first 200 `.md` files of a folder (by name). A `.md` file that is over 64 KB, cannot be read or does
-  not parse might be the type's own definition: when one comes before the match (the project folder first, each
-  folder by name), the type is not read-only.
+  past the first 200 `.md` files of a folder (by name). A `.md` file that is over 64 KB, cannot be read, or opens
+  frontmatter that does not parse might be the type's own definition: when one comes before the match (the project
+  folder first, each folder by name), the type is not read-only.
+- A `.md` file with no frontmatter, such as a `README.md`, is skipped: its first line, after an optional byte order
+  mark and with trailing white space dropped, is not `---` (an empty file has none). Probes of Claude Code 2.1.332
+  (headless, empty HOME) found such files missing from the init event's agents list; a `---` line led by a byte order
+  mark or with trailing spaces loads, and one after a blank line or after leading spaces does not. A skipped file
+  still counts toward the 200.
 - The no-edit note, the no-edit ask and the main-session no-edit flag name `readOnlyAgents` under
   `subagent-watchdog` in `.claude/pau-skills.json` as the way out for a type the watchdog cannot see is read-only.
 

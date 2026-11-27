@@ -10,9 +10,14 @@
 // the name wins, so the project's definition wins over the user's. Not read: plugin agents, CLAUDE_CONFIG_DIR,
 // subfolders, links, a file over 64 KB, files past the first 200 .md files of a folder (sorted by name). Facts from a
 // headless run (Claude Code 2.1.332, 2026-11-26): SubagentStart's agent_type is the name line ("lector" from the file
-// lector-file.md), and the input names no definition file. Any read or parse error means "not read-only", which is
-// the rule as it was before: a .md file over 64 KB, unreadable or not parsing, seen before the match, might be the
-// type's own definition, so it makes the answer false. tools: null or ~ counts as no tools field.
+// lector-file.md), and the input names no definition file. A .md file with no frontmatter is not an agent definition
+// and is skipped: its first line, after an optional BOM and with trailing white space dropped, is not "---" (an empty
+// file has none). Probes of the same version (headless, empty HOME): a README.md and a plain prompt with no frontmatter
+// were missing from the init event's agents list; a "---" line led by a BOM or with trailing spaces loads, and one
+// after a blank line or after leading spaces does not. Any other read or parse error means "not read-only", which is
+// the rule as it was before: a .md file over 64 KB, unreadable, or opening frontmatter that does not parse, seen before
+// the match, might be the type's own definition, so it makes the answer false. tools: null or ~ counts as no tools
+// field.
 import * as fs from 'node:fs';
 import { join } from 'node:path';
 
@@ -71,6 +76,16 @@ function inlineTools(v) {
   return names.includes(undefined) ? undefined : names.filter((n) => n !== '');
 }
 
+/** The lines of a text, after an optional byte order mark. */
+function textLines(text) {
+  let t = String(text);
+  if (t.charCodeAt(0) === 0xfeff) t = t.slice(1);
+  return t.split(/\r?\n/);
+}
+
+/** Frontmatter opens when the first line, trailing white space dropped, is "---". Claude Code loads the same files. */
+const opens = (lines) => lines[0].trimEnd() === '---';
+
 /**
  * One agent definition's frontmatter: { name (a string, or null when there is none), readOnly }, or null when the text
  * has no frontmatter that parses (no "---" first line or closing line, a key given twice, a list that does not parse).
@@ -78,10 +93,8 @@ function inlineTools(v) {
  * MultiEdit, NotebookEdit or "*".
  */
 export function parseDefinition(text) {
-  let t = String(text);
-  if (t.charCodeAt(0) === 0xfeff) t = t.slice(1);
-  const lines = t.split(/\r?\n/);
-  if (lines[0].trimEnd() !== '---') return null;
+  const lines = textLines(text);
+  if (!opens(lines)) return null;
   const end = lines.findIndex((l, i) => i > 0 && l.trimEnd() === '---');
   if (end < 0) return null;
   const fields = new Map();
@@ -120,11 +133,17 @@ export function parseDefinition(text) {
   return { name: fields.has('name') ? fields.get('name') : null, readOnly };
 }
 
-/** One definition file, or null: a regular file of at most 64 KB that parses. */
+const NO_FRONTMATTER = Symbol('no frontmatter');
+
+/**
+ * One definition file: its parsed frontmatter; NO_FRONTMATTER for a file read in full whose first line does not open
+ * one (not an agent definition); null for a file over 64 KB, one that cannot be read, or frontmatter that does not parse.
+ */
 function definition(file, io) {
   try {
     if (io.statSync(file).size > MAX_BYTES) return null;
-    return parseDefinition(io.readFileSync(file, 'utf8'));
+    const text = io.readFileSync(file, 'utf8');
+    return opens(textLines(text)) ? parseDefinition(text) : NO_FRONTMATTER;
   } catch {
     return null;
   }
@@ -132,8 +151,10 @@ function definition(file, io) {
 
 /**
  * True when the agent type's definition, in the project's agents folder or else the home one, is read-only. A file
- * seen before the match that is over 64 KB, cannot be read or does not parse might be the type's own definition, so
- * it makes the answer false.
+ * seen before the match that is over 64 KB, cannot be read, or opens frontmatter that does not parse might be the
+ * type's own definition, so it makes the answer false. A file with no frontmatter (its first line, after a BOM and
+ * with trailing white space dropped, is not "---") is not an agent definition for Claude Code 2.1.332, so it is
+ * skipped; it still counts toward the 200 files.
  */
 export function definedReadOnly(type, { project, home, io = fs } = {}) {
   if (typeof type !== 'string' || type === '') return false;
@@ -149,6 +170,7 @@ export function definedReadOnly(type, { project, home, io = fs } = {}) {
     }
     for (const name of names.sort().slice(0, MAX_FILES)) {
       const d = definition(join(dir, name), io);
+      if (d === NO_FRONTMATTER) continue;
       if (d === null) unknown = true;
       else if (d.name === type) return !unknown && d.readOnly;
     }

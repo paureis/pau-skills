@@ -117,16 +117,39 @@ test('A8 not read: a subfolder, a file that is not .md, a file over 64 KB, files
   }
 });
 
-test('A14 a file that cannot be read in full or does not parse, seen before the match, makes the answer not read-only: in the project folder before the home one, and in one folder; a match seen first still counts', () => {
+test('A14 a file that cannot be read in full or does not parse, seen before the match, makes the answer not read-only: in the project folder before the home one, and in one folder; a match seen first still counts, and a file with no frontmatter first does not count', () => {
   const reader = def('name: builder2\ntools: Read, Bash');
   const big = def('name: builder2\ntools: Read, Edit, Bash') + 'x'.repeat(70 * 1024);
   const bad = '---\nname: builder2\ntools: [Read,\n---\n';
   assert.equal(definedReadOnly('builder2', folders({}, { 'old.md': reader })), true, 'control: the home definition alone');
   assert.equal(definedReadOnly('builder2', folders({ 'builder2.md': big }, { 'old.md': reader })), false, 'a 70 KB project file');
   assert.equal(definedReadOnly('builder2', folders({ 'builder2.md': bad }, { 'old.md': reader })), false, 'a project file that does not parse');
-  assert.equal(definedReadOnly('builder2', folders({ 'a.md': 'not a definition', 'b.md': reader })), false, 'one folder, no frontmatter first');
+  assert.equal(definedReadOnly('builder2', folders({ 'a.md': 'not a definition', 'b.md': reader })), true, 'one folder, no frontmatter first');
   assert.equal(definedReadOnly('builder2', folders({ 'a.md': big, 'b.md': reader })), false, 'one folder, too big first');
   assert.equal(definedReadOnly('builder2', folders({ 'a.md': reader, 'z.md': bad })), true, 'the match comes first');
+});
+
+// Probes (Claude Code 2.1.332, headless, empty HOME): a .md file whose first line is not "---" (after a BOM, trailing
+// spaces dropped) is not in the init event's agents list, so it is no definition and the answer does not depend on it.
+test('A16 a file with no frontmatter before the match is skipped: a README, an empty file, a blank line or a space before "---"; a BOM before "---" still opens one', () => {
+  const reader = def('name: lector\ntools: Read');
+  const readme = '# Agents\n\nNotes.\n';
+  assert.equal(definedReadOnly('lector', folders({ 'README.md': readme, 'lector.md': reader })), true, 'one folder');
+  assert.equal(definedReadOnly('lector', folders({ 'README.md': readme }, { 'lector.md': reader })), true, 'project README, home match');
+  assert.equal(definedReadOnly('lector', folders({ 'a.md': '', 'b.md': reader })), true, 'an empty file');
+  assert.equal(definedReadOnly('lector', folders({ 'a.md': '\n---\nname: lector\ntools: Edit\n---\n', 'b.md': reader })), true, 'a blank line first');
+  assert.equal(definedReadOnly('lector', folders({ 'a.md': ' ---\nname: lector\ntools: Edit\n---\n', 'b.md': reader })), true, 'a space first');
+  assert.equal(definedReadOnly('lector', folders({ 'README.md': readme, 'lector.md': '\ufeff---\nname: lector\ntools: Read\n---\n' })), true, 'a BOM-led match');
+});
+
+test('A17 a file whose first line opens frontmatter that does not parse, before the match, still makes the answer not read-only; skipped files count toward the 200', () => {
+  const reader = def('name: lector\ntools: Read');
+  for (const [bad, why] of [[def('name: a\nname: b'), 'a duplicate key'], ['---\nname: a\n', 'no closing line'], [def('name: a\ntools: [Read,\n  Grep]'), 'a flow list not closed on its line'],
+    ['\ufeff---\r\nname: a\r\n', 'a BOM, CRLF, no closing line'], ['--- \nname: a\n', 'a trailing space, no closing line']]) {
+    assert.equal(definedReadOnly('lector', folders({ 'a.md': bad, 'b.md': reader })), false, why);
+  }
+  const plain = Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`a${String(i).padStart(3, '0')}.md`, '# Notes\n']));
+  assert.equal(definedReadOnly('lector', folders({ ...plain, 'b.md': reader })), false, 'the match is the 201st file');
 });
 
 test('A15 tools: null, Null, NULL or ~ is no tools field, so not read-only; so is an empty tools: value', () => {
