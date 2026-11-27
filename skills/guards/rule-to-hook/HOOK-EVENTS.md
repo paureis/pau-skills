@@ -12,8 +12,9 @@ disagree, the reference wins; note the difference in your report.
 - **Environment**: `CLAUDE_PROJECT_DIR` is the project root (use it in `.claude/settings.json` commands so the hook is
   found from any subdirectory). In a plugin's `hooks/hooks.json`, `${CLAUDE_PLUGIN_ROOT}` is the plugin's install
   folder.
-- **Exit code 0**: success. Stdout is parsed as JSON if it is JSON. For `UserPromptSubmit` and `SessionStart`, plain
-  stdout is added to Claude's context; for other events, plain stdout only shows in the transcript view.
+- **Exit code 0**: success. Stdout is parsed as JSON if it is JSON. For `UserPromptSubmit`, `UserPromptExpansion` and
+  `SessionStart`, plain stdout is added to Claude's context; for other events, plain stdout only shows in the transcript
+  view.
 - **Exit code 2**: a blocking error. Stderr is fed back (to Claude or to the user, depending on the event, see the
   table) and the action is stopped where the event allows it. JSON on stdout is ignored with exit 2.
 - **Any other exit code**: a non-blocking error. The action goes ahead and stderr is shown to the user. A guard that
@@ -34,6 +35,7 @@ disagree, the reference wins; note the difference in your report.
 | `PermissionRequest` | When a permission dialog would be shown | `tool_name`, `tool_input` | Yes, it answers the dialog (allow or deny) | Auto-answering a permission prompt; rarely the right place for a rule |
 | `PostToolUse` | After a tool call succeeded | `tool_name`, `tool_input`, `tool_response` | Not the call (it already ran). Exit 2 or JSON `{"decision":"block","reason"}` sends the reason to Claude so it fixes the result | "Every edited file must pass the formatter", "after writing a migration, run the checker" |
 | `UserPromptSubmit` | When the user submits a prompt, before Claude sees it | `prompt` | Yes. Exit 2 erases the prompt (stderr to the user only), or JSON `{"decision":"block","reason"}`. Plain stdout or `additionalContext` adds context | Injecting a reminder when a prompt mentions a topic; refusing prompts that contain secrets |
+| `UserPromptExpansion` | When a typed slash command resolves and expands into a prompt: a skill, a custom command or a built-in prompt command, and also an MCP prompt. Recorded with Claude Code 2.1.332 and 2.1.302, it fires after `UserPromptSubmit`; for a `context: fork` skill it fires first | `expansion_type` (`slash_command`, or `mcp_prompt`), `command_name` (the resolved name; the matcher is tested against it), `command_args`, `command_source` (can be absent; seen: `userSettings`, `projectSettings`, `plugin`, `bundled`, `builtin`), `prompt` | Yes. Exit 2 blocks the expansion (stderr to the user only), or JSON `{"decision":"block","reason"}`. Plain stdout or `additionalContext` adds context | Refusing a command in a given state, such as a deploy skill on a dirty tree; injecting a reminder whenever a given skill or command runs |
 | `Stop` | When the main agent is about to end its turn | `stop_hook_active` | Yes. Exit 2 or JSON `{"decision":"block","reason"}` sends Claude back to work with the reason | "Do not say done until the tests ran", "never end with uncommitted changes". Check `stop_hook_active` and let it stop the second time, or it can loop |
 | `SubagentStop` | When a subagent is about to finish | `stop_hook_active` | Same as `Stop`, for the subagent | Rules for delegated work |
 | `SubagentStart` | When a subagent starts | agent details | No; JSON `additionalContext` informs the subagent | Passing a rule into every subagent |
