@@ -67,11 +67,11 @@ test('T3 links to a file and to a folder are followed; a link to a folder alread
     assert.equal(v, true, why);
     assert.ok(ms < 1000, `${why}: ${ms} ms`);
   }
-  const chain = Array.from({ length: 7 }, (_, i) => `c${i}`).join('/');
+  const chain = Array.from({ length: 6 }, (_, i) => `c${i}`).join('/');
   for (const [real, via] of [['r', 'a'], ['b', 'z']]) {
-    p = agents({ [`${real}/${chain}/m.md`]: R, [`${via}/`]: '' });
-    symlinkSync(join(p.dir, real), join(p.dir, via, 'link'));
-    assert.equal(ask(p), true, `${via}/link to ${real}, whose match is 8 levels down`);
+    p = agents({ [`${real}/x/${chain}/m.md`]: R, [`${via}/y/`]: '' });
+    symlinkSync(join(p.dir, real, 'x'), join(p.dir, via, 'y', 'link'));
+    assert.equal(ask(p), true, `${via}/y/link to ${real}/x, whose match is 8 levels down`);
   }
   for (const [name, why] of [['gone.md', 'a dangling .md link'], ['gone', 'a dangling link not named .md']]) {
     p = agents({ 'a.md': R });
