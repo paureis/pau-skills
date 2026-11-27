@@ -3,6 +3,19 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-27: Q40, Q41 and Q42, follow-ups from batch 26
+
+- `rule-to-hook`: HOOK-EVENTS.md has rows for `PostToolUseFailure`, `PostToolBatch`, `PreSkillShellCommand`,
+  `StopFailure`, `TaskCompleted`, `PostCompact` and `ConfigChange`, each checked against the Claude Code 2.1.332
+  binary, and says it is not the full list (34 events). The `PreCompact` row now says exit 2 blocks compaction, and
+  `SessionStart` lists the `fork` source. Q40.
+- Tests: `tests/geppetto-roster-lock.test.mjs` keeps the roster number with a hash of the roster files, so a roster
+  change with no bump fails and the message gives the line to write. CLAUDE.md says to set it. Q41.
+- `subagent-watchdog`: the read-only rule reads agent definitions the way Claude Code 2.1.332 loads them: subfolders
+  (up to 8 levels) and links, an unclosed `tools: [Read, Grep` list, files with no or an empty description skipped,
+  and a type read-only only when every definition of it is. `.git` folders and broken links are skipped. Q42.
+- `guards` 0.12.2, `agent-orchestration` 0.15.2, `pau-skills-hooks` 0.9.2, `pau-skills` 0.27.2.
+
 ## 2026-11-27: Q34, Q36 and Q39, small follow-ups from earlier batches
 
 - `rule-to-hook`: HOOK-EVENTS.md has a `UserPromptExpansion` row (a typed slash command or MCP prompt, matched on
