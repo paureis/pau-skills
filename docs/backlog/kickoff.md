@@ -2,64 +2,52 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twenty-sixth batch (Q34, Q36 and Q39, pull request 104, release v0.27.1) is done. Next, in this order: **Q40**
-rule-to-hook knows the newer hook events (found in Q34), **Q41** a roster bump forgotten everywhere (found in Q36) and
-**Q42** the watchdog reads agent folders the way Claude Code does (found in Q39). They touch different files, so they
-run as one batch. Read "Things that bit the twenty-sixth batch" (`docs/backlog/things-that-bit/batch-26.md`) and the
-twenty-fifth's first.
+The twenty-seventh batch (Q40, Q41 and Q42, pull request 106, release v0.27.2) is done. Next: **Q43** the roster
+lock checks a change against main (found in Q41), the only planned item. Read "Things that bit the twenty-seventh
+batch" (`docs/backlog/things-that-bit/batch-27.md`) and the twenty-sixth's first.
 
-Q40 adds rows to `skills/guards/rule-to-hook/HOOK-EVENTS.md`, each checked against the installed binary. Q41 adds a
-test in the geppetto suite that fails when a roster file changes and the roster number does not. Q42 changes
-`hooks/agent-orchestration/subagent-watchdog-agents.mjs` and needs probes first (an unclosed flow list, a file in a
-subfolder, a file with no description), and may end with some cases left as they are. hooks/README.md is 32 bytes
-under its limit, so make room before adding to it.
+Q43 is small: one builder, one reviewer, no cold run. It touches `tests/geppetto-roster-lock.test.mjs` and perhaps
+`.github/workflows/ci.yml`; a CI change is in the orchestrator's files, so the brief says which file the builder may
+edit.
 
 The owner starts the batch with this message:
 
 ```text
-You are the orchestrator for the twenty-seventh batch in this repository: Q40 (rule-to-hook knows the newer hook
-events), Q41 (a roster bump forgotten everywhere) and Q42 (the watchdog reads agent folders the way Claude Code does),
-in that order. Do not build them yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
-integrate their work. Type /lean-subagent-dev first (it is typed only since Q28).
+You are the orchestrator for the twenty-eighth batch in this repository: Q43 (the roster lock checks a change
+against main). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
+integrate the work. Type /lean-subagent-dev first (it is typed only since Q28).
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md.
-2. docs/backlog/q40.md, q41.md and q42.md, decision 29 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md
+2. docs/backlog/q41.md and q43.md, decision 29 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md
    ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
-   docs/backlog/things-that-bit/batch-24.md, batch-25.md and batch-26.md.
-3. skills/guards/rule-to-hook/HOOK-EVENTS.md, hooks/agent-orchestration/subagent-watchdog.md and the geppetto tests
-   (tests/geppetto*.test.mjs).
+   docs/backlog/things-that-bit/batch-26.md and batch-27.md.
+3. tests/geppetto-roster-lock.test.mjs and .github/workflows/ci.yml.
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3) and CLAUDE_AUTOCOMPACT_PCT_OVERRIDE (it should read
-  40), and tell me both values. Tell eng-lead to hand back at once with the builders' agent IDs if they run in the
-  background; you start the reviewers and send the fix rounds.
-- Run Q42's probes before planning (headless, empty HOME, the init event's agents list): an unclosed flow list in
-  `tools`, a definition in a subfolder of .claude/agents/, a definition with no description. Record the version and
-  each answer.
+  40), and tell me both values. Tell eng-lead to hand back at once with the builder's agent ID if it runs in the
+  background; you start the reviewer and send the fix round.
+- Find out how CI checks out the repository (fetch depth, whether the base branch is reachable) before planning; the
+  check must pass, and say so, when no base is reachable.
 - Read the base commit before you write it into any brief, and push the working branch at it before dispatch.
-- Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone and tries
-  mutations of its own, a fresh reviewer per slice, and a cold run (headless, empty HOME, --max-budget-usd) of the
-  Q42 hook change with real hooks. Commits carry the harness's two attribution trailers.
+- Work the lean-subagent-dev way: a read-only plan check of the brief that builds the slice in a clone and tries
+  mutations of its own, and a fresh reviewer. Commits carry the harness's two attribution trailers.
 
 Rules that matter most:
-- Every skill works on its own; a mention of a typed-only skill holds /name in the same paragraph. Scripts and hooks
-  use the Node standard library only; a hook exits 0 on input it does not understand and checks hookEnabled(). Plain
-  English, no em or en dashes; no tracked file over its size limit (hooks/README.md is 32 bytes under its limit:
-  make room before adding to it).
+- Scripts and tests use the Node standard library only. Plain English, no em or en dashes; no tracked file over its
+  size limit.
 - Every new test fails without the change: prove each with mutate.sh (it prints RESULT: CAUGHT) and report every
   "# tests" line.
-- Before merging a builder's work, check `git log <base>..<branch>` on both the harness branch and the branch the
-  brief named: the commits may be on either.
-- Run npm test before every commit, docs included. Bump every plugin whose files changed, pau-skills-hooks for the
-  hook changes, and the bundle; write docs/releases/v<bundle version>.md and run its pre-merge check.
-- Builders commit and never push. You push the working branch and open the PR. When CI is green on Linux, macOS and
-  the validate job and every review is clean, merge it yourself.
+- Before merging the builder's work, check `git log <base>..<branch>` on both the harness branch and any branch the
+  brief named.
+- Run npm test before every commit, docs included. A change to tests and CI only bumps no plugin and gets no release
+  notes; say so in the PR.
+- The builder commits and never pushes. You push the working branch and open the PR. When CI is green on Linux, macOS
+  and the validate job and every review is clean, merge it yourself.
 
-When the PR is open, tell me in plain words what changed, what the reviews found, and anything I need to decide. After
-the merge, check the Release run, give me the zips of every changed skill (node scripts/pack-skills.mjs --since <main
-before the batch>) and the hook update commands, mark the items done in docs/backlog/ with what worked and what did
-not, and write the next kickoff here.
+When the PR is open, tell me in plain words what changed, what the review found, and anything I need to decide. After
+the merge, mark Q43 done in docs/backlog/ with what worked and what did not, and write the next kickoff here.
 ```
 
 ## The fifth batch's kickoff, as a template
