@@ -139,8 +139,8 @@ test('A16 a file with no frontmatter before the match is skipped: a README, an e
   assert.equal(definedReadOnly('lector', folders({ 'README.md': readme, 'lector.md': reader })), true, 'one folder');
   assert.equal(definedReadOnly('lector', folders({ 'README.md': readme }, { 'lector.md': reader })), true, 'project README, home match');
   assert.equal(definedReadOnly('lector', folders({ 'a.md': '', 'b.md': reader })), true, 'an empty file');
-  assert.equal(definedReadOnly('lector', folders({ 'a.md': '\n---\nname: lector\ntools: Edit\n---\n', 'b.md': reader })), true, 'a blank line first');
-  assert.equal(definedReadOnly('lector', folders({ 'a.md': ' ---\nname: lector\ntools: Edit\n---\n', 'b.md': reader })), true, 'a space first');
+  assert.equal(definedReadOnly('lector', folders({ 'a.md': '\n---\nname: lector\ndescription: Edits.\ntools: Edit\n---\n', 'b.md': reader })), true, 'a blank line first');
+  assert.equal(definedReadOnly('lector', folders({ 'a.md': ' ---\nname: lector\ndescription: Edits.\ntools: Edit\n---\n', 'b.md': reader })), true, 'a space first');
   assert.equal(definedReadOnly('lector', folders({ 'README.md': readme, 'lector.md': '\ufeff---\nname: lector\ndescription: Reads.\ntools: Read\n---\n' })), true, 'a BOM-led match');
 });
 
