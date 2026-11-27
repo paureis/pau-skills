@@ -42,6 +42,7 @@ Cursor's plugin repository. pstack is a single snapshot, so there is no history 
 - [Compact-snapshot hook, `hooks/session-discipline/compact-snapshot.mjs`](origins/session-discipline/compact-snapshot.md): Original
 - [Skill-usage hook, `hooks/session-discipline/skill-usage.mjs`](origins/session-discipline/skill-usage.md): Original
 - [project-setup](origins/session-discipline/project-setup.md): Original
+- [wizard](origins/session-discipline/wizard.md): Adapted from [mattpocock/skills `wizard`](https://github.com/mattpocock/skills/tree/6f7f7831a625f040a8e06a0e7954826b87ce775a/skills/engineering/wizard)
 
 ---
 

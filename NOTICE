@@ -22,6 +22,8 @@ upstream version it was compared against and what this version changes.
   skills/verification/bug-fix/SKILL.md
   skills/session-discipline/instructions-audit/SKILL.md
   skills/session-discipline/instructions-audit/CHECKS.md
+  skills/session-discipline/wizard/SKILL.md
+  skills/session-discipline/wizard/wizard.mjs
 
 Those files are distributed under the upstream license, reproduced here:
 

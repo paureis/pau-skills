@@ -1,7 +1,7 @@
 # pau-skills
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Skills: 41](https://img.shields.io/badge/skills-41-informational)
+![Skills: 42](https://img.shields.io/badge/skills-42-informational)
 ![Hooks: 16](https://img.shields.io/badge/hooks-16-informational)
 ![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-D97757)
 
@@ -94,8 +94,8 @@ green by skipping the failing test.
   repeat, and proposes a fix for each at the highest layer it can live in (architecture, types, a lint or CI check, a
   test, then prose), proven on a past instance.
 - `friction-review` counts the friction that repeats across your last sessions (searches before the first edit,
-  reruns, failed access, big tool results, checks nobody runs or wires in, files read in pieces, new files, reads
-  before the first edit in each folder) and proposes a fix for each.
+  reruns, failed access, big tool results, checks nobody runs or wires in, files read in pieces, new files) and
+  proposes a fix for each.
 - `file-size-guard` (hook) blocks a change that grows a file past 5,000 tokens, the file an agent keeps appending to,
   and says how to split it along a real boundary, or to ask you for a per-path limit when there is none.
 - `skill-eval` checks whether a change to a skill or prompt changes what the agent actually does, with blind runs,
@@ -113,6 +113,8 @@ API key into the source.
 - `no-verify-guard` (hook) blocks skipping git hooks and commit signing.
 - `merge-guard` (hook) and `safe-merge` merge pull requests without closing the ones stacked on them.
 - `inline-backtick-guard` (hook) blocks inline interpreter payloads that bash would silently rewrite.
+- `wizard` walks you through setup steps only you can do (a key, a secret, a dashboard) and checks each one
+  without reading the value.
 
 ### 4. Every session starts from zero
 
@@ -143,8 +145,7 @@ context was compacted.
 - `engineering-principles` gives a name to each rule a design or code decision is made by ("apply build the lever"),
   so one phrase steers the work and every citation says which decision it changed.
 - `lazy-senior` writes the smallest complete change: first whether it needs to exist, then the codebase, the
-  standard library and the installed dependencies, without ever cutting validation, security or a needed test. A new
-  file needs a reason, and size alone is not one. It reviews a change or a whole repository with bugs first and bloat last, and lists the `shortcut:` comments that mark
+  standard library and the installed dependencies, without ever cutting validation, security or a needed test. It reviews a change or a whole repository with bugs first and bloat last, and lists the `shortcut:` comments that mark
   a known limit. Its hook, on by default, adds the rules to every session and subagent. Adapted from ponytail.
 
 ### 6. Several agents in one repository
@@ -155,9 +156,8 @@ context was compacted.
 - `arena` runs several subagents at one task with different briefs, and a blind judge helps pick and combine the
   results.
 - `lean-subagent-dev` is the light version for a whole session: one subagent at a time with a written brief, and the
-  main session checks its work itself. It asks how much usage room you have and delegates less when it is tight,
-  because a subagent costs more usage in total, not less. Every brief carries the same standing orders, and no
-  subagent starts while a field of its brief is empty.
+  main session checks its work itself. It asks how much usage room you have and delegates less when it is tight.
+  Every brief carries the same standing orders, and no subagent starts while a field of its brief is empty.
 - `overnight-run` lets an agent work while you are away without waking up to hours of motion and no way to tell what
   it did: it starts only after trust checks, stops on a check a script runs, logs every decision, and has a fresh
   reviewer audit the log against the transcript before you read the summary.

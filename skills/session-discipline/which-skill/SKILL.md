@@ -94,6 +94,7 @@ writes the project CLAUDE.md, and ends with a first task. It needs no other skil
 | "Is this ready for paying customers", "can we launch", an app about to reach beta, paying customers, enterprise buyers or regulated data | `launch-readiness` (verification) | fix the must-fix rows, then run it again |
 | A CVE announcement, "are we vulnerable", "is this package safe" | `dependency-security-audit` (guards) | `dependency-upgrade` to apply fixes |
 | CI is slow or expensive, "how much CI should we run" | `ci-cost-and-cadence` (verification) | |
+| Work blocked on a step only the user can do (an API key, a secret, a dashboard, an app approval), "walk me through the setup" | `wizard` (session-discipline): a steps file the user runs in their own terminal, checked step by step | `status` to confirm |
 | Review comments to work through, "which of these should I fix", a review loop that keeps going | `review-triage` (verification) | |
 | A bug whose cause is not obvious, a fix that did not hold, a bug that came back, "find the root cause" (happens every time; an obvious one-line fix needs no skill) | `bug-fix` (verification) | `evaluator` to attack the fix |
 | "Verify it in the app", "how can an agent test this app", no scripted way to drive the app, a skeleton or loading state that jumps | `verify-app` (verification) | `evaluator` cites its drives as evidence |
