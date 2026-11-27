@@ -56,6 +56,12 @@ test('a valid file passes and prints the numbered step list, running nothing', a
   } finally { await local.close(); }
 });
 
+test('check counts one step as 1 step, not 1 steps', async () => {
+  const r = await check(steps([step('a', [{ file: 'x' }])], 'Single'));
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /^Single: 1 step$/m);
+});
+
 test('example-steps.json passes', async () => {
   const r = await wizard(['check', repo('skills', 'session-discipline', 'wizard', 'example-steps.json')], { cwd: fixture(undefined) });
   assert.equal(r.code, 0, r.out);

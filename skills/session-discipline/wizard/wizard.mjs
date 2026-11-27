@@ -1,14 +1,10 @@
 #!/usr/bin/env node
 // wizard: walks a person through setup steps only they can do, read from a JSON steps file, and checks each step
 // without reading a secret's value. The person puts every value in place themselves; this script only checks that it
-// is there. It never asks for, stores, prints or logs a value.
-//
-//   node wizard.mjs check  <steps.json>   validate the file and list the steps; runs nothing
-//   node wizard.mjs status <steps.json>   run every check; exit 0 when every step is done
-//   node wizard.mjs run    <steps.json> [--no-open]   one step at a time, for the person, in their own terminal
-//
-// A relative path in a check is read from the current folder, not the steps file's folder. Node 20+, standard
-// library only. Adapted from mattpocock/skills wizard (MIT); see NOTICE.
+// is there. It never asks for, stores, prints or logs a value. check validates and runs nothing; status runs every
+// check; run is for the person, in their own terminal. A relative path in a check is read from the current folder,
+// not the steps file's folder. Node 20+, standard library only. Adapted from mattpocock/skills wizard (MIT); see
+// NOTICE.
 import { accessSync, constants, readFileSync, realpathSync, statSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
@@ -28,10 +24,11 @@ const URL_TIMEOUT_MS = 10_000;
 const COMMAND_TIMEOUT_MS = 30_000;
 const OPENER_WAIT_MS = 3_000;
 const YES = new Set(['y', 'Y', 'yes']);
-const ENTER = 'Press Enter when this step is done (q to quit)';
+const ENTER = 'Press Enter when this step is done (s to skip, q to quit)';
 const CLEAR = '\x1b[2J\x1b[3J\x1b[H';
 
 const has = (o, k) => Object.hasOwn(o, k);
+const count = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const filled = (v) => typeof v === 'string' && v.trim() !== '';
 const isName = (v) => typeof v === 'string' && NAME.test(v);
@@ -171,10 +168,9 @@ function commandTimeout() {
   return Number.isInteger(ms) && ms > 0 ? ms : COMMAND_TIMEOUT_MS;
 }
 
-// The exit of a command run with no shell; its output is never read. On POSIX it runs in a new session (detached),
-// so it has no controlling terminal and cannot read or write /dev/tty; on the timeout its whole process group is
-// killed with SIGKILL, so a command that ignores SIGTERM, or a child it left behind, cannot pass or linger. The timer
-// is our own: spawn's `timeout` option keeps the process alive for the full time after a command that could not start.
+// The exit of a command run with no shell; its output is never read. On POSIX it runs detached (a new session with no
+// terminal, so no /dev/tty), and on the timeout its whole group gets SIGKILL, so ignoring SIGTERM cannot pass. Our own
+// timer: spawn's `timeout` option keeps the process alive the full time after a command that could not start.
 function commandExit(argv) {
   const win = process.platform === 'win32';
   return new Promise((done) => {
@@ -227,7 +223,7 @@ const where = () => `Relative paths are read from: ${process.cwd()}`;
 
 function check(data) {
   console.log(where());
-  console.log(`${data.title}: ${data.steps.length} steps`);
+  console.log(`${data.title}: ${count(data.steps.length, 'step')}`);
   data.steps.forEach((s, i) => {
     console.log(`${i + 1}. ${s.id}: ${s.title}${s.confirm ? ' (asks for a yes: cannot be undone)' : ''}`);
     for (const c of s.checks) console.log(`   check: ${describe(c)}`);
@@ -238,16 +234,17 @@ function check(data) {
 
 async function status(data) {
   console.log(where());
-  let all = true;
+  let notDone = 0;
   for (const [i, s] of data.steps.entries()) {
     const failed = await failures(s);
     if (failed.length === 0) console.log(`${i + 1}. ${s.id}: done`);
     else {
-      all = false;
+      notDone += 1;
       console.log(`${i + 1}. ${s.id}: not done: ${failed.join('; ')}`);
     }
   }
-  return all ? 0 : 1;
+  console.log(notDone ? `${notDone} of ${count(data.steps.length, 'step')} not done.` : 'Every step is done.');
+  return notDone ? 1 : 0;
 }
 
 // The opener for this platform: the command and its argv, run with no shell, so an & in the URL stays inside its own
@@ -328,7 +325,9 @@ async function walk(s, label, lines, noOpen) {
     const answer = await lines.ask('  Type y to go on; anything else stops the wizard here:');
     if (answer === null || !YES.has(answer.trim())) return 'quit';
   }
-  if (quits(await lines.ask(ENTER))) return 'quit';
+  const first = await lines.ask(ENTER);
+  if (quits(first)) return 'quit';
+  if (first.trim().toLowerCase() === 's') return 'skipped';
   for (;;) {
     const failed = await failures(s);
     if (failed.length === 0) { console.log('  Done.'); return 'done'; }
@@ -350,7 +349,7 @@ async function walk(s, label, lines, noOpen) {
 async function run(data, noOpen) {
   const n = data.steps.length;
   const tty = Boolean(process.stdout.isTTY);
-  console.log(`\n${data.title}\n${n} steps. You do each step; the wizard checks it and never asks for a value.`);
+  console.log(`\n${data.title}\n${count(n, 'step')}. You do each step; the wizard checks it and never asks for a value.`);
   console.log(where());
   // Decided once, before the first prompt, so a re-run resumes where the last one stopped.
   const doneAtStart = [];

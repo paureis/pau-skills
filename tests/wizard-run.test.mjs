@@ -11,7 +11,7 @@ import { WIZARD, wizard, fixture, steps, step, exits, passesLater } from './wiza
 const { openerFor, onPath } = await import(pathToFileURL(WIZARD).href);
 
 const run = (list, input, { files = {}, env = {}, args = [] } = {}) => wizard(['run', 'steps.json', ...args], { cwd: fixture(steps(list), files), env, input });
-const prompts = (out) => out.split('Press Enter when this step is done (q to quit)').length - 1;
+const prompts = (out) => out.split('Press Enter when this step is done (s to skip, q to quit)').length - 1;
 const summary = (out, label) => out.split('\n').find((l) => l.startsWith(`${label}: `))?.slice(label.length + 2);
 
 test('run walks the steps in order, showing say lines and the command without running it', async () => {
@@ -62,6 +62,22 @@ test('a failed check is named; r and an empty line retry, s skips, and the skipp
   assert.equal(summary(r.out, 'Done'), 'b', r.out);
   assert.equal(summary(r.out, 'Skipped, still to do by hand'), 'a', r.out);
   assert.equal(summary(r.out, 'Not reached'), undefined, r.out);
+});
+
+test('s at the Enter prompt skips the step without running its checks', async () => {
+  const r = await run([step('a', [passesLater('a.count')]), step('b', [passesLater('b.count')])], 's\n\n');
+  assert.equal(r.code, 1, r.out);
+  assert.equal(prompts(r.out), 2, r.out);
+  assert.ok(!r.out.includes('Check failed'), r.out);
+  assert.equal(summary(r.out, 'Skipped, still to do by hand'), 'a', r.out);
+  assert.equal(summary(r.out, 'Done'), 'b', r.out);
+});
+
+test('one step is counted as 1 step, not 1 steps', async () => {
+  const r = await run([step('a', [passesLater('a.count')])], '\n');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /^1 step\. /m);
+  assert.ok(!/\b1 steps\b/.test(r.out), r.out);
 });
 
 test('q stops the wizard; the step where it stopped and the later ones are not reached', async () => {

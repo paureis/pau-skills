@@ -79,6 +79,18 @@ test('a step is done only when every check passes, and status exits 0 when every
   assert.match(all.out, /^Relative paths are read from: /m);
 });
 
+test('status ends with one summary line: every step done, or how many of how many are not', async () => {
+  const last = (out) => out.trimEnd().split('\n').at(-1);
+  const all = await status([step('a', [exits(0)])]);
+  assert.equal(all.code, 0, all.out);
+  assert.equal(last(all.out), 'Every step is done.');
+  const some = await status([step('a', [exits(0)]), step('b', [exits(1)]), step('c', [exits(1)])]);
+  assert.equal(some.code, 1, some.out);
+  assert.equal(last(some.out), '2 of 3 steps not done.');
+  const one = await status([step('a', [exits(1)])]);
+  assert.equal(last(one.out), '1 of 1 step not done.');
+});
+
 test('a bad file exits 2 and names the problems as check does', async () => {
   const r = await status([step('a', [{ file: 'x', value: 'v' }])]);
   assert.equal(r.code, 2, r.out);
