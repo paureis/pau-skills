@@ -2,34 +2,36 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twenty-seventh batch (Q40, Q41 and Q42, pull request 106, release v0.27.2) is done. Next: **Q43** the roster
-lock checks a change against main (found in Q41), the only planned item. Read "Things that bit the twenty-seventh
-batch" (`docs/backlog/things-that-bit/batch-27.md`) and the twenty-sixth's first.
+The twenty-eighth batch (Q43, pull request 108, no release) is done. Next: **Q44** CI says when the roster lock base
+check found no base (found in Q43), the only planned item. The owner chose option 1: fail when `ROSTER_LOCK_BASE` is
+set and gives no base, and keep passing with a note when it is unset.
+Read "Things that bit the twenty-eighth batch" (`docs/backlog/things-that-bit/batch-28.md`) and the twenty-seventh's
+first.
 
-Q43 is small: one builder, one reviewer, no cold run. It touches `tests/geppetto-roster-lock.test.mjs` and perhaps
-`.github/workflows/ci.yml`; a CI change is in the orchestrator's files, so the brief says which file the builder may
-edit.
+Q44 is small: one builder, one reviewer, no cold run. It touches `tests/geppetto-roster-lock-base.test.mjs` and
+perhaps `.github/workflows/ci.yml`; the brief says which file the builder may edit. Tests and CI only: no plugin bump
+and no release notes.
 
 The owner starts the batch with this message:
 
 ```text
-You are the orchestrator for the twenty-eighth batch in this repository: Q43 (the roster lock checks a change
-against main). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
-integrate the work. Type /lean-subagent-dev first (it is typed only since Q28).
+You are the orchestrator for the twenty-ninth batch in this repository: Q44 (CI says when the roster lock base check
+found no base), option 1 from docs/backlog/q44.md. Do not build it yourself; run the roster in
+.claude/agents/ (eng-lead, builder, reviewer) and integrate the work. Type /lean-subagent-dev first (it is typed only
+since Q28).
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md.
-2. docs/backlog/q41.md and q43.md, decision 29 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md
+2. docs/backlog/q43.md and q44.md, decision 29 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md
    ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
-   docs/backlog/things-that-bit/batch-26.md and batch-27.md.
-3. tests/geppetto-roster-lock.test.mjs and .github/workflows/ci.yml.
+   docs/backlog/things-that-bit/batch-27.md and batch-28.md.
+3. tests/geppetto-roster-lock-base.test.mjs and .github/workflows/ci.yml.
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3) and CLAUDE_AUTOCOMPACT_PCT_OVERRIDE (it should read
   40), and tell me both values. Tell eng-lead to hand back at once with the builder's agent ID if it runs in the
   background; you start the reviewer and send the fix round.
-- Find out how CI checks out the repository (fetch depth, whether the base branch is reachable) before planning; the
-  check must pass, and say so, when no base is reachable.
+- Run git fetch origin main first: this clone is shallow and its origin/main can be stale.
 - Read the base commit before you write it into any brief, and push the working branch at it before dispatch.
 - Work the lean-subagent-dev way: a read-only plan check of the brief that builds the slice in a clone and tries
   mutations of its own, and a fresh reviewer. Commits carry the harness's two attribution trailers.
@@ -38,16 +40,17 @@ Rules that matter most:
 - Scripts and tests use the Node standard library only. Plain English, no em or en dashes; no tracked file over its
   size limit.
 - Every new test fails without the change: prove each with mutate.sh (it prints RESULT: CAUGHT) and report every
-  "# tests" line.
+  "# tests" line. In a file that holds its own tests, anchor each sed pattern to the code line.
 - Before merging the builder's work, check `git log <base>..<branch>` on both the harness branch and any branch the
   brief named.
 - Run npm test before every commit, docs included. A change to tests and CI only bumps no plugin and gets no release
   notes; say so in the PR.
 - The builder commits and never pushes. You push the working branch and open the PR. When CI is green on Linux, macOS
-  and the validate job and every review is clean, merge it yourself.
+  and the validate job, each Tests log shows the roster lock base line, and every review is clean, merge it yourself.
 
 When the PR is open, tell me in plain words what changed, what the review found, and anything I need to decide. After
-the merge, mark Q43 done in docs/backlog/ with what worked and what did not, and write the next kickoff here.
+the merge, check the push run on main names its base too, mark Q44 done in docs/backlog/ with what worked and what did
+not, and write the next kickoff here.
 ```
 
 ## The fifth batch's kickoff, as a template

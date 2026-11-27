@@ -2,70 +2,11 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-Work from 2026-10-17 to 2026-10-19 (the first six batches) is in
-[done-2026-10-17-to-19.md](done-2026-10-17-to-19.md), and work from 2026-10-20 to 2026-10-25 (the seventh to the
-twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
+Earlier work is in three files: 2026-10-17 to 2026-10-19 (the first six batches) in
+[done-2026-10-17-to-19.md](done-2026-10-17-to-19.md), 2026-10-20 to 2026-10-25 (the seventh to the twelfth batches)
+in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md), and 2026-10-29 to 2026-11-06 (the thirteenth batch to Q20)
+in [done-2026-10-29-to-11-06.md](done-2026-10-29-to-11-06.md).
 
-- 2026-10-29: the thirteenth batch, Q16 trigger tests and a skill usage log, merged as
-  [pull request 59](https://github.com/paureis/pau-skills/pull/59). `eng-lead` planned four slices (the trigger mode,
-  the request lists written blind, their shape test, the hook and report); a fifth (the baseline in parts) followed the
-  paid round. Every brief had a read-only plan check that built the slice in a clone, every slice a fresh reviewer, a
-  fix round and a second look. The first paid round: 380 one-turn runs for 34.10 US dollars (cap 40), no wrong starts,
-  175 of 228 hits, 41 of 53 misses after a look around the empty folder. 1,470 tests (1,357 before). skill-eval and
-  which-skill went to the owner as zips; `pau-skills-hooks` went to 0.4.0, and the profile README says 14 hooks. With
-  the roster:
-  - Worked: `eng-lead` handing back at once with the builders' IDs; splitting the list slice so its fix round stayed
-    blind; a hash-based overlap checker that told the blind writer what to reword without showing a phrase; plan checks
-    that found real problems in all five briefs, among them a cap that could be passed and tests that wrote to the
-    real HOME; a reviewer that read the lists as data and found 10 weak requests before the money was spent; the first
-    paid transcripts doubling as the fact check.
-  - Did not: the cap rule needed the review to find that reserving the price still passed the cap; the first summary
-    was 210 KB and needed a fifth slice to fit the size rule; a container restart lost one review; builders and a
-    reviewer still wrote `2>/dev/null`.
-- 2026-11-04: the fourteenth batch, Q17 descriptions that start their skill, merged as
-  [pull request 62](https://github.com/paureis/pau-skills/pull/62). `eng-lead` planned two slices: the code
-  (`--max-turns`, the turn of a start, the two-turn lists) in full, and the rewording as a draft the orchestrator
-  filled after the rerun. Each brief had a read-only plan check, each slice a fresh reviewer; one fix round. The two
-  paid runs: 41 two-turn runs for 4.49 US dollars (no start in turn 2), then 380 one-turn runs for 34.67 (cap 40): no
-  wrong start, 152 of 152 near misses right, 186 of 228 hits (175 before); six of the ten reworded skills went up,
-  four stayed at 2 of 6. 1,489 tests. Eleven skills went to the owner as one bundle. With the roster:
-  - Worked: `eng-lead` handing back at once with each builder's ID; a draft brief with fields to fill after the paid
-    rerun; plan checks that built or tried each slice (nine surviving mutations in A, four ways past the blind rule
-    in B); a builder and a reviewer kept away from the lists, with test output read only through a grep; the cheap
-    rerun before the expensive round.
-  - Did not: four description rules (curly quotes, a backticked name with "if installed", the opener, quoted remarks)
-    have no test and were checked by hand; four reworded skills did not move, and one round cannot tell a change of 1
-    or 2 hits from noise.
-- 2026-11-04: the fifteenth batch, Q18 tests for the description rules checked by hand, merged as
-  [pull request 65](https://github.com/paureis/pau-skills/pull/65). `eng-lead` planned one slice; a read-only plan
-  check built it in a clone first, one builder built it, a fresh reviewer checked it, and one fix round followed with
-  a second look. `tests/description-rules.test.mjs` holds the four rules, each proven on a real description with
-  `mutate.sh`, and the confirm list moved to `tests/confirm-list.mjs`. 1,500 tests (1,489 before). No skill changed,
-  so there were no zips. With the roster:
-  - Worked: `eng-lead` handing back at once with the builder's ID; a plan check that built the slice and found two
-    done-when items that could not pass and 16 surviving mutations before the build; a proof table that named the
-    test each mutation must fail; resuming the builder by ID after a container restart.
-  - Did not: the review still found six mutations no fixture caught, and two kinds of character the rules as written
-    let through (other question marks, quote ornaments), left to the owner.
-- 2026-11-05: the fifteenth batch's second part, Q19 descriptions in printable ASCII only, merged as
-  [pull request 67](https://github.com/paureis/pau-skills/pull/67), from the owner's answer on the Q18 decisions page
-  (decision 21). The same shape as Q18: one slice, a plan check that built it in a clone, one builder, a fresh
-  reviewer, one fix round and a second look. Rule 1 now flags every character outside U+0020 to U+007E; 1,500 tests,
-  as before. With the roster:
-  - Worked: proving each gap SURVIVED at the base before the change; a sweep of every BMP code point; a reviewer that
-    checked rule 1 against a hand-written decoder on every code point.
-  - Did not: the orchestrator's own correction put the only bad skill last in the multi-skill case, so a rule that read
-    only the last skill passed every test until the review; the test file is now 189 bytes under the size limit.
-- 2026-11-06: Q20 verify-before-done without false alarms, merged as
-  [pull request 69](https://github.com/paureis/pau-skills/pull/69), after another chat reported about ten false
-  alarms in one session (decision 22). One slice, a plan check that built it in a clone, one builder, a fresh reviewer,
-  one fix round and a second look. Only edits inside the project count; Monitor commands and six package-manager flags
-  count as checks; this repository names its own checks as `testCommands`. 1,543 tests (1,500 before);
-  `pau-skills-hooks` 0.4.1, so the owner updates the hooks plugin on each computer. With the roster:
-  - Worked: reproducing the report with the hook's own function before planning; settling the test file layout before
-    the plan check; a reviewer that ran the old and new hooks side by side as processes and timed long inputs.
-  - Did not: no plan check and no listed mutation caught the flag pattern's exponential time; only the reviewer's
-    timing did.
 - 2026-11-18: the eighteenth batch, Q24 verification ideas from the Claude Code team, merged as
   [pull request 76](https://github.com/paureis/pau-skills/pull/76) (decision 26). Four slices on the roster: the
   diff-triggered checklist, property and differential tests beside it, rules from the merge base with REVIEW.md and
@@ -135,6 +76,18 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
   - Did not: the harness branch of the worktree held no commits (the builder used the brief's branch name), so the
     first merge did nothing; Windows was never run; a token in a command check's argv is still printed, covered by a
     rule in SKILL.md instead of code.
+- 2026-11-27: the twenty-eighth batch, Q43, merged as
+  [pull request 108](https://github.com/paureis/pau-skills/pull/108), with no release (tests and CI only, no plugin
+  bumped). One slice from one `eng-lead` plan: `tests/geppetto-roster-lock-base.test.mjs` reads `LOCK` at a base
+  commit, and CI checks out the full history and names the base. A read-only plan check built a prototype in a clone,
+  one builder did the work, a fresh reviewer checked it, and one fix round closed its finding. 2,258 tests (2,238
+  before).
+  - Worked: the plan check found that `HEAD^1` gives a wrong verdict on a multi-commit push to main, three branches no
+    test could fail, and a 2 second git timeout that could skip the check on a slow runner, all fixed in the brief;
+    the reviewer found a surviving mutant (the merge base read as the origin/main tip) that would fail any branch
+    behind main, closed in one round; CI showed all four test jobs naming base `HEAD^1` at main.
+  - Did not: a no-base outcome in CI passes with only a log line (Q44); the builder's mutations of a file that holds
+    its own tests first gave a false SURVIVED, because the sed pattern also hit the asserting lines.
 - 2026-11-27: the twenty-seventh batch, Q40, Q41 and Q42, merged as
   [pull request 106](https://github.com/paureis/pau-skills/pull/106) and released as v0.27.2. Three slices from one
   `eng-lead` plan: seven new rows and two fixed rows in rule-to-hook's HOOK-EVENTS.md, a roster lock test, and the
