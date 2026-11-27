@@ -10,11 +10,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { ROOT } from './helpers.mjs';
 import { runGit } from '../hooks/guards/file-size-guard.mjs';
-import { makeRepo, cleanEnv, plainDir } from './file-size-guard.helpers.mjs';
+import { makeRepo, cleanEnv, plainDir, put } from './file-size-guard.helpers.mjs';
 
 const LOCK_FILE = 'tests/geppetto-roster-lock.test.mjs';
 const SHAPE = 'roster <N> sha256:<64 lowercase hex>';
@@ -162,15 +162,11 @@ const envOf = (extra = {}) => {
   const { ROSTER_LOCK_BASE, ...rest } = cleanEnv();
   return { ...rest, ...extra };
 };
-const putLock = (dir, text) => {
-  mkdirSync(dirname(join(dir, LOCK_FILE)), { recursive: true });
-  writeFileSync(join(dir, LOCK_FILE), text);
-};
 const commitAll = (dir, msg) => { git(dir, 'add', '-A'); git(dir, 'commit', '-q', '-m', msg); return git(dir, 'rev-parse', 'HEAD'); };
 /** A repository whose one commit holds a lock file with LOCK at roster 8, hash of 'a'. */
 function baseRepo() {
   const dir = makeRepo();
-  putLock(dir, lockText(lockLine(8, 'a')));
+  put(dir, LOCK_FILE, lockText(lockLine(8, 'a')));
   return { dir, sha: commitAll(dir, 'base') };
 }
 const NOTE = 'Set ROSTER_LOCK_BASE to a commit to turn the check on.';
@@ -187,13 +183,13 @@ test('a base with LOCK: a same-number rewrite here fails, and a raised number pa
   const { dir, sha } = baseRepo();
   const env = envOf({ ROSTER_LOCK_BASE: 'HEAD' });
   assert.equal(checkLock({ root: dir, env }).ok, true, 'unchanged');
-  putLock(dir, lockText(lockLine(8, 'b')));
+  put(dir, LOCK_FILE, lockText(lockLine(8, 'b')));
   const r = checkLock({ root: dir, env });
   assert.equal(r.ok, false);
   assert.ok(r.message.includes(`base commit ${sha.slice(0, 12)}`), r.message);
   assert.ok(r.message.includes(`here: ${lockLine(8, 'b')}`), r.message);
   assert.ok(r.diagnostic.includes(`ROSTER_LOCK_BASE "HEAD", commit ${sha.slice(0, 12)}`), r.diagnostic);
-  putLock(dir, lockText(lockLine(9, 'b')));
+  put(dir, LOCK_FILE, lockText(lockLine(9, 'b')));
   assert.equal(checkLock({ root: dir, env }).ok, true, 'raised');
 });
 
@@ -201,23 +197,23 @@ test('no base: the lock file is missing at the base', () => {
   const dir = makeRepo();
   writeFileSync(join(dir, 'other.txt'), 'x\n');
   commitAll(dir, 'no lock');
-  putLock(dir, lockText(lockLine(8, 'a')));
+  put(dir, LOCK_FILE, lockText(lockLine(8, 'a')));
   noBase(dir, envOf({ ROSTER_LOCK_BASE: 'HEAD' }), `${LOCK_FILE} is not in`);
 });
 
 test('no base: LOCK is missing, repeated or unparsable at the base', () => {
   for (const [text, why] of [['const OTHER = 1;\n', 'no LOCK line'], [lockText(`${lockLine(8, 'a')}\n${lockLine(8, 'a')}`), '2 LOCK lines'], [lockText("const LOCK = 'roster 8';"), 'does not have the shape']]) {
     const dir = makeRepo();
-    putLock(dir, text);
+    put(dir, LOCK_FILE, text);
     commitAll(dir, 'bad lock');
-    putLock(dir, lockText(lockLine(8, 'b')));
+    put(dir, LOCK_FILE, lockText(lockLine(8, 'b')));
     noBase(dir, envOf({ ROSTER_LOCK_BASE: 'HEAD' }), why);
   }
 });
 
 test('no base: an unknown sha, HEAD^1 in a one-commit repository, or a value starting with "-"', () => {
   const { dir } = baseRepo();
-  putLock(dir, lockText(lockLine(8, 'b')));
+  put(dir, LOCK_FILE, lockText(lockLine(8, 'b')));
   noBase(dir, envOf({ ROSTER_LOCK_BASE: H('0').slice(0, 40) }), 'does not resolve to a commit');
   noBase(dir, envOf({ ROSTER_LOCK_BASE: 'HEAD^1' }), '"HEAD^1" does not resolve to a commit');
   noBase(dir, envOf({ ROSTER_LOCK_BASE: '--all' }), '"--all" starts with "-"');
@@ -225,12 +221,12 @@ test('no base: an unknown sha, HEAD^1 in a one-commit repository, or a value sta
 
 test('no base: no variable and no origin/main, in a repository or in a folder that is not one', () => {
   const { dir } = baseRepo();
-  putLock(dir, lockText(lockLine(8, 'b')));
+  put(dir, LOCK_FILE, lockText(lockLine(8, 'b')));
   noBase(dir, envOf(), 'ROSTER_LOCK_BASE is unset and there is no origin/main');
   git(dir, 'branch', 'origin/main'); // a local branch, refs/heads/origin/main, is not the remote ref
   noBase(dir, envOf(), 'ROSTER_LOCK_BASE is unset and there is no origin/main');
   const plain = plainDir();
-  putLock(plain.dir, lockText(lockLine(8, 'b')));
+  put(plain.dir, LOCK_FILE, lockText(lockLine(8, 'b')));
   noBase(plain.dir, envOf(plain.env), 'ROSTER_LOCK_BASE is unset and there is no origin/main');
 });
 
@@ -238,7 +234,7 @@ test('no base: origin/main has no merge base with HEAD', () => {
   const { dir } = baseRepo();
   const orphan = git(dir, 'commit-tree', 'HEAD^{tree}', '-m', 'orphan');
   git(dir, 'update-ref', 'refs/remotes/origin/main', orphan);
-  putLock(dir, lockText(lockLine(8, 'b')));
+  put(dir, LOCK_FILE, lockText(lockLine(8, 'b')));
   noBase(dir, envOf(), 'HEAD has no merge base with origin/main');
 });
 
@@ -253,7 +249,7 @@ test('with no variable, or an empty one, the merge base with origin/main is the 
   git(dir, 'update-ref', 'refs/remotes/origin/main', sha);
   writeFileSync(join(dir, 'later.txt'), 'x\n');
   commitAll(dir, 'later');
-  putLock(dir, lockText(lockLine(8, 'b')));
+  put(dir, LOCK_FILE, lockText(lockLine(8, 'b')));
   for (const env of [envOf(), envOf({ ROSTER_LOCK_BASE: '' })]) {
     const r = checkLock({ root: dir, env });
     assert.equal(r.ok, false, 'a same-number rewrite against the merge base');
@@ -265,7 +261,7 @@ test('with no variable, or an empty one, the merge base with origin/main is the 
 test('a branch behind origin/main is judged against the merge base, not the origin/main tip', () => {
   const { dir, sha } = baseRepo();
   git(dir, 'switch', '-q', '-c', 'side');
-  putLock(dir, lockText(lockLine(9, 'b')));
+  put(dir, LOCK_FILE, lockText(lockLine(9, 'b')));
   const sibling = commitAll(dir, 'main raised the roster');
   git(dir, 'switch', '-q', '-');
   git(dir, 'update-ref', 'refs/remotes/origin/main', sibling);
@@ -284,7 +280,7 @@ test('the lock file missing here, or a LOCK here that does not parse, fails and 
   const gone = checkLock({ root: dir, env });
   assert.equal(gone.ok, false);
   assert.ok(gone.message.includes(`${LOCK_FILE} is missing in the working tree`), gone.message);
-  putLock(dir, 'no lock here\n');
+  put(dir, LOCK_FILE, 'no lock here\n');
   const bad = checkLock({ root: dir, env });
   assert.equal(bad.ok, false);
   assert.ok(bad.message.includes(`${LOCK_FILE} in the working tree: no LOCK line`), bad.message);
