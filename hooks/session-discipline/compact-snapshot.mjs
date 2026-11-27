@@ -17,9 +17,10 @@
 // snapshot from another session in the same project is not taken for this one. The folder gets a .gitignore of "*",
 // so snapshots never reach a commit. Only the newest ten are kept.
 //
-// SessionStart with source "compact": prints the newest snapshot (if it is under an hour old) as additional context,
-// so the facts are back in the window the moment the compacted session resumes. A snapshot that records another
-// session, or any session when the input has none, is not printed; one that records no session (older) still is.
+// SessionStart with source "compact": prints this session's newest snapshot (if it is under an hour old) as additional
+// context, so the facts are back in the window the moment the compacted session resumes. Snapshots of another session
+// are passed over, even when newer, and one that records no session (older) still counts; none left, none printed.
+// With no session in the input, the newest snapshot is printed only when it records no session.
 // It also works out which compaction this is from the transcript (see compactionNumber) and takes the larger of that
 // and the count of a snapshot from the same session. From the handoffAfter-th compaction on (default 2), it puts a
 // line first that tells the session to finish the current step, write a handoff or the next kickoff and tell the
@@ -198,18 +199,30 @@ export function writeSnapshot({ dir, transcript, trigger, git, now = new Date(),
   return file;
 }
 
-export function latestSnapshot(dir, now = Date.now()) {
-  let files;
-  try { files = readdirSync(dir).filter((f) => f.endsWith('.md')).sort(); } catch { return null; }
-  const last = files[files.length - 1];
-  if (!last) return null;
-  const path = join(dir, last);
+function readSnapshot(path, now) {
   try {
     if (now - statSync(path).mtimeMs > MAX_AGE_MS) return null;
     const text = readFileSync(path, 'utf8');
     const m = /^# Pre-compaction snapshot [^\n]*\r?\n\r?\ncompaction: (\d+)\r?\n(?:session: ([^\r\n]+)\r?\n)?/.exec(text);
     return { path, text, compaction: m ? Number(m[1]) : 0, session: m?.[2] || '' };
   } catch { return null; }
+}
+
+/**
+ * The snapshot to show, or null. With a valid session: the newest file under an hour old that records this session or
+ * no session; one that is older, unreadable or another session's is skipped. Without one: the newest file, or null
+ * when it is over an hour old.
+ */
+export function latestSnapshot(dir, now = Date.now(), session) {
+  let files;
+  try { files = readdirSync(dir).filter((f) => f.endsWith('.md')).sort().reverse(); } catch { return null; }
+  const sid = sessionKey(session);
+  if (!sid) return files.length ? readSnapshot(join(dir, files[0]), now) : null;
+  for (const f of files) {
+    const snap = readSnapshot(join(dir, f), now);
+    if (snap && (!snap.session || snap.session === sid)) return snap;
+  }
+  return null;
 }
 
 const isMain = (() => { try { return import.meta.url === pathToFileURL(realpathSync.native(process.argv[1])).href; } catch { return false; } })();
@@ -232,7 +245,7 @@ if (isMain) {
           if (typeof input.transcript_path === 'string') {
             try { transcript = readFileSync(input.transcript_path, 'utf8'); } catch { /* no transcript, no count */ }
           }
-          const text = compactNote({ transcript, snap: latestSnapshot(dir), opts, session: input.session_id });
+          const text = compactNote({ transcript, snap: latestSnapshot(dir, Date.now(), input.session_id), opts, session: input.session_id });
           if (text) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text } }) + '\n');
         }
       } catch { /* never block compaction or a session */ }
