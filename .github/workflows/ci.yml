@@ -18,11 +18,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so the roster lock can read the base commit
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
       - name: Tests
         run: npm test
+        # The base for tests/geppetto-roster-lock-base.test.mjs. On a pull request HEAD is the merge commit and HEAD^1
+        # is the base branch tip; on a push to main it is the previous main, which covers multi-commit pushes.
+        env:
+          ROSTER_LOCK_BASE: ${{ github.event_name == 'push' && github.event.before || 'HEAD^1' }}
       - name: Scrub check
         run: npm run scrub
       - name: marketplace.json is up to date
