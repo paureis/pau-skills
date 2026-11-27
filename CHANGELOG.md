@@ -3,6 +3,14 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-27: Q43, the roster lock checks a change against a base commit
+
+- Tests: `tests/geppetto-roster-lock-base.test.mjs` reads `LOCK` at a base commit and fails when the roster hash
+  changed and the number did not go up, so rewriting `LOCK` under the same number no longer passes. The base is
+  `ROSTER_LOCK_BASE`, else the merge base with `origin/main`; with no base it passes and says so. CI fetches the full
+  history and sets the base (HEAD^1 on a pull request, the previous main on a push). Q43.
+- No plugin changed, so no version bump and no release.
+
 ## 2026-11-27: Q40, Q41 and Q42, follow-ups from batch 26
 
 - `rule-to-hook`: HOOK-EVENTS.md has rows for `PostToolUseFailure`, `PostToolBatch`, `PreSkillShellCommand`,
