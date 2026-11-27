@@ -3,6 +3,13 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-27: Q44, the roster lock base check fails in CI when it finds no base
+
+- Tests: when `ROSTER_LOCK_BASE` is set and gives no base commit (it does not resolve, the lock file or a valid `LOCK`
+  is missing there, or git cannot run), `tests/geppetto-roster-lock-base.test.mjs` now fails and says to keep
+  `fetch-depth: 0`. With the variable unset, it still passes with a note. CI is the only place that sets it. Q44.
+- No plugin changed, so no version bump and no release.
+
 ## 2026-11-27: Q43, the roster lock checks a change against a base commit
 
 - Tests: `tests/geppetto-roster-lock-base.test.mjs` reads `LOCK` at a base commit and fails when the roster hash
