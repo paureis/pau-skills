@@ -135,6 +135,20 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
   - Did not: the harness branch of the worktree held no commits (the builder used the brief's branch name), so the
     first merge did nothing; Windows was never run; a token in a command check's argv is still printed, covered by a
     rule in SKILL.md instead of code.
+- 2026-11-27: the twenty-seventh batch, Q40, Q41 and Q42, merged as
+  [pull request 106](https://github.com/paureis/pau-skills/pull/106) and released as v0.27.2. Three slices from one
+  `eng-lead` plan: seven new rows and two fixed rows in rule-to-hook's HOOK-EVENTS.md, a roster lock test, and the
+  watchdog reading agent folders the way Claude Code does. Four probe rounds settled Q42 before and during the plan;
+  each brief had a read-only plan check that built the slice in a clone, each slice a fresh reviewer and one fix
+  round, and a cold run (real hooks, headless, empty HOME, 0.73 US dollars) covered Q42. 2,238 tests (2,180 before).
+  - Worked: the plan checks found real gaps in all three briefs (Q40 missed four candidate events and two wrong old
+    rows; Q41's went-down message gave the wrong fix; Q42 missed a test file, an exact description rule, name-order
+    dependence and an entry cap); every review found something worth fixing (a ConfigChange exception only the code
+    shows, a weakened test, a git history passing the folder limit); probing during triage settled questions in one
+    cheap run each.
+  - Did not: builders again could not reach a scratch clone through git (the worktree guard), so references to the
+    plan checker's draft were unusable; the cold run's subagents made no tool calls, so the watchdog's in-subagent
+    paths were not exercised live.
 - 2026-11-27: the twenty-sixth batch, Q34, Q36 and Q39, merged as
   [pull request 104](https://github.com/paureis/pau-skills/pull/104) and released as v0.27.1. Three small follow-ups
   as three slices in parallel worktrees: a `UserPromptExpansion` row in rule-to-hook's HOOK-EVENTS.md, the split rule

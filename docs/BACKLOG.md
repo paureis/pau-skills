@@ -97,6 +97,7 @@ under "Work items" below.
 - [Things that bit the twenty-fourth batch](backlog/things-that-bit/batch-24.md)
 - [Things that bit the twenty-fifth batch](backlog/things-that-bit/batch-25.md)
 - [Things that bit the twenty-sixth batch](backlog/things-that-bit/batch-26.md)
+- [Things that bit the twenty-seventh batch](backlog/things-that-bit/batch-27.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not; the first six batches are in
   [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md), and the seventh to twelfth in
   [done-2026-10-20-to-25.md](backlog/done-2026-10-20-to-25.md).
@@ -158,9 +159,10 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q37 reframe and sharpen from pstack, close to word for word](backlog/q37.md) (done)
 - [Q38 subagent-watchdog: what one orchestrated session showed, and a compaction count](backlog/q38.md) (done)
 - [Q39 what Q38 left: the newest snapshot of the session, and stray files in an agents folder](backlog/q39.md) (done)
-- [Q40 rule-to-hook knows the newer hook events](backlog/q40.md)
-- [Q41 a roster bump forgotten everywhere at once](backlog/q41.md)
-- [Q42 the watchdog reads agent folders the way Claude Code does](backlog/q42.md)
+- [Q40 rule-to-hook knows the newer hook events](backlog/q40.md) (done)
+- [Q41 a roster bump forgotten everywhere at once](backlog/q41.md) (done)
+- [Q42 the watchdog reads agent folders the way Claude Code does](backlog/q42.md) (done)
+- [Q43 the roster lock checks a change against main](backlog/q43.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -210,8 +212,8 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 31. Done: the twenty-fifth batch, Q35 `wizard` (pull request 102); its scope was decision 37.
 32. Done: the twenty-sixth batch, Q34, Q36 and Q39 (pull request 104). Parked: Q25 Claude Code mods (decision 27) and
     Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
-33. **Next:** Q40 rule-to-hook knows the newer hook events (found in Q34), Q41 a roster bump forgotten everywhere
-    (found in Q36) and Q42 the watchdog reads agent folders the way Claude Code does (found in Q39); they touch
-    different files, so the kickoff in [backlog/kickoff.md](backlog/kickoff.md) runs them as one batch, in that order.
+33. Done: the twenty-seventh batch, Q40, Q41 and Q42 (pull request 106, release v0.27.2).
+34. **Next:** Q43 the roster lock checks a change against main (found in Q41), the only planned item; the kickoff in
+    [backlog/kickoff.md](backlog/kickoff.md) runs it as a small batch. Parked: Q25 and Q26.
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
