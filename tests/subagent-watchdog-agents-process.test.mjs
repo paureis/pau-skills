@@ -75,7 +75,7 @@ test('AP3 not read-only: a definition with Edit, one with no tools, the same nam
 test('AP4 a 70 KB project definition with Edit and a read-only one of the same name under PAU_SKILLS_HOME: ro false, and the 40th call gets the note', () => {
   const w = world();
   w.agents(w.project, { 'builder2.md': '---\nname: builder2\ntools: Read, Edit, Bash\n---\n' + 'x'.repeat(70 * 1024) });
-  w.agents(w.user, { 'old.md': '---\nname: builder2\ntools: Read, Bash\n---\n' });
+  w.agents(w.user, { 'old.md': '---\nname: builder2\ndescription: Builds.\ntools: Read, Bash\n---\n' });
   silent(w.run({ ...w.start, agent_type: 'builder2' }));
   assert.equal(w.state().ro, false);
   assert.deepEqual(w.reads(40), [...Array(39).fill('-'), 'note']);
