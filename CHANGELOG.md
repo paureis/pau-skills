@@ -3,6 +3,16 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-27: Q35, wizard for the steps only a person can do
+
+- `wizard` (session-discipline, new, adapted from mattpocock/skills): when work is blocked on a step only a person can
+  do (an API key, a secret, a dashboard, an app approval), the agent writes a JSON steps file and hands over one
+  command. `wizard.mjs run` shows one step at a time and checks each (a file, an environment variable, a dotenv line,
+  a URL's status, a command's exit); `status` lets the agent confirm afterwards. The person puts every value in place
+  themselves, and the script never asks for, prints or logs one. Decision 37.
+- `which-skill` routes a blocked setup step to `wizard`.
+- `session-discipline` 0.18.0, `pau-skills` 0.27.0.
+
 ## 2026-11-26: compact-snapshot stops a third compaction
 
 - `compact-snapshot` blocks a compaction once the session has compacted `maxCompactions` times (default 2, 0 for no

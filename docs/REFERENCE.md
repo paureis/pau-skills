@@ -30,6 +30,9 @@ derived from [mattpocock/skills](https://github.com/mattpocock/skills) or from
   with a separate yes, your personal preferences, in your language. Written for people new to Claude Code. When the
   project handles money, sign-in, a database, server input or secrets, it offers the matching production rules from
   its `PRODUCTION-RULES.md` for the project CLAUDE.md.
+- **[wizard](../skills/session-discipline/wizard/SKILL.md)** (adapted): For setup steps only a person can do (an API key, a
+  secret, a dashboard), writes a JSON steps file that `wizard.mjs` walks one step at a time, checking each step (a file,
+  an environment variable, a dotenv line, a URL's status, a command's exit) without reading a value.
 - Hooks: [`roadmap`](../hooks/session-discipline/roadmap.mjs), [`branch-context`](../hooks/session-discipline/branch-context.mjs), [`compact-snapshot`](../hooks/session-discipline/compact-snapshot.mjs), [`skill-usage`](../hooks/session-discipline/skill-usage.mjs).
 
 ## verification

@@ -1,7 +1,7 @@
 # session-discipline
 
 Skills: `which-skill`, `retrospective` (with `audit.mjs`), `session-close`, `handoff`, `instructions-audit` (with
-`scan.mjs` and its modules `scan-units.mjs`, `scan-refs.mjs` and `scan-discover.mjs`), `project-setup` (with `PRODUCTION-RULES.md`, a copy of the one in `launch-readiness`), `friction-review` (with `friction.mjs` and its `friction-*.mjs` modules, and copies of `mine-transcripts.mjs`, `mine-redact.mjs` and `mine-commits.mjs` from agent-friendly-audit and of `skill-eval-core.mjs` from skill-eval). `session-close` carries its own copy of `audit.mjs`, so it works without
+`scan.mjs` and its modules `scan-units.mjs`, `scan-refs.mjs` and `scan-discover.mjs`), `project-setup` (with `PRODUCTION-RULES.md`, a copy of the one in `launch-readiness`), `friction-review` (with `friction.mjs` and its `friction-*.mjs` modules, and copies of `mine-transcripts.mjs`, `mine-redact.mjs` and `mine-commits.mjs` from agent-friendly-audit and of `skill-eval-core.mjs` from skill-eval), `wizard` (with `wizard.mjs` and `example-steps.json`). `session-close` carries its own copy of `audit.mjs`, so it works without
 `retrospective`. `which-skill` carries `usage-report.mjs`, which reads the `skill-usage` log. Hooks: the roadmap summary
 and `branch-context` at SessionStart, `compact-snapshot` around compaction, and `skill-usage`, which logs each skill
 start for the usage report. The newer hooks and their options are in [hooks/README.md](../../hooks/README.md).

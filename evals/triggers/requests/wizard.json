@@ -1,0 +1,18 @@
+{
+  "skill": "wizard",
+  "should": [
+    "walk me through the setup",
+    "The app needs Stripe keys in .env and a GitHub Actions secret before it can deploy; tell me what to click, one screen at a time, and check I did it",
+    "I am the only one with access to the Google Cloud console, and the login flow is blocked until someone creates an OAuth client there. Guide me through it."
+  ],
+  "nearMisses": [
+    {
+      "request": "Get Claude Code configured for this repository with a CLAUDE.md and sensible defaults",
+      "expect": "project-setup"
+    },
+    {
+      "request": "Change the default port in config/server.yaml from 3000 to 8080",
+      "expect": "none"
+    }
+  ]
+}

@@ -11,7 +11,7 @@ import { TYPED_ONLY } from './typed-only-list.mjs';
 import { norm, DASHES, quoteMarks, holds, sameKeys, brokenShape, readLists, readSkills } from './trigger-lists.helpers.mjs';
 
 // The skills that can start from a request. A new typed-only skill changes this file nowhere.
-const MODEL_INVOKED_COUNT = 31;
+const MODEL_INVOKED_COUNT = 32;
 const REQUESTS_DIR = join(ROOT, 'evals', 'triggers', 'requests');
 // The lists here use bare skill names; the typed-only list holds <plugin>/<skill> ids.
 const TYPED_NAMES = new Set(TYPED_ONLY.map((id) => id.split('/')[1]));
