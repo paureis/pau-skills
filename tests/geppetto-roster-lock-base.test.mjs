@@ -186,16 +186,19 @@ function noBase(root, env, why) {
   const r = checkLock({ root, env });
   assert.equal(r.ok, true, r.message);
   assert.ok(r.diagnostic.includes(why), r.diagnostic);
-  assert.ok(r.diagnostic.includes(NOTE), r.diagnostic);
+  assert.ok(r.diagnostic.startsWith(`${HERE}: no base commit, so the check passes: `), r.diagnostic);
+  assert.ok(r.diagnostic.endsWith(NOTE), r.diagnostic);
   return r;
 }
 const FIX = 'fetch-depth: 0';
+const SET_FIX = `Set it to a commit that holds ${LOCK_FILE} with a valid LOCK, or unset it to skip the check.`;
 /** checkLock with ROSTER_LOCK_BASE set and no base: it fails, and the message names the value, the why and the fix. */
 function setNoBase(root, env, why) {
   const r = checkLock({ root, env });
   assert.equal(r.ok, false, r.diagnostic);
   assert.ok(r.message.includes(why), r.message);
   assert.ok(r.message.includes(FIX), r.message);
+  assert.ok(r.message.includes(SET_FIX), r.message);
   assert.ok(r.message.includes(`ROSTER_LOCK_BASE is set (${JSON.stringify(env.ROSTER_LOCK_BASE)})`), r.message);
   assert.ok(r.diagnostic.includes(why), r.diagnostic);
   return r;
@@ -238,6 +241,7 @@ test('a set variable with no base fails: an unknown sha, HEAD^1 in a one-commit 
   put(dir, LOCK_FILE, lockText(lockLine(8, 'b')));
   setNoBase(dir, envOf({ ROSTER_LOCK_BASE: H('0').slice(0, 40) }), 'does not resolve to a commit');
   setNoBase(dir, envOf({ ROSTER_LOCK_BASE: 'HEAD^1' }), '"HEAD^1" does not resolve to a commit');
+  setNoBase(dir, envOf({ ROSTER_LOCK_BASE: ' ' }), '" " does not resolve to a commit');
   setNoBase(dir, envOf({ ROSTER_LOCK_BASE: '--all' }), '"--all" starts with "-"');
 });
 
