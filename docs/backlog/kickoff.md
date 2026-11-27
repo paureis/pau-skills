@@ -3,8 +3,8 @@
 [Back to the backlog index](../BACKLOG.md)
 
 The twenty-eighth batch (Q43, pull request 108, no release) is done. Next: **Q44** CI says when the roster lock base
-check found no base (found in Q43), the only planned item. It waits on the owner's choice between its two options (fail
-in CI when `ROSTER_LOCK_BASE` gives no base, or a visible warning); ask first if the choice is not in the message.
+check found no base (found in Q43), the only planned item. The owner chose option 1: fail when `ROSTER_LOCK_BASE` is
+set and gives no base, and keep passing with a note when it is unset.
 Read "Things that bit the twenty-eighth batch" (`docs/backlog/things-that-bit/batch-28.md`) and the twenty-seventh's
 first.
 
@@ -16,7 +16,7 @@ The owner starts the batch with this message:
 
 ```text
 You are the orchestrator for the twenty-ninth batch in this repository: Q44 (CI says when the roster lock base check
-found no base), with option <1 or 2> from docs/backlog/q44.md. Do not build it yourself; run the roster in
+found no base), option 1 from docs/backlog/q44.md. Do not build it yourself; run the roster in
 .claude/agents/ (eng-lead, builder, reviewer) and integrate the work. Type /lean-subagent-dev first (it is typed only
 since Q28).
 

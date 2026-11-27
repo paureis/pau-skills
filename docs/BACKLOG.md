@@ -218,7 +218,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 33. Done: the twenty-seventh batch, Q40, Q41 and Q42 (pull request 106, release v0.27.2).
 34. Done: the twenty-eighth batch, Q43 the roster lock checks a change against main (pull request 108, no release:
     tests and CI only).
-35. **Next:** Q44 CI says when the roster lock base check found no base (found in Q43), once the owner picks one of
-    its two options; the kickoff in [backlog/kickoff.md](backlog/kickoff.md). Parked: Q25 and Q26.
+35. **Next:** Q44 CI says when the roster lock base check found no base (found in Q43), option 1 (fail in CI); the
+    kickoff in [backlog/kickoff.md](backlog/kickoff.md). Parked: Q25 and Q26.
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
