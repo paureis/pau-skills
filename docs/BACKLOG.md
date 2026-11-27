@@ -98,9 +98,11 @@ under "Work items" below.
 - [Things that bit the twenty-fifth batch](backlog/things-that-bit/batch-25.md)
 - [Things that bit the twenty-sixth batch](backlog/things-that-bit/batch-26.md)
 - [Things that bit the twenty-seventh batch](backlog/things-that-bit/batch-27.md)
+- [Things that bit the twenty-eighth batch](backlog/things-that-bit/batch-28.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not; the first six batches are in
-  [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md), and the seventh to twelfth in
-  [done-2026-10-20-to-25.md](backlog/done-2026-10-20-to-25.md).
+  [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md), the seventh to twelfth in
+  [done-2026-10-20-to-25.md](backlog/done-2026-10-20-to-25.md), and the thirteenth batch to Q20 in
+  [done-2026-10-29-to-11-06.md](backlog/done-2026-10-29-to-11-06.md).
 
 ## Work items
 
@@ -162,7 +164,8 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q40 rule-to-hook knows the newer hook events](backlog/q40.md) (done)
 - [Q41 a roster bump forgotten everywhere at once](backlog/q41.md) (done)
 - [Q42 the watchdog reads agent folders the way Claude Code does](backlog/q42.md) (done)
-- [Q43 the roster lock checks a change against main](backlog/q43.md)
+- [Q43 the roster lock checks a change against main](backlog/q43.md) (done)
+- [Q44 CI says when the roster lock base check found no base](backlog/q44.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -213,7 +216,9 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 32. Done: the twenty-sixth batch, Q34, Q36 and Q39 (pull request 104). Parked: Q25 Claude Code mods (decision 27) and
     Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
 33. Done: the twenty-seventh batch, Q40, Q41 and Q42 (pull request 106, release v0.27.2).
-34. **Next:** Q43 the roster lock checks a change against main (found in Q41), the only planned item; the kickoff in
-    [backlog/kickoff.md](backlog/kickoff.md) runs it as a small batch. Parked: Q25 and Q26.
+34. Done: the twenty-eighth batch, Q43 the roster lock checks a change against main (pull request 108, no release:
+    tests and CI only).
+35. **Next:** Q44 CI says when the roster lock base check found no base (found in Q43), once the owner picks one of
+    its two options; the kickoff in [backlog/kickoff.md](backlog/kickoff.md). Parked: Q25 and Q26.
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
