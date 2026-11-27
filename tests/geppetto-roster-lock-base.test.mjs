@@ -227,6 +227,8 @@ test('no base: no variable and no origin/main, in a repository or in a folder th
   const { dir } = baseRepo();
   putLock(dir, lockText(lockLine(8, 'b')));
   noBase(dir, envOf(), 'ROSTER_LOCK_BASE is unset and there is no origin/main');
+  git(dir, 'branch', 'origin/main'); // a local branch, refs/heads/origin/main, is not the remote ref
+  noBase(dir, envOf(), 'ROSTER_LOCK_BASE is unset and there is no origin/main');
   const plain = plainDir();
   putLock(plain.dir, lockText(lockLine(8, 'b')));
   noBase(plain.dir, envOf(plain.env), 'ROSTER_LOCK_BASE is unset and there is no origin/main');
