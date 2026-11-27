@@ -141,28 +141,44 @@ function envFileSets(path, key) {
   return set;
 }
 
-// The status of one GET, or the network error's code. No redirect is followed and the body is thrown away unread.
+// The status of one GET, or the network error's code. No redirect is followed and the body is never read: the
+// response is destroyed once its status is known, so an endpoint that streams forever cannot keep the wizard running.
 function urlStatus(url) {
   return new Promise((done) => {
     const lib = new URL(url).protocol === 'https:' ? https : http;
     let req;
     try {
-      req = lib.get(url, { agent: false, timeout: URL_TIMEOUT_MS }, (res) => { res.resume(); done({ status: res.statusCode }); });
+      req = lib.get(url, { agent: false, timeout: URL_TIMEOUT_MS }, (res) => { done({ status: res.statusCode }); res.destroy(); });
     } catch (e) { done({ error: e.code || 'ERROR' }); return; }
     req.on('timeout', () => req.destroy(Object.assign(new Error('timeout'), { code: 'ETIMEDOUT' })));
     req.on('error', (e) => done({ error: e.code || 'ERROR' }));
   });
 }
 
-// The exit of a command run with no shell; its output is never read. The timer is our own: spawn's `timeout` option
-// keeps the process alive for the full time after a command that could not start.
+// The time a command check may take. WIZARD_COMMAND_TIMEOUT_MS sets it, so a test does not wait the full 30 s.
+function commandTimeout() {
+  const ms = Number(process.env.WIZARD_COMMAND_TIMEOUT_MS);
+  return Number.isInteger(ms) && ms > 0 ? ms : COMMAND_TIMEOUT_MS;
+}
+
+// The exit of a command run with no shell; its output is never read. On POSIX it runs in a new session (detached),
+// so it has no controlling terminal and cannot read or write /dev/tty; on the timeout its whole process group is
+// killed with SIGKILL, so a command that ignores SIGTERM, or a child it left behind, cannot pass or linger. The timer
+// is our own: spawn's `timeout` option keeps the process alive for the full time after a command that could not start.
 function commandExit(argv) {
+  const win = process.platform === 'win32';
   return new Promise((done) => {
     let child;
-    try { child = spawn(argv[0], argv.slice(1), { shell: false, stdio: 'ignore', windowsHide: true }); } catch (e) { done({ error: e.code || 'ERROR' }); return; }
-    const timer = setTimeout(() => child.kill(), COMMAND_TIMEOUT_MS);
+    try {
+      child = spawn(argv[0], argv.slice(1), { shell: false, stdio: 'ignore', windowsHide: true, detached: !win });
+    } catch (e) { done({ error: e.code || 'ERROR' }); return; }
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      try { if (win) child.kill('SIGKILL'); else process.kill(-child.pid, 'SIGKILL'); } catch { /* it has already exited */ }
+    }, commandTimeout());
     child.on('error', (e) => { clearTimeout(timer); done({ error: e.code || 'ERROR' }); });
-    child.on('close', (code, signal) => { clearTimeout(timer); done({ code, signal }); });
+    child.on('close', (code, signal) => { clearTimeout(timer); done({ code, signal, timedOut }); });
   });
 }
 
@@ -183,6 +199,7 @@ async function failure(c) {
   }
   const r = await commandExit(c.command);
   if (r.error) return `${what}: could not start (${r.error})`;
+  if (r.timedOut) return `${what}: timed out`;
   if (r.code === 0) return '';
   return `${what}: ${r.code === null ? `stopped (${r.signal})` : `exited ${r.code}`}`;
 }

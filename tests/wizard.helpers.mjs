@@ -17,16 +17,22 @@ export function childEnv(extra = {}) {
 }
 
 // Runs the wizard without blocking this process, so a server here can answer its url checks. stdin and stdout are
-// pipes, never a terminal.
-export function wizard(args, { cwd, env = {}, input = '' } = {}) {
+// pipes, never a terminal. A wizard still running after `killAfterMs` is killed, and the result has `killed: true`.
+export function wizard(args, { cwd, env = {}, input = '', killAfterMs = 60_000 } = {}) {
   return new Promise((resolve, reject) => {
+    const started = Date.now();
     const child = spawn(process.execPath, [WIZARD, ...args], { cwd, env: childEnv(env) });
     let stdout = '';
     let stderr = '';
+    let killed = false;
+    const timer = setTimeout(() => { killed = true; child.kill('SIGKILL'); }, killAfterMs);
     child.stdout.setEncoding('utf8').on('data', (d) => { stdout += d; });
     child.stderr.setEncoding('utf8').on('data', (d) => { stderr += d; });
     child.on('error', reject);
-    child.on('close', (code) => resolve({ code, stdout, stderr, out: stdout + stderr }));
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      resolve({ code, stdout, stderr, out: stdout + stderr, killed, ms: Date.now() - started });
+    });
     child.stdin.on('error', () => {}); // the wizard may stop before it reads all the input
     child.stdin.end(input);
   });
