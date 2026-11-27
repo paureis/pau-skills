@@ -2,55 +2,62 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twenty-fourth batch (Q38, pull request 98, release v0.25.0) is done. Next, in this order: **Q35** `wizard`, a
-guided script for the steps only a person can do (from Q30), then Q34, Q36 and Q39. Read "Things that bit the
-twenty-fourth batch" (`docs/backlog/things-that-bit/batch-24.md`) and the twenty-third's first.
+The twenty-fifth batch (Q35 `wizard`, pull request 102, release v0.27.0) is done. Next, in this order: **Q34**
+rule-to-hook knows UserPromptExpansion (found in Q32), **Q36** what Q33 left (found in Q33) and **Q39** what Q38 left
+(found in Q38). They touch different files, so they run as one batch. Read "Things that bit the twenty-fifth batch"
+(`docs/backlog/things-that-bit/batch-25.md`) and the twenty-fourth's first.
 
-Q35 is a new skill with a Node script. Upstream (mattpocock/skills) has a `wizard` in bash; read it at a pinned commit
-and record what changes. The owner settled both open questions (decision 37): it is model-invoked, and adapted from
-upstream. The script must never read, print or log a secret's value, and a test plants one to prove it.
+Q34 adds one row to `skills/guards/rule-to-hook/HOOK-EVENTS.md`. Q36 changes the `file-size-guard` recipe, the
+lazy-senior REVIEW.md and the geppetto roster builder (roster first, then `.claude/agents/`, raising the roster number
+on every covenant marker). Q39 changes two hooks (`compact-snapshot` and `subagent-watchdog-agents.mjs`) and needs a
+probe first: does Claude Code load an agent from a file with no frontmatter? hooks/README.md is 32 bytes under its
+limit, so make room before adding to it.
 
 The owner starts the batch with this message:
 
 ```text
-You are the orchestrator for the twenty-fifth batch in this repository: Q35 (wizard, a guided script for the steps
-only a person can do). Do not build it yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
-integrate their work. Type /lean-subagent-dev first (it is typed only since Q28).
+You are the orchestrator for the twenty-sixth batch in this repository: Q34 (rule-to-hook knows
+UserPromptExpansion), Q36 (what Q33 left: the split rule in more places) and Q39 (what Q38 left: the newest snapshot
+of the session, and stray files in an agents folder), in that order. Do not build them yourself; run the roster in
+.claude/agents/ (eng-lead, builder, reviewer) and integrate their work. Type /lean-subagent-dev first (it is typed
+only since Q28).
 
 Before anything else, read these in full:
-1. CLAUDE.md and docs/ADDING-A-SKILL.md (new skill steps, the confirm list rules, description limits).
-2. docs/backlog/q35.md, decisions 31, 33 and 37 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md ("With
-   the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and docs/backlog/things-that-bit/batch-22.md,
-   batch-23.md and batch-24.md.
-3. Upstream's wizard at a pinned commit (step 1 of "How to work an item" in docs/BACKLOG.md): what it does, its
-   license, and what we would change.
+1. CLAUDE.md and docs/ADDING-A-SKILL.md.
+2. docs/backlog/q34.md, q36.md and q39.md, decision 29 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md
+   ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
+   docs/backlog/things-that-bit/batch-23.md, batch-24.md and batch-25.md.
+3. hooks/README.md, skills/guards/rule-to-hook/HOOK-EVENTS.md and the geppetto roster
+   (skills/agent-orchestration/geppetto/roster/).
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3) and CLAUDE_AUTOCOMPACT_PCT_OVERRIDE (it should read
   40), and tell me both values. Tell eng-lead to hand back at once with the builders' agent IDs if they run in the
   background; you start the reviewers and send the fix rounds.
-- It is model-invoked and adapted from upstream (decision 37): check the description budget and the confirm list
-  rules before the brief, and record upstream's license and what we change.
+- Run Q39's probe before planning: does Claude Code load an agent from a .md file with no frontmatter? Record the
+  version and the answer.
 - Read the base commit before you write it into any brief, and push the working branch at it before dispatch.
 - Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone and tries
-  mutations of its own, a fresh reviewer per slice, and a cold run (headless, empty HOME, --max-budget-usd) that
-  follows the skill on a fixture with two human-only steps. Commits carry the harness's two attribution trailers.
+  mutations of its own, a fresh reviewer per slice, and a cold run (headless, empty HOME, --max-budget-usd) of the
+  two Q39 hook changes with real hooks. Commits carry the harness's two attribution trailers.
 
 Rules that matter most:
-- Every skill works on its own; a mention of a typed-only skill holds /name in the same paragraph. Scripts use the
-  Node standard library only and cover the common ecosystems. Plain English, no em or en dashes; no tracked file over
-  its size limit (README.md is 7 bytes under its limit and hooks/README.md 32: make room before adding to either).
-- No secret value is read, printed or logged: a test plants one and checks every output and log.
+- Every skill works on its own; a mention of a typed-only skill holds /name in the same paragraph. Scripts and hooks
+  use the Node standard library only; a hook exits 0 on input it does not understand and checks hookEnabled(). Plain
+  English, no em or en dashes; no tracked file over its size limit (README.md is 28 bytes under its limit and
+  hooks/README.md 32: make room before adding to either).
 - Every new test fails without the change: prove each with mutate.sh (it prints RESULT: CAUGHT) and report every
   "# tests" line.
-- Run npm test before every commit, docs included. Bump the plugin and the bundle; write
-  docs/releases/v<bundle version>.md for the batch and run its pre-merge check.
+- Before merging a builder's work, check `git log <base>..<branch>` on both the harness branch and the branch the
+  brief named: the commits may be on either.
+- Run npm test before every commit, docs included. Bump every plugin whose files changed, pau-skills-hooks for the
+  hook changes, and the bundle; write docs/releases/v<bundle version>.md and run its pre-merge check.
 - Builders commit and never push. You push the working branch and open the PR. When CI is green on Linux, macOS and
   the validate job and every review is clean, merge it yourself.
 
 When the PR is open, tell me in plain words what changed, what the reviews found, and anything I need to decide. After
 the merge, check the Release run, give me the zips of every changed skill (node scripts/pack-skills.mjs --since <main
-before the batch>) and any hook update commands, mark the items done in docs/backlog/ with what worked and what did
+before the batch>) and the hook update commands, mark the items done in docs/backlog/ with what worked and what did
 not, and write the next kickoff here.
 ```
 
