@@ -96,6 +96,7 @@ under "Work items" below.
 - [Things that bit the twenty-third batch](backlog/things-that-bit/batch-23.md)
 - [Things that bit the twenty-fourth batch](backlog/things-that-bit/batch-24.md)
 - [Things that bit the twenty-fifth batch](backlog/things-that-bit/batch-25.md)
+- [Things that bit the twenty-sixth batch](backlog/things-that-bit/batch-26.md)
 - [Done](backlog/done.md): finished work by date, with what worked and what did not; the first six batches are in
   [done-2026-10-17-to-19.md](backlog/done-2026-10-17-to-19.md), and the seventh to twelfth in
   [done-2026-10-20-to-25.md](backlog/done-2026-10-20-to-25.md).
@@ -151,12 +152,12 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q31 patch notes for every batch](backlog/q31.md) (done)
 - [Q32 skill-usage logs typed starts as the agent's](backlog/q32.md) (done)
 - [Q33 context in fewer calls: splitting files only where it helps](backlog/q33.md) (done)
-- [Q34 rule-to-hook knows UserPromptExpansion](backlog/q34.md)
+- [Q34 rule-to-hook knows UserPromptExpansion](backlog/q34.md) (done)
 - [Q35 wizard, a guided script for the steps only a person can do](backlog/q35.md) (done)
-- [Q36 what Q33 left: the split rule in more places](backlog/q36.md)
+- [Q36 what Q33 left: the split rule in more places](backlog/q36.md) (done)
 - [Q37 reframe and sharpen from pstack, close to word for word](backlog/q37.md) (done)
 - [Q38 subagent-watchdog: what one orchestrated session showed, and a compaction count](backlog/q38.md) (done)
-- [Q39 what Q38 left: the newest snapshot of the session, and stray files in an agents folder](backlog/q39.md)
+- [Q39 what Q38 left: the newest snapshot of the session, and stray files in an agents folder](backlog/q39.md) (done)
 - [Q40 rule-to-hook knows the newer hook events](backlog/q40.md)
 - [Q41 a roster bump forgotten everywhere at once](backlog/q41.md)
 - [Q42 the watchdog reads agent folders the way Claude Code does](backlog/q42.md)
@@ -207,11 +208,10 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
 30. Done: the twenty-fourth batch, Q38 subagent-watchdog fixes and a compaction count (pull request 98); its scope was
     decisions 34 and 35.
 31. Done: the twenty-fifth batch, Q35 `wizard` (pull request 102); its scope was decision 37.
-32. **Next:** Q34 rule-to-hook knows UserPromptExpansion (found in Q32), then Q36 what Q33 left (found in Q33), then
-    Q39 what Q38 left (found in Q38); the three touch different files, so the kickoff in
-    [backlog/kickoff.md](backlog/kickoff.md) runs them as one batch, in that order. Parked: Q25 Claude Code mods
-    (decision 27) and Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
-33. Then: Q40 rule-to-hook knows the newer hook events (found in Q34), Q41 a roster bump forgotten everywhere (found
-    in Q36) and Q42 the watchdog reads agent folders the way Claude Code does (found in Q39), as one batch.
+32. Done: the twenty-sixth batch, Q34, Q36 and Q39 (pull request 104). Parked: Q25 Claude Code mods (decision 27) and
+    Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
+33. **Next:** Q40 rule-to-hook knows the newer hook events (found in Q34), Q41 a roster bump forgotten everywhere
+    (found in Q36) and Q42 the watchdog reads agent folders the way Claude Code does (found in Q39); they touch
+    different files, so the kickoff in [backlog/kickoff.md](backlog/kickoff.md) runs them as one batch, in that order.
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

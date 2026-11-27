@@ -2,50 +2,51 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twenty-fifth batch (Q35 `wizard`, pull request 102, release v0.27.0) is done. Next, in this order: **Q34**
-rule-to-hook knows UserPromptExpansion (found in Q32), **Q36** what Q33 left (found in Q33) and **Q39** what Q38 left
-(found in Q38). They touch different files, so they run as one batch. Read "Things that bit the twenty-fifth batch"
-(`docs/backlog/things-that-bit/batch-25.md`) and the twenty-fourth's first.
+The twenty-sixth batch (Q34, Q36 and Q39, pull request 104, release v0.27.1) is done. Next, in this order: **Q40**
+rule-to-hook knows the newer hook events (found in Q34), **Q41** a roster bump forgotten everywhere (found in Q36) and
+**Q42** the watchdog reads agent folders the way Claude Code does (found in Q39). They touch different files, so they
+run as one batch. Read "Things that bit the twenty-sixth batch" (`docs/backlog/things-that-bit/batch-26.md`) and the
+twenty-fifth's first.
 
-Q34 adds one row to `skills/guards/rule-to-hook/HOOK-EVENTS.md`. Q36 changes the `file-size-guard` recipe, the
-lazy-senior REVIEW.md and the geppetto roster builder (roster first, then `.claude/agents/`, raising the roster number
-on every covenant marker). Q39 changes two hooks (`compact-snapshot` and `subagent-watchdog-agents.mjs`) and needs a
-probe first: does Claude Code load an agent from a file with no frontmatter? hooks/README.md is 32 bytes under its
-limit, so make room before adding to it.
+Q40 adds rows to `skills/guards/rule-to-hook/HOOK-EVENTS.md`, each checked against the installed binary. Q41 adds a
+test in the geppetto suite that fails when a roster file changes and the roster number does not. Q42 changes
+`hooks/agent-orchestration/subagent-watchdog-agents.mjs` and needs probes first (an unclosed flow list, a file in a
+subfolder, a file with no description), and may end with some cases left as they are. hooks/README.md is 32 bytes
+under its limit, so make room before adding to it.
 
 The owner starts the batch with this message:
 
 ```text
-You are the orchestrator for the twenty-sixth batch in this repository: Q34 (rule-to-hook knows
-UserPromptExpansion), Q36 (what Q33 left: the split rule in more places) and Q39 (what Q38 left: the newest snapshot
-of the session, and stray files in an agents folder), in that order. Do not build them yourself; run the roster in
-.claude/agents/ (eng-lead, builder, reviewer) and integrate their work. Type /lean-subagent-dev first (it is typed
-only since Q28).
+You are the orchestrator for the twenty-seventh batch in this repository: Q40 (rule-to-hook knows the newer hook
+events), Q41 (a roster bump forgotten everywhere) and Q42 (the watchdog reads agent folders the way Claude Code does),
+in that order. Do not build them yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and
+integrate their work. Type /lean-subagent-dev first (it is typed only since Q28).
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md.
-2. docs/backlog/q34.md, q36.md and q39.md, decision 29 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md
+2. docs/backlog/q40.md, q41.md and q42.md, decision 29 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md
    ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
-   docs/backlog/things-that-bit/batch-23.md, batch-24.md and batch-25.md.
-3. hooks/README.md, skills/guards/rule-to-hook/HOOK-EVENTS.md and the geppetto roster
-   (skills/agent-orchestration/geppetto/roster/).
+   docs/backlog/things-that-bit/batch-24.md, batch-25.md and batch-26.md.
+3. skills/guards/rule-to-hook/HOOK-EVENTS.md, hooks/agent-orchestration/subagent-watchdog.md and the geppetto tests
+   (tests/geppetto*.test.mjs).
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3) and CLAUDE_AUTOCOMPACT_PCT_OVERRIDE (it should read
   40), and tell me both values. Tell eng-lead to hand back at once with the builders' agent IDs if they run in the
   background; you start the reviewers and send the fix rounds.
-- Run Q39's probe before planning: does Claude Code load an agent from a .md file with no frontmatter? Record the
-  version and the answer.
+- Run Q42's probes before planning (headless, empty HOME, the init event's agents list): an unclosed flow list in
+  `tools`, a definition in a subfolder of .claude/agents/, a definition with no description. Record the version and
+  each answer.
 - Read the base commit before you write it into any brief, and push the working branch at it before dispatch.
 - Work the lean-subagent-dev way: a read-only plan check of every brief that builds the slice in a clone and tries
   mutations of its own, a fresh reviewer per slice, and a cold run (headless, empty HOME, --max-budget-usd) of the
-  two Q39 hook changes with real hooks. Commits carry the harness's two attribution trailers.
+  Q42 hook change with real hooks. Commits carry the harness's two attribution trailers.
 
 Rules that matter most:
 - Every skill works on its own; a mention of a typed-only skill holds /name in the same paragraph. Scripts and hooks
   use the Node standard library only; a hook exits 0 on input it does not understand and checks hookEnabled(). Plain
-  English, no em or en dashes; no tracked file over its size limit (README.md is 28 bytes under its limit and
-  hooks/README.md 32: make room before adding to either).
+  English, no em or en dashes; no tracked file over its size limit (hooks/README.md is 32 bytes under its limit:
+  make room before adding to it).
 - Every new test fails without the change: prove each with mutate.sh (it prints RESULT: CAUGHT) and report every
   "# tests" line.
 - Before merging a builder's work, check `git log <base>..<branch>` on both the harness branch and the branch the

@@ -135,6 +135,19 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
   - Did not: the harness branch of the worktree held no commits (the builder used the brief's branch name), so the
     first merge did nothing; Windows was never run; a token in a command check's argv is still printed, covered by a
     rule in SKILL.md instead of code.
+- 2026-11-27: the twenty-sixth batch, Q34, Q36 and Q39, merged as
+  [pull request 104](https://github.com/paureis/pau-skills/pull/104) and released as v0.27.1. Three small follow-ups
+  as three slices in parallel worktrees: a `UserPromptExpansion` row in rule-to-hook's HOOK-EVENTS.md, the split rule
+  in the file-size-guard recipe, lazy-senior's REVIEW.md and the roster builder (roster 8), and two hook fixes
+  (`compact-snapshot` shows this session's newest snapshot; the watchdog skips agent files with no frontmatter). Each
+  brief had a read-only plan check, each slice a fresh reviewer, and one cold run (headless, empty HOME, real hooks,
+  0.04 US dollars) covered Q39. 2,180 tests (2,170 before). With the roster:
+  - Worked: the plan checks fixed two briefs before any build (a done-when that could not be met as written, and
+    mutants for the BOM, the cap and trimEnd that would have survived); the Q34 reviewer checked every fact in the row
+    against the binary; the Q39 reviewer found two surviving mutants, closed in one fix round; the cold run showed the
+    base failing both Q39 items and the change passing them.
+  - Did not: the Q34 and Q36 reviews found nothing to fix, so their cost bought only confidence; the cold run found
+    that Claude Code's YAML parser is looser than the watchdog's, which no probe had asked (Q42).
 - 2026-11-26: the twenty-fourth batch, Q38 subagent-watchdog fixes and a compaction count, merged as
   [pull request 98](https://github.com/paureis/pau-skills/pull/98) and released as v0.25.0. Hooks only. Two slices in
   parallel: S1 the watchdog (an edit counts wherever the file is, a project or user agent whose definition cannot edit
