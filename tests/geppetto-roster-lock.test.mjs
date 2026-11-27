@@ -5,9 +5,10 @@
 // exact line to write.
 //
 // The hash covers every file under skills/agent-orchestration/geppetto/roster/, found recursively, sorted by its POSIX
-// path relative to roster/. Per file it takes the path, a NUL, the text with CRLF changed to LF, one leading byte
-// order mark dropped and the number on each covenant start marker replaced by a fixed token, then a NUL. Raising the
-// number alone keeps the hash, so the check does not depend on itself.
+// path relative to roster/. Files and folders whose name starts with "." are skipped: untracked junk such as a macOS
+// .DS_Store would change the hash here and not in CI. Per file it takes the path, a NUL, the text with CRLF changed to
+// LF, one leading byte order mark dropped and the number on each covenant start marker replaced by a fixed token, then
+// a NUL. Raising the number alone keeps the hash, so the check does not depend on itself.
 // Not covered, and why:
 // - .claude/agents/: each copy is byte-identical to its roster file (tests/geppetto-roster.test.mjs).
 // - COVENANT.md and PRODUCTION-RULES.md: their blocks are pasted into the roster files, and the existing tests check
@@ -33,10 +34,11 @@ const HERE = 'roster lock (LOCK in tests/geppetto-roster-lock.test.mjs)';
 // The start marker as check-agents-checks.mjs matches it, with the g flag so every marker in a file is replaced.
 const MARKER = /<!--\s*covenant start: geppetto roster (\d+)\s*-->/g;
 
-/** Every file under `dir`, recursively: { <POSIX path relative to dir>: <text> }. */
+/** Every file under `dir`, recursively, skipping dot entries: { <POSIX path relative to dir>: <text> }. */
 function readTree(dir, prefix = '') {
   const files = {};
   for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (e.name.startsWith('.')) continue;
     const key = prefix + e.name;
     if (e.isDirectory()) Object.assign(files, readTree(join(dir, e.name), `${key}/`));
     else files[key] = readFileSync(join(dir, e.name), 'utf8');
@@ -105,6 +107,17 @@ test('the roster is read recursively, keyed by its POSIX path', () => {
   put(dir, 'a.md', 'one\n');
   put(dir, join('sub', 'b.md'), 'two\n');
   assert.deepEqual(readTree(dir), { 'a.md': 'one\n', 'sub/b.md': 'two\n' });
+});
+
+test('a .DS_Store or other dot entry next to the roster files leaves the hash unchanged', () => {
+  const dir = tempDir('geppetto-lock-dot-');
+  put(dir, 'a.md', 'one\n');
+  put(dir, join('sub', 'b.md'), 'two\n');
+  const before = rosterHash(readTree(dir));
+  put(dir, '.DS_Store', 'junk');
+  put(dir, join('sub', '.DS_Store'), 'junk');
+  put(dir, join('.hidden', 'c.md'), 'three\n');
+  assert.equal(rosterHash(readTree(dir)), before);
 });
 
 test('a hash and number equal to the line pass', () => {
