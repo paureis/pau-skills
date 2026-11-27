@@ -157,6 +157,9 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q37 reframe and sharpen from pstack, close to word for word](backlog/q37.md) (done)
 - [Q38 subagent-watchdog: what one orchestrated session showed, and a compaction count](backlog/q38.md) (done)
 - [Q39 what Q38 left: the newest snapshot of the session, and stray files in an agents folder](backlog/q39.md)
+- [Q40 rule-to-hook knows the newer hook events](backlog/q40.md)
+- [Q41 a roster bump forgotten everywhere at once](backlog/q41.md)
+- [Q42 the watchdog reads agent folders the way Claude Code does](backlog/q42.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -208,5 +211,7 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
     Q39 what Q38 left (found in Q38); the three touch different files, so the kickoff in
     [backlog/kickoff.md](backlog/kickoff.md) runs them as one batch, in that order. Parked: Q25 Claude Code mods
     (decision 27) and Q26 our hooks under Code Mode (decision 28). Work this order as it stands (decision 29).
+33. Then: Q40 rule-to-hook knows the newer hook events (found in Q34), Q41 a roster bump forgotten everywhere (found
+    in Q36) and Q42 the watchdog reads agent folders the way Claude Code does (found in Q39), as one batch.
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).

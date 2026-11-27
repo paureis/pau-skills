@@ -71,6 +71,8 @@ const NEVER_CUT = [
 const SHARED_RULES = [
   // The ladder, from RULES.md, word for word in the builder.
   { source: RULES, first: 'Before you write code, stop at the first', last: 'or anything the user asked for.', copies: BUILDERS },
+  // The new-file rule, from RULES.md, word for word in the builder.
+  { source: RULES, first: 'A new file needs a reason', last: 'where its parts went.', copies: BUILDERS },
   // The never-cut list, each file by its own sentence.
   { files: [RULES, ...BUILDERS], first: 'Never cut validation', last: 'or anything the user asked for.', items: NEVER_CUT },
   { files: REVIEWERS, first: 'Never report what the contract asks for', last: 'or what a production rule below requires.', items: NEVER_CUT },

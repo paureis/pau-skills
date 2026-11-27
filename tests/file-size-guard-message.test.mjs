@@ -56,6 +56,14 @@ const NEW_RECIPE = {
   data: /generate it from a script at test or build time/,
 };
 
+// From docs/backlog/q36.md: a helpers module is offered only when two or more of the new test files share the setup.
+test('the test-file recipes offer a helpers module only when two or more new files share the setup', () => {
+  for (const reason of [grown(KINDS.test[0]), created(KINDS.test[0])]) {
+    assert.match(reason, /with a helpers module only when two or more of the new files share the setup\./);
+    assert.doesNotMatch(reason, /with shared setup in a helpers module/);
+  }
+});
+
 describe('file-size guard: the refusal message', () => {
   for (const [kind, paths] of Object.entries(KINDS)) {
     test(`gives the recipe for ${kind}, and only that one`, () => {

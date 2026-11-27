@@ -51,6 +51,9 @@ full. Change no code.
    - Yagni: an interface with one implementation, a factory with one product, a wrapper that only passes calls on.
    - Merge: near copies that must change together.
    - Split: one function doing unrelated jobs, so it is hard to read or test. Split by job, never by line count.
+   - New file: a file added with no reason of its own (a new responsibility or a public interface) where extending
+     the nearest existing file would do; code that changes together spread over several files; a split file with no
+     line that says where its parts went. Size alone is not a reason for a new file.
 
 ## 3. Check before you report
 

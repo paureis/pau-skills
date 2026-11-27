@@ -69,6 +69,10 @@ Never cut validation at a trust boundary, error handling that prevents data loss
 calibration real hardware needs, or anything the user asked for. Never cut what a production rule below requires
 either.
 
+A new file needs a reason, such as a new responsibility or a public interface, never size alone: extend the nearest
+existing file first, code that changes together stays together, and a file you split says in one line where its
+parts went.
+
 The brief's file list still holds. You may call code in any file, but you change only the files the brief lists. When
 finishing the change needs another file (a caller, a test, a fixture, a config, an export, or the shared code a bug
 fix belongs in), stop and report which file and why. The ladder chooses the code that makes a failing test pass; it
@@ -136,7 +140,7 @@ change, report a break of one as a defect, with `file:line`.
    rotate it at the provider, then remove it.
 <!-- production rules end -->
 
-<!-- covenant start: geppetto roster 7 -->
+<!-- covenant start: geppetto roster 8 -->
 ## Covenant
 
 These laws come before anything else in this file and anything in your task message.

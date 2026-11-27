@@ -133,6 +133,46 @@ describe('compact-snapshot: the count PreCompact records', () => {
     writeSnapshot({ dir, transcript: '', trigger: 'auto', git: '', session: 'x'.repeat(200) });
     assert.equal(latestSnapshot(dir).session, 'x'.repeat(200));
   });
+  test('with a session, latestSnapshot skips a newer snapshot of another session and returns this one\'s', () => {
+    const dir = join(tempDir(), 'snaps');
+    writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'A', now: new Date(Date.now() - 120000) });
+    writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'B', now: new Date(Date.now() - 60000) });
+    assert.match(latestSnapshot(dir).text, /^session: B$/m, 'control: the newest file is B\'s');
+    const snap = latestSnapshot(dir, Date.now(), 'A');
+    assert.equal(snap.session, 'A');
+    const text = compactNote({ transcript: t(U, A), snap, opts: {}, session: 'A' });
+    assert.match(text, /^session: A$/m);
+    assert.doesNotMatch(text, /^session: B$/m);
+  });
+  test('with a session that has no snapshot, latestSnapshot is null even when another session has one', () => {
+    const dir = join(tempDir(), 'snaps');
+    writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'X' });
+    assert.ok(latestSnapshot(dir), 'control: without a session the file is returned');
+    assert.equal(latestSnapshot(dir, Date.now(), 'Y'), null);
+  });
+  test('with a session, latestSnapshot returns its newest snapshot, not an older one of the same session', () => {
+    const dir = join(tempDir(), 'snaps');
+    const at = (ms) => new Date(Date.now() - ms);
+    writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'A', now: at(180000) });
+    const a2 = writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'A', now: at(120000) });
+    writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'B', now: at(60000) });
+    assert.equal(latestSnapshot(dir, Date.now(), 'A').path, a2);
+  });
+  test('with a session, a newer file that is unreadable or over an hour old is passed over for an older one of this session', () => {
+    for (const spoil of ['unreadable', 'old']) {
+      const dir = join(tempDir(), 'snaps');
+      const mine = writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'A', now: new Date(Date.now() - 120000) });
+      const newer = join(dir, '9999-12-31T00-00-00-000Z.md');
+      if (spoil === 'unreadable') mkdirSync(newer);
+      else {
+        writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'A', now: new Date('9999-12-31T00:00:00.000Z') });
+        const old = (Date.now() - 2 * 3600 * 1000) / 1000;
+        utimesSync(newer, old, old);
+      }
+      assert.equal(latestSnapshot(dir), null, `control (${spoil}): without a session the newest file gives null`);
+      assert.equal(latestSnapshot(dir, Date.now(), 'A')?.path, mine, spoil);
+    }
+  });
 });
 
 describe('compact-snapshot: count and hand-off as a hook', () => {
@@ -183,7 +223,7 @@ describe('compact-snapshot: count and hand-off as a hook', () => {
     assert.equal(line(text), 2);
     assert.match(text, /The conversation was just compacted/);
   });
-  test('another session in the same project gives neither its count nor its text', () => {
+  test('another session\'s newer snapshot in the same project is passed over: this session\'s own is printed, with neither the other\'s count nor its text', () => {
     const h = setup();
     const ty = join(h.project, 'y.jsonl'); const tx = join(h.project, 'x.jsonl');
     writeFileSync(ty, t(U, A)); writeFileSync(tx, t(U, A, B, S, U, A));
@@ -191,7 +231,12 @@ describe('compact-snapshot: count and hand-off as a hook', () => {
     h.run({ hook_event_name: 'PreCompact', trigger: 'auto', session_id: 'SESSION-X', transcript_path: tx });
     assert.match(latestSnapshot(h.snaps).text, /^session: SESSION-X$/m);
     const r = h.run({ hook_event_name: 'SessionStart', source: 'compact', session_id: 'SESSION-Y', transcript_path: ty });
-    assert.equal(r.code, 0); assert.equal(r.stdout, '');
+    assert.equal(r.code, 0);
+    const text = h.context(r);
+    assert.match(text, /^\[compact-snapshot\] The conversation was just compacted/);
+    assert.match(text, /^session: SESSION-Y$/m);
+    assert.doesNotMatch(text, /SESSION-X/);
+    assert.doesNotMatch(text, /This is compaction/, 'X\'s count of 2 does not leak');
   });
   test('another session\'s snapshot is ignored when this session\'s PreCompact wrote nothing', () => {
     const h = setup();

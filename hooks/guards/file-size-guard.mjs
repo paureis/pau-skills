@@ -186,8 +186,8 @@ const DATA_RECIPE = 'generate it from a script at test or build time, or keep a 
 export const RECIPES = {
   code: ['code file', 'split it by responsibility into modules, and keep the old path re-exporting what moved so callers do not change.',
     'write it as one module per responsibility, with a small entry file that imports them.'],
-  test: ['test file', 'split it by the behaviour each group covers, into files the test runner still finds, with shared setup in a helpers module.',
-    'write one test file per behaviour group, with shared setup in a helpers module.'],
+  test: ['test file', 'split it by the behaviour each group covers, into files the test runner still finds, with a helpers module only when two or more of the new files share the setup.',
+    'write one test file per behaviour group, with a helpers module only when two or more of the new files share the setup.'],
   document: ['long document', 'make it a short index plus one file per section, each linked from the index.',
     'write a short index plus one file per section, each linked from the index.'],
   log: ['log', 'keep recent entries and move older ones to an archive file by period (one per year or release), linked from the top.',
