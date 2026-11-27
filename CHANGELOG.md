@@ -3,6 +3,21 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-27: Q34, Q36 and Q39, small follow-ups from earlier batches
+
+- `rule-to-hook`: HOOK-EVENTS.md has a `UserPromptExpansion` row (a typed slash command or MCP prompt, matched on
+  `command_name`; exit 2 blocks the expansion), and the exit code 0 note names it among the events whose plain stdout
+  reaches the model. Q34.
+- `file-size-guard`: the recipe for splitting a test file now says to add a helpers module only when two or more of
+  the new files share the setup. `lazy-senior` REVIEW.md flags a new file that holds what an existing file could, and
+  the roster builder carries the new-file rule from RULES.md (roster 8). Q36.
+- `compact-snapshot`: after a compaction, the note shows this session's newest snapshot even when another session in
+  the same project wrote a newer one. `subagent-watchdog`: a `.md` file with no frontmatter in an agents folder (a
+  README, notes) no longer turns off the read-only rule, since Claude Code does not load it as an agent. Q39.
+- New backlog items Q40, Q41 and Q42 for what these reviews found.
+- `guards` 0.12.1, `planning` 0.13.1, `agent-orchestration` 0.15.1, `session-discipline` 0.18.1, `pau-skills-hooks`
+  0.9.1, `pau-skills` 0.27.1.
+
 ## 2026-11-27: Q35, wizard for the steps only a person can do
 
 - `wizard` (session-discipline, new, adapted from mattpocock/skills): when work is blocked on a step only a person can
