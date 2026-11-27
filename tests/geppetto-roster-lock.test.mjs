@@ -14,6 +14,8 @@
 // - COVENANT.md and PRODUCTION-RULES.md: their blocks are pasted into the roster files, and the existing tests check
 //   the pasted blocks equal them, so a change to either block changes a roster file.
 // - templates/designer.md: not a roster agent; geppetto's Update step 1 never merges it.
+// The bypass: rewriting LOCK with a new hash under the same number passes this test; only a reviewer reading the diff
+// catches it.
 // The lock line lives here, not in the skill folder: it checks this repository's release habit, the skill never reads
 // it, and a standalone geppetto install would ship a file no user needs.
 import { test } from 'node:test';
