@@ -262,6 +262,21 @@ test('with no variable, or an empty one, the merge base with origin/main is the 
   }
 });
 
+test('a branch behind origin/main is judged against the merge base, not the origin/main tip', () => {
+  const { dir, sha } = baseRepo();
+  git(dir, 'switch', '-q', '-c', 'side');
+  putLock(dir, lockText(lockLine(9, 'b')));
+  const sibling = commitAll(dir, 'main raised the roster');
+  git(dir, 'switch', '-q', '-');
+  git(dir, 'update-ref', 'refs/remotes/origin/main', sibling);
+  writeFileSync(join(dir, 'later.txt'), 'x\n');
+  commitAll(dir, 'unrelated work');
+  const r = checkLock({ root: dir, env: envOf() });
+  assert.equal(r.ok, true, r.message);
+  assert.ok(r.diagnostic.includes(`the merge base of HEAD and origin/main, commit ${sha.slice(0, 12)}`), r.diagnostic);
+  assert.ok(!r.diagnostic.includes(sibling.slice(0, 12)), r.diagnostic);
+});
+
 test('the lock file missing here, or a LOCK here that does not parse, fails and says so', () => {
   const { dir } = baseRepo();
   const env = envOf({ ROSTER_LOCK_BASE: 'HEAD' });
