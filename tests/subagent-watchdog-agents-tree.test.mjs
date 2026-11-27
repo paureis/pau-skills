@@ -3,6 +3,7 @@
 // type defined more than once. Real tempDir() folders, as in subagent-watchdog-agents.test.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import * as fs from 'node:fs';
 import { mkdirSync, writeFileSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { tempDir } from './helpers.mjs';
@@ -51,7 +52,7 @@ test('T2 subfolders are read at any depth, hidden ones too; a type defined twice
   assert.equal(ask(agents({ 'a.md': R, 'b.md': E })), false, 'two in one folder');
 });
 
-test('T3 links to a file and to a folder are followed; a link to a folder already read is skipped, also when name order reaches it deep first; a dangling or looping link of any name is an unknown', { skip: WIN }, () => {
+test('T3 links to a file and to a folder are followed; a link to a folder already read is skipped, also when name order reaches it deep first; a dangling or looping link of any name is skipped, as Claude Code cannot load it either', { skip: WIN }, () => {
   const other = agents({ 'x/real.md': R });
   let p = agents();
   symlinkSync(join(other.dir, 'x', 'real.md'), join(p.dir, 'link.md'));
@@ -73,15 +74,43 @@ test('T3 links to a file and to a folder are followed; a link to a folder alread
     symlinkSync(join(p.dir, real, 'x'), join(p.dir, via, 'y', 'link'));
     assert.equal(ask(p), true, `${via}/y/link to ${real}/x, whose match is 8 levels down`);
   }
-  for (const [name, why] of [['gone.md', 'a dangling .md link'], ['gone', 'a dangling link not named .md']]) {
+  for (const [name, to, why] of [['gone.md', 'missing', 'a dangling .md link'], ['gone', 'missing', 'a dangling link not named .md'],
+    ['.#a.md', 'user@host.1234', 'an editor lock link'], ['self.md', 'self.md', 'a link to itself']]) {
     p = agents({ 'a.md': R });
-    symlinkSync(join(p.dir, 'missing'), join(p.dir, name));
-    assert.equal(ask(p), false, why);
+    symlinkSync(join(p.dir, to), join(p.dir, name));
+    assert.equal(ask(p), true, why);
   }
   p = agents({ 'a.md': R });
   symlinkSync(join(p.dir, 'l2'), join(p.dir, 'l1'));
   symlinkSync(join(p.dir, 'l1'), join(p.dir, 'l2'));
-  assert.equal(ask(p), false, 'a looping link');
+  assert.equal(ask(p), true, 'two links to each other');
+  p = agents({ 'a.md': E });
+  symlinkSync(join(p.dir, 'missing'), join(p.dir, 'gone.md'));
+  assert.equal(ask(p), false, 'a dangling link next to a match that edits');
+});
+
+/** fs with some calls replaced; an error with the given code from those calls whose path matches. */
+const failing = (calls, match, code) => new Proxy(fs, {
+  get: (t, k) => (calls.includes(k) ? (p, ...a) => { if (match(String(p))) throw Object.assign(new Error(code), { code }); return t[k](p, ...a); } : t[k]),
+});
+
+test('T10 any other stat error (EACCES) is an unknown, so is a subfolder that cannot be listed; the top folder that cannot be listed is skipped', () => {
+  const p = agents({ 'a.md': R, 'locked': 'x', 'sub/b.md': R });
+  assert.equal(definedReadOnly('lector', { project: p.root }), true, 'control: the real fs');
+  assert.equal(definedReadOnly('lector', { project: p.root, io: failing(['statSync'], (s) => s.endsWith('locked'), 'EACCES') }), false, 'EACCES on stat');
+  assert.equal(definedReadOnly('lector', { project: p.root, io: failing(['readdirSync'], (s) => s.endsWith('sub'), 'EACCES') }), false, 'a subfolder that cannot be listed');
+  const h = agents({ 'b.md': R });
+  assert.equal(definedReadOnly('lector', { project: p.root, home: h.root, io: failing(['readdirSync'], (s) => s === p.dir, 'EACCES') }), true, 'the project folder cannot be listed: home decides');
+});
+
+// Probe (same version, 2026-11-27): a described .md file in .claude/agents/.git/objects/ab/ loads. The watchdog skips
+// .git on purpose: no one keeps a definition there, and the loose object folders of a git repository kept as the agents
+// folder pass the 200 folders after about 110 commits.
+test('T11 a folder named .git is not read and counts toward no limit; a .MD file (upper case) is not read, as Claude Code does not load it', () => {
+  const git = Object.fromEntries(Array.from({ length: 300 }, (_, i) => [`.git/objects/${i}/`, '']));
+  assert.equal(ask(agents({ 'a.md': R, ...git, '.git/objects/ab/e.md': E })), true, 'a .git of 300 folders');
+  assert.equal(ask(agents({ 'a.md': R, 'b.MD': E })), true, 'a .MD file that edits');
+  assert.equal(ask(agents({ 'a.MD': R })), false, 'only a .MD file');
 });
 
 const deep = (n) => Array(n).fill('s').join('/');
@@ -110,6 +139,11 @@ const SKIPPED = [
   ['description: with nothing after it, a key next', (n, t) => `---\nname: ${n}\ndescription:\ntools: ${t}\n---\n`],
   ['description: with nothing after it, the last line', (n, t) => `---\nname: ${n}\ntools: ${t}\ndescription:   \n---\n`],
   ...['""', "''", '~', 'null', 'Null', 'NULL', '# x', '~ # x'].map((v) => [`description: ${v}`, (n, t) => `---\nname: ${n}\ndescription: ${v}\ntools: ${t}\n---\n`]),
+  // Probed: "|" and ">" with no body are dropped; the other block scalar indicators read the same in YAML.
+  ...['|', '>', '|-', '>+', '|2', '>-1', '| # x'].map((v) => [`description: ${v} with no body`, (n, t) => `---\nname: ${n}\ndescription: ${v}\ntools: ${t}\n---\n`]),
+  ['description: | with no body, the last line', (n, t) => `---\nname: ${n}\ntools: ${t}\ndescription: |\n---\n`],
+  // Not probed: a line at column 0 that is not a key is no indented line, so the description stays empty.
+  ['description: with a line at column 0 after it', (n, t) => `---\nname: ${n}\ndescription:\nReads files.\ntools: ${t}\n---\n`],
 ];
 for (const [why, make] of SKIPPED) {
   test(`T7 ${why}: not a definition (not a match and not an unknown)`, () => {

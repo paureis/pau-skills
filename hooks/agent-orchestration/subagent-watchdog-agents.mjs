@@ -16,11 +16,16 @@
 // file (2026-11-26). A README.md and a prompt with no frontmatter do not load; a "---" first line led by a BOM or with
 // trailing spaces loads, one after a blank line or leading spaces does not (2026-11-26). Subfolders at any depth, a
 // linked file, a linked folder, hidden and git-ignored ones load; the same name at top level and in a subfolder is one
-// agent, which copy wins is not known; no description, an empty one ("", '', or no indented line after it), null, ~ or
-// only a comment drop the file; "tools: [Read, Grep" loads with Grep alone; a .MD file does not load (2026-11-27). So a
-// file with no frontmatter, or no description, is skipped. A flow list carried on to the next line loads too, but is
-// not read here: that line could hold an Edit. Any other read or parse error, or a root left incomplete, is an unknown,
-// which means "not read-only": it might be the type's own definition. tools: null or ~ counts as no tools field.
+// agent, which copy wins is not known; no description, an empty one ("", '', or no indented line after it, also after
+// "|" or ">"), null, ~ or only a comment drop the file; "tools: [Read, Grep" loads with Grep alone; a .MD file does
+// not load; a described .md file in .claude/agents/.git/objects/ab/ loads (2026-11-27). So a file with no frontmatter,
+// or no description, is skipped, and so is a link that is dangling or loops (stat gives ENOENT or ELOOP): Claude Code
+// cannot load it either, and an editor lock link such as .#a.md would otherwise turn every type off. A folder named
+// .git is skipped on purpose, unlike Claude Code, and counts toward no limit: no one keeps a definition there, and the
+// loose object folders of a git repository kept as the agents folder pass the 200 folders after about 110 commits. A
+// flow list carried on to the next line loads too, but is not read here: that line could hold an Edit. Any other
+// stat, list, read or parse error, or a root left incomplete, is an unknown, which means "not read-only": it might be
+// the type's own definition. tools: null or ~ counts as no tools field.
 import * as fs from 'node:fs';
 import { join } from 'node:path';
 
@@ -31,6 +36,7 @@ const MAX_DEPTH = 8; // folder levels below .claude/agents
 const MAX_DIRS = 200; // folders per root, .claude/agents included
 const MAX_ENTRIES = 5000; // entries stat'd per root, of any kind
 const NULLS = new Set(['null', 'Null', 'NULL', '~']);
+const BLOCK_SCALAR = /^[|>]([1-9][+-]?|[+-][1-9]?)?$/; // a block scalar indicator: |, >, |-, >+, |2, >-1
 
 /** A YAML scalar: the text inside quotes, or the plain text before a comment. undefined for text after a quote. */
 function scalar(v) {
@@ -106,8 +112,8 @@ const opens = (lines) => lines[0].trimEnd() === '---';
  * does not parse, a flow list not closed on its line that goes on to the next line). readOnly: a tools field (a comma
  * list, a flow list or a block list) that names at least one tool and none of Edit, MultiEdit, NotebookEdit or "*".
  * described: a description that is not empty. Claude Code 2.1.332 drops a file with none, an empty one
- * ("description:" with no indented line after it, "", ''), or an unquoted null, Null, NULL or ~. A value that is only
- * a comment is empty.
+ * ("description:" or a block scalar indicator such as "|" or ">-" with no indented line after it, "", ''), or an
+ * unquoted null, Null, NULL or ~. A value that is only a comment is empty.
  */
 export function parseDefinition(text) {
   const lines = textLines(text);
@@ -149,7 +155,9 @@ export function parseDefinition(text) {
     } else {
       const v = scalar(value);
       if (v === undefined) return null;
-      fields.set(key[1], key[1] === 'description' && !/^["']/.test(value) && NULLS.has(v) ? '' : v);
+      const plain = key[1] === 'description' && !/^["']/.test(value);
+      if (plain && BLOCK_SCALAR.test(v)) empty = key[1]; // its body, if any, is the indented next line
+      fields.set(key[1], plain && (NULLS.has(v) || BLOCK_SCALAR.test(v)) ? '' : v);
     }
   }
   const tools = fields.get('tools');
@@ -177,8 +185,9 @@ function definition(file, io) {
 /**
  * The parsed definitions under dir and its subfolders, read breadth first so each real folder is first reached at its
  * smallest depth; links to files and folders are followed (statSync). [] when dir cannot be listed. null for an
- * unknown: an entry that cannot be listed, stat'd or read (a dangling or looping link of any name), a definition()
- * null, or a limit that stops the walk (the root is then incomplete). A real folder already read is skipped silently.
+ * unknown: an entry that cannot be listed, stat'd or read, a definition() null, or a limit that stops the walk (the
+ * root is then incomplete). Skipped silently: a real folder already read, an entry named .git, and an entry whose
+ * stat gives ENOENT or ELOOP (a dangling or looping link of any name).
  */
 function tree(dir, io) {
   const defs = [];
@@ -193,10 +202,17 @@ function tree(dir, io) {
     // millions of entries under .claude/agents ever shows up.
     try { names = io.readdirSync(folder); } catch { return q === 0 ? defs : null; }
     for (const name of names) {
+      if (name === '.git') continue; // on purpose, unlike Claude Code: see the header
       if (++count > MAX_ENTRIES) return null;
       const path = join(folder, name);
+      let st;
       try {
-        const st = io.statSync(path);
+        st = io.statSync(path);
+      } catch (e) {
+        if (e && (e.code === 'ENOENT' || e.code === 'ELOOP')) continue; // a dangling or looping link
+        return null;
+      }
+      try {
         if (st.isDirectory()) {
           const real = io.realpathSync(path);
           if (seen.has(real)) continue;
