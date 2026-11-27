@@ -25,10 +25,10 @@
 //
 // Agent definitions, at SubagentStart only (subagent-watchdog-agents.mjs): the .md files of <project>/.claude/agents
 // and its subfolders, then of <home>/.claude/agents, home being PAU_SKILLS_HOME or else the user's home (as for the
-// config). The type is matched to the name line; it is read-only, stored as ro, when every definition of the name in
-// the first root that has one lists tools and none of Edit, MultiEdit or NotebookEdit. Links are followed; per root at
-// most 200 .md files, 64 KB a file, 8 levels, 200 folders, 5,000 entries; plugin agents and CLAUDE_CONFIG_DIR are not
-// read. Claude Code 2.1.332 (2026-11-26): agent_type is the name line, and CLAUDE_PROJECT_DIR is set for hooks.
+// config). The type is read-only, stored as ro, when every definition of its name line in the first root that has one
+// lists tools and none of Edit, MultiEdit or NotebookEdit, and no unknown was met. Links are followed, .git is not;
+// per root up to 200 .md files, 64 KB a file, 8 levels, 200 folders, 5,000 entries; plugin agents and CLAUDE_CONFIG_DIR
+// are not read. Claude Code 2.1.332 (2026-11-26): agent_type is the name line, and CLAUDE_PROJECT_DIR is set for hooks.
 //
 // State: <os.tmpdir()>/pau-skills-watchdog-<uid>/<session_id>/<agent_id>.json (no -<uid> where the platform has no
 // user ids), one file per agent, and a file "shown" with the main session's last status time. Both ids must match
