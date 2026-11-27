@@ -2,30 +2,24 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twenty-eighth batch (Q43, pull request 108, no release) is done. Next: **Q44** CI says when the roster lock base
-check found no base (found in Q43), the only planned item. The owner chose option 1: fail when `ROSTER_LOCK_BASE` is
-set and gives no base, and keep passing with a note when it is unset.
-Read "Things that bit the twenty-eighth batch" (`docs/backlog/things-that-bit/batch-28.md`) and the twenty-seventh's
-first.
+The twenty-ninth batch (Q44 option 1, pull request 110, no release) is done. No planned item is left: Q25 Claude
+Code mods and Q26 our hooks under Code Mode are parked (decisions 27 and 28). The owner picks the next work, or adds an
+item after the parked ones (decision 29). Read "Things that bit the twenty-ninth batch"
+(`docs/backlog/things-that-bit/batch-29.md`) and the twenty-eighth's first.
 
-Q44 is small: one builder, one reviewer, no cold run. It touches `tests/geppetto-roster-lock-base.test.mjs` and
-perhaps `.github/workflows/ci.yml`; the brief says which file the builder may edit. Tests and CI only: no plugin bump
-and no release notes.
-
-The owner starts the batch with this message:
+For a new item, the owner starts the batch with this message, with the item filled in:
 
 ```text
-You are the orchestrator for the twenty-ninth batch in this repository: Q44 (CI says when the roster lock base check
-found no base), option 1 from docs/backlog/q44.md. Do not build it yourself; run the roster in
-.claude/agents/ (eng-lead, builder, reviewer) and integrate the work. Type /lean-subagent-dev first (it is typed only
-since Q28).
+You are the orchestrator for the thirtieth batch in this repository: <item and its backlog file>. Do not build it
+yourself; run the roster in .claude/agents/ (eng-lead, builder, reviewer) and integrate the work. Type
+/lean-subagent-dev first (it is typed only since Q28).
 
 Before anything else, read these in full:
 1. CLAUDE.md and docs/ADDING-A-SKILL.md.
-2. docs/backlog/q43.md and q44.md, decision 29 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md
-   ("With the roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and
-   docs/backlog/things-that-bit/batch-27.md and batch-28.md.
-3. tests/geppetto-roster-lock-base.test.mjs and .github/workflows/ci.yml.
+2. The item's backlog file, decision 29 (docs/backlog/decisions.md), docs/backlog/how-to-run-a-batch.md ("With the
+   roster", steps 8 and 10 with the patch notes), docs/RELEASES.md, and docs/backlog/things-that-bit/batch-28.md and
+   batch-29.md.
+3. The files the item names.
 
 First, before any brief:
 - Check CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH (it should read 3) and CLAUDE_AUTOCOMPACT_PCT_OVERRIDE (it should read
@@ -43,14 +37,14 @@ Rules that matter most:
   "# tests" line. In a file that holds its own tests, anchor each sed pattern to the code line.
 - Before merging the builder's work, check `git log <base>..<branch>` on both the harness branch and any branch the
   brief named.
-- Run npm test before every commit, docs included. A change to tests and CI only bumps no plugin and gets no release
-  notes; say so in the PR.
+- Run npm test before every commit, docs included. Bump every plugin whose files changed and the bundle, and add
+  release notes, unless the change is tests and CI only; say which in the PR.
 - The builder commits and never pushes. You push the working branch and open the PR. When CI is green on Linux, macOS
-  and the validate job, each Tests log shows the roster lock base line, and every review is clean, merge it yourself.
+  and the validate job and every review is clean, merge it yourself.
 
 When the PR is open, tell me in plain words what changed, what the review found, and anything I need to decide. After
-the merge, check the push run on main names its base too, mark Q44 done in docs/backlog/ with what worked and what did
-not, and write the next kickoff here.
+the merge, ship any changed skills (step 10), mark the item done in docs/backlog/ with what worked and what did not,
+and write the next kickoff here.
 ```
 
 ## The fifth batch's kickoff, as a template

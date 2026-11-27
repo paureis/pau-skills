@@ -76,6 +76,19 @@ in [done-2026-10-29-to-11-06.md](done-2026-10-29-to-11-06.md).
   - Did not: the harness branch of the worktree held no commits (the builder used the brief's branch name), so the
     first merge did nothing; Windows was never run; a token in a command check's argv is still printed, covered by a
     rule in SKILL.md instead of code.
+- 2026-11-27: the twenty-ninth batch, Q44 option 1, merged as
+  [pull request 110](https://github.com/paureis/pau-skills/pull/110), with no release (tests and CI only). Run in the
+  same session as batch 28, with no compaction. One slice from one `eng-lead` plan: the roster lock base check fails
+  when `ROSTER_LOCK_BASE` is set and gives no base, and passes with a note when it is unset. A read-only plan check
+  built a prototype, one builder did the work, a fresh reviewer checked it, and one fix round pinned three gaps.
+  2,259 tests (2,258 before).
+  - Worked: the plan check ran every done-when and mutation in a clone first and found two assertions no test could
+    fail (the fail diagnostic and the value in the message); the reviewer compared old and new code in 14 cases to
+    prove the unset path unchanged, and simulated the depth-1 CI case; the brief listed each old assertion allowed to
+    change, so the rule change could not hide a weakened test.
+  - Did not: the builder's worktree guard refused heredocs holding `!==` or `{ note`, so sed scripts had to go in
+    files; three more mutants survived the first build (a value of only spaces, part of the fix text, part of the
+    note), a fix round the brief could have saved.
 - 2026-11-27: the twenty-eighth batch, Q43, merged as
   [pull request 108](https://github.com/paureis/pau-skills/pull/108), with no release (tests and CI only, no plugin
   bumped). One slice from one `eng-lead` plan: `tests/geppetto-roster-lock-base.test.mjs` reads `LOCK` at a base
