@@ -83,7 +83,11 @@ function textLines(text) {
   return t.split(/\r?\n/);
 }
 
-/** Frontmatter opens when the first line, trailing white space dropped, is "---". Claude Code loads the same files. */
+/**
+ * Frontmatter opens when the first line, trailing white space dropped, is "---". The hook skips only files Claude Code
+ * would not load; Claude Code also needs a line break after "---", a closing line and a name, so some files it skips still
+ * count here as a possible match (the cautious side).
+ */
 const opens = (lines) => lines[0].trimEnd() === '---';
 
 /**

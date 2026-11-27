@@ -150,6 +150,29 @@ describe('compact-snapshot: the count PreCompact records', () => {
     assert.ok(latestSnapshot(dir), 'control: without a session the file is returned');
     assert.equal(latestSnapshot(dir, Date.now(), 'Y'), null);
   });
+  test('with a session, latestSnapshot returns its newest snapshot, not an older one of the same session', () => {
+    const dir = join(tempDir(), 'snaps');
+    const at = (ms) => new Date(Date.now() - ms);
+    writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'A', now: at(180000) });
+    const a2 = writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'A', now: at(120000) });
+    writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'B', now: at(60000) });
+    assert.equal(latestSnapshot(dir, Date.now(), 'A').path, a2);
+  });
+  test('with a session, a newer file that is unreadable or over an hour old is passed over for an older one of this session', () => {
+    for (const spoil of ['unreadable', 'old']) {
+      const dir = join(tempDir(), 'snaps');
+      const mine = writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'A', now: new Date(Date.now() - 120000) });
+      const newer = join(dir, '9999-12-31T00-00-00-000Z.md');
+      if (spoil === 'unreadable') mkdirSync(newer);
+      else {
+        writeSnapshot({ dir, transcript: t(U, A), trigger: 'auto', git: '', session: 'A', now: new Date('9999-12-31T00:00:00.000Z') });
+        const old = (Date.now() - 2 * 3600 * 1000) / 1000;
+        utimesSync(newer, old, old);
+      }
+      assert.equal(latestSnapshot(dir), null, `control (${spoil}): without a session the newest file gives null`);
+      assert.equal(latestSnapshot(dir, Date.now(), 'A')?.path, mine, spoil);
+    }
+  });
 });
 
 describe('compact-snapshot: count and hand-off as a hook', () => {
