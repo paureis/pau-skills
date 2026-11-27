@@ -4,20 +4,23 @@
 // NotebookEdit is read-only: a lone Write is the report file. No tools field means the agent gets every tool, so it
 // is not read-only; nor is one limited only by disallowedTools.
 //
-// The hook calls definedReadOnly() at SubagentStart only, and stores the answer in the agent's state. It reads
-// <project>/.claude/agents/*.md, then <home>/.claude/agents/*.md (home is PAU_SKILLS_HOME, else the user's home, as
-// for the config), and matches the type to the frontmatter name line, not to the file name; the first folder with
-// the name wins, so the project's definition wins over the user's. Not read: plugin agents, CLAUDE_CONFIG_DIR,
-// subfolders, links, a file over 64 KB, files past the first 200 .md files of a folder (sorted by name). Facts from a
-// headless run (Claude Code 2.1.332, 2026-11-26): SubagentStart's agent_type is the name line ("lector" from the file
-// lector-file.md), and the input names no definition file. A .md file with no frontmatter is not an agent definition
-// and is skipped: its first line, after an optional BOM and with trailing white space dropped, is not "---" (an empty
-// file has none). Probes of the same version (headless, empty HOME): a README.md and a plain prompt with no frontmatter
-// were missing from the init event's agents list; a "---" line led by a BOM or with trailing spaces loads, and one
-// after a blank line or after leading spaces does not. Any other read or parse error means "not read-only", which is
-// the rule as it was before: a .md file over 64 KB, unreadable, or opening frontmatter that does not parse, seen before
-// the match, might be the type's own definition, so it makes the answer false. tools: null or ~ counts as no tools
-// field.
+// The hook calls definedReadOnly() at SubagentStart only, and stores the answer in the agent's state. It reads the
+// .md files (lower case) of <project>/.claude/agents and its subfolders, then the same under <home> (PAU_SKILLS_HOME,
+// else the user's home, as for the config), and matches the type to the frontmatter name line, not to the file name.
+// The first root with the name decides, so the project's definitions win over the user's; there, every definition of
+// the name must be read-only. Links to files and folders are followed; hidden and git-ignored entries are read. Per
+// root at most 200 .md files, 64 KB a file, 8 folder levels below .claude/agents, 200 folders (.claude/agents
+// included) and 5,000 entries; a walk stopped at a limit leaves the root incomplete. Not read: plugin agents,
+// CLAUDE_CONFIG_DIR, .MD files. Facts from headless runs (Claude Code 2.1.332, empty HOME, the init event's agents
+// list): SubagentStart's agent_type is the name line ("lector" from lector-file.md), and the input names no definition
+// file (2026-11-26). A README.md and a prompt with no frontmatter do not load; a "---" first line led by a BOM or with
+// trailing spaces loads, one after a blank line or leading spaces does not (2026-11-26). Subfolders at any depth, a
+// linked file, a linked folder, hidden and git-ignored ones load; the same name at top level and in a subfolder is one
+// agent, which copy wins is not known; no description, an empty one ("", '', or no indented line after it), null, ~ or
+// only a comment drop the file; "tools: [Read, Grep" loads with Grep alone; a .MD file does not load (2026-11-27). So a
+// file with no frontmatter, or no description, is skipped. A flow list carried on to the next line loads too, but is
+// not read here: that line could hold an Edit. Any other read or parse error, or a root left incomplete, is an unknown,
+// which means "not read-only": it might be the type's own definition. tools: null or ~ counts as no tools field.
 import * as fs from 'node:fs';
 import { join } from 'node:path';
 
@@ -99,11 +102,12 @@ const opens = (lines) => lines[0].trimEnd() === '---';
 
 /**
  * One agent definition's frontmatter: { name (a string, or null when there is none), readOnly, described }, or null
- * when the text has no frontmatter that parses (no "---" first line or closing line, a key given twice, a list that does
- * not parse, a flow list not closed on its line that goes on to the next line). readOnly: a tools field (a comma list,
- * a flow list or a block list) that names at least one tool and none of Edit, MultiEdit, NotebookEdit or "*".
- * described: a description that is not empty. Claude Code 2.1.332 drops a file with none, an empty one ("description:"
- * with no indented line after it, "", ''), or an unquoted null, Null, NULL or ~. A value that is only a comment is empty.
+ * when the text has no frontmatter that parses (no "---" first line or closing line, a key given twice, a list that
+ * does not parse, a flow list not closed on its line that goes on to the next line). readOnly: a tools field (a comma
+ * list, a flow list or a block list) that names at least one tool and none of Edit, MultiEdit, NotebookEdit or "*".
+ * described: a description that is not empty. Claude Code 2.1.332 drops a file with none, an empty one
+ * ("description:" with no indented line after it, "", ''), or an unquoted null, Null, NULL or ~. A value that is only
+ * a comment is empty.
  */
 export function parseDefinition(text) {
   const lines = textLines(text);
@@ -150,7 +154,8 @@ export function parseDefinition(text) {
   }
   const tools = fields.get('tools');
   const readOnly = tools !== undefined && tools.length > 0 && !tools.some((n) => EDIT_TOOLS.has(n) || n === '*');
-  return { name: fields.has('name') ? fields.get('name') : null, readOnly, described: Boolean(fields.get('description')) };
+  const described = Boolean(fields.get('description'));
+  return { name: fields.has('name') ? fields.get('name') : null, readOnly, described };
 }
 
 const NO_FRONTMATTER = Symbol('no frontmatter');
@@ -171,9 +176,9 @@ function definition(file, io) {
 
 /**
  * The parsed definitions under dir and its subfolders, read breadth first so each real folder is first reached at its
- * smallest depth; links to files and folders are followed (statSync). [] when dir cannot be listed. null for an unknown:
- * an entry that cannot be listed, stat'd or read (a dangling or looping link of any name), a definition() null, or a
- * limit that stops the walk (the root is then incomplete). A real folder already read is skipped silently.
+ * smallest depth; links to files and folders are followed (statSync). [] when dir cannot be listed. null for an
+ * unknown: an entry that cannot be listed, stat'd or read (a dangling or looping link of any name), a definition()
+ * null, or a limit that stops the walk (the root is then incomplete). A real folder already read is skipped silently.
  */
 function tree(dir, io) {
   const defs = [];
