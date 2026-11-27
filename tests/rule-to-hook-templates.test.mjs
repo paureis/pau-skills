@@ -1,7 +1,7 @@
 // The rule-to-hook templates work as shipped: the JS guard denies its example pattern, passes harmless and near-miss
 // commands, fails open on garbage; its bundled test template is green; the Python twin agrees; the snippet is valid.
 // The ratchet template passes at its baseline count, fails when a change adds one or drops one, and fails on an
-// expired or incomplete exception. It also covers HOOK-EVENTS.md: the UserPromptExpansion row and the Exit code 0 bullet.
+// expired or incomplete exception. HOOK-EVENTS.md is covered in rule-to-hook-events.test.mjs.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -67,25 +67,6 @@ test('settings snippet is valid JSON with a Bash PreToolUse command hook', () =>
   const entry = s.hooks.PreToolUse[0];
   assert.equal(entry.matcher, 'Bash');
   assert.equal(entry.hooks[0].type, 'command');
-});
-
-describe('HOOK-EVENTS.md', () => {
-  const md = readFileSync(repo('skills', 'guards', 'rule-to-hook', 'HOOK-EVENTS.md'), 'utf8');
-  const events = md.split('\n## The events\n')[1]?.split('\n## ')[0] ?? '';
-  const rows = events.split('\n').filter((l) => l.startsWith('| `')).map((l) => l.split('|').slice(1, -1).map((c) => c.trim()));
-  test('the events table has one UserPromptExpansion row with its input fields and how exit 2 blocks', () => {
-    const found = rows.filter((r) => r[0] === '`UserPromptExpansion`');
-    assert.equal(found.length, 1);
-    const [row] = found;
-    assert.equal(row.length, 5);
-    for (const f of ['expansion_type', 'command_name', 'command_args', 'command_source']) assert.ok(row[2].includes(`\`${f}\``), f);
-    assert.match(row[3], /exit 2 blocks the expansion/i);
-  });
-  test('the Exit code 0 bullet says plain stdout reaches Claude on UserPromptExpansion', () => {
-    const bullet = md.split('\n- ').find((b) => b.startsWith('**Exit code 0**'));
-    assert.ok(bullet);
-    assert.match(bullet, /`UserPromptExpansion`/);
-  });
 });
 
 const python = ['python3', 'python'].find((p) => spawnSync(p, ['--version'], { encoding: 'utf8' }).status === 0);
