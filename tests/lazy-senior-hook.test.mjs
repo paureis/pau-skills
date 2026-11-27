@@ -146,6 +146,26 @@ test("BUILD.md's Finish the change section says a new file needs a reason", () =
   assert.doesNotMatch(build, /pathLimits/);
 });
 
+test("REVIEW.md's Lean list says a new file needs a reason, for review and audit alike", () => {
+  const review = readFileSync(repo('skills', 'planning', 'lazy-senior', 'REVIEW.md'), 'utf8');
+  const look = review.split(/^## /m).find((s) => s.startsWith('2. Look for\n'));
+  assert.ok(look, 'a "## 2. Look for" section');
+  const lean = look.split(/^\d+\. /m).find((s) => s.startsWith('**Lean:**'));
+  assert.ok(lean, 'a "**Lean:**" item');
+  const bullet = lean.split(/^(?=\s*- )/m).find((b) => /^\s*- New file:/.test(b));
+  assert.ok(bullet, 'a "- New file:" bullet in the Lean list');
+  const text = bullet.replace(/\s+/g, ' ');
+  assert.match(text, /a new responsibility or a public interface/);
+  assert.match(text, /extending the nearest existing file would do/);
+  assert.match(text, /code that changes together spread over several files/);
+  assert.match(text, /where its parts went/);
+  assert.match(text, /Size alone is not a reason for a new file\./);
+  assert.doesNotMatch(text, FORBIDS_NEW_FILES, 'the bullet does not forbid new files');
+  assert.match(lean, /Split by job, never by line count\./, 'the Split bullet stays');
+  // The skill works without the hooks, so REVIEW.md names neither the guard nor its option.
+  assert.doesNotMatch(review, /file-size-guard|pathLimits/);
+});
+
 test('the signing line names both off switches exactly', () => {
   assert.equal(SIGNATURE, '(lazy-senior hook. Turn it off with "hooks": {"lazy-senior": false} in .claude/pau-skills.json, ' +
     'or PAU_SKILLS_DISABLE=lazy-senior.)');
