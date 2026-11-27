@@ -31,24 +31,49 @@ characters in a message and 80 in the status.
 
 A type is read-only when it is in `readOnlyAgents`, or when its definition lists tools and none of Edit, MultiEdit or
 NotebookEdit: a reader or critic with `tools: Read, Bash, Write` reads for many calls and writes one report at the
-end, by design. At SubagentStart the watchdog reads `<project>/.claude/agents/*.md`, then
-`~/.claude/agents/*.md` (the home folder is `PAU_SKILLS_HOME` when it is set, as for the config file), finds the file
-whose frontmatter `name:` is the agent's type (the file name does not matter), and keeps the answer in the agent's
-state. The project's definition wins when both folders have the name.
+end, by design. At SubagentStart the watchdog reads the `.md` files of `<project>/.claude/agents` and its
+subfolders, then of `~/.claude/agents` (the home folder is `PAU_SKILLS_HOME` when it is set, as for the config file),
+finds the files whose frontmatter `name:` is the agent's type (the file name does not matter), and keeps the answer in
+the agent's state. The first of the two with the name decides, so the project's definitions win; there, every
+definition with the name must be read-only: a probe (2026-11-27) found one name at top level and in a subfolder
+loads as one agent, and which copy Claude Code uses is not known.
 
 - `tools:` may be a comma list (`tools: Read, Bash, Write`), a flow list (`[Read, Grep]`) or a block list (one
   `- Read` per line). A `(...)` suffix, as in `Bash(git commit:*)`, is ignored. `*` counts as every tool.
+- A flow list not closed on its line is read as Claude Code reads it, a comma list of the whole value: the first entry
+  keeps its `[` and names no tool. `tools: [Read, Grep` is Grep alone (a probe of Claude Code 2.1.332 on 2026-11-27
+  loaded it, and the agent had only Grep), so it is read-only; `[Edit` names no tool. A list carried on to the next
+  line loads too (same probe), but the watchdog does not read it, since that line could hold an Edit: the type is not
+  read-only.
 - No `tools:` field means the agent gets every tool, so it is not read-only; `tools: null`, `tools: ~` and an empty
-  `tools:` read the same. Nor is an agent limited only by `disallowedTools`.
-- Not read: plugin agents, a folder set with `CLAUDE_CONFIG_DIR`, subfolders, links, a file over 64 KB, and the files
-  past the first 200 `.md` files of a folder (by name). A `.md` file that is over 64 KB, cannot be read, or opens
-  frontmatter that does not parse might be the type's own definition: when one comes before the match (the project
-  folder first, each folder by name), the type is not read-only.
+  `tools:` (or one that holds only a comment, as `tools: # Edit`) read the same. Nor is an agent limited only by
+  `disallowedTools`.
+- Subfolders up to 8 levels below `.claude/agents` (Claude Code loads any depth), links to files and folders, and
+  hidden and git-ignored entries are read: probes of Claude Code 2.1.332 (headless, empty HOME, the init event's agents
+  list, 2026-11-27) found them all loaded, and `.MD` files (upper case) not loaded, so those are not read. Other limits
+  for each of the two trees: 200 `.md` files, 64 KB a file, 200 folders (`.claude/agents` itself is one), 5,000 entries
+  of any kind. A link to a folder already read is skipped.
+- A folder named `.git` is skipped, and counts toward no limit. This differs from Claude Code on purpose: the same
+  probes found a described `.md` file in `.claude/agents/.git/objects/ab/` loads, but no one keeps a definition there,
+  and the loose object folders of a git repository kept as the agents folder pass the 200 folders after about 110
+  commits, which would make every type not read-only.
+- A link that is dangling or loops is skipped: Claude Code cannot load it either, and an editor lock link such as
+  `.#a.md` would otherwise make every type not read-only.
+- Not read: plugin agents and a folder set with `CLAUDE_CONFIG_DIR`. A `.md` file that is over 64 KB, cannot be read,
+  or opens frontmatter that does not parse might be the type's own definition, and so might an entry that cannot be
+  listed or stat'd for any other reason (such as no permission) and a walk stopped at a limit (a folder 9 levels down,
+  even an empty one, the 201st `.md` file, the 201st folder, the 5,001st entry). When one is met in the project's tree,
+  or in the home tree when that one decides, the type is not read-only, wherever it is in the tree.
 - A `.md` file with no frontmatter, such as a `README.md`, is skipped: its first line, after an optional byte order
   mark and with trailing white space dropped, is not `---` (an empty file has none). Probes of Claude Code 2.1.332
-  (headless, empty HOME) found such files missing from the init event's agents list; a `---` line led by a byte order
-  mark or with trailing spaces loads, and one after a blank line or after leading spaces does not. A skipped file
-  still counts toward the 200.
+  (headless, empty HOME, 2026-11-26) found such files missing from the init event's agents list; a `---` line led by a
+  byte order mark or with trailing spaces loads, and one after a blank line or after leading spaces does not. A
+  skipped file still counts toward the 200 `.md` files.
+- A file with no `description:`, or an empty one, is skipped too: the same probes (2026-11-27) found Claude Code drops
+  it. Empty is `description:` with no indented line after it, `""`, `''`, `~`, `null`, `Null`, `NULL`, a value that is
+  only a comment (`description: # x`), or a block scalar indicator (`|`, `>`, `|-`, `>+` and the like) with no indented
+  line after it (probed for `|` and `>`: dropped). `description:` followed by an indented line is a description
+  (probed: it loads), and so is a block scalar with an indented body.
 - The no-edit note, the no-edit ask and the main-session no-edit flag name `readOnlyAgents` under
   `subagent-watchdog` in `.claude/pau-skills.json` as the way out for a type the watchdog cannot see is read-only.
 
