@@ -35,20 +35,30 @@ const has = (o, k) => Object.hasOwn(o, k);
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const filled = (v) => typeof v === 'string' && v.trim() !== '';
 const isName = (v) => typeof v === 'string' && NAME.test(v);
-// A key is printed only when it looks like a key name, never when it could be a pasted value.
-const keyName = (k) => (/^[A-Za-z_][A-Za-z0-9_-]{0,31}$/.test(k) ? `"${k}"` : '(a key that is not a plain name)');
+// An unknown key is never named, since a pasted value can sit in a key: the place, how many, and what is allowed there.
+function unknownKeys(obj, allowed, at, problems) {
+  const n = Object.keys(obj).filter((k) => !allowed.includes(k)).length;
+  if (n) problems.push(`${at}: ${n} unknown key${n === 1 ? '' : 's'} (allowed here: ${allowed.join(', ')})`);
+}
 
-// Why a URL is refused, or '' when it is fine. The reason never holds the URL: it may hold a password.
+// A query or fragment parameter whose name says it may carry a secret, also inside a longer name (access_token).
+const SECRET_PARAM = /token|secret|key|password|passwd|pass|auth|sig|signature|session|code|credential/i;
+const secretParam = (params) => [...params.keys()].some((name) => SECRET_PARAM.test(name));
+
+// Why a URL is refused, or '' when it is fine. The reason never holds the URL: it may hold a secret.
 function urlProblem(v) {
   let u;
   try { u = new URL(v); } catch { return 'not an http or https URL'; }
   if (u.protocol !== 'http:' && u.protocol !== 'https:') return 'not an http or https URL';
-  return u.username || u.password ? 'holds credentials' : '';
+  if (u.username || u.password) return 'holds credentials';
+  if (secretParam(u.searchParams)) return 'the query holds a parameter that may carry a secret';
+  if (secretParam(new URLSearchParams(u.hash.slice(1)))) return 'the fragment holds a parameter that may carry a secret';
+  return '';
 }
 
 function checkProblems(c, at, problems) {
   if (!isObject(c)) { problems.push(`${at}: not an object`); return; }
-  for (const k of Object.keys(c)) if (!CHECK_KEYS.has(k)) problems.push(`${at}: unknown key ${keyName(k)}`);
+  unknownKeys(c, [...CHECK_KEYS], at, problems);
   const kinds = Object.keys(KINDS).filter((k) => has(c, k));
   if (kinds.length !== 1) {
     problems.push(`${at}: ${kinds.length ? 'more than one check kind' : 'no check kind (file, env, envFile, url or command)'}`);
@@ -75,17 +85,17 @@ function checkProblems(c, at, problems) {
 }
 
 // Every problem in a parsed steps file, each named by its place and key. No problem quotes a value from the file.
-export function validate(data) {
+function validate(data) {
   if (!isObject(data)) return ['top level: not a JSON object'];
   const problems = [];
-  for (const k of Object.keys(data)) if (!TOP_KEYS.includes(k)) problems.push(`top level: unknown key ${keyName(k)}`);
+  unknownKeys(data, TOP_KEYS, 'top level', problems);
   if (!filled(data.title)) problems.push('title: not a non-empty string');
   if (!Array.isArray(data.steps) || data.steps.length === 0) return [...problems, 'steps: not a non-empty array'];
   const ids = new Map();
   data.steps.forEach((s, i) => {
     const at = `steps[${i}]`;
     if (!isObject(s)) { problems.push(`${at}: not an object`); return; }
-    for (const k of Object.keys(s)) if (!STEP_KEYS.includes(k)) problems.push(`${at}: unknown key ${keyName(k)}`);
+    unknownKeys(s, STEP_KEYS, at, problems);
     if (!filled(s.id)) problems.push(`${at}.id: not a non-empty string`);
     else if (ids.has(s.id)) problems.push(`${at}.id: duplicate of steps[${ids.get(s.id)}]`);
     else ids.set(s.id, i);

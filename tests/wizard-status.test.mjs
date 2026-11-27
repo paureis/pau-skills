@@ -82,5 +82,5 @@ test('a step is done only when every check passes, and status exits 0 when every
 test('a bad file exits 2 and names the problems as check does', async () => {
   const r = await status([step('a', [{ file: 'x', value: 'v' }])]);
   assert.equal(r.code, 2, r.out);
-  assert.ok(r.out.includes('steps[0].checks[0]: unknown key "value"'), r.out);
+  assert.ok(r.out.includes('steps[0].checks[0]: 1 unknown key'), r.out);
 });
