@@ -120,6 +120,21 @@ twelfth batches) is in [done-2026-10-20-to-25.md](done-2026-10-20-to-25.md).
   directly at the owner's request. A probe showed a PreCompact `{"decision":"block"}` stops `/compact`; a live run of
   three `/compact` calls in one session ran two and refused the third with the reason. 2,130 tests; seven mutations,
   all caught.
+- 2026-11-27: the twenty-fifth batch, Q35 `wizard`, merged as
+  [pull request 102](https://github.com/paureis/pau-skills/pull/102) and released as v0.27.0. A new model-invoked
+  skill in session-discipline, adapted from mattpocock/skills: a JSON steps file the person runs with `wizard.mjs run`,
+  checked step by step, and `status` for the agent afterwards; the script never takes a value. One slice: `eng-lead`
+  planned it, a read-only plan check built a rough version in a clone and ran its own mutations, one builder, one fresh
+  reviewer, one cold run (headless, empty HOME, 0.66 and 0.07 US dollars), one fix round and a second look. 2,170 tests
+  (2,130 before), 22 mutations caught. With the roster:
+  - Worked: the plan check closed six gaps before the build (a URL with a password in an error message, a test that
+    could not see a browser being opened, proxy variables in the local server tests); the reviewer found a real hang
+    (a streaming URL) and three ways a value could still be printed, all fixed in one round; the cold run showed the
+    skill start on its own, wait for the yes, never run `run` and leak the planted value nowhere, and found six
+    instruction gaps the review could not.
+  - Did not: the harness branch of the worktree held no commits (the builder used the brief's branch name), so the
+    first merge did nothing; Windows was never run; a token in a command check's argv is still printed, covered by a
+    rule in SKILL.md instead of code.
 - 2026-11-26: the twenty-fourth batch, Q38 subagent-watchdog fixes and a compaction count, merged as
   [pull request 98](https://github.com/paureis/pau-skills/pull/98) and released as v0.25.0. Hooks only. Two slices in
   parallel: S1 the watchdog (an edit counts wherever the file is, a project or user agent whose definition cannot edit
