@@ -121,6 +121,8 @@ test('runs per arm from the normal formula', () => {
   assert.equal(runsPerArm({ sd: 0.3, delta: 0.15, alpha: 0.05, power: 0.8 }), 63);
   // Half the spread: 2 * 7.848879 * 1 = 15.70, so 16.
   assert.equal(runsPerArm({ sd: 0.15, delta: 0.15, alpha: 0.05, power: 0.8 }), 16);
+  // 2 * 7.848879 * 0.12^2 / 0.15^2 = 15.697758 * 0.64 = 10.05: always up, so 11, not 10.
+  assert.equal(runsPerArm({ sd: 0.12, delta: 0.15, alpha: 0.05, power: 0.8 }), 11);
   assert.throws(() => runsPerArm({ sd: 0.3, delta: 0, alpha: 0.05, power: 0.8 }), /delta/);
 });
 
