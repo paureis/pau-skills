@@ -119,6 +119,21 @@ describe('owner-grades', () => {
     assert.ok(!existsSync(join(round, 'owner', 'grades-tdd.txt')));
   });
 
+  test('refuses a sheet with a letter line taken out, which parses cleanly', () => {
+    const f = join(scratch(), 'tdd.txt');
+    const g = join(scratch(), 'fix.txt');
+    writeFileSync(f, fill(readFileSync(join(sheet, 'grades-tdd.txt'), 'utf8')));
+    const fix = fill(readFileSync(join(sheet, 'grades-bug-fix.txt'), 'utf8')).split('\n');
+    const at = fix.findIndex((l) => l.startsWith('Criterion 2:')) + 2;
+    assert.match(fix[at], /^ {2}G: 4\/5/);
+    writeFileSync(g, [...fix.slice(0, at), ...fix.slice(at + 1)].join('\n'));
+    const r = bench(['owner-grades', '--round', round, '--tdd', f, '--bug-fix', g]);
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /^refused: the grades are not complete; every letter needs/m);
+    assert.match(r.stderr, /^refused: bug-fix: criterion 2 has no 1 to 5 score for G$/m);
+    assert.ok(!existsSync(join(round, 'owner', 'grades-bug-fix.txt')));
+  });
+
   test('stores a complete pair of sheets', () => {
     const f = join(scratch(), 'tdd.txt');
     const g = join(scratch(), 'fix.txt');
