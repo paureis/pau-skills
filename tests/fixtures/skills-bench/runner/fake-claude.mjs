@@ -102,7 +102,7 @@ if (spec.fail) {
   process.exit(1);
 }
 const cost = 'cost' in spec ? spec.cost : cfg.defaultCost ?? 0.05;
-const result = { type: 'result', subtype: spec.subtype || 'success', is_error: false, num_turns: id + 1, result: `Done in ${cwd}.`, permission_denials: [] };
+const result = { type: 'result', subtype: spec.subtype || 'success', is_error: false, num_turns: id + 1, duration_ms: 1500, result: `Done in ${cwd}.`, permission_denials: [] };
 if (cost !== null) result.total_cost_usd = cost;
 lines.push(result);
 process.stdout.write(lines.map((l) => JSON.stringify(l)).join('\n') + '\n');

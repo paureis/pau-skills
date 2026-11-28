@@ -69,6 +69,19 @@ describe('judge', () => {
     assert.equal(JSON.parse(readFileSync(join(small.round, 'judge', 'bug-fix', 'fix-simple-a.json'), 'utf8')).costMicros, 100_000);
   });
 
+  test('skips a task with fewer than 2 finished runs and says why, and judges the rest', () => {
+    const small = runRound({ extra: ['--only', 'fix-simple-a', '--only', 'fix-medium-a', '--n', '1'], fake: { runs: { 'word-count/*': { fail: true } } } });
+    assert.equal(small.code, 0, small.stderr);
+    const r = bench(['judge', '--round', small.round, '--judge-model', 'fake-judge', ...PASS], { fake });
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stdout, /^fix-simple-a: judge skipped: fewer than 2 finished runs \(0 of 2\)$/m);
+    const s = readState(small.round);
+    assert.deepEqual([s.tasks['fix-simple-a'].judged, s.tasks['fix-simple-a'].judgeStatus, s.tasks['fix-simple-a'].judgeReason],
+      [false, 'skipped', 'fewer than 2 finished runs (0 of 2)']);
+    assert.equal(s.tasks['fix-medium-a'].judged, true);
+    assert.equal(readLog(r.log).filter((c) => c.kind === 'judge').length, 1);
+  });
+
   test('reserves judge money only for the tasks still to judge, not for one the cap held back', () => {
     // Cap $1.00, reserve 2 x $0.05. fix-medium-a starts (0 + 2 x $0.40 + 0.10) and its runs pass their stop a little,
     // $0.46 each: spent 0.92, so fix-simple-a is not run. Its judge would never come, so the one judge left needs

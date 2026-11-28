@@ -84,11 +84,20 @@ export async function judgeCommand(o, out, err) {
   s.judgeModel = o.judgeModel;
   s.passEnv = [...new Set([...(s.passEnv || []), ...o.passEnv])].sort();
   let failed = 0;
+  // A judge compares runs: a task with fewer than 2 finished runs has nothing to compare, and is skipped.
+  const finished = (t) => (t.runs || []).filter((r) => r.finished).length;
+  const judgeable = (t) => t.status === 'done' && !t.judged && finished(t) >= 2;
   for (const id of s.planned) {
     const t = s.tasks[id];
     if (t.status !== 'done' || t.judged) continue;
-    // This judge and the ones still to come: a task that never ran is never judged, so it holds nothing back here.
-    const reserve = s.planned.filter((x) => s.tasks[x].status === 'done' && !s.tasks[x].judged).length * s.judgeMicros;
+    if (!judgeable(t)) {
+      Object.assign(t, { judgeStatus: 'skipped', judgeReason: `fewer than 2 finished runs (${finished(t)} of ${t.runs.length})` });
+      saveState(round, s);
+      out(`${id}: judge skipped: ${t.judgeReason}`);
+      continue;
+    }
+    // This judge and the ones still to come: a task that is never judged holds nothing back here.
+    const reserve = s.planned.filter((x) => judgeable(s.tasks[x])).length * s.judgeMicros;
     if (s.spentMicros + reserve > s.capMicros) {
       t.judgeStatus = 'not run (cap)';
       out(`${id}: judge not run (cap): ${microsUsd(s.spentMicros)} spent and ${microsUsd(reserve)} reserved pass the ${microsUsd(s.capMicros)} cap`);

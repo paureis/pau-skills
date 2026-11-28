@@ -1,10 +1,10 @@
 // skills-bench runner: the run command. One skill-eval lab per task, run in the order of pilot.json, each task started
 // only when the start rule lets it (plan.mjs), with a hard stop per run set by its difficulty.
-import { existsSync, readdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { join, resolve, basename, relative, isAbsolute } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
-import { REPO, findMetaWords, microsArg, microsUsd, parseUsdMicros, lastLines, skillEval } from './common.mjs';
+import { REPO, findMetaWords, microsArg, microsUsd, parseUsdMicros, lastLines, skillEval, readJson, extractActions } from './common.mjs';
 import { loadConfig, loadTasks, runOrder, priceOf } from './config.mjs';
 import { settings, planRows, hardStopOf, startNeed, runCountProblems } from './plan.mjs';
 import { STATE_FORMAT, openRound, saveState, newRoundId, judgeReserve } from './state.mjs';
@@ -55,6 +55,7 @@ function newState(o, cfg, s, ordered, n, p) {
 }
 
 const started = (lab) => existsSync(join(lab, 'runs')) && readdirSync(join(lab, 'runs')).some((f) => f.endsWith('.jsonl'));
+const finishedRun = (lab, id) => existsSync(join(lab, 'runs', `${id}.jsonl`)) && extractActions(readFileSync(join(lab, 'runs', `${id}.jsonl`), 'utf8')).finished;
 
 export async function runCommand(o, out, err) {
   const refuse = (...lines) => { for (const l of lines) err(`refused: ${l}`); return 1; };
@@ -96,18 +97,36 @@ export async function runCommand(o, out, err) {
   for (const task of ordered) {
     const t = s.tasks[task.id];
     if (t.status === 'done') { out(`${task.id}: done before, skipped`); continue; }
+    let interrupted = false;
     if (t.status === 'running' && t.lab && existsSync(join(t.lab, 'plan.json')) && started(t.lab)) {
-      // The last round stopped while this task ran: what its runs left is kept, and a run with no result is charged.
-      collectTask(task, t, s, round, cfg);
+      // The last round stopped while this task ran. Runs that finished are kept, and a run with no result is charged.
+      const planned = readJson(join(t.lab, 'plan.json')).runs;
+      if (planned.some((r) => finishedRun(t.lab, r.id))) {
+        collectTask(task, t, s, round, cfg);
+        saveState(round, s);
+        out(`${task.id}: collected the runs of an interrupted round`);
+        continue;
+      }
+      // None finished: what they spent is unknown, so each is charged its hard stop, and the task starts again.
+      const lost = planned.length * t.hardStopMicros;
+      s.spentMicros += lost;
+      t.spentMicros = (t.spentMicros || 0) + lost;
+      interrupted = true;
       saveState(round, s);
-      out(`${task.id}: collected the runs of an interrupted round`);
-      continue;
+      out(`${task.id}: interrupted with no finished run; charged ${microsUsd(lost)} for its runs and starting it again`);
     }
     for (const d of [t.lab, t.root]) if (d) rmSync(d, { recursive: true, force: true });
     const prices = Object.fromEntries(Object.keys(cfg.prices).map((d) => [d, priceOf(d, cfg, set.cli, s.seenMicros)]));
     t.hardStopMicros = hardStopOf(task.difficulty, prices, cfg.hardStopFactor);
     const runs = task.variants.length * n;
     const rule = startNeed({ spent: s.spentMicros, runs, hardStop: t.hardStopMicros, reserve: judgeReserve(s), cap: s.capMicros });
+    if (!rule.fits && interrupted) {
+      Object.assign(t, { status: 'failed', reason: `interrupted with no finished run, and the cap leaves no room to run it again (it needs ${microsUsd(rule.need)} of the ${microsUsd(s.capMicros)} cap)` });
+      failed++;
+      saveState(round, s);
+      out(`${task.id}: failed: ${t.reason}`);
+      continue;
+    }
     if (!rule.fits) {
       t.status = 'not run (cap)';
       saveState(round, s);

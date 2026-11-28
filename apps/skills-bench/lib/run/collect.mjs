@@ -38,14 +38,24 @@ export function processSignals(x, skill, runDir) {
   };
 }
 
-/** The subtype of a transcript's last result line, or null. */
-export function lastResultSubtype(text) {
-  let sub = null;
+/** A transcript's last result line, or null. */
+export function lastResult(text) {
+  let last = null;
   for (const line of String(text).split(/\r?\n/)) {
     if (!line.includes('"result"')) continue;
-    try { const e = JSON.parse(line); if (e.type === 'result') sub = e.subtype ?? null; } catch { /* not JSON */ }
+    try { const e = JSON.parse(line); if (e.type === 'result') last = e; } catch { /* not JSON */ }
   }
-  return sub;
+  return last;
+}
+
+/**
+ * A run's seconds: skill-eval's record of it, else (a round stopped before skill-eval wrote it) the result line's
+ * duration_ms, else 0. Null only for a run that did not finish and has no record.
+ */
+function secondsOf(res, last, finished) {
+  if (typeof res?.seconds === 'number') return res.seconds;
+  if (!finished) return null;
+  return typeof last?.duration_ms === 'number' ? Math.round(last.duration_ms / 1000) : 0;
 }
 
 const isCheck = (c) => c && typeof c.name === 'string' && ['outcome', 'process'].includes(c.kind)
@@ -73,7 +83,9 @@ export function gradeRun(graderFile, taskDir, runDir) {
       return { grade: null, gradeError: 'the grader printed JSON that is not contract 2: { pass, score, checks: [{ name, kind, required, pass, detail }] }' };
     }
     const outcome = g.checks.filter((c) => c.kind === 'outcome');
-    const outcomeScore = outcome.length ? outcome.filter((c) => c.pass).length / outcome.length : null;
+    // Every grade has an outcome: a grader that checks none is at fault, not the run.
+    if (!outcome.length) return { grade: null, gradeError: 'the grader reported no outcome check, so the run has no outcomeScore' };
+    const outcomeScore = outcome.filter((c) => c.pass).length / outcome.length;
     return { grade: hide({ pass: g.pass, score: g.score, checks: g.checks, outcomeScore }), gradeError: null };
   } finally {
     rmSync(tmp, { recursive: true, force: true });
@@ -101,15 +113,22 @@ export function collectTask(task, t, s, round, cfg) {
     const tFile = join(lab, 'runs', `${r.id}.jsonl`);
     const text = existsSync(tFile) ? readFileSync(tFile, 'utf8') : '';
     const x = extractActions(text);
+    const last = lastResult(text);
     if (x.model) models.add(x.model);
-    const cost = x.finished ? usdMicros(x.costUsd) : null;
+    const seen = x.finished ? usdMicros(x.costUsd) : null;
+    // A finished run with no cost line is charged its hard stop, and that charge is its cost: costMicros is null only
+    // for a run that did not finish. Only a real cost raises the price of a difficulty.
+    const cost = x.finished ? seen ?? t.hardStopMicros : null;
     charged += cost ?? t.hardStopMicros;
-    if (cost !== null) s.seenMicros[task.difficulty] = Math.max(s.seenMicros[task.difficulty] || 0, cost);
-    const { grade, gradeError } = gradeRun(join(cfg.tasksDir, task.skill, 'grade.mjs'), task.dir, r.dir);
+    if (seen !== null) s.seenMicros[task.difficulty] = Math.max(s.seenMicros[task.difficulty] || 0, seen);
+    // A dropout is not graded: its folder holds a run that stopped half way.
+    const { grade, gradeError } = x.finished
+      ? gradeRun(join(cfg.tasksDir, task.skill, 'grade.mjs'), task.dir, r.dir)
+      : { grade: null, gradeError: 'the run did not finish' };
     const result = {
       format: 'skills-bench-run/1', roundId: s.roundId, skill: task.skill, task: task.id, difficulty: task.difficulty,
       variant: r.variant, n, runId: r.id, finished: x.finished, exit: res ? res.exit ?? null : null,
-      resultSubtype: lastResultSubtype(text), seconds: res ? res.seconds ?? null : null, costMicros: cost, turns: x.turns,
+      resultSubtype: last?.subtype ?? null, seconds: secondsOf(res, last, x.finished), costMicros: cost, turns: x.turns,
       toolCalls: x.steps.length, failedToolCalls: x.steps.filter((st) => st.failed).length, denials: x.denials.length,
       ...processSignals(x, task.skill, r.dir), grade, gradeError, judge: null, judgeLetter: null,
     };
@@ -117,7 +136,7 @@ export function collectTask(task, t, s, round, cfg) {
     runs.push({ id: r.id, variant: r.variant, n, dir: r.dir, home: r.home, finished: x.finished });
   }
   s.modelsReported = [...models].sort();
-  Object.assign(t, { status: 'done', runs, runsMade: made, spentMicros: charged, dropouts: runs.filter((r) => !r.finished).map((r) => r.id) });
+  Object.assign(t, { status: 'done', runs, runsMade: made, spentMicros: (t.spentMicros || 0) + charged, dropouts: runs.filter((r) => !r.finished).map((r) => r.id) });
   s.spentMicros += charged;
   return charged;
 }

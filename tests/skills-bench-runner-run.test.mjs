@@ -2,7 +2,7 @@
 // resume, the result files, the process signals and the grader. Money is in micro-dollars: $0.20 is 200000.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { ROOT } from './helpers.mjs';
@@ -72,6 +72,9 @@ describe('the start rule and the hard stop', () => {
     assert.equal(failed.exit, 1);
     assert.equal(failed.costMicros, null);
     assert.equal(failed.resultSubtype, null);
+    // A dropout is never graded: its folder holds a half-done run.
+    assert.equal(failed.grade, null);
+    assert.equal(failed.gradeError, 'the run did not finish');
     assert.equal(readResult(r.round, 'bug-fix', 'fix-simple-a', 'without').costMicros, 50_000);
   });
 
@@ -84,6 +87,23 @@ describe('the start rule and the hard stop', () => {
     assert.equal(s.spentMicros, 0);
   });
 });
+
+/**
+ * Rewinds a task of a finished round to what a kill in the middle of it leaves: the state says running, nothing was
+ * collected or charged; with dropRecords, skill-eval had not written its per-run records either.
+ */
+function interrupt(round, id, { dropRecords = false } = {}) {
+  const f = join(round, 'round.json');
+  const s = JSON.parse(readFileSync(f, 'utf8'));
+  const t = s.tasks[id];
+  s.spentMicros -= t.spentMicros;
+  Object.assign(t, { status: 'running', spentMicros: 0, runsMade: 0 });
+  delete t.runs;
+  delete t.dropouts;
+  rmSync(join(round, 'results'), { recursive: true, force: true });
+  if (dropRecords) for (const x of readdirSync(join(t.lab, 'runs')).filter((n) => n.endsWith('.json'))) rmSync(join(t.lab, 'runs', x));
+  writeFileSync(f, JSON.stringify(s, null, 2));
+}
 
 describe('resume', () => {
   test('a second run on the same round skips the tasks that are done and starts the ones the cap held back', () => {
@@ -105,6 +125,54 @@ describe('resume', () => {
     const other = runRound({ round: first.round, maxUsd: '2', extra: only, fake, env: {} });
     assert.equal(other.code, 0);
     assert.deepEqual(workers(other.log), [], 'a round that is all done runs nothing');
+  });
+
+  test('reruns a task interrupted with no finished run, after charging its hard stops', () => {
+    // Both runs leave no result line, then the round is rewound as a kill mid-task leaves it. On resume: 2 x $0.20
+    // charged for the lost runs, then a fresh lab whose 2 runs cost $0.05 each.
+    const only = ['--only', 'fix-simple-a', '--n', '1'];
+    const first = runRound({ extra: only, fake: { runs: { 'word-count/*': { fail: true } } } });
+    interrupt(first.round, 'fix-simple-a');
+    const again = runRound({ round: first.round, extra: only });
+    assert.equal(again.code, 0, again.stderr);
+    assert.match(again.stdout, /^fix-simple-a: interrupted with no finished run; charged \$0\.40 for its runs and starting it again$/m);
+    assert.equal(workers(again.log).length, 2);
+    const s = readState(again.round);
+    const t = s.tasks['fix-simple-a'];
+    assert.deepEqual([t.status, t.runsMade, t.dropouts], ['done', 2, []]);
+    assert.equal(s.spentMicros, 500_000);
+    assert.equal(readResult(again.round, 'bug-fix', 'fix-simple-a', 'with').finished, true);
+  });
+
+  test('marks an interrupted task failed when the cap leaves no room to run it again', () => {
+    // After the $0.40 charge the start rule needs 0.40 + 2 x $0.20 + $0.05 = $0.85, over a $0.60 cap.
+    const only = ['--only', 'fix-simple-a', '--n', '1'];
+    const first = runRound({ extra: only, fake: { runs: { 'word-count/*': { fail: true } } } });
+    interrupt(first.round, 'fix-simple-a');
+    const again = runRound({ round: first.round, maxUsd: '0.6', extra: only });
+    assert.equal(again.code, 1);
+    assert.deepEqual(workers(again.log), []);
+    const t = readState(again.round).tasks['fix-simple-a'];
+    assert.equal(t.status, 'failed');
+    assert.equal(t.reason, 'interrupted with no finished run, and the cap leaves no room to run it again (it needs $0.85 of the $0.60 cap)');
+    assert.equal(readState(again.round).spentMicros, 400_000);
+  });
+
+  test('collects an interrupted task whose runs finished, with seconds from the result line when skill-eval kept none', () => {
+    const only = ['--only', 'fix-simple-a', '--n', '1'];
+    const first = runRound({ extra: only });
+    interrupt(first.round, 'fix-simple-a', { dropRecords: true });
+    const again = runRound({ round: first.round, extra: only });
+    assert.equal(again.code, 0, again.stderr);
+    assert.deepEqual(workers(again.log), [], 'finished runs are kept, not run again');
+    const s = readState(again.round);
+    assert.deepEqual([s.tasks['fix-simple-a'].status, s.spentMicros], ['done', 100_000]);
+    for (const v of ['with', 'without']) {
+      const x = readResult(again.round, 'bug-fix', 'fix-simple-a', v);
+      assert.equal(x.finished, true);
+      // The fake's result line says duration_ms 1500.
+      assert.equal(x.seconds, 2, 'a finished run always has its seconds');
+    }
   });
 
   test('refuses to resume with another model or another set of tasks', () => {
@@ -175,6 +243,28 @@ describe('the result of each run', () => {
       assert.ok(!JSON.stringify(c).includes(UNNAMED));
     }
     assert.deepEqual(calls.map((c) => c.variant).sort(), ['broken', 'empty', 'with', 'without']);
+  });
+
+  test('records a grade with no outcome check as a grader fault, so outcomeScore is never null', () => {
+    const tasksDir = copyTasks((d) => patchTask(d, 'bug-fix', 'fix-simple-a', (t) => ({ ...t, fixtureGrade: 'no-outcome' })));
+    const x = runRound({ config: writeConfig({ tasksDir }), extra: ['--only', 'fix-simple-a', '--n', '1'] });
+    assert.equal(x.code, 0, x.stderr);
+    const g = readResult(x.round, 'bug-fix', 'fix-simple-a', 'with');
+    assert.equal(g.grade, null);
+    assert.equal(g.gradeError, 'the grader reported no outcome check, so the run has no outcomeScore');
+  });
+
+  test('charges a finished run with no cost line its hard stop, and records that as its cost', () => {
+    const x = runRound({ extra: ['--only', 'fix-simple-a', '--n', '1'], fake: { runs: { 'word-count/without': { cost: null } } } });
+    assert.equal(x.code, 0, x.stderr);
+    const g = readResult(x.round, 'bug-fix', 'fix-simple-a', 'without');
+    assert.equal(g.finished, true);
+    assert.equal(g.costMicros, 200_000);
+    assert.equal(typeof g.seconds, 'number');
+    // with: $0.05; without: no cost line, so its 2 x $0.10 hard stop. A missing cost is not a cost seen.
+    const s = readState(x.round);
+    assert.equal(s.spentMicros, 250_000);
+    assert.equal(s.seenMicros.simple, 50_000);
   });
 
   test('records a grader that exits 1 as gradeError', () => {

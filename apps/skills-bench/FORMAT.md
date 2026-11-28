@@ -81,8 +81,10 @@ It prints exactly one JSON line on standard output:
 - It works on a temporary copy, never writes into `--run` or `--task`, uses no network, is deterministic and finishes
   within 5 minutes (the runner kills it then).
 
-The runner adds `outcomeScore`: passed outcome checks over outcome checks, or null when there are none. A grader that
-exits 1, times out or prints anything but one such line gives `grade: null` and a `gradeError` sentence.
+The runner adds `outcomeScore`: passed outcome checks over outcome checks, from 0 to 1. A grade with no outcome check
+is a grader fault: it gives `grade: null` and a `gradeError` that says so, as does a grader that exits 1, times out or
+prints anything but one such line. A run that did not finish is not graded: `grade: null`, `gradeError: "the run did
+not finish"`.
 
 ## Contract 3: results
 
@@ -111,6 +113,9 @@ rounded half up.
 - `variantSources` is keyed `<skill>/<variant>`, because `with` is a different folder for each skill. A folder with
   uncommitted changes when the round started says so after the commit.
 - `runsMade` counts the runs skill-eval started; a run that started and left no result line is a dropout.
+- A task the runner was stopped in the middle of is collected on the next `run` when any of its runs finished. When
+  none did, each of its runs is charged its hard stop and the task starts again in a fresh lab if the start rule lets
+  it, or is `failed`.
 - `calibration` is true for a round run with `--only` and `--n 1`.
 
 `<skill>/<task>/<variant>/<n>/result.json`, with variant `with`, `without`, `broken` or `empty` and n from 1:
@@ -122,12 +127,17 @@ rounded half up.
   "seconds": 95, "costMicros": 140000, "turns": 12, "toolCalls": 20, "failedToolCalls": 2, "denials": 0,
   "skillStarted": true,
   "process": { "firstTestEditStep": 3, "firstSourceEditStep": 7, "failedCommandBeforeFirstSourceEdit": true },
-  "grade": { "pass": true, "score": 1, "checks": [], "outcomeScore": 1 }, "gradeError": null,
+  "grade": { "pass": true, "score": 1, "outcomeScore": 1,
+    "checks": [ { "name": "fixed", "kind": "outcome", "required": true, "pass": true, "detail": "the bug no longer shows" } ] },
+  "gradeError": null,
   "judge": { "1": 4, "2": 5, "3": 3 }, "judgeLetter": "C"
 }
 ```
 
-- `finished` is true when the transcript has a result line; `costMicros` is null when it has none.
+- `finished` is true when the transcript has a result line. `costMicros` and `grade` are null only when it is false.
+  A finished run whose result line has no cost is charged its hard stop, and `costMicros` records that charge.
+- `seconds` is skill-eval's own count; when a stopped round left none, it is the result line's `duration_ms` rounded
+  to whole seconds (0 when that is missing too). It is null only for a run that did not finish and has no count.
 - `exit` is the exit code of claude (null when it was killed); `resultSubtype` is the subtype of the last result line.
 - `denials` counts the tool calls the permissions refused.
 - `skillStarted` is true when a Skill step names the task's skill (or `<plugin>:<skill>`).
@@ -137,6 +147,7 @@ rounded half up.
   step failed before the first source edit (anywhere, when there is none). Files written by a shell command are not
   seen.
 - `judge` maps each criterion number to the judge's 1 to 5 score; null before judge, or when the run had no letter.
+  A task with fewer than 2 finished runs is not judged; the runner records why in its state.
 
 `judge/<skill>/<task>.json` is `{ "model", "costMicros", "criteria": [ { "n", "text" } ] }`, the criteria being that
 skill's rubric and `costMicros` what was charged. `judge/<skill>/<task>.verdict.txt` is the judge's reply, cut to fit
