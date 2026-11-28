@@ -80,6 +80,7 @@ for (const id of TASK_IDS) {
     await t.test('the size matches the difficulty', () => {
       const sources = startFiles.filter(isSource);
       const modules = sources.filter((f) => !f.startsWith('bin/')).length;
+      assert.equal(codeLineCount('// a\n\n/**\n * b\n */\nconst x = 1; // c\n/* d */\n  return x;\n'), 2, 'the counter leaves out blanks and comments');
       const count = (files) => files.reduce((n, f) => n + codeLineCount(readFileSync(join(start, f), 'utf8')), 0);
       const lines = count(sources);
       const want = SIZE[task.difficulty];

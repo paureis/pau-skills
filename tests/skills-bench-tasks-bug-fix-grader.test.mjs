@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cpSync, rmSync, symlinkSync } from 'node:fs';
+import { cpSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tempDir } from './helpers.mjs';
 import {
@@ -124,6 +124,12 @@ test('grade.mjs reads the test files a run adds as Node does', SLOW, async (t) =
     const link = join(tempDir(), 'grade.mjs');
     symlinkSync(GRADER, link);
     assert.equal(grade(MONTH, makeRun(MONTH, 'reference'), {}, link).pass, true);
+  });
+  await t.test('comments and blank lines added to a source file are no code lines changed', () => {
+    const run = makeRun(MONTH);
+    const file = join(run, 'src', 'renewal.mjs');
+    writeFileSync(file, `// Renewal dates.\n\n/*\n * Notes.\n */\n${readFileSync(file, 'utf8')}\n// End.\n`);
+    assert.equal(check(grade(MONTH, run), 'fix-size').detail, '0 code lines changed (added plus removed; blank and comment lines not counted), limit 12');
   });
   await t.test('a node --test killed before its counts means the grader cannot grade', () => {
     const r = spawnGrade(MONTH, fixedRun('test/kill.test.mjs'));

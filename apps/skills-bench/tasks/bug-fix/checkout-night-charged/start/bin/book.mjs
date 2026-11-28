@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Books a stay if its nights are free, and says when the cabin is free next if not. The bookings file is only read;
 // the new list goes to the file given with --out, which may be the same file.
-//   node bin/book.mjs data/bookings.json fern 2025-06-13 2025-06-16 "Ada Brooks" --out my-bookings.json
+//   node bin/book.mjs data/bookings.json fern 2025-07-04 2025-07-07 "Ada Brooks" --out my-bookings.json
 import { loadBookings, saveBookings, addBooking, takeOut } from '../src/bookings.mjs';
 import { firstFreeStay } from '../src/availability.mjs';
 import { daysBetween } from '../src/dates.mjs';
