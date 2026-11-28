@@ -2,9 +2,9 @@
 
 [Back to the backlog index](../BACKLOG.md)
 
-The twenty-ninth batch (Q44 option 1, pull request 110, no release) is done. No planned item is left: Q25 Claude
-Code mods and Q26 our hooks under Code Mode are parked (decisions 27 and 28). The owner picks the next work, or adds an
-item after the parked ones (decision 29). Read "Things that bit the twenty-ninth batch"
+The twenty-ninth batch (Q44 option 1, pull request 110, no release) is done. Next: **Q45** the Skills Bench pilot
+(decision 39), then Q46 to Q51. Q45 spends real API credits (cap 10 US dollars) and needs an API key through the
+secure form. Fill the item below with "Q45 the Skills Bench pilot (docs/backlog/q45.md), on tdd and bug-fix". Read "Things that bit the twenty-ninth batch"
 (`docs/backlog/things-that-bit/batch-29.md`) and the twenty-eighth's first.
 
 For a new item, the owner starts the batch with this message, with the item filled in:
