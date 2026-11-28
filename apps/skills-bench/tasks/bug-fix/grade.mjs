@@ -89,9 +89,10 @@ function runTests(cwd, files, clock) {
     return { ok: false, failed: true, detail: `node --test ${files.join(' ')} timed out after ${Math.round(timeout / 1000)}s` };
   }
   if (r.error) throw new GradeError(`could not start node --test: ${r.error.message}`);
+  // The summary is at the end; a test that prints "fail 0" puts a line like it higher up, so the last one counts.
   const count = (word) => {
-    const m = new RegExp(`^# ${word} (\\d+)$`, 'm').exec(r.stdout);
-    return m ? Number(m[1]) : null;
+    const all = [...r.stdout.matchAll(new RegExp(`^# ${word} (\\d+)$`, 'gm'))];
+    return all.length > 0 ? Number(all[all.length - 1][1]) : null;
   };
   const pass = count('pass');
   const fail = count('fail');

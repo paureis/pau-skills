@@ -332,4 +332,7 @@ test('grade.mjs reads the test files a run adds as Node does', SLOW, async (t) =
     assert.deepEqual(added(['test-.mjs']), { name: 'added-failing-test', kind: 'process', required: false, pass: true,
       detail: 'test-.mjs fails on start (1 failing) and passes on the run (1 passing)' });
   });
+  await t.test('the counts come from the summary at the end, not from what a test prints', () => {
+    assert.equal(added(['test/log.test.mjs']).detail, 'test/log.test.mjs fails on start (1 failing) and passes on the run (1 passing)');
+  });
 });

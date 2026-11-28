@@ -12,4 +12,6 @@ const regression = "test('January 31 plus a month', () => assert.equal(formatDat
 export const CASES = {
   // At the top of the project, named as Node's test-* pattern allows with nothing after the dash.
   'test-.mjs': head('.') + regression,
+  // Prints lines that look like TAP counts before the real ones at the end.
+  'test/log.test.mjs': `${head('..')}console.log('fail 0');\nconsole.log('pass 9');\n${regression}`,
 };
