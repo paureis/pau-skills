@@ -1,0 +1,22 @@
+// Paging for the list screens. Pages are numbered from 1.
+
+function wholeAtLeast(name, value, min) {
+  if (!Number.isInteger(value) || value < min) {
+    throw new RangeError(`${name} must be a whole number of ${min} or more, got ${value}`);
+  }
+}
+
+/** How many pages total items fill at perPage items a page. No items is 0 pages. */
+export function pageCount(total, perPage) {
+  wholeAtLeast('total', total, 0);
+  wholeAtLeast('perPage', perPage, 1);
+  return Math.ceil(total / perPage);
+}
+
+/** "Page 2 of 5" for the footer; "No pages" when there are none. */
+export function pageLabel(page, pages) {
+  wholeAtLeast('pages', pages, 0);
+  if (pages === 0) return 'No pages';
+  wholeAtLeast('page', page, 1);
+  return `Page ${page} of ${pages}`;
+}

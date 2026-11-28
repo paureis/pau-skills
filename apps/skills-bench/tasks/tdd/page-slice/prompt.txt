@@ -1,0 +1,9 @@
+The list screens need to show one page of results at a time. Add an exported function pageSlice(items, page, perPage) to src/pages.js, next to pageCount, that returns { items, page, totalPages, hasPrev, hasNext }:
+
+- Pages are numbered from 1. For the list 1 to 10 with 4 a page, page 1 holds [1, 2, 3, 4], page 2 holds [5, 6, 7, 8] and page 3 holds [9, 10].
+- totalPages is what pageCount gives for the list. hasPrev is true from page 2 on; hasNext is true only when a later page has items, so it is false on the last page.
+- A page past the end has no items (and hasNext false); an empty list has 0 pages.
+- page and perPage must be whole numbers of 1 or more; anything else throws a RangeError.
+- The list passed in must not change.
+
+Please make sure this is tested.
