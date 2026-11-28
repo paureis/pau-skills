@@ -1,0 +1,20 @@
+{
+  "id": "tally-medium",
+  "skill": "tdd",
+  "difficulty": "medium",
+  "slug": "seat-map",
+  "summary": "Add a count of the free seats to the seat map.",
+  "allowTools": [
+    "Bash(npm test)",
+    "Bash(node *)",
+    "Bash(git *)"
+  ],
+  "allowWords": [
+    "test"
+  ],
+  "timeoutMin": 15,
+  "control": false,
+  "interface": [
+    "src/thing.js"
+  ]
+}

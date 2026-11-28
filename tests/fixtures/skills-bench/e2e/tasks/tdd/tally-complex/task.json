@@ -1,0 +1,20 @@
+{
+  "id": "tally-complex",
+  "skill": "tdd",
+  "difficulty": "complex",
+  "slug": "route-planner",
+  "summary": "Add the length of a route across the route planner.",
+  "allowTools": [
+    "Bash(npm test)",
+    "Bash(node *)",
+    "Bash(git *)"
+  ],
+  "allowWords": [
+    "test"
+  ],
+  "timeoutMin": 30,
+  "control": false,
+  "interface": [
+    "src/thing.js"
+  ]
+}

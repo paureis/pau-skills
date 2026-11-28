@@ -1,0 +1,18 @@
+{
+  "id": "mend-complex",
+  "skill": "bug-fix",
+  "difficulty": "complex",
+  "slug": "stock-ledger",
+  "summary": "Fix a stock level that goes wrong after a return.",
+  "allowTools": [
+    "Bash(npm test)",
+    "Bash(node *)",
+    "Bash(git *)",
+    "Bash(npm test *)"
+  ],
+  "allowWords": [
+    "test"
+  ],
+  "timeoutMin": 30,
+  "control": false
+}

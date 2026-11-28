@@ -1,0 +1,20 @@
+{
+  "id": "tally-simple",
+  "skill": "tdd",
+  "difficulty": "simple",
+  "slug": "coin-jar",
+  "summary": "Add a sum of the coins to a small coin jar module.",
+  "allowTools": [
+    "Bash(npm test)",
+    "Bash(node *)",
+    "Bash(git *)"
+  ],
+  "allowWords": [
+    "test"
+  ],
+  "timeoutMin": 15,
+  "control": true,
+  "interface": [
+    "src/thing.js"
+  ]
+}
