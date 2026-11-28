@@ -1,10 +1,10 @@
 // skills-bench runner: the owner sheet (10 blind runs the owner grades by hand) and reading the owner's grades back.
 // The sheet holds the letter texts, the rubrics and empty grades files; which run each letter is goes only to
 // <round>/owner/map.json.
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { randomInt } from 'node:crypto';
-import { parseScores, readJson, writeJson, DIFFICULTIES } from './common.mjs';
+import { parseScores, readJson, writeJson, isFreeFolder, DIFFICULTIES } from './common.mjs';
 import { rubricCriteria } from './config.mjs';
 import { loadRound, resultPath } from './state.mjs';
 
@@ -42,8 +42,6 @@ export function pickRuns(cands, rng) {
   return picks;
 }
 
-const isFree = (dir) => !existsSync(dir) || (statSync(dir).isDirectory() && !readdirSync(dir).length);
-
 export function ownerSheetCommand(o, out, err) {
   const refuse = (...lines) => { for (const l of lines) err(`refused: ${l}`); return 1; };
   const round = resolve(o.round);
@@ -52,7 +50,7 @@ export function ownerSheetCommand(o, out, err) {
   try { s = loadRound(round); } catch (e) { return refuse(e.message); }
   const mapFile = join(round, 'owner', 'map.json');
   if (existsSync(mapFile)) return refuse(`an owner sheet was made for this round already (${mapFile}); a new one needs new grades, so remove ${join(round, 'owner')} first`);
-  if (!isFree(dest)) return refuse(`${dest} is not a new or empty folder`);
+  if (!isFreeFolder(dest)) return refuse(`${dest} is not a new or empty folder`);
   const seed = o.seed ?? randomInt(2 ** 31);
   const rng = seeded(seed);
   const map = {};
@@ -80,7 +78,7 @@ export function ownerSheetCommand(o, out, err) {
     shuffle(picks, rng).forEach((p, i) => {
       const L = letters[i];
       const plan = readJson(join(s.tasks[p.task].lab, 'plan.json'));
-      const text = readFileSync(join(round, 'blind', p.task, `${p.letter}.md`), 'utf8').replace(/^# Output [A-Z]\s*$/m, `# Output ${L}`);
+      const text = readFileSync(join(round, 'blind', p.task, `${p.letter}.md`), 'utf8').replace(/^# Output [A-Z][ \t]*$/m, `# Output ${L}`);
       files[`${L}.txt`] = [`Task: ${s.tasks[p.task].summary}`, '', 'Prompt:', '', plan.prompts[p.variant], '', text].join('\n');
       map[L] = { skill, task: p.task, difficulty: p.difficulty, variant: p.variant, n: p.n };
     });

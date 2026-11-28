@@ -1,11 +1,11 @@
 // skills-bench runner: export, which writes a round in contract 3 (FORMAT.md) to a folder that can be committed. Paths
 // become <project>, <home>, <tmp> and <repo>, environment values <env>, emails <email>; then every written file is
 // checked for temporary and home paths the scrub check misses, and the export fails on a hit.
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, rmSync, mkdtempSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync, mkdtempSync } from 'node:fs';
 import { join, resolve, dirname, relative } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
-import { REPO, MAX_BYTES, claudeCommand, childEnv, readJson, firstLine, pathPairs, replaceDeep } from './common.mjs';
+import { REPO, MAX_BYTES, claudeCommand, childEnv, readJson, firstLine, pathPairs, replaceDeep, isFreeFolder } from './common.mjs';
 import { loadRound, resultPath } from './state.mjs';
 import { judgePaths } from './judge.mjs';
 
@@ -66,15 +66,13 @@ function exportPairs(s, round) {
   return { pairs, env };
 }
 
-const isFree = (dir) => !existsSync(dir) || (statSync(dir).isDirectory() && !readdirSync(dir).length);
-
 export function exportCommand(o, out, err) {
   const refuse = (...lines) => { for (const l of lines) err(`refused: ${l}`); return 1; };
   const round = resolve(o.round);
   const to = resolve(o.to);
   let s;
   try { s = loadRound(round); } catch (e) { return refuse(e.message); }
-  if (!isFree(to)) return refuse(`${to} is not a new or empty folder`);
+  if (!isFreeFolder(to)) return refuse(`${to} is not a new or empty folder`);
   const { pairs, env } = exportPairs(s, round);
   const clean = (v) => {
     const hidden = replaceDeep(replaceDeep(v, pairs), env);

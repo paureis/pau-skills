@@ -1,13 +1,16 @@
 // skills-bench runner: the names it takes from skill-eval, the paths it knows, a JSON writer, money from a transcript,
 // path replacement and the way it starts skill-eval as a command.
-import { mkdirSync, writeFileSync, readFileSync, existsSync, realpathSync } from 'node:fs';
-import { join, resolve, dirname, basename } from 'node:path';
+import { mkdirSync, writeFileSync, readFileSync, realpathSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
 export {
   extractActions, findMetaWords, judgeArgv, childEnv, claudeCommand, parseScores, validateRubric,
 } from '../../../../skills/verification/skill-eval/skill-eval-core.mjs';
+// Not re-exported by skill-eval.mjs, but exported by its modules: used as they are, never copied.
+export { realOrPlanned, isFreeFolder } from '../../../../skills/verification/skill-eval/skill-eval-files.mjs';
+import { replaceAll } from '../../../../skills/verification/skill-eval/skill-eval-core.mjs';
 export {
   parseUsdMicros, microsArg, microsUsd, isInside, MAX_RUNS, META_WORDS, withoutComments,
 } from '../../../../skills/verification/skill-eval/skill-eval.mjs';
@@ -33,14 +36,6 @@ export function writeJson(file, data) {
  */
 export const usdMicros = (usd) => (typeof usd === 'number' && Number.isFinite(usd) && usd >= 0 ? Math.round(usd * 1_000_000) : null);
 
-/** realpath of a path that may not exist yet: the real nearest existing folder above it, plus the rest. */
-export function realOrPlanned(p) {
-  let cur = resolve(p);
-  const rest = [];
-  while (!existsSync(cur)) { rest.unshift(basename(cur)); cur = dirname(cur); }
-  return join(realpathSync(cur), ...rest);
-}
-
 /** [from, to] pairs for a path and its real path. */
 export function pathPairs(list) {
   const out = [];
@@ -52,12 +47,10 @@ export function pathPairs(list) {
   return out;
 }
 
-/** Every string in value with each pair replaced, longest first. Objects and arrays are copied. */
+/** Every string in value with each pair replaced, longest first (skill-eval's replaceAll). Objects and arrays are copied. */
 export function replaceDeep(value, pairs) {
-  const sorted = pairs.filter(([f]) => f).sort((a, b) => b[0].length - a[0].length);
-  const one = (s) => { let t = s; for (const [f, to] of sorted) t = t.split(f).join(to); return t; };
   const walk = (v) => {
-    if (typeof v === 'string') return one(v);
+    if (typeof v === 'string') return replaceAll(v, pairs);
     if (Array.isArray(v)) return v.map(walk);
     if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
     return v;

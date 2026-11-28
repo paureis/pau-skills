@@ -123,6 +123,7 @@ describe('owner-sheet', () => {
       const text = readFileSync(join(sheet, `${l}.txt`), 'utf8');
       assert.match(text, /^Task: .+\n\nPrompt:\n\n.+\n/);
       assert.deepEqual([...text.matchAll(/^# Output ([A-Z])\s*$/gm)].map((m) => m[1]), [l]);
+      assert.match(text, new RegExp(`\\n\\n# Output ${l}\\n\\n## What it did\\n`), 'the blank line after the heading stays');
       assert.doesNotMatch(text, /^\W*variant\W*[:=]/im);
       assert.doesNotMatch(text, /graded\.txt/, 'what the grader wrote never reaches the blind copy');
       for (const id of ids) assert.ok(!text.includes(id), `${l} holds run id ${id}`);
@@ -130,6 +131,17 @@ describe('owner-sheet', () => {
     for (const f of files(sheet)) assert.doesNotMatch(readFileSync(join(sheet, f), 'utf8'), /"skill"|"variant"|map\.json/);
     const grades = readFileSync(join(sheet, 'grades-tdd.txt'), 'utf8');
     assert.match(grades, /^Criterion 1: The new behaviour works as the request asked\.\n {2}A: \?\/5 {2}<your reason>\n/);
+  });
+
+  test('refuses a round whose judged runs cannot cover both variants and every difficulty', () => {
+    const small = runRound({ extra: ['--only', 'tdd-simple-a', '--n', '1'] });
+    assert.equal(bench(['judge', '--round', small.round, '--judge-model', 'fake-judge', ...PASS], { fake }).code, 0);
+    const out = join(scratch(), 'sheet');
+    const r = bench(['owner-sheet', '--round', small.round, '--out', out, '--seed', '1']);
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /^refused: tdd has no judged set of runs with 5 finished runs, a medium run, a complex run; judge more tasks first$/m);
+    assert.ok(!existsSync(out));
+    assert.ok(!existsSync(join(small.round, 'owner', 'map.json')));
   });
 
   test('refuses to make a second sheet for the same round', () => {
