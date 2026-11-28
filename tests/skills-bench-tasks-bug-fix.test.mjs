@@ -122,6 +122,11 @@ for (const id of TASK_IDS) {
         for (const line of examples) {
           const args = [...line.slice(`//   node ${bin} `.length).matchAll(/"([^"]*)"|(\S+)/g)].map((m) => m[1] ?? m[2]);
           spawnSync(process.execPath, [bin, ...args], { cwd: run, env: cleanEnv(), encoding: 'utf8', timeout: 30_000 });
+          const at = args.indexOf('--out');
+          if (at < 0) continue;
+          const bare = [...args.slice(0, at), ...args.slice(at + 2)];
+          const r = spawnSync(process.execPath, [bin, ...bare], { cwd: run, env: cleanEnv(), encoding: 'utf8', timeout: 30_000 });
+          assert.ok(r.status !== 0 && r.stderr.includes('--out <file>'), `${bin} without --out did not stop with its usage line`);
         }
       }
       for (const [f, text] of before) assert.equal(readFileSync(join(run, f), 'utf8'), text, `${f} changed`);
