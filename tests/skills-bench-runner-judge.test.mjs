@@ -68,6 +68,20 @@ describe('judge', () => {
     assert.equal(readState(small.round).spentMicros, 200_000);
     assert.equal(JSON.parse(readFileSync(join(small.round, 'judge', 'bug-fix', 'fix-simple-a.json'), 'utf8')).costMicros, 100_000);
   });
+
+  test('reserves judge money only for the tasks still to judge, not for one the cap held back', () => {
+    // Cap $1.00, reserve 2 x $0.05. fix-medium-a starts (0 + 2 x $0.40 + 0.10) and its runs pass their stop a little,
+    // $0.46 each: spent 0.92, so fix-simple-a is not run. Its judge would never come, so the one judge left needs
+    // 0.92 + 0.05 = 0.97, which fits.
+    const small = runRound({ maxUsd: '1', extra: ['--only', 'fix-simple-a', '--only', 'fix-medium-a', '--n', '1'], fake: { runs: { 'csv-tool/*': { cost: 0.46 } } } });
+    assert.equal(small.code, 0, small.stderr);
+    assert.equal(readState(small.round).tasks['fix-simple-a'].status, 'not run (cap)');
+    const r = bench(['judge', '--round', small.round, '--judge-model', 'fake-judge', ...PASS], { fake });
+    assert.equal(r.code, 0, r.stderr);
+    const s = readState(small.round);
+    assert.equal(s.tasks['fix-medium-a'].judged, true);
+    assert.equal(s.spentMicros, 940_000);
+  });
 });
 
 const sheet = join(scratch(), 'sheet');

@@ -99,7 +99,8 @@ node apps/skills-bench/bench.mjs judge --round "$F/round" --judge-model claude-s
 ```
 
 One blind judge per task, with no tools, an empty HOME and an empty working folder. Its cost counts against the cap
-of the round. Run it again to retry a task whose judge failed.
+of the round: a judge call starts only when what is spent, plus one judge price for each task still to judge, stays
+within it. Run it again to retry a task whose judge failed.
 
 ## B5: the owner's grades
 

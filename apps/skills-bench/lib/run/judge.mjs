@@ -10,7 +10,7 @@ import {
   skillEval, pathPairs, replaceDeep,
 } from './common.mjs';
 import { rubricCriteria } from './config.mjs';
-import { loadRound, saveState, resultPath, judgeReserve } from './state.mjs';
+import { loadRound, saveState, resultPath } from './state.mjs';
 
 const JUDGE_LIMIT_MS = 30 * 60_000;
 
@@ -86,7 +86,8 @@ export async function judgeCommand(o, out, err) {
   for (const id of s.planned) {
     const t = s.tasks[id];
     if (t.status !== 'done' || t.judged) continue;
-    const reserve = judgeReserve(s);
+    // This judge and the ones still to come: a task that never ran is never judged, so it holds nothing back here.
+    const reserve = s.planned.filter((x) => s.tasks[x].status === 'done' && !s.tasks[x].judged).length * s.judgeMicros;
     if (s.spentMicros + reserve > s.capMicros) {
       t.judgeStatus = 'not run (cap)';
       out(`${id}: judge not run (cap): ${microsUsd(s.spentMicros)} spent and ${microsUsd(reserve)} reserved pass the ${microsUsd(s.capMicros)} cap`);

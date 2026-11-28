@@ -14,6 +14,7 @@ This folder is repository tooling, not a skill or a plugin: nothing here is inst
   results and grading, judge, owner sheet, export).
 - `pilot.json`: the pilot's settings: tasks folder, skill folders, controls, runs per variant, cap, prices per run by
   difficulty, judge price, hard stop factor, parallel runs and run order. It names no model: `--model` is required.
+  Its paths are relative to the repository root; money is a string of US dollars, such as `"0.15"`.
 - `FORMAT.md`: the task, grader and results formats, and the owner sheet.
 - `RUNBOOK.md`: the steps of a pilot round, B0 to B7, with every command.
 - `tasks/`, `variants/`, `analyse.mjs` and `results/` come from the other parts of Q45.
