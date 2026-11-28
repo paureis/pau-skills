@@ -1,0 +1,20 @@
+{
+  "format": "skills-bench-pilot/1",
+  "tasksDir": "tests/fixtures/skills-bench/e2e/tasks",
+  "skills": {
+    "tdd": "tests/fixtures/skills-bench/runner/skills/tdd",
+    "bug-fix": "tests/fixtures/skills-bench/runner/skills/bug-fix"
+  },
+  "controls": {
+    "skill": "tdd",
+    "broken": "tests/fixtures/skills-bench/runner/variants/tdd-broken",
+    "empty": "tests/fixtures/skills-bench/runner/variants/tdd-empty"
+  },
+  "n": 1,
+  "maxUsd": "20",
+  "usdPerRun": { "simple": "0.10", "medium": "0.20", "complex": "0.50" },
+  "usdPerJudge": "0.05",
+  "hardStopFactor": 2,
+  "parallel": 4,
+  "order": ["complex", "control", "medium", "simple"]
+}

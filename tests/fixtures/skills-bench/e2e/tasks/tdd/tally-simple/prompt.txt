@@ -1,0 +1,1 @@
+Add a total() to src/thing.js that sums the coins in the jar, with a test for it.
