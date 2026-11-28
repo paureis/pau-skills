@@ -1,0 +1,11 @@
+{
+  "name": "shop-invoices",
+  "version": "2.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Invoices and refunds for the shop's orders.",
+  "bin": { "invoice": "bin/invoice.mjs", "refund": "bin/refund.mjs" },
+  "scripts": {
+    "test": "node --test"
+  }
+}

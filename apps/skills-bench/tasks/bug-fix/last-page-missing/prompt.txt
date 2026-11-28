@@ -1,0 +1,1 @@
+We have 25 orders in data/orders.json. `node bin/orders.mjs data/orders.json --page 3 --size 10` prints "no page 3: there are 2 pages", so the last five orders never show up anywhere. Can you find the root cause and fix it? `npm test` should still pass.

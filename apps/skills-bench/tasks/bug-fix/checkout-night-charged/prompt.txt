@@ -1,0 +1,1 @@
+A guest asked for a quote for the fern cabin from Friday 2025-06-13 to Monday 2025-06-16. `node bin/quote.mjs fern 2025-06-13 2025-06-16` says "4 nights" and a total of 595.00 EUR, and lists Monday as a night, but they check out on Monday morning, so that is 3 nights. Please find the root cause and fix it. `npm test` must still pass.

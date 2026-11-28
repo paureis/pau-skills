@@ -1,0 +1,12 @@
+{
+  "id": "month-end-renewal",
+  "skill": "bug-fix",
+  "difficulty": "simple",
+  "slug": "renewal-dates",
+  "summary": "A monthly plan started on January 31 shows its next renewal on March 3; find the root cause and fix it.",
+  "allowTools": ["Bash(npm test)", "Bash(npm test *)", "Bash(node *)", "Bash(git *)"],
+  "allowWords": ["test"],
+  "timeoutMin": 15,
+  "control": false,
+  "maxFixLines": 12
+}

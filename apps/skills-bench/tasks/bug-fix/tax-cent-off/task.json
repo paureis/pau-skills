@@ -1,0 +1,12 @@
+{
+  "id": "tax-cent-off",
+  "skill": "bug-fix",
+  "difficulty": "medium",
+  "slug": "shop-invoices",
+  "summary": "The invoice for order 1042 shows 1.64 of tax where the register charged 1.65; find the root cause and fix it.",
+  "allowTools": ["Bash(npm test)", "Bash(npm test *)", "Bash(node *)", "Bash(git *)"],
+  "allowWords": ["test"],
+  "timeoutMin": 15,
+  "control": false,
+  "maxFixLines": 8
+}

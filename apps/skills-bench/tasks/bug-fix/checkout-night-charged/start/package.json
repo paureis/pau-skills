@@ -1,0 +1,16 @@
+{
+  "name": "cabin-bookings",
+  "version": "1.6.0",
+  "private": true,
+  "type": "module",
+  "description": "Quotes, bookings and calendars for three rental cabins.",
+  "bin": {
+    "quote": "bin/quote.mjs",
+    "book": "bin/book.mjs",
+    "calendar": "bin/calendar.mjs",
+    "cancel": "bin/cancel.mjs"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

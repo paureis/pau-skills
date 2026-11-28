@@ -1,0 +1,1 @@
+When I print the price lists for two regions with `node bin/price-list.mjs us eu`, the Europe section shows "Desk lamp 39.00 USD", the same as the US one. On its own, `node bin/price-list.mjs eu` gives the right 42.00 EUR. Please find the root cause and fix it; `npm test` has to keep passing.

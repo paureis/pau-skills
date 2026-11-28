@@ -1,0 +1,11 @@
+{
+  "name": "price-lists",
+  "version": "3.0.2",
+  "private": true,
+  "type": "module",
+  "description": "Customer prices by region for the shop's price lists and carts.",
+  "bin": { "price-list": "bin/price-list.mjs", "cart": "bin/cart.mjs" },
+  "scripts": {
+    "test": "node --test"
+  }
+}
