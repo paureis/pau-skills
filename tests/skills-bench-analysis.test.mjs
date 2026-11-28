@@ -215,6 +215,12 @@ test('controls: a broken copy that scores higher and an empty skill that shifts 
   const thin = summarize(memory([...arm('with', [0.5, 0.6]), ...arm('without', [0.5, null]),
     ...arm('broken', [0.4, 0.5]), ...arm('empty', [0.5, 0.6])])).controls.tasks[0];
   assert.deepEqual([thin.empty.lo, thin.empty.excludesZero, thin.empty.asExpected], [null, null, null]);
+  // Empty and without both 0.6 on every run: the interval is the point 0 to 0, which includes 0, so as expected.
+  // Broken scoring exactly what with scores: a difference of 0 is not below 0, so not as expected.
+  const flat = summarize(memory([...arm('with', [0.5, 0.6, 0.7]), ...arm('without', [0.6, 0.6, 0.6]),
+    ...arm('broken', [0.5, 0.6, 0.7]), ...arm('empty', [0.6, 0.6, 0.6])])).controls.tasks[0];
+  assert.deepEqual([flat.empty.lo, flat.empty.hi, flat.empty.flag, flat.empty.asExpected], [0, 0, 'no spread', true]);
+  assert.deepEqual([flat.broken.diff, flat.broken.asExpected], [0, false]);
   // A task with broken runs but no empty runs is not a control.
   assert.deepEqual(summarize(memory([...arm('with', [0.5, 0.6]), ...arm('without', [0.5, 0.4]), ...arm('broken', [0.1, 0.2])])).controls.tasks, []);
 });
@@ -223,6 +229,13 @@ test('the dropout rule holds for a grade null in the middle of an arm', () => {
   const m = summarize(memory([...arm('with', [1, null, 0]), ...arm('without', [0.5, 0.5])]));
   const c = m.cells.find((x) => x.variant === 'with');
   assert.deepEqual([c.runs, c.graded, c.dropouts, c.passes, c.passRate, c.meanScore], [3, 2, 1, 1, 0.5, 0.5]);
+  // A dropout's seconds and cost still count: 1, 10 and 1 seconds give a mean of 4 and a max of 10; costs 10, 40
+  // and 10 micro-dollars give a mean of 20 and a max of 40.
+  const slow = summarize(memory([run('with', 1, 1), run('with', 2, null, { seconds: 10, costMicros: 40 }), run('with', 3, 0)])).cells[0];
+  assert.deepEqual([slow.secondsMean, slow.secondsMax, slow.costMeanMicros, slow.costMaxMicros], [4, 10, 20, 40]);
+  // An unfinished run has no cost and no seconds: only the values that exist count.
+  const cut = summarize(memory([run('with', 1, 1), run('with', 2, null, { finished: false, seconds: null, costMicros: null }), run('with', 3, 0, { seconds: 3, costMicros: 11 })])).cells[0];
+  assert.deepEqual([cut.runs, cut.dropouts, cut.secondsMean, cut.secondsMax, cut.costMeanMicros, cut.costMaxMicros], [3, 1, 2, 3, 11, 11]);
   // Judge null is left out of the judge mean, judge scores average per run first.
   const j = summarize(memory([run('with', 1, 1, { judge: { 1: 2, 2: 4 } }), run('with', 2, 1, { judge: null }), run('with', 3, 1, { judge: { 1: 5, 2: 5 } })]));
   assert.equal(j.cells[0].judgeMean, 4);

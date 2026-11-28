@@ -22,8 +22,9 @@ export function cellOf(runs) {
   const scores = graded.map((r) => r.grade.score);
   const passes = graded.filter((r) => r.grade.pass).length;
   const judged = runs.filter((r) => r.judge !== null && Object.keys(r.judge).length).map((r) => mean(Object.values(r.judge)));
-  const costs = runs.map((r) => r.costMicros);
-  const seconds = runs.map((r) => r.seconds);
+  // Dropouts count here; a run that never finished has no cost or seconds (null), so only recorded values count.
+  const costs = runs.map((r) => r.costMicros).filter((x) => x !== null);
+  const seconds = runs.map((r) => r.seconds).filter((x) => x !== null);
   const started = runs.filter((r) => typeof r.skillStarted === 'boolean');
   return {
     runs: runs.length,
@@ -35,6 +36,7 @@ export function cellOf(runs) {
     meanOutcomeScore: mean(graded.map((r) => r.grade.outcomeScore)),
     judged: judged.length,
     judgeMean: mean(judged),
+    costRuns: costs.length,
     costSumMicros: sum(costs),
     costMeanMicros: meanMicros(sum(costs), costs.length),
     costMaxMicros: maxOf(costs),
@@ -115,7 +117,7 @@ function recommendationOf(round, cells, judgeCalls, delta) {
   const costPerRun = {};
   for (const d of DIFFICULTIES) {
     const inD = arms.filter((c) => c.difficulty === d);
-    const runs = sum(inD.map((c) => c.runs));
+    const runs = sum(inD.map((c) => c.costRuns));
     const total = sum(inD.map((c) => c.costSumMicros));
     costPerRun[d] = { runs, sumMicros: total, meanMicros: meanMicros(total, runs) };
   }

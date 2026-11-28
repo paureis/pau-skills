@@ -16,7 +16,8 @@ hand working) and `tests/skills-bench-analysis*.test.mjs` (a hand-written round 
 - `round.json` must have format `skills-bench-results/1`, a tasks list, and a difficulty of simple, medium or complex
   on every task. Without that the analysis stops.
 - Each `<skill>/<task>/<variant>/<n>/result.json` must have format `skills-bench-run/1`, the skill, task, variant and
-  n of its folder, whole micro-dollars in `costMicros`, seconds of 0 or more, a grade that is null or holds `pass`,
+  n of its folder, whole micro-dollars in `costMicros` and seconds of 0 or more (both may be null when `finished` is
+  false, as the runner writes them for a run that never finished), a grade that is null or holds `pass`,
   `score` and `outcomeScore` (both 0 to 1), and a judge that is null or holds whole scores from 1 to 5. A file that
   fails is left out and listed under Problems in the report. The variant folders are with, without, broken and empty.
 - `judge/<skill>/<task>.json` gives the cost of one judge call. `owner/map.json` and `owner/grades-<skill>.txt` give
@@ -34,6 +35,9 @@ is the point itself, flagged "no spread".
 Runs, graded runs, dropouts, pass rate (passes over graded runs), mean score, mean outcome score, judge mean (each
 run's criteria averaged first, then the runs), cost per run (mean and max), seconds per run (mean and max) and the
 skill start rate (runs where the skill started, over runs that say).
+
+Dropouts count in cost and seconds, since they took time and money. A run that never finished has no cost and no
+seconds recorded (null), so the means and maxima of cost and seconds use only the runs that have a value.
 
 Money is in whole micro-dollars. Sums stay whole; a mean cost is rounded up once, when it is reported, and the budget
 is summed exactly (as fractions) and rounded up once at the end.
@@ -111,7 +115,8 @@ A missing `map.json` or grades file gives "judge agreement not measured", not a 
   calculation, which puts t on `2n - 2` df in place of z and repeats until n settles, gives 64, so the normal formula
   runs about one run per arm low at this size. The plan never asks for fewer than 2 runs per arm.
 - **Budget**: the same tasks as the round, with and without only, at that many runs per arm. Each run costs the
-  observed mean cost per run of its difficulty (over with and without runs, dropouts included, since they cost money).
+  observed mean cost per run of its difficulty (over the with and without runs that have a cost, dropouts included,
+  since they cost money).
   A judge call labels runs with the letters A to Z, so it reviews 26 runs at most; each task needs
   `ceil(2n / 26)` calls at the observed mean cost per judge call. The total is summed exactly and rounded up once.
 

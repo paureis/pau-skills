@@ -155,6 +155,34 @@ test('a run with a score outside 0 to 1 is left out and listed', () => {
   assert.ok(out.stdout.includes('| `tdd` | `slugify` | simple | without | 2 | 2 | 0 |'));
 });
 
+test('an unfinished run with no cost and no seconds is a dropout, not a problem', () => {
+  // The runner writes costMicros and seconds null when a run never finished (A1 FORMAT.md, lib/run/collect.mjs).
+  const dir = copy();
+  const f = join(dir, 'bug-fix', 'off-by-one', 'with', '3', 'result.json');
+  const r = JSON.parse(readFileSync(f, 'utf8'));
+  assert.deepEqual([r.finished, r.grade], [false, null]);
+  writeFileSync(f, JSON.stringify({ ...r, costMicros: null, seconds: null }));
+  const s = summarize(readResults(dir));
+  assert.deepEqual(s.problems, []);
+  const c = s.cells.find((x) => x.skill === 'bug-fix' && x.task === 'off-by-one' && x.variant === 'with');
+  assert.deepEqual([c.runs, c.graded, c.dropouts, c.costMeanMicros, c.costMaxMicros, c.secondsMean, c.secondsMax], [3, 2, 1, 100000, 100000, 60, 60]);
+  // The plan counts only runs with a cost: 23 simple runs, still 100000 each.
+  assert.deepEqual(s.recommendation.costPerRun.simple, { runs: 23, sumMicros: 2300000, meanMicros: 100000 });
+  // A finished run must still have both.
+  writeFileSync(f, JSON.stringify({ ...r, finished: true, costMicros: null, seconds: 60 }));
+  assert.deepEqual(readResults(dir).problems, ['bug-fix/off-by-one/with/3/result.json: costMicros null is not a whole number of micro-dollars; left out']);
+});
+
+test('an owner letter that maps to a run of another skill is not used', () => {
+  // F is a bug-fix run (owner/map.json); scoring it in the tdd file must not add a pair to tdd's criterion 2.
+  const dir = copy();
+  const grades = join(dir, 'owner', 'grades-tdd.txt');
+  writeFileSync(grades, readFileSync(grades, 'utf8').replace('  E: 3/5  mixed\n', '  E: 3/5  mixed\n  F: 4/5  not a tdd run\n'));
+  const tdd = summarize(readResults(dir)).agreement.skills.find((x) => x.skill === 'tdd');
+  assert.equal(tdd.criteria[1].pairs, 5);
+  assert.deepEqual(tdd.problems, ['owner/grades-tdd.txt criterion 2, letter F: the map gives a bug-fix run']);
+});
+
 test('bad arguments and a bad round stop with a message', () => {
   const usage = runNode(CLI, { args: [] });
   assert.equal(usage.code, 2);
