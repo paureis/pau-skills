@@ -49,7 +49,8 @@ export function runProblem(r, where) {
   // A run that never finished has no cost and no seconds (the runner writes null); it is a dropout.
   const unfinished = r.finished === false;
   if (!isMicros(r.costMicros) && !(unfinished && r.costMicros === null)) return `costMicros ${JSON.stringify(r.costMicros)} is not a whole number of micro-dollars`;
-  if (!(typeof r.seconds === 'number' && r.seconds >= 0) && !(unfinished && r.seconds === null)) return `seconds ${JSON.stringify(r.seconds)} is not a number of 0 or more`;  if (r.grade !== null) {
+  if (!(typeof r.seconds === 'number' && r.seconds >= 0) && !(unfinished && r.seconds === null)) return `seconds ${JSON.stringify(r.seconds)} is not a number of 0 or more`;
+  if (r.grade !== null) {
     if (!isObject(r.grade) || typeof r.grade.pass !== 'boolean') return 'grade is neither null nor an object with a pass true or false';
     if (!isUnit(r.grade.score)) return `grade score ${JSON.stringify(r.grade.score)} is not from 0 to 1`;
     if (!isUnit(r.grade.outcomeScore)) return `grade outcomeScore ${JSON.stringify(r.grade.outcomeScore)} is not from 0 to 1`;
