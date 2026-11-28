@@ -1,0 +1,12 @@
+{
+  "id": "booking-cancel",
+  "skill": "tdd",
+  "difficulty": "complex",
+  "slug": "room-bookings",
+  "summary": "Let customers cancel room bookings: cancelBooking in src/bookings.js with a refundFor rule in src/pricing.js, shown on the invoice and left out of room usage.",
+  "allowTools": ["Bash(npm test)", "Bash(node *)", "Bash(git *)"],
+  "allowWords": ["test"],
+  "timeoutMin": 30,
+  "control": false,
+  "interface": ["src/bookings.js", "src/pricing.js", "src/invoice.js", "src/report.js", "src/availability.js"]
+}

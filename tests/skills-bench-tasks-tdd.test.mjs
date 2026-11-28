@@ -139,12 +139,15 @@ for (const id of taskIds) {
     assert.equal(t.timeoutMin, SIZE[t.difficulty].timeoutMin);
     assert.equal(typeof t.control, 'boolean');
     assert.ok(Array.isArray(t.interface) && t.interface.length > 0, 'interface');
-    for (const p of t.interface) assert.ok(existsSync(join(reference, p)), `interface path ${p} is not in reference/`);
+    // The reference project is start + reference/: an interface module the behaviour reaches without changing it
+    // (booking-cancel's availability.js) is only in start/.
+    const done = layered(start, reference);
+    for (const p of t.interface) assert.ok(existsSync(join(done, p)), `interface path ${p} is not in the reference project`);
+    assert.ok(t.interface.some((p) => existsSync(join(reference, p))), 'no interface module is in reference/');
     const n = badNames(id).length;
     assert.ok(n >= 4 && n <= 6, `${n} bad versions`);
     for (const f of filesOf(dir)) assert.ok(lstatSync(join(dir, f)).size < 20_000, `${f} is 20,000 bytes or more`);
 
-    const done = layered(start, reference);
     const sources = filesOf(done).filter((f) => /\.[cm]?js$/.test(f) && !isTest(f));
     const lines = sources.reduce((sum, f) => sum + read(done, f).split('\n').filter((l) => l.trim()).length, 0);
     const size = SIZE[t.difficulty];
