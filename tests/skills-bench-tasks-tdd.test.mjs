@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile, execFileSync, spawnSync } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readFileSync, readdirSync, lstatSync, readlinkSync, mkdirSync, copyFileSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, lstatSync, readlinkSync, mkdirSync, copyFileSync, existsSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { ROOT, repo, tempDir } from './helpers.mjs';
@@ -167,6 +167,11 @@ for (const id of taskIds) {
     assert.deepEqual(entries.filter((e) => e.link).map((e) => e.rel), [], 'links in start/');
     const banned = entries.filter((e) => ['.git', '.claude', 'CLAUDE.md', 'AGENTS.md'].includes(e.rel.split('/').at(-1)));
     assert.deepEqual(banned.map((e) => e.rel), []);
+    for (const f of filesOf(dir).filter((f) => f !== 'prompt.txt')) {
+      const text = read(dir, f);
+      assert.deepEqual(findMetaWords(text, { allow: ['test'], exempt: ['tdd'] }), [], `words in ${f}`);
+      assert.deepEqual(text.match(/@(?!example\.com\b)[A-Za-z0-9-]+\.[A-Za-z.]+/g) ?? [], [], `emails in ${f}`);
+    }
     const pkg = JSON.parse(read(start, 'package.json'));
     assert.equal(pkg.scripts?.test, 'node --test');
     assert.equal(pkg.dependencies, undefined);
@@ -215,6 +220,78 @@ test('the grader exits 1 with the reason on stderr when it cannot grade', () => 
     assert.equal(r.stdout, '');
     assert.match(r.stderr, /^grade\.mjs: could not grade: \S.*\n$/);
   }
+});
+
+// Edge cases, on duration-parse (6 bad versions). A run is start + reference, then the files given here.
+const DP = join(TASKS, 'duration-parse');
+const DP_START_TEST = read(DP, 'start', 'test', 'duration.test.js');
+function runWith(files, dirs = [join(DP, 'start'), join(DP, 'reference')]) {
+  const d = layered(...dirs);
+  for (const [f, text] of Object.entries(files)) {
+    mkdirSync(dirname(join(d, f)), { recursive: true });
+    writeFileSync(join(d, f), text);
+  }
+  return d;
+}
+function gradeWith(runDir, env = {}) {
+  const r = spawnSync(process.execPath, [GRADER, '--task', DP, '--run', runDir], { encoding: 'utf8', timeout: 120_000, env: { ...process.env, ...env } });
+  return { ...r, g: r.status === 0 ? JSON.parse(r.stdout) : null };
+}
+const HEAD = "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { parseDuration } from '../src/duration.js';\n";
+
+test('with the time budget used up no node --test starts: the checks fail with that detail and the grade exits 0', () => {
+  const r = gradeWith(runWith({}), { SKILLS_BENCH_BUDGET_MS: '0' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.g.pass, false);
+  for (const c of r.g.checks) assert.match(c.detail, /time budget used up$/, c.name);
+});
+
+test('a run that uses up the time budget is stopped and the later checks fail with the budget detail', OPTIONS, () => {
+  const slow = `${HEAD}test('waits', () => new Promise((done) => setTimeout(done, 15_000)));\n`;
+  const r = gradeWith(runWith({ 'test/slow.test.js': slow }), { SKILLS_BENCH_BUDGET_MS: '6000' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(r.g.checks.slice(0, 2).map((c) => c.pass), [true, true]);
+  assert.match(r.g.checks[2].detail, /^2 test files new or changed, on the reference: node --test was stopped after \d+ ms$/);
+  assert.equal(r.g.checks[4].detail, '2 test files: time budget used up');
+});
+
+test('a node --test that prints no counts cannot be graded: exit 1, the reason on stderr, nothing on stdout', () => {
+  const r = gradeWith(runWith({ 'test/gone.test.js': "process.kill(process.ppid, 'SIGKILL');\n" }));
+  assert.equal(r.status, 1);
+  assert.equal(r.stdout, '');
+  assert.match(r.stderr, /^grade\.mjs: could not grade: node --test printed no pass and fail counts .*\n$/);
+});
+
+test('a run that breaks a start behaviour and weakens its test fails the start tests check', () => {
+  const code = read(DP, 'reference', 'src', 'duration.js').replace('if (!Number.isInteger(seconds) || seconds < 0)', 'if (seconds < 0)');
+  const tests = read(DP, 'reference', 'test', 'duration.test.js').replace("  assert.throws(() => formatDuration(1.5), RangeError);\n  assert.throws(() => formatDuration('60'), RangeError);\n", '');
+  const r = gradeWith(runWith({ 'src/duration.js': code, 'test/duration.test.js': tests }));
+  assert.equal(r.g.checks[1].pass, false, r.g.checks[1].detail);
+  assert.equal(r.g.checks[4].pass, true, 'the edited tests pass on the run code');
+  assert.equal(r.g.pass, false);
+});
+
+test('test files that run no test do not pass', () => {
+  const skipped = `${HEAD}test.skip('parses hours', () => assert.equal(parseDuration('1h'), 3600));\n`;
+  const r = gradeWith(runWith({ 'test/later.test.js': skipped }, [join(DP, 'start')]));
+  assert.equal(r.g.checks[2].pass, false);
+  assert.equal(r.g.checks[2].detail, '1 test file new or changed, on the reference: 0 passed, 0 failed, exit 0');
+});
+
+test('4 of 6 bad versions caught is under 75%', () => {
+  const four = `${HEAD}test('four rules', () => {\n  assert.equal(parseDuration('2H'), 7200);\n  assert.throws(() => parseDuration(''), RangeError);\n  assert.equal(parseDuration('90'), 90);\n  assert.equal(parseDuration('1.5h'), 5400);\n});\n`;
+  const r = gradeWith(runWith({ 'test/duration.test.js': DP_START_TEST, 'test/parse.test.js': four }));
+  assert.equal(r.g.checks[3].detail, '4 of 6 bad versions caught, 5 needed; missed: total-rounded-down, unknown-unit-skipped');
+  assert.equal(r.g.checks[3].pass, false);
+});
+
+test('output over the buffer limit fails the check with a detail instead of stopping the grade', () => {
+  const noisy = `${HEAD}test('talks', () => { console.log('x'.repeat(200_000)); });\n`;
+  const r = gradeWith(runWith({ 'test/noisy.test.js': noisy }), { SKILLS_BENCH_MAX_BUFFER: '50000' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.g.checks[0].pass, true, r.g.checks[0].detail);
+  assert.match(r.g.checks[2].detail, /: node --test printed more than 50000 bytes$/);
+  assert.equal(r.g.checks[4].detail, '2 test files: node --test printed more than 50000 bytes');
 });
 
 test('the rubric is usable: 3 to 6 numbered criteria and comments, naming no skill or variant', () => {

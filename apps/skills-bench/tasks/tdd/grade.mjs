@@ -17,6 +17,11 @@
 //   5. the run's test files pass on the run's own code (process).
 // For checks 3 and 4, files the run added that are not tests (a helper, a fixture) are laid in before the reference.
 //
+// Time: no node --test starts 230 s after the grade began, and none runs past that point or past 60 s, so a grade
+// ends well inside 240 s; a check that never got to run fails with "time budget used up". Output: a node --test that
+// prints more than 64 MB fails its check. For tests only, SKILLS_BENCH_BUDGET_MS and SKILLS_BENCH_MAX_BUFFER (whole
+// numbers) replace the 230 s and the 64 MB, so the self-check reaches both paths in seconds.
+//
 // The bug-fix grader carries its own copy of the file walk, the test file patterns and the node --test runner; a fix
 // to one of them belongs in both.
 import { spawnSync } from 'node:child_process';
@@ -25,8 +30,11 @@ import { join, dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomBytes } from 'node:crypto';
 
-const BUDGET_MS = 270_000; // the whole grade stays under 5 minutes
+const fromEnv = (name, fallback) => (/^\d+$/.test(process.env[name] ?? '') ? Number(process.env[name]) : fallback);
+const BUDGET_MS = fromEnv('SKILLS_BENCH_BUDGET_MS', 230_000); // after this no node --test starts
+const MAX_BUFFER = fromEnv('SKILLS_BENCH_MAX_BUFFER', 1 << 26); // bytes of output one node --test may print
 const RUN_MAX_MS = 60_000; // one node --test
+const BUDGET_USED = 'time budget used up';
 const CATCH_SHARE = 0.75;
 
 class CannotGrade extends Error {}
@@ -68,14 +76,20 @@ function lastCount(tap, word) {
   return all.length ? Number(all[all.length - 1][1]) : null;
 }
 
-/** node --test on files inside cwd: { ok, detail }. No count lines means the grade cannot be trusted. */
+/**
+ * node --test on files inside cwd: { ok, detail }, with budget: true when the deadline had passed and nothing ran.
+ * No count lines means the grade cannot be trusted.
+ */
 function nodeTest(cwd, files, deadline) {
+  const left = deadline - Date.now();
+  if (left <= 0) return { ok: false, budget: true, detail: BUDGET_USED };
   const env = { ...process.env, TZ: 'UTC', LC_ALL: 'C' };
   delete env.NODE_TEST_CONTEXT;
-  const timeout = Math.max(1000, Math.min(RUN_MAX_MS, deadline - Date.now()));
+  const timeout = Math.min(RUN_MAX_MS, left);
   const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...files.map((f) => join(cwd, f))],
-    { cwd, env, timeout, encoding: 'utf8', maxBuffer: 1 << 26 });
+    { cwd, env, timeout, encoding: 'utf8', maxBuffer: MAX_BUFFER });
   if (r.error && r.error.code === 'ETIMEDOUT') return { ok: false, detail: `node --test was stopped after ${timeout} ms` };
+  if (r.error && r.error.code === 'ENOBUFS') return { ok: false, detail: `node --test printed more than ${MAX_BUFFER} bytes` };
   if (r.error) throw new CannotGrade(`node --test did not start: ${r.error.message}`);
   const pass = lastCount(r.stdout, 'pass');
   const fail = lastCount(r.stdout, 'fail');
@@ -148,14 +162,17 @@ function grade(task, run, tmp) {
 
   const missed = [];
   let caught = 0;
+  let outOfTime = onReference.budget === true;
   if (onReference.ok) {
     for (const b of bads) {
       const r = nodeTest(onTop(tree(join(part('bad'), b))), changedTests, deadline);
+      if (r.budget) { outOfTime = true; break; }
       if (r.ok) missed.push(b); else caught++;
     }
   }
   const need = Math.ceil(CATCH_SHARE * bads.length);
-  const why = onReference.ok ? (missed.length ? `; missed: ${missed.join(', ')}` : '') : '; the new tests do not pass on the reference';
+  let why = onReference.ok ? (missed.length ? `; missed: ${missed.join(', ')}` : '') : '; the new tests do not pass on the reference';
+  if (outOfTime) why = `${onReference.ok ? why : ''}; ${BUDGET_USED}`;
   add('new-tests-catch-bad-versions', 'outcome', false, caught >= need, `${caught} of ${bads.length} bad versions caught, ${need} needed${why}`);
 
   // 5. The run's tests on its own code.
