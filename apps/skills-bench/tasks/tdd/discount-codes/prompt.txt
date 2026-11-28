@@ -1,0 +1,7 @@
+Checkout needs to take discount codes. The codes are already in the CODES table in src/discounts.js. Please add two exported functions:
+
+1. findDiscount(code, today) in src/discounts.js. today is the date as "YYYY-MM-DD". It finds the code the customer typed, whatever its case and with spaces around it ignored, and returns the table entry with the code in upper case, for example { code: "SAVE10", kind: "percent", percent: 10, expires: "2026-12-31" }. A code that is not in the table throws a CodeError with code "UNKNOWN_CODE". A code still works on its expires day and throws a CodeError with code "EXPIRED" from the day after.
+
+2. cartTotal(cart, code, today) in src/cart.js. It returns { subtotal, discount, total }, each as { cents, currency } in the cart's currency. With no code (null, undefined or a blank string) the discount is 0. A percent code takes that share of the subtotal, rounded to the nearest cent with half a cent going up: SAVE10 on 29.99 EUR takes 3.00 EUR off, and on 10.05 EUR it takes 1.01 EUR off. A fixed code takes its amount off, but never more than the subtotal, so the total never goes below zero. A fixed code in a different currency from the cart throws a CodeError with code "WRONG_CURRENCY". Unknown and expired codes throw as findDiscount does; they are never silently ignored.
+
+Keep every amount in whole cents. Build it test first.
