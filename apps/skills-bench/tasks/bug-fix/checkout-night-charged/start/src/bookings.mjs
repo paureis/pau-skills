@@ -23,11 +23,21 @@ function checkBooking(record, i) {
   return { id: record.id, ...stay, guest: checkGuestName(record.guest), status: record.status, totalCents: record.totalCents };
 }
 
+/** A file that lists one id twice would let a cancel or a move change the wrong booking. */
+function checkUniqueIds(bookings) {
+  const seen = new Set();
+  for (const b of bookings) {
+    if (seen.has(b.id)) throw new Error(`booking ${b.id} is in the file twice`);
+    seen.add(b.id);
+  }
+  return bookings;
+}
+
 export function loadBookings(file) {
   if (!existsSync(file)) return [];
   const data = JSON.parse(readFileSync(file, 'utf8'));
   if (!Array.isArray(data)) throw new Error(`${file} must hold a list of bookings`);
-  return data.map(checkBooking);
+  return checkUniqueIds(data.map(checkBooking));
 }
 
 /** Writes the list to a new file first, so a crash part way never leaves half a bookings file. */
@@ -67,6 +77,22 @@ export function addBooking(bookings, request) {
   const quote = quoteStay(stay);
   const booking = { id: nextId(bookings), ...stay, guest, status: 'confirmed', totalCents: quote.totalCents };
   return { booking, quote, bookings: [...bookings, booking] };
+}
+
+/**
+ * The bookings that match every given field: a cabin, part of the guest name (any case), a status, and a period
+ * (from and to) that the stay overlaps. Sorted by check-in day, then id.
+ */
+export function findBookings(bookings, { cabin, guest, status, from, to } = {}) {
+  const name = guest === undefined ? null : String(guest).trim().toLowerCase();
+  if (status !== undefined && !STATUSES.has(status)) throw new Error(`unknown status: ${status}`);
+  return bookings
+    .filter((b) => cabin === undefined || b.cabin === cabin)
+    .filter((b) => name === null || b.guest.toLowerCase().includes(name))
+    .filter((b) => status === undefined || b.status === status)
+    .filter((b) => from === undefined || b.checkOut > from)
+    .filter((b) => to === undefined || b.checkIn < to)
+    .sort((a, b) => (a.checkIn === b.checkIn ? (a.id < b.id ? -1 : 1) : (a.checkIn < b.checkIn ? -1 : 1)));
 }
 
 export function cancelBooking(bookings, id) {

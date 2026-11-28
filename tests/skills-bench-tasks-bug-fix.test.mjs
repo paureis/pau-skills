@@ -19,13 +19,25 @@ const HELPER_FIX = ['month-end-renewal', 'checkout-night-charged'];
 const SIZE_DETAIL = /^(\d+) code lines changed \(added plus removed; blank and comment lines not counted\), limit (\d+)$/;
 const HIDDEN = ['symptom.test.mjs', 'sibling.test.mjs', 'existing.test.mjs'];
 const ALLOW_TOOLS = ['Bash(npm test)', 'Bash(npm test *)', 'Bash(node *)', 'Bash(git *)'];
-// Source size by difficulty: modules are non-test source files outside bin/; lines are the non-blank lines of every
-// non-test source file, bin/ included.
+// Source size by difficulty: modules are non-test source files outside bin/; lines are the code lines (no blank or
+// comment lines) of every non-test source file, bin/ included. The complex task's modules alone hold its lower bound,
+// so its size is in the code the bug crosses, not in the commands.
 const SIZE = {
   simple: { modules: [1, 1], lines: [30, 80] },
   medium: { modules: [2, 3], lines: [100, 250] },
-  complex: { modules: [5, 99], lines: [400, 800] },
+  complex: { modules: [5, 99], lines: [400, 800], moduleLines: 400 },
 };
+/** Lines that are neither blank nor a // line nor part of a block comment. */
+function codeLineCount(text) {
+  let n = 0;
+  let inBlock = false;
+  for (const t of text.split('\n').map((l) => l.trim())) {
+    if (inBlock) inBlock = !t.includes('*/');
+    else if (t.startsWith('/*')) inBlock = !t.includes('*/', 2);
+    else if (t && !t.startsWith('//')) n++;
+  }
+  return n;
+}
 
 test('the tasks are 2 simple, 2 medium and 1 complex', () => {
   const count = { simple: 0, medium: 0, complex: 0 };
@@ -68,10 +80,13 @@ for (const id of TASK_IDS) {
     await t.test('the size matches the difficulty', () => {
       const sources = startFiles.filter(isSource);
       const modules = sources.filter((f) => !f.startsWith('bin/')).length;
-      const lines = sources.reduce((n, f) => n + readFileSync(join(start, f), 'utf8').split('\n').filter((l) => l.trim()).length, 0);
+      const count = (files) => files.reduce((n, f) => n + codeLineCount(readFileSync(join(start, f), 'utf8')), 0);
+      const lines = count(sources);
       const want = SIZE[task.difficulty];
+      const moduleLines = count(sources.filter((f) => !f.startsWith('bin/')));
+      assert.ok(moduleLines >= (want.moduleLines ?? 0), `${moduleLines} code lines in the modules of the ${task.difficulty} task`);
       assert.ok(modules >= want.modules[0] && modules <= want.modules[1], `${modules} modules for ${task.difficulty}`);
-      assert.ok(lines >= want.lines[0] && lines <= want.lines[1], `${lines} source lines for ${task.difficulty}`);
+      assert.ok(lines >= want.lines[0] && lines <= want.lines[1], `${lines} code lines for ${task.difficulty}`);
       assert.ok(sources.some((f) => f.startsWith('bin/')), 'a bin/ command shows the bug');
       for (const e of walk(dir)) if (e.stat.isFile()) assert.ok(e.stat.size < 20_000, `${e.rel}: ${e.stat.size} bytes`);
     });
