@@ -1,0 +1,1 @@
+Add a way to total an order in the order book, with tests.

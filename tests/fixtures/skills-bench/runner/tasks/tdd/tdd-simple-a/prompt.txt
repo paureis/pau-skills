@@ -1,0 +1,1 @@
+Add a total() to src/thing.js that sums the prices in the list, with a test for it.

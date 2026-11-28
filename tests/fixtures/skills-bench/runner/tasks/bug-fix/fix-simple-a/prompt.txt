@@ -1,0 +1,1 @@
+The word count is one too high for text that ends with a space. Please fix it.

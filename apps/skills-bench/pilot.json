@@ -1,0 +1,24 @@
+{
+  "format": "skills-bench-pilot/1",
+  "tasksDir": "apps/skills-bench/tasks",
+  "skills": {
+    "tdd": "skills/verification/tdd",
+    "bug-fix": "skills/verification/bug-fix"
+  },
+  "controls": {
+    "skill": "tdd",
+    "broken": "apps/skills-bench/variants/tdd-broken",
+    "empty": "apps/skills-bench/variants/tdd-empty"
+  },
+  "n": 3,
+  "maxUsd": "40",
+  "usdPerRun": {
+    "simple": "0.15",
+    "medium": "0.35",
+    "complex": "0.90"
+  },
+  "usdPerJudge": "0.15",
+  "hardStopFactor": 2,
+  "parallel": 4,
+  "order": ["complex", "control", "medium", "simple"]
+}

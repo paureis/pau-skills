@@ -1,0 +1,1 @@
+Cards lose their labels when moved to another column. Please fix it.

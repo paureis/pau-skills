@@ -1,0 +1,18 @@
+{
+  "id": "fix-medium-a",
+  "skill": "bug-fix",
+  "difficulty": "medium",
+  "slug": "csv-tool",
+  "summary": "Fix quoted commas splitting a field in the csv tool.",
+  "allowTools": [
+    "Bash(npm test)",
+    "Bash(node *)",
+    "Bash(git *)",
+    "Bash(npm test *)"
+  ],
+  "allowWords": [
+    "test"
+  ],
+  "timeoutMin": 15,
+  "control": false
+}

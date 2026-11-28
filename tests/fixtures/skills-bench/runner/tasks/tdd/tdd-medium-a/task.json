@@ -1,0 +1,20 @@
+{
+  "id": "tdd-medium-a",
+  "skill": "tdd",
+  "difficulty": "medium",
+  "slug": "order-book",
+  "summary": "Add order totals across the order book modules.",
+  "allowTools": [
+    "Bash(npm test)",
+    "Bash(node *)",
+    "Bash(git *)"
+  ],
+  "allowWords": [
+    "test"
+  ],
+  "timeoutMin": 15,
+  "control": false,
+  "interface": [
+    "src/thing.js"
+  ]
+}
