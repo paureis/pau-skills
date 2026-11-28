@@ -12,7 +12,7 @@ const req = (roomId, start, end, customerId = 'ana') => ({ roomId, customerId, s
 function setUp() {
   const store = createStore();
   const directory = createDirectory();
-  addCustomer(directory, { id: 'ana', name: 'Ana Lind', email: 'Ana@Example.com' });
+  addCustomer(directory, { id: 'ana', name: 'Ana Lind', email: 'Ana@example.com' });
   addCustomer(directory, { id: 'ben', name: 'Ben Okafor', email: 'ben@example.org' });
   return { store, directory };
 }
