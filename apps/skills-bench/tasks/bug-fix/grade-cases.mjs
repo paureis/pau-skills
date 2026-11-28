@@ -22,6 +22,11 @@ export const CASES = {
   assert.equal((1234.5).toLocaleString(), '1,234.5');
 });
 `,
+  // Passes on start too, but only after 20 s there, so a short time-out cuts it off on start only.
+  'test/slow.test.mjs': `${head('..')}test('waits on start', async () => {
+  if (formatDate(addMonths(parseDate('2025-01-31'), 1)) !== '2025-02-28') await new Promise((r) => setTimeout(r, 20_000));
+});
+`,
   // Kills the node --test that runs it, so no counts are printed.
   'test/kill.test.mjs': "process.kill(process.ppid, 'SIGKILL');\n",
 };

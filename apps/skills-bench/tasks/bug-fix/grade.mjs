@@ -79,20 +79,20 @@ function childEnv() {
 }
 
 /**
- * node --test on files (paths relative to cwd). Returns { ok, failed, pass, fail, detail }. ok needs both TAP count
- * lines, pass above 0, fail 0 and exit 0; failed means a test failed or the run timed out. Output with no count lines
- * means the grader cannot grade.
+ * node --test on files (paths relative to cwd). Returns { ok, failed, cut, pass, fail, detail }. ok needs both TAP
+ * count lines, pass above 0, fail 0 and exit 0; failed means a test failed. cut means the run never finished (its
+ * time-out or the budget), so nothing is known about it. Output with no count lines means the grader cannot grade.
  */
 function runTests(cwd, files, clock) {
   if (files.length === 0) return { ok: false, detail: 'no test files to run' };
   const left = clock.end - Date.now();
-  if (left < 1000) return { ok: false, detail: `${BUDGET_OUT} before this check` };
+  if (left < 1000) return { ok: false, cut: true, detail: `${BUDGET_OUT} before this check` };
   const timeout = Math.min(clock.limits.spawnMs, left);
   const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...files], {
     cwd, timeout, env: childEnv(), encoding: 'utf8', maxBuffer: clock.limits.maxBuffer,
   });
   if (r.error?.code === 'ETIMEDOUT') {
-    return { ok: false, failed: true, detail: `node --test ${files.join(' ')} timed out after ${Math.round(timeout / 1000)}s` };
+    return { ok: false, cut: true, detail: `node --test ${files.join(' ')} timed out after ${Math.round(timeout / 1000)}s` };
   }
   if (r.error) throw new GradeError(`could not start node --test: ${r.error.message}`);
   // The summary is at the end; a test that prints "fail 0" puts a line like it higher up, so the last one counts.
@@ -243,15 +243,18 @@ export function gradeRun(taskDir, run, clock) {
       copyFiles(start, base, startFiles);
       copyFiles(run, base, changedTests);
       let found = null;
+      let unknown = null; // the first file whose run was cut off: whether it qualifies is not known
       for (const f of candidates) {
         const onRun = runTests(work, [f], clock);
+        if (onRun.cut) unknown ??= `could not tell whether ${f} passes on the run: ${onRun.detail}`;
         if (!onRun.ok) continue;
         const onStart = runTests(base, [f], clock);
+        if (onStart.cut) unknown ??= `could not tell whether ${f} fails on start: ${onStart.detail}`;
         if (onStart.failed) { found = { f, onRun, onStart }; break; }
       }
       add('added-failing-test', 'process', false, !!found, found
-        ? `${found.f} fails on start (${found.onStart.fail === undefined ? 'timed out' : `${found.onStart.fail} failing`}) and passes on the run (${found.onRun.pass} passing)`
-        : `no added or changed test file fails on start and passes on the run: ${candidates.join(', ')}`);
+        ? `${found.f} fails on start (${found.onStart.fail} failing) and passes on the run (${found.onRun.pass} passing)`
+        : unknown ?? `no added or changed test file fails on start and passes on the run: ${candidates.join(', ')}`);
     }
 
     const order = commitOrder(run, clock);

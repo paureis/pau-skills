@@ -311,7 +311,8 @@ test('the commit-order check reads the history from the root commit to HEAD', SL
     const cut = 'the time budget ran out before this check';
     assert.deepEqual(r.checks.slice(0, 3).map((c) => [c.pass, c.detail]), [[false, `the reported symptom: ${cut}`],
       [false, `start's tests and the existing behaviour on the run's source: ${cut}`], [false, `a second symptom of the same cause: ${cut}`]]);
-    assert.equal(check(r, 'added-failing-test').pass, false);
+    assert.deepEqual([check(r, 'added-failing-test').pass, check(r, 'added-failing-test').detail],
+      [false, `could not tell whether test/nights.test.mjs passes on the run: ${cut}`]);
     assert.equal(check(r, 'test-commit-first').detail, 'git could not read the history: the time budget ran out');
   });
 
@@ -357,6 +358,10 @@ test('grade.mjs reads the test files a run adds as Node does', SLOW, async (t) =
   await t.test('NODE_TEST_CONTEXT from a test runner above the grader does not reach its node --test', () => {
     assert.deepEqual(passes(grade(MONTH, makeRun(MONTH, 'reference'), { NODE_TEST_CONTEXT: 'child-v8' })), {
       'symptom-fixed': true, 'original-tests-pass': true, 'sibling-fixed': true, 'added-failing-test': true, 'test-commit-first': false, 'fix-size': true });
+  });
+  await t.test('a test cut off on start is unknown, not a failure', () => {
+    assert.deepEqual(added(['test/slow.test.mjs'], { BUG_FIX_GRADE_LIMITS: '{"spawnMs":4000}' }), { name: 'added-failing-test', kind: 'process',
+      required: false, pass: false, detail: 'could not tell whether test/slow.test.mjs fails on start: node --test test/slow.test.mjs timed out after 4s' });
   });
   await t.test('a node --test killed before its counts means the grader cannot grade', () => {
     const r = spawnGrade(MONTH, fixedRun('test/kill.test.mjs'));
