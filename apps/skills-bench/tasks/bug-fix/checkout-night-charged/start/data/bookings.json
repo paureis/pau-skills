@@ -1,0 +1,22 @@
+[
+  {
+    "id": "BK-0001",
+    "cabin": "fern",
+    "checkIn": "2025-06-10",
+    "checkOut": "2025-06-13",
+    "guests": 2,
+    "guest": "Ada Brooks",
+    "status": "confirmed",
+    "totalCents": 42000
+  },
+  {
+    "id": "BK-0002",
+    "cabin": "birch",
+    "checkIn": "2025-06-20",
+    "checkOut": "2025-06-27",
+    "guests": 4,
+    "guest": "Sam Okafor",
+    "status": "confirmed",
+    "totalCents": 121875
+  }
+]

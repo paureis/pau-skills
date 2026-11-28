@@ -1,0 +1,12 @@
+{
+  "id": "discount-codes",
+  "skill": "tdd",
+  "difficulty": "medium",
+  "slug": "shop-cart",
+  "summary": "Add findDiscount(code, today) to src/discounts.js and cartTotal(cart, code, today) to src/cart.js so checkout takes discount codes.",
+  "allowTools": ["Bash(npm test)", "Bash(node *)", "Bash(git *)"],
+  "allowWords": ["test"],
+  "timeoutMin": 15,
+  "control": true,
+  "interface": ["src/cart.js", "src/discounts.js"]
+}

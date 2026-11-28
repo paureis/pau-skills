@@ -1,0 +1,18 @@
+{
+  "id": "mend-simple",
+  "skill": "bug-fix",
+  "difficulty": "simple",
+  "slug": "word-tally",
+  "summary": "Fix a word tally that is off by one.",
+  "allowTools": [
+    "Bash(npm test)",
+    "Bash(node *)",
+    "Bash(git *)",
+    "Bash(npm test *)"
+  ],
+  "allowWords": [
+    "test"
+  ],
+  "timeoutMin": 15,
+  "control": false
+}

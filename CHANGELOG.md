@@ -3,6 +3,18 @@
 Versions are per plugin and live in `.claude-plugin/marketplace.json`. A change reaches users only when the version of
 the plugin they installed is bumped.
 
+## 2026-11-28: Q45, the Skills Bench pilot kit
+
+- New `apps/skills-bench/`, repository tooling that measures whether a skill changes the outcome of real tasks;
+  nothing there is installed. `bench.mjs` plans a round against a cost cap, runs each task with and without its skill
+  (and a broken and an empty copy of `tdd` as controls) through skill-eval's isolation, grades every run with the
+  task's code grader, asks one blind judge per task, makes the owner's grading sheet and exports the round.
+  `analyse.mjs` turns a round into REPORT.md and summary.json: Welch and Newcombe intervals per task, paired
+  intervals per skill and difficulty, the controls verdict, judge agreement with the owner (weighted kappa), and runs
+  per arm with a budget for a full round. Ten tasks (5 for `tdd`, 5 for `bug-fix`, simple to complex) with graders.
+  Formats in `apps/skills-bench/FORMAT.md`, methods in `ANALYSIS.md`, steps in `RUNBOOK.md`. Q45.
+- No plugin changed, so no version bump and no release.
+
 ## 2026-11-27: Q44, the roster lock base check fails in CI when it finds no base
 
 - Tests: when `ROSTER_LOCK_BASE` is set and gives no base commit (it does not resolve, the lock file or a valid `LOCK`

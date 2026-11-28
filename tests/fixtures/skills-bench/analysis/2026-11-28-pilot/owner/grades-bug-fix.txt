@@ -1,0 +1,21 @@
+Criterion 1: The cause is found before the fix
+  F: 4/5  found it
+  G: 2/5  guessed
+  H: 4/5  found it
+  I: 2/5  guessed
+  J: 4/5  found it
+
+Criterion 2: A check reproduces the bug
+  F: 4/5  yes
+  G: 3/5  partly
+  H: 4/5  yes
+  I: 3/5  partly
+  J: 4/5  yes
+  K: 4  not a run in the map
+
+Criterion 3: The fix is in the shared code
+  F: 4/5  yes
+  G: 4/5  yes
+  H: 4/5  yes
+  I: 4/5  yes
+  J: 4/5  yes

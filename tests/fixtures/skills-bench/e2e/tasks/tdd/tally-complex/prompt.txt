@@ -1,0 +1,1 @@
+Add routeLength() to src/thing.js that adds up the legs of a route, built with tests as you go.

@@ -1,0 +1,1 @@
+A customer signed up for the monthly plan on 2025-01-31, and `node bin/renewal.mjs 2025-01-31 monthly` says "Next renewal: 2025-03-03". Their first renewal should be at the end of February, not in March. Please find the root cause and fix it, and keep `npm test` green.

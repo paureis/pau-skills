@@ -1,0 +1,1 @@
+Add freeSeats() to src/thing.js that counts the seats nobody holds, with tests.

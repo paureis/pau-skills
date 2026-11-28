@@ -1,0 +1,20 @@
+{
+  "id": "tdd-simple-a",
+  "skill": "tdd",
+  "difficulty": "simple",
+  "slug": "price-list",
+  "summary": "Add a sum of the prices to a small price list module.",
+  "allowTools": [
+    "Bash(npm test)",
+    "Bash(node *)",
+    "Bash(git *)"
+  ],
+  "allowWords": [
+    "test"
+  ],
+  "timeoutMin": 15,
+  "control": true,
+  "interface": [
+    "src/thing.js"
+  ]
+}

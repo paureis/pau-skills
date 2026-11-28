@@ -1,0 +1,11 @@
+{
+  "name": "renewal-dates",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Renewal dates for monthly, quarterly and yearly plans.",
+  "bin": { "renewal": "bin/renewal.mjs" },
+  "scripts": {
+    "test": "node --test"
+  }
+}

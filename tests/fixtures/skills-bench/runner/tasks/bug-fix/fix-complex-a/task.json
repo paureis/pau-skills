@@ -1,0 +1,18 @@
+{
+  "id": "fix-complex-a",
+  "skill": "bug-fix",
+  "difficulty": "complex",
+  "slug": "task-board",
+  "summary": "Fix moved cards losing their labels on the task board.",
+  "allowTools": [
+    "Bash(npm test)",
+    "Bash(node *)",
+    "Bash(git *)",
+    "Bash(npm test *)"
+  ],
+  "allowWords": [
+    "test"
+  ],
+  "timeoutMin": 30,
+  "control": false
+}

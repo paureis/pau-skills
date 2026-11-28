@@ -1,0 +1,11 @@
+Customers need to be able to cancel their room bookings, with a refund that depends on how early they cancel. Please add this across the project:
+
+1. cancelBooking(store, bookingId, now) in src/bookings.js. It marks the booking as cancelled (status "cancelled", cancelledAt set to now, and the refund kept on the booking as refund: { cents, currency }) and returns it. A cancelled booking no longer holds its time: the same room can be booked again for those hours with book, and freeHours in src/availability.js shows them as free. An unknown id throws a BookingError with code "NO_BOOKING", cancelling a booking a second time throws "ALREADY_CANCELLED", and cancelling at or after the booking's start throws "ALREADY_STARTED".
+
+2. refundFor(booking, now) in src/pricing.js, which cancelBooking uses for the refund: the whole price when now is 48 hours or more before the start, half the price when it is 24 hours or more before, and nothing later than that. Half a price is rounded to whole cents with half a cent going up: a 19.99 EUR booking cancelled 30 hours ahead refunds 10.00 EUR.
+
+3. invoiceFor in src/invoice.js keeps the cancelled booking's line and adds a line right after it, { bookingId, kind: "refund", description, cents }, with the refund as negative cents, so totalCents goes down by the refund. A cancellation with nothing to refund adds no line.
+
+4. roomUsage in src/report.js leaves cancelled bookings out.
+
+Times are UTC ISO strings and now is always passed in; keep money in whole cents. Make sure this is tested.

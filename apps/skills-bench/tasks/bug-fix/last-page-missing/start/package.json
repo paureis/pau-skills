@@ -1,0 +1,11 @@
+{
+  "name": "order-pages",
+  "version": "0.4.1",
+  "private": true,
+  "type": "module",
+  "description": "Lists shop orders page by page in the terminal.",
+  "bin": { "orders": "bin/orders.mjs" },
+  "scripts": {
+    "test": "node --test"
+  }
+}

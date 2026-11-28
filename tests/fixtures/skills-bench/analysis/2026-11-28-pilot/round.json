@@ -1,0 +1,161 @@
+{
+  "format": "skills-bench-results/1",
+  "roundId": "2026-11-28-pilot",
+  "startedAt": "2026-11-28T09:00:00Z",
+  "endedAt": "2026-11-28T11:30:00Z",
+  "model": "pinned-model-id",
+  "modelsReported": [
+    "pinned-model-id"
+  ],
+  "judgeModel": "judge-model-id",
+  "claudeVersion": "2.0.0",
+  "auth": "api-key",
+  "currency": "USD",
+  "capMicros": 15000000,
+  "spentMicros": 13650002,
+  "estimateMicros": 14000000,
+  "n": 3,
+  "calibration": true,
+  "variantSources": {
+    "with": "variants/with",
+    "without": "none",
+    "broken": "variants/broken",
+    "empty": "variants/empty"
+  },
+  "tasks": [
+    {
+      "skill": "tdd",
+      "task": "parse-dates",
+      "difficulty": "simple",
+      "variants": [
+        "with",
+        "without"
+      ],
+      "status": "done",
+      "runsPlanned": 6,
+      "runsMade": 6,
+      "hardStopMicros": 2000000
+    },
+    {
+      "skill": "tdd",
+      "task": "slugify",
+      "difficulty": "simple",
+      "variants": [
+        "with",
+        "without"
+      ],
+      "status": "done",
+      "runsPlanned": 6,
+      "runsMade": 6,
+      "hardStopMicros": 2000000
+    },
+    {
+      "skill": "tdd",
+      "task": "rate-limit",
+      "difficulty": "medium",
+      "variants": [
+        "with",
+        "without",
+        "broken",
+        "empty"
+      ],
+      "status": "done",
+      "runsPlanned": 12,
+      "runsMade": 12,
+      "hardStopMicros": 2000000
+    },
+    {
+      "skill": "tdd",
+      "task": "csv-reader",
+      "difficulty": "medium",
+      "variants": [
+        "with",
+        "without",
+        "broken",
+        "empty"
+      ],
+      "status": "done",
+      "runsPlanned": 12,
+      "runsMade": 12,
+      "hardStopMicros": 2000000
+    },
+    {
+      "skill": "tdd",
+      "task": "lru-cache",
+      "difficulty": "complex",
+      "variants": [
+        "with",
+        "without"
+      ],
+      "status": "done",
+      "runsPlanned": 6,
+      "runsMade": 6,
+      "hardStopMicros": 2000000
+    },
+    {
+      "skill": "bug-fix",
+      "task": "off-by-one",
+      "difficulty": "simple",
+      "variants": [
+        "with",
+        "without"
+      ],
+      "status": "done",
+      "runsPlanned": 6,
+      "runsMade": 6,
+      "hardStopMicros": 2000000
+    },
+    {
+      "skill": "bug-fix",
+      "task": "null-config",
+      "difficulty": "simple",
+      "variants": [
+        "with",
+        "without"
+      ],
+      "status": "done",
+      "runsPlanned": 6,
+      "runsMade": 6,
+      "hardStopMicros": 2000000
+    },
+    {
+      "skill": "bug-fix",
+      "task": "timezone",
+      "difficulty": "medium",
+      "variants": [
+        "with",
+        "without"
+      ],
+      "status": "done",
+      "runsPlanned": 6,
+      "runsMade": 6,
+      "hardStopMicros": 2000000
+    },
+    {
+      "skill": "bug-fix",
+      "task": "retry-loop",
+      "difficulty": "medium",
+      "variants": [
+        "with",
+        "without"
+      ],
+      "status": "done",
+      "runsPlanned": 6,
+      "runsMade": 6,
+      "hardStopMicros": 2000000
+    },
+    {
+      "skill": "bug-fix",
+      "task": "race-cache",
+      "difficulty": "complex",
+      "variants": [
+        "with",
+        "without"
+      ],
+      "status": "done",
+      "runsPlanned": 6,
+      "runsMade": 6,
+      "hardStopMicros": 2000000
+    }
+  ]
+}

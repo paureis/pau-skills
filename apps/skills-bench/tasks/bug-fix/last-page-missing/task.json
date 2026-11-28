@@ -1,0 +1,12 @@
+{
+  "id": "last-page-missing",
+  "skill": "bug-fix",
+  "difficulty": "simple",
+  "slug": "order-pages",
+  "summary": "The order list refuses page 3 of 25 orders at 10 a page; find the root cause and fix it.",
+  "allowTools": ["Bash(npm test)", "Bash(npm test *)", "Bash(node *)", "Bash(git *)"],
+  "allowWords": ["test"],
+  "timeoutMin": 15,
+  "control": false,
+  "maxFixLines": 6
+}

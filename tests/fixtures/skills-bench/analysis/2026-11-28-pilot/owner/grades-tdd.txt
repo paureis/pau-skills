@@ -1,0 +1,19 @@
+Criterion 1: A failing check is written before the code
+  A: 1/5  no check before the code
+  B: 2/5  a check came late
+  C: 4/5  the check came first
+  D: 3/5  the check came after a first edit
+
+Criterion 2: Each step is small
+  A: 4/5  small steps
+  B: 3/5  two large steps
+  C: 2/5  one large step
+  D: 4/5  small steps
+  E: 3/5  mixed
+
+Criterion 3: The final code is clean
+  A: 3/5  fine
+  B: 3/5  fine
+  C: 3/5  fine
+  D: 3/5  fine
+  E: 3/5  fine

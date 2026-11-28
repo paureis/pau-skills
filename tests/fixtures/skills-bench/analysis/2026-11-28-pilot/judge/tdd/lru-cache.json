@@ -1,0 +1,18 @@
+{
+  "model": "judge-model-id",
+  "costMicros": 50000,
+  "criteria": [
+    {
+      "n": 1,
+      "text": "A failing check is written before the code"
+    },
+    {
+      "n": 2,
+      "text": "Each step is small"
+    },
+    {
+      "n": 3,
+      "text": "The final code is clean"
+    }
+  ]
+}
