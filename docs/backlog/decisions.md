@@ -168,3 +168,11 @@ Decisions 1 to 21 (2026-10-17 to 2026-11-04) are in [decisions-1-to-21.md](decis
    `maxCompactions` (default 2, 0 for no limit), still writing the snapshot first, because Claude Code compacts
    anyway when the request cannot go out uncompacted. Built directly at the owner's request, between batches, as an
    exception to decision 29's order.
+
+39. **Skills Bench, a local app that tests skills with and without them (Q45 to Q51).** The owner's idea of 2026-11-28,
+   worked through `reframe` and `sharpen`. Settled: it lives in `apps/skills-bench/` and moves to its own repository
+   once it works; localhost first, no .exe; results show a task's outcome with a skill against without it, with error
+   bars, never one skill against another. A pilot on `tdd` and `bug-fix` comes first, then the engine, a design step
+   with clickable prototypes, the app, plug-ins (Obsidian export, Whisper voice, scheduled runs), other agents, its own
+   repository. Runs use the Claude login or an API key, switched by one setting. The owner wants it well made and
+   distinct; extras that are not about testing skills are plug-ins, not core.

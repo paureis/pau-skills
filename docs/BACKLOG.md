@@ -167,6 +167,13 @@ Status: `todo`, `in progress`, `done`. Plugin is where the skill goes; "tier" in
 - [Q42 the watchdog reads agent folders the way Claude Code does](backlog/q42.md) (done)
 - [Q43 the roster lock checks a change against main](backlog/q43.md) (done)
 - [Q44 CI says when the roster lock base check found no base](backlog/q44.md) (done)
+- [Q45 Skills Bench pilot: does a skill help, with and without it](backlog/q45.md)
+- [Q46 the Skills Bench engine](backlog/q46.md)
+- [Q47 Skills Bench design directions](backlog/q47.md)
+- [Q48 the Skills Bench app](backlog/q48.md)
+- [Q49 Skills Bench plug-ins and the first add-ons](backlog/q49.md)
+- [Q50 Skills Bench runner adapters for other agents](backlog/q50.md)
+- [Q51 Skills Bench in its own repository](backlog/q51.md)
 
 A new item gets its own file under `docs/backlog/` and a Contents line, and a new batch's list of things that bit is
 a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents line.
@@ -221,7 +228,8 @@ a new file `batch-<n>.md` in `docs/backlog/things-that-bit/` with a Contents lin
     tests and CI only).
 35. Done: the twenty-ninth batch, Q44 CI fails when the roster lock base check finds no base, option 1 (pull request
     110, no release: tests and CI only).
-36. **Next:** no planned item. The owner picks the next work or adds an item; the kickoff in
-    [backlog/kickoff.md](backlog/kickoff.md) says what to read first. Parked: Q25 and Q26.
+36. **Next:** Q45 the Skills Bench pilot (decision 39), then Q46 to Q51 in order: the engine, design directions, the
+    app, plug-ins and add-ons, other runner adapters, its own repository. The kickoff in
+    [backlog/kickoff.md](backlog/kickoff.md) runs Q45. Parked: Q25 and Q26.
 
 When the batch is merged, update the skill and hook counts on the author's GitHub profile README (`paureis/paureis`).
