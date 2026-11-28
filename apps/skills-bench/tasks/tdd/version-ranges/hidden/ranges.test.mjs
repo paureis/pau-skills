@@ -13,7 +13,7 @@ test('an exact version, with or without =, matches only that version', () => {
   outside('=2.0.0', '2.0.1');
 });
 
-test('comparisons include or leave out the version as written', () => {
+test('an operator includes or leaves out the version as written', () => {
   inside('>=1.2.0', '1.2.0', '1.2.1', '4.0.0');
   outside('>=1.2.0', '1.1.9', '0.9.0');
   inside('>1.2.0', '1.2.1');

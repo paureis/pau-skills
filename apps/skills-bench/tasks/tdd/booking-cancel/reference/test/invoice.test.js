@@ -13,7 +13,7 @@ function setUp() {
   const store = createStore();
   const directory = createDirectory();
   addCustomer(directory, { id: 'ana', name: 'Ana Lind', email: 'Ana@example.com' });
-  addCustomer(directory, { id: 'ben', name: 'Ben Okafor', email: 'ben@example.org' });
+  addCustomer(directory, { id: 'ben', name: 'Ben Okafor', email: 'ben@example.com' });
   return { store, directory };
 }
 
@@ -39,7 +39,7 @@ test('the invoice text is addressed to the customer and ends with the total', ()
     'Pine booth, 2026-03-03 09:00, 1 h: 19.99 EUR',
     'Total: 19.99 EUR',
   ]);
-  assert.deepEqual(invoiceText(invoiceFor(store, 'ben'), directory), ['Invoice for Ben Okafor <ben@example.org>', 'No bookings.']);
+  assert.deepEqual(invoiceText(invoiceFor(store, 'ben'), directory), ['Invoice for Ben Okafor <ben@example.com>', 'No bookings.']);
   assert.equal(formatMoney({ cents: -1250, currency: 'EUR' }), '-12.50 EUR');
 });
 
@@ -70,7 +70,7 @@ test('reminders go out for the bookings that start in the next 24 hours', () => 
   const due = dueReminders(store, directory, NOW);
   assert.deepEqual(due.map((r) => [r.to, r.subject]), [
     ['ana@example.com', 'Reminder: Pine booth in 1 h'],
-    ['ben@example.org', 'Reminder: Pine booth in 24 h'],
+    ['ben@example.com', 'Reminder: Pine booth in 24 h'],
   ]);
 });
 

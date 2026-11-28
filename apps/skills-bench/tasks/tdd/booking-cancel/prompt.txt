@@ -4,7 +4,7 @@ Customers need to be able to cancel their room bookings, with a refund that depe
 
 2. refundFor(booking, now) in src/pricing.js, which cancelBooking uses for the refund: the whole price when now is 48 hours or more before the start, half the price when it is 24 hours or more before, and nothing later than that. Half a price is rounded to whole cents with half a cent going up: a 19.99 EUR booking cancelled 30 hours ahead refunds 10.00 EUR.
 
-3. invoiceFor in src/invoice.js keeps the cancelled booking's line and adds a line right after it with kind "refund" and the refund as negative cents, so totalCents goes down by the refund. A cancellation with nothing to refund adds no line.
+3. invoiceFor in src/invoice.js keeps the cancelled booking's line and adds a line right after it, { bookingId, kind: "refund", description, cents }, with the refund as negative cents, so totalCents goes down by the refund. A cancellation with nothing to refund adds no line.
 
 4. roomUsage in src/report.js leaves cancelled bookings out.
 
