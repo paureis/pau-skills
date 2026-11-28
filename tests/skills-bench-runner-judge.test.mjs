@@ -58,6 +58,16 @@ describe('judge', () => {
       assert.ok(!existsSync(c.cwd), 'the empty working folder is removed');
     }
   });
+
+  test('charges a judge reply with no cost line hardStopFactor x usdPerJudge', () => {
+    const small = runRound({ extra: ['--only', 'fix-simple-a', '--n', '1'] });
+    assert.equal(small.code, 0, small.stderr);
+    const r = bench(['judge', '--round', small.round, '--judge-model', 'fake-judge', ...PASS], { fake: { judge: { cost: null } } });
+    assert.equal(r.code, 0, r.stderr);
+    // 2 runs x $0.05, then the judge at 2 x $0.05.
+    assert.equal(readState(small.round).spentMicros, 200_000);
+    assert.equal(JSON.parse(readFileSync(join(small.round, 'judge', 'bug-fix', 'fix-simple-a.json'), 'utf8')).costMicros, 100_000);
+  });
 });
 
 const sheet = join(scratch(), 'sheet');

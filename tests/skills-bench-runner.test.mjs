@@ -6,6 +6,8 @@ import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo } from './helpers.mjs';
 import { bench, writeConfig, copyTasks, patchTask, readLog, runRound, scratch, PASS } from './skills-bench-runner.helpers.mjs';
+import { isTestPath } from '../apps/skills-bench/lib/run/collect.mjs';
+import { fitText } from '../apps/skills-bench/lib/run/judge.mjs';
 
 const plan = (extra = [], opts = {}) => bench(['plan', '--config', opts.config || writeConfig(), '--model', 'fake-model', ...extra], opts);
 
@@ -121,5 +123,21 @@ describe('run refuses before any setup', () => {
     const r2 = runRound({ round: other });
     assert.equal(r2.code, 1);
     assert.match(r2.stderr, /is not empty and holds no round\.json this bench wrote; give a new or empty folder, or a round folder to resume$/m);
+  });
+});
+
+describe('helpers the runner shares', () => {
+  test('a test file is a path with a test, tests or __tests__ part, or a name with .test., .spec., _test. or test_', () => {
+    for (const p of ['src/__tests__/a.js', 'tests/cart.js', 'test/x.mjs', 'src/cart.test.js', 'a.spec.ts', 'pkg/cart_test.go', 'test_cart.py']) {
+      assert.equal(isTestPath(p), true, p);
+    }
+    for (const p of ['src/cart.js', 'src/testing.js', 'latest.js', 'contest/x.js', 'src/attest.py']) assert.equal(isTestPath(p), false, p);
+  });
+
+  test('a verdict is cut to fit 20,000 bytes, with a marker line', () => {
+    assert.equal(fitText('short'), 'short\n');
+    const cut = fitText(`${'x'.repeat(30_000)}\n`);
+    assert.ok(Buffer.byteLength(cut) <= 20_000);
+    assert.match(cut, /^x+\n\[cut: the reply was 30001 bytes; the first part is kept to fit 20000\]\n$/);
   });
 });
