@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, lstatSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT, tempDir } from './helpers.mjs';
 import { findMetaWords, validateRubric, withoutComments } from '../skills/verification/skill-eval/skill-eval-core.mjs';
@@ -362,6 +362,16 @@ test('grade.mjs reads the test files a run adds as Node does', SLOW, async (t) =
   await t.test('a test cut off on start is unknown, not a failure', () => {
     assert.deepEqual(added(['test/slow.test.mjs'], { BUG_FIX_GRADE_LIMITS: '{"spawnMs":4000}' }), { name: 'added-failing-test', kind: 'process',
       required: false, pass: false, detail: 'could not tell whether test/slow.test.mjs fails on start: node --test test/slow.test.mjs timed out after 4s' });
+  });
+  await t.test('output over the buffer limit fails the check and the grader still grades', () => {
+    const r = grade(MONTH, makeRun(MONTH), { BUG_FIX_GRADE_LIMITS: '{"maxBuffer":200}' });
+    assert.equal(check(r, 'symptom-fixed').detail, 'the reported symptom: node --test printed more than 200 bytes of output');
+    assert.equal(check(r, 'symptom-fixed').pass, false);
+  });
+  await t.test('the grader grades when started through a symlinked path', () => {
+    const link = join(tempDir(), 'grade.mjs');
+    symlinkSync(GRADER, link);
+    assert.equal(grade(MONTH, makeRun(MONTH, 'reference'), {}, link).pass, true);
   });
   await t.test('a node --test killed before its counts means the grader cannot grade', () => {
     const r = spawnGrade(MONTH, fixedRun('test/kill.test.mjs'));

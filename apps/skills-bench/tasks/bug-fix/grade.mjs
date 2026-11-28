@@ -9,7 +9,7 @@
 //
 // The task folder holds task.json, start/ (the project the run got) and hidden/ with symptom.test.mjs (the reported
 // symptom), sibling.test.mjs (a second symptom of the same root cause) and existing.test.mjs (behaviour that already
-// worked). The run's working tree is compared with start/, leaving out .git and .claude; git is read only for the
+// worked). The run's working tree is read against start/, leaving out .git and .claude; git is read only for the
 // commit-order check.
 //
 // Every child process (node --test and git) runs under one deadline that starts with the grader, each call with its
@@ -23,7 +23,6 @@ import { randomBytes } from 'node:crypto';
 import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const HIDDEN = { symptom: 'symptom.test.mjs', sibling: 'sibling.test.mjs', existing: 'existing.test.mjs' };
 const SKIP_DIRS = new Set(['.git', '.claude']);
@@ -31,13 +30,13 @@ const SKIP_DIRS = new Set(['.git', '.claude']);
 const LIMITS = { budgetMs: 230_000, spawnMs: 90_000, maxBuffer: 64 * 1024 * 1024 };
 const GIT_MS = 30_000;
 const BUDGET_OUT = 'the time budget ran out';
-const MAX_CANDIDATES = 10; // added or changed test files tried by the added-test check
+const MAX_TRIED = 10; // added or changed test files tried by the added-test check
 const MAX_DIFF_CELLS = 4_000_000; // above this a file's changed lines are counted as all its lines
 
 class GradeError extends Error {}
 
 /** Regular files under root, as sorted relative paths with /, leaving out .git, .claude and links. */
-export function listFiles(root, rel = '') {
+function listFiles(root, rel = '') {
   const out = [];
   for (const name of readdirSync(join(root, rel)).sort()) {
     const r = rel ? `${rel}/${name}` : name;
@@ -53,7 +52,7 @@ export function listFiles(root, rel = '') {
 // _test.mjs), but never a leading dot (it skips .test.mjs).
 const TEST_NAME = /^(?:.*[-_]test|[^.].*\.test|test(?:-.*)?)\.[cm]?js$/;
 /** A file node --test would run. */
-export function isTestFile(rel) {
+function isTestFile(rel) {
   const parts = rel.split('/');
   const dirs = parts.slice(0, -1);
   if (dirs.some((d) => d === 'node_modules' || d.startsWith('.'))) return false;
@@ -61,7 +60,7 @@ export function isTestFile(rel) {
   return TEST_NAME.test(name) || (dirs.includes('test') && /\.[cm]?js$/.test(name));
 }
 /** A test file or anything else under a test/ folder (helpers, fixtures): a change that is not a source change. */
-export const isTestSide = (rel) => isTestFile(rel) || rel.split('/').slice(0, -1).includes('test');
+const isTestSide = (rel) => isTestFile(rel) || rel.split('/').slice(0, -1).includes('test');
 
 function copyFiles(from, to, files) {
   for (const f of files) {
@@ -94,6 +93,7 @@ function runTests(cwd, files, clock) {
   if (r.error?.code === 'ETIMEDOUT') {
     return { ok: false, cut: true, detail: `node --test ${files.join(' ')} timed out after ${Math.round(timeout / 1000)}s` };
   }
+  if (r.error?.code === 'ENOBUFS') return { ok: false, detail: `node --test printed more than ${clock.limits.maxBuffer} bytes of output` };
   if (r.error) throw new GradeError(`could not start node --test: ${r.error.message}`);
   // The summary is at the end; a test that prints "fail 0" puts a line like it higher up, so the last one counts.
   const count = (word) => {
@@ -116,7 +116,7 @@ const lines = (text) => {
 };
 
 /** Lines added plus lines removed between two texts, from a longest common subsequence of lines. */
-export function changedLines(before, after) {
+function changedLines(before, after) {
   let a = lines(before);
   let b = lines(after);
   let head = 0;
@@ -200,7 +200,7 @@ function readLimits(text) {
   return { ...LIMITS, ...given };
 }
 
-export function gradeRun(taskDir, run, clock) {
+function gradeRun(taskDir, run, clock) {
   const task = readTask(taskDir);
   const start = join(taskDir, 'start');
   const tmp = mkdtempSync(join(tmpdir(), 'bug-fix-grade-'));
@@ -235,8 +235,8 @@ export function gradeRun(taskDir, run, clock) {
 
     // Check 4: a test file the run added or changed that fails on start's source and passes on the run's.
     const changedTests = runFiles.filter((f) => isTestSide(f) && (!startSet.has(f) || !sameFile(join(start, f), join(run, f))));
-    const candidates = changedTests.filter(isTestFile).slice(0, MAX_CANDIDATES);
-    if (candidates.length === 0) {
+    const runnable = changedTests.filter(isTestFile).slice(0, MAX_TRIED);
+    if (runnable.length === 0) {
       add('added-failing-test', 'process', false, false, 'the run added or changed no test file');
     } else {
       const base = join(tmp, 'start');
@@ -244,7 +244,7 @@ export function gradeRun(taskDir, run, clock) {
       copyFiles(run, base, changedTests);
       let found = null;
       let unknown = null; // the first file whose run was cut off: whether it qualifies is not known
-      for (const f of candidates) {
+      for (const f of runnable) {
         const onRun = runTests(work, [f], clock);
         if (onRun.cut) unknown ??= `could not tell whether ${f} passes on the run: ${onRun.detail}`;
         if (!onRun.ok) continue;
@@ -254,7 +254,7 @@ export function gradeRun(taskDir, run, clock) {
       }
       add('added-failing-test', 'process', false, !!found, found
         ? `${found.f} fails on start (${found.onStart.fail} failing) and passes on the run (${found.onRun.pass} passing)`
-        : unknown ?? `no added or changed test file fails on start and passes on the run: ${candidates.join(', ')}`);
+        : unknown ?? `no added or changed test file fails on start and passes on the run: ${runnable.join(', ')}`);
     }
 
     const order = commitOrder(run, clock);
@@ -294,11 +294,9 @@ function main(argv) {
   return gradeRun(args.task, args.run, clock);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  try {
-    process.stdout.write(`${JSON.stringify(main(process.argv.slice(2)))}\n`);
-  } catch (err) {
-    process.stderr.write(`grade.mjs: ${err instanceof GradeError ? err.message : err.stack}\n`);
-    process.exitCode = 1;
-  }
+try {
+  process.stdout.write(`${JSON.stringify(main(process.argv.slice(2)))}\n`);
+} catch (err) {
+  process.stderr.write(`grade.mjs: ${err instanceof GradeError ? err.message : err.stack}\n`);
+  process.exitCode = 1;
 }
