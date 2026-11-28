@@ -102,7 +102,9 @@ export const passes = (result) => Object.fromEntries(result.checks.map((c) => [c
 
 export function git(dir, ...args) {
   const r = spawnSync('git', ['-c', 'user.name=Bench Runner', '-c', 'user.email=runner@example.com', '-c', 'commit.gpgsign=false',
-    '-c', 'init.defaultBranch=main', '-c', 'core.hooksPath=/dev/null', ...args], { cwd: dir, env: cleanEnv(), encoding: 'utf8' });
+    '-c', 'init.defaultBranch=main', '-c', 'core.hooksPath=/dev/null',
+    // No background maintenance: newer git (macOS CI) starts it after a commit, and its lock file breaks hashTree.
+    '-c', 'maintenance.auto=false', '-c', 'gc.auto=0', ...args], { cwd: dir, env: cleanEnv(), encoding: 'utf8' });
   assert.equal(r.status, 0, `git ${args.join(' ')}: ${r.stderr}`);
   return r.stdout;
 }
