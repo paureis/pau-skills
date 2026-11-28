@@ -3,12 +3,13 @@
 import { DIFFICULTIES } from './read.mjs';
 import { mean, sampleVariance, welchInterval, pairedInterval, newcombeDiff, runsPerArm, FEWER_RUNS } from './stats.mjs';
 import { judgeAgreement } from './agreement.mjs';
+import { MAX_RUNS } from '../../../../skills/verification/skill-eval/skill-eval-core.mjs';
 
 export const LEVEL = 0.95;
 export const ALPHA = 0.05;
 export const POWER = 0.8;
-// One judge call labels its runs with the letters A to Z (judgeLetter in result.json), so it reviews 26 at most.
-export const RUNS_PER_JUDGE_CALL = 26;
+// The runner makes one judge call per task, over one skill-eval lab, and a lab holds MAX_RUNS (26) runs at most.
+const RUNS_PER_JUDGE_CALL = MAX_RUNS;
 const ARMS = ['with', 'without'];
 
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);

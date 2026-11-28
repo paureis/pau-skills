@@ -13,12 +13,12 @@ import { summarize } from './lib/analysis/summary.mjs';
 import { renderReport } from './lib/analysis/report.mjs';
 
 const USAGE = 'Usage: node apps/skills-bench/analyse.mjs <results folder> [--delta 0.15] [--write]';
-export const SEPARATOR = '\n----- summary.json -----\n';
+const SEPARATOR ='\n----- summary.json -----\n';
 
 class UsageError extends Error {}
 
 /** { dir, delta, write } from the command line arguments. */
-export function parseArgs(argv) {
+function parseArgs(argv) {
   const out = { dir: null, delta: 0.15, write: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];

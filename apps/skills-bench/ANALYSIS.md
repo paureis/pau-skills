@@ -116,9 +116,13 @@ A missing `map.json` or grades file gives "judge agreement not measured", not a 
   runs about one run per arm low at this size. The plan never asks for fewer than 2 runs per arm.
 - **Budget**: the same tasks as the round, with and without only, at that many runs per arm. Each run costs the
   observed mean cost per run of its difficulty (over the with and without runs that have a cost, dropouts included,
-  since they cost money).
-  A judge call labels runs with the letters A to Z, so it reviews 26 runs at most; each task needs
-  `ceil(2n / 26)` calls at the observed mean cost per judge call. The total is summed exactly and rounded up once.
+  since they cost money). Each task needs `ceil(2n / 26)` judge calls at the observed mean cost per judge call
+  (`MAX_RUNS` from `skills/verification/skill-eval/skill-eval-core.mjs` is 26). The total is summed exactly and
+  rounded up once.
+- **Judge calls**: the runner makes one judge call per task, over that task's skill-eval lab, and skill-eval caps a lab
+  at 26 runs. So a full round above 13 runs per arm needs each task split over several labs, which the runner does
+  not do yet (a note for Q46). The cost per judge call comes from the pilot, whose calls each reviewed 6 to 12 runs;
+  a call over 26 runs reads more and is likely to cost more, so the judge part of the budget is a low estimate.
 
 ## Quantiles
 
@@ -139,4 +143,5 @@ A missing `map.json` or grades file gives "judge agreement not measured", not a 
 - The paired difference treats the tasks as a sample of tasks; 5 tasks per skill is a small sample.
 - No correction is made for the number of intervals in the report. Read a single interval that excludes 0 among many
   with care.
-- The judge-call count assumes one call reviews up to 26 runs of one task, as the A to Z letters allow.
+- The judge-call count assumes a task's runs are split over labs of up to 26 runs, one judge call each; the runner
+  does not split a task yet.
