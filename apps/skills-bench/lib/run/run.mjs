@@ -88,6 +88,8 @@ export async function runCommand(o, out, err) {
     s = newState(o, cfg, set, ordered, n, p);
     out(`Round ${s.roundId}: ${p.runs} runs, estimate ${microsUsd(p.estimate)}, cap ${microsUsd(set.capMicros)}`);
   }
+  // The names (never the values) given with --pass-env, so export knows which values to hide.
+  s.passEnv = [...new Set([...(s.passEnv || []), ...o.passEnv])].sort();
   saveState(round, s);
 
   let failed = 0;

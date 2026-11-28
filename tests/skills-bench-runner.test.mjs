@@ -8,6 +8,7 @@ import { repo } from './helpers.mjs';
 import { bench, writeConfig, copyTasks, patchTask, readLog, runRound, scratch, PASS } from './skills-bench-runner.helpers.mjs';
 import { isTestPath } from '../apps/skills-bench/lib/run/collect.mjs';
 import { fitText } from '../apps/skills-bench/lib/run/judge.mjs';
+import { leftPaths } from '../apps/skills-bench/lib/run/export.mjs';
 
 const plan = (extra = [], opts = {}) => bench(['plan', '--config', opts.config || writeConfig(), '--model', 'fake-model', ...extra], opts);
 
@@ -132,6 +133,21 @@ describe('helpers the runner shares', () => {
       assert.equal(isTestPath(p), true, p);
     }
     for (const p of ['src/cart.js', 'src/testing.js', 'latest.js', 'contest/x.js', 'src/attest.py']) assert.equal(isTestPath(p), false, p);
+  });
+
+  test('export finds a temporary or home path wherever it starts, and lets only the exact placeholders through', () => {
+    const home = '/srv/someone';
+    for (const probe of ['echo hi >/tmp/real-leak.log', 'run 2>/tmp/err', 'cmd>/root/.ssh/id', 'a -/tmp/a', 'see /tmp.', 'x/tmp/y']) {
+      assert.equal(leftPaths(probe, home).length, 1, probe);
+    }
+    assert.deepEqual(leftPaths('a\nkept in /root/notes', home), ['line 2 has /root']);
+    assert.deepEqual(leftPaths('cache at /var/folders/xy/T/a', home), ['line 1 has /var/folders']);
+    assert.deepEqual(leftPaths('cache at /private/var/db/xy', home), ['line 1 has /private/var']);
+    assert.deepEqual(leftPaths('a copy in /srv/someone/x', home), ['line 1 has /srv/someone']);
+    for (const fine of ['<tmp>/tmp.x/made.txt', '"<project>/src/a.js"', '<home>/.seen and <repo>/tests/a', '/tmpfoo and /rooted', 'temp/tmpdir']) {
+      assert.deepEqual(leftPaths(fine, home), [], fine);
+    }
+    assert.equal(leftPaths('<tmp>/x >/tmp/leak', home).length, 1, 'a placeholder does not hide a path after it');
   });
 
   test('a verdict is cut to fit 20,000 bytes, with a marker line', () => {

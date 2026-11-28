@@ -25,31 +25,45 @@ export function claudeVersion() {
   }
 }
 
+/** The system folders a path must never start from in an export; a HOME or TMPDIR equal to one is never replaced. */
+const ROOTS = ['/tmp', '/root', '/var/folders', '/private/var'];
+/** An exact placeholder and the path after it, up to a space, a quote or an angle bracket: the only thing exempt. */
+const PLACEHOLDER_PATH = /<(?:tmp|home|project|repo)>[^\s"'`<>]*/g;
+
 /** The places in a text where a temporary or home path is left, as short sentences. */
 export function leftPaths(text, home = process.env.HOME) {
-  const roots = ['/tmp', '/root', '/var/folders', '/private/var', ...(home && home.length > 1 ? [home] : [])];
+  const roots = [...ROOTS, ...(home && home.length > 1 && !ROOTS.includes(home) ? [home] : [])];
   const hits = [];
-  String(text).split(/\r?\n/).forEach((line, i) => {
+  String(text).split(/\r?\n/).forEach((raw, i) => {
+    const line = raw.replace(PLACEHOLDER_PATH, ' ');
     for (const r of roots) {
-      const re = new RegExp(`(?<![\\w<>.-])${r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w.-])`);
+      // Wherever it starts (after >, -, a letter or a slash), and not when the name goes on (/tmpfoo, /rooted).
+      const re = new RegExp(`${r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-])`);
       if (re.test(line)) hits.push(`line ${i + 1} has ${r}`);
     }
   });
   return hits;
 }
 
+/** A variable whose name says it holds a secret. */
+const SECRET_NAME = /KEY|TOKEN|SECRET|PASSWORD|PASSWD|AUTH|CREDENTIAL/i;
+
 function exportPairs(s, round) {
-  const list = [[round, '<tmp>'], [REPO, '<repo>'], [process.env.HOME, '<home>']];
+  // HOME and TMPDIR are replaced unless one is a bare system root: then a path under it is left for the check.
+  const own = (v) => (v && v.length > 1 && !ROOTS.includes(resolve(v)) ? resolve(v) : null);
+  const list = [[round, '<tmp>'], [REPO, '<repo>'], [own(process.env.HOME), '<home>'], [own(process.env.TMPDIR), '<tmp>']];
   for (const t of Object.values(s.tasks)) {
     if (t.root) list.push([t.root, '<tmp>']);
     if (t.lab) list.push([t.lab, '<tmp>']);
     for (const r of t.runs || []) list.push([r.dir, '<project>'], [r.home, '<home>']);
   }
   const pairs = pathPairs(list.filter(([p]) => p && p.length > 1));
-  const keep = new Set([s.model, s.judgeModel].filter(Boolean));
-  const taken = new Set(pairs.map(([p]) => p));
-  const env = Object.values(process.env).filter((v) => typeof v === 'string' && v.length >= MIN_ENV && !keep.has(v) && !taken.has(v));
-  return { pairs, env: env.map((v) => [v, '<env>']) };
+  // Only the values of the names given with --pass-env and of key-like names: other variables hold ordinary words.
+  const passed = new Set(s.passEnv || []);
+  const env = Object.entries(process.env)
+    .filter(([k, v]) => typeof v === 'string' && v.length >= MIN_ENV && (passed.has(k) || SECRET_NAME.test(k)))
+    .map(([, v]) => [v, '<env>']);
+  return { pairs, env };
 }
 
 const isFree = (dir) => !existsSync(dir) || (statSync(dir).isDirectory() && !readdirSync(dir).length);

@@ -38,10 +38,11 @@ roots as in B7, then `rm -rf "$S"`.
 ## B1: the login and the cap
 
 ```bash
-export ANTHROPIC_API_KEY=placeholder
+export ANTHROPIC_API_KEY=sk-ant-placeholder-0000
 ```
 
-The network proxy injects the real key; the variable only has to exist. Never print it. Pass
+The network proxy injects the real key; the variable only has to exist, with a value that cannot be an ordinary word
+(export replaces it wherever it appears). Never print it. Pass
 `--pass-env ANTHROPIC_API_KEY` to every `run` and `judge` below, so it reaches the runs and the judge and nothing
 else does.
 

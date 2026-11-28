@@ -61,7 +61,7 @@ if (kind === 'judge') {
       lines.push(`  ${outputs[i]}: ${SCORES[token] ?? 3}/5  read what it did`);
     }
   }
-  lines.push('', `Notes kept by ${env.FAKE_BENCH_ECHO || 'nobody'}; write to ops@example.org`);
+  lines.push('', `Notes kept by ${env.FAKE_BENCH_ECHO || 'nobody'}; checked the production code; write to ops@example.org`);
   const cost = cfg.judge && 'cost' in cfg.judge ? cfg.judge.cost : 0.02;
   const res = { type: 'result', subtype: 'success', is_error: false, result: lines.join('\n') };
   if (cost !== null) res.total_cost_usd = cost;

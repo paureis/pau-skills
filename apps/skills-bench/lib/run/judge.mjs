@@ -82,6 +82,7 @@ export async function judgeCommand(o, out, err) {
   try { s = loadRound(round); } catch (e) { return refuse(e.message); }
   if (s.judgeModel && s.judgeModel !== o.judgeModel) return refuse(`this round was judged by ${s.judgeModel}; one round has one judge model`);
   s.judgeModel = o.judgeModel;
+  s.passEnv = [...new Set([...(s.passEnv || []), ...o.passEnv])].sort();
   let failed = 0;
   for (const id of s.planned) {
     const t = s.tasks[id];

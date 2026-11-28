@@ -7,8 +7,9 @@ import { repo, runNode, tempDir, removeAtExit } from './helpers.mjs';
 export const BENCH = repo('apps', 'skills-bench', 'bench.mjs');
 export const FIX = repo('tests', 'fixtures', 'skills-bench', 'runner');
 export const FAKE = join(FIX, 'fake-claude.mjs');
-// A value the fake judge echoes when it gets FAKE_BENCH_ECHO, and a key-like value never passed with --pass-env.
-export const ECHO = 'sk-ant-fake-echo-0123456789abcdef';
+// A value the fake judge echoes when it gets FAKE_BENCH_ECHO (it looks like no key, so only the --pass-env rule can
+// hide it), and a key-like value never passed with --pass-env.
+export const ECHO = 'kettle-echo-7b2f9d41c3a0';
 export const UNNAMED = 'sk-ant-unnamed-9876543210fedcba';
 export const PASS = ['--pass-env', 'FAKE_BENCH_CONFIG', 'FAKE_BENCH_LOG', 'FAKE_BENCH_ECHO'];
 

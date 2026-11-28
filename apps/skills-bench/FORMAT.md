@@ -148,11 +148,16 @@ skill's rubric and `costMicros` what was charged. `judge/<skill>/<task>.verdict.
 `summary.json` and `REPORT.md` are written by `analyse.mjs`.
 
 Never in the results: a transcript, an absolute path, an environment value or an email. Export replaces paths with
-`<project>` (a run folder), `<home>` (a run's HOME or yours), `<tmp>` (the round folder, a run root or a lab) and
-`<repo>` (the repository), any environment value of 8 or more characters with `<env>`, a key-like `sk-` value with
-`<key>` and an email with `<email>`. Then it reads every file back, fails on `/tmp`, `/root`, `/var/folders`,
-`/private/var` or your HOME and removes what it wrote; it warns about a file over 20,000 bytes. Text a model wrote is
-only in `.txt` files.
+`<project>` (a run folder), `<home>` (a run's HOME or yours), `<tmp>` (the round folder, a run root, a lab or your
+TMPDIR) and `<repo>` (the repository); a HOME or TMPDIR that is itself `/tmp`, `/root`, `/var/folders` or
+`/private/var` is not replaced, so a path under it fails the check below. It replaces with `<env>` the value (8 or more
+characters) of every variable named with `--pass-env` in the round's `run` or `judge` (the round records the names,
+never the values) and of every variable whose name holds KEY, TOKEN, SECRET, PASSWORD, PASSWD, AUTH or CREDENTIAL;
+other variables are left alone, as their values are often ordinary words. A key-like `sk-` value becomes `<key>` and an
+email `<email>`. Then it reads every file back and fails on `/tmp`, `/root`, `/var/folders`, `/private/var` or your
+HOME wherever it starts in a line (after `>`, `-`, a letter or a slash too); only the exact placeholders above, and
+the path right after one, are exempt. On a hit it removes what it wrote. It warns about a file over 20,000 bytes. Text
+a model wrote is only in `.txt` files.
 
 ## The owner sheet
 

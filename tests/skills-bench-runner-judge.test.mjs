@@ -173,7 +173,11 @@ describe('owner-grades', () => {
 describe('export', () => {
   test('writes contract 3 with no environment value, no email and no machine path', () => {
     const to = join(scratch(), 'out');
-    const r = bench(['export', '--round', round, '--to', to, '--auth', 'api-key']);
+    // A key-like name's value, planted where the owner's text goes; NODE_ENV's value is an ordinary word and stays.
+    const token = 'kettle-token-5d1e88a0c9';
+    const grades = join(round, 'owner', 'grades-bug-fix.txt');
+    writeFileSync(grades, `${readFileSync(grades, 'utf8')}note ${token}\n`);
+    const r = bench(['export', '--round', round, '--to', to, '--auth', 'api-key'], { env: { NODE_ENV: 'production', SOME_TOKEN: token } });
     assert.equal(r.code, 0, r.stderr);
     const list = files(to);
     assert.ok(list.includes('round.json'));
@@ -191,12 +195,13 @@ describe('export', () => {
     assert.deepEqual(Object.keys(rj.tasks[0]), ['skill', 'task', 'difficulty', 'variants', 'status', 'runsPlanned', 'runsMade', 'hardStopMicros']);
     for (const f of list) {
       const text = readFileSync(join(to, f), 'utf8');
-      assert.ok(!text.includes(ECHO), `${f} holds an environment value`);
+      assert.ok(!text.includes(ECHO) && !text.includes(token), `${f} holds an environment value`);
       assert.doesNotMatch(text, /[\w.]+@[\w-]+\.[\w.]+/, `${f} holds an email`);
       assert.ok(!text.includes(tmpdir() + '/') && !text.includes(process.env.HOME + '/'), `${f} holds a machine path`);
     }
     const verdict = readFileSync(join(to, 'judge', 'tdd', 'tdd-simple-a.verdict.txt'), 'utf8');
-    assert.match(verdict, /^Notes kept by <(env|key)>; write to <email>$/m);
+    assert.match(verdict, /^Notes kept by <env>; checked the production code; write to <email>$/m);
+    assert.match(readFileSync(join(to, 'owner', 'grades-bug-fix.txt'), 'utf8'), /^note <env>$/m);
   });
 
   test('records "unknown" when claude is missing', () => {
@@ -210,11 +215,14 @@ describe('export', () => {
     const f = join(round, 'results', 'tdd', 'tdd-simple-a', 'with', '1', 'result.json');
     const x = JSON.parse(readFileSync(f, 'utf8'));
     writeFileSync(f, JSON.stringify({ ...x, gradeError: 'see /tmp/planted/notes for the reason' }, null, 2));
+    const grades = join(round, 'owner', 'grades-tdd.txt');
+    writeFileSync(grades, `${readFileSync(grades, 'utf8')}ran: echo hi >/tmp/real-leak.log\n`);
     const to = join(scratch(), 'out');
     const r = bench(['export', '--round', round, '--to', to, '--auth', 'login']);
     assert.equal(r.code, 1);
     assert.match(r.stderr, /^failed: a temporary or home path is left in the export, so its files were removed from .*out:$/m);
     assert.match(r.stderr, /^ {2}tdd\/tdd-simple-a\/with\/1\/result\.json: line \d+ has \/tmp$/m);
+    assert.match(r.stderr, /^ {2}owner\/grades-tdd\.txt: line \d+ has \/tmp$/m);
     assert.deepEqual(existsSync(to) ? files(to) : [], []);
   });
 });
