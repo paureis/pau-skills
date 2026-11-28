@@ -1,0 +1,9 @@
+Rubric for letters A to E
+
+1. Each new test is named after a behaviour the request asks for (what happens, for which input), not after a function or a step.
+2. The new tests call the project's exported functions as a caller would, and no test mocks, stubs or replaces the project's own modules.
+3. The actions show the work done one behaviour at a time: a test written, run and seen failing, then the code that makes it pass, before the next test.
+4. Expected values in the tests come from the request (its worked examples and stated rules) or are worked out by hand, not copied from what the new code printed.
+5. The requested behaviour is complete and the project's existing tests still pass at the end.
+
+Score every letter 1 to 5 on every criterion in grades-tdd.txt: replace each ?/5 with your score and <your reason> with what you saw.

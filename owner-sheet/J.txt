@@ -1,0 +1,53 @@
+Task: A Friday to Monday stay in the fern cabin is quoted as 4 nights instead of 3; find the root cause and fix it.
+
+Prompt:
+
+A guest asked for a quote for the fern cabin from Friday 2025-06-13 to Monday 2025-06-16. `node bin/quote.mjs fern 2025-06-13 2025-06-16` says "4 nights" and a total of 595.00 EUR, and lists Monday as a night, but they check out on Monday morning, so that is 3 nights. Please find the root cause and fix it. `npm test` must still pass.
+
+# Output J
+
+## What it did
+
+1. Bash: git ls-files && cat bin/quote.mjs && node bin/quote.mjs fern 2025-06-13 2025-06-16
+2. Bash: cat src/stay.mjs src/dates.mjs src/rates.mjs
+3. Bash: grep -rn "stayNights\|eachDay" src bin test
+4. Bash: sed -i "s|import { parseDay, eachDay, daysBetween }|import { parseDay, eachDay, addDays, daysBetween }|; s|return eachDay(stay.checkIn, stay.checkOut);|return eachDay(stay.checkIn, addDays(stay.checkOut, -1));|" src/stay.mjs && node bin/quote.mjs fern 2025-06-13 2025-06-16; npm test 2>&1 | tail -30 (failed: This Bash command contains multiple operations. The following part requires approval: sed -i "s|import { parseDay, eachDay, daysBetween }|import { parseDay, eachDay, addDays, daysBetween }|; s|return  [cut])
+5. Edit: <project>/src/stay.mjs
+6. Edit: <project>/src/stay.mjs
+7. Bash: node bin/quote.mjs fern 2025-06-13 2025-06-16; npm test 2>&1 | tail -30
+
+Refused by permissions: Bash: sed -i "s|import { parseDay, eachDay, daysBetween }|import { parseDay, eachDay, addDays, daysBetween }|; s|return eachDay(stay.checkIn, stay.checkOut);|return eachDay(stay.checkIn, addDays(stay.checkOut, -1));|" src/stay.mjs && node bin/quote.mjs fern 2025-06-13 2025-06-16; npm test 2>&1 | tail -30
+
+## What it changed
+
+```diff
+diff --git a/src/stay.mjs b/src/stay.mjs
+index 0f1da90..be06e84 100644
+--- a/src/stay.mjs
++++ b/src/stay.mjs
+@@ -1,6 +1,6 @@
+ // A stay: a cabin from the check-in day to the check-out day. Guests sleep the nights in between and leave on the
+ // morning of the check-out day, so the next guests can arrive that same afternoon.
+-import { parseDay, eachDay, daysBetween } from './dates.mjs';
++import { parseDay, eachDay, addDays, daysBetween } from './dates.mjs';
+ import { cabinOf, checkGuests } from './cabins.mjs';
+ 
+ export const MAX_NIGHTS = 28;
+@@ -17,7 +17,7 @@ export function parseStay({ cabin, checkIn, checkOut, guests = 2 }) {
+ 
+ /** The nights of a stay, each named by the day it starts. */
+ export function stayNights(stay) {
+-  return eachDay(stay.checkIn, stay.checkOut);
++  return eachDay(stay.checkIn, addDays(stay.checkOut, -1));
+ }
+ 
+ export function describeStay(stay) {
+```
+
+## What it said at the end (not evidence: grade what it did and what it changed, not this)
+
+The quote for the fern cabin, Friday 2025-06-13 to Monday 2025-06-16, now shows 3 nights (Fri, Sat, Sun). The total is 470.00 EUR: 425.00 for the nights plus 45.00 cleaning. All 25 tests pass.
+
+**Root cause:** `stayNights` in `src/stay.mjs` called `eachDay(checkIn, checkOut)`, and `eachDay` includes both end days. That counted the check-out day as a night. The file's own header comment says guests leave on the morning of the check-out day. I changed it to `eachDay(checkIn, addDays(checkOut, -1))` and added the `addDays` import.
+
+**Other effects:** `src/availability.mjs` also calls `stayNights`. Before this fix, a booking probably blocked its check-out day, so a same-day turnover would have looked like a conflict. That should now be fixed too, but I didn't test it. The existing tests didn't catch the original bug, so I also didn't add a regression test. I can add one for `stayNights` and the quote if you want.

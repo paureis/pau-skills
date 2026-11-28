@@ -1,0 +1,342 @@
+Task: Let customers cancel room bookings: cancelBooking in src/bookings.js with a refundFor rule in src/pricing.js, shown on the invoice and left out of room usage.
+
+Prompt:
+
+Customers need to be able to cancel their room bookings, with a refund that depends on how early they cancel. Please add this across the project:
+
+1. cancelBooking(store, bookingId, now) in src/bookings.js. It marks the booking as cancelled (status "cancelled", cancelledAt set to now, and the refund kept on the booking as refund: { cents, currency }) and returns it. A cancelled booking no longer holds its time: the same room can be booked again for those hours with book, and freeHours in src/availability.js shows them as free. An unknown id throws a BookingError with code "NO_BOOKING", cancelling a booking a second time throws "ALREADY_CANCELLED", and cancelling at or after the booking's start throws "ALREADY_STARTED".
+
+2. refundFor(booking, now) in src/pricing.js, which cancelBooking uses for the refund: the whole price when now is 48 hours or more before the start, half the price when it is 24 hours or more before, and nothing later than that. Half a price is rounded to whole cents with half a cent going up: a 19.99 EUR booking cancelled 30 hours ahead refunds 10.00 EUR.
+
+3. invoiceFor in src/invoice.js keeps the cancelled booking's line and adds a line right after it, { bookingId, kind: "refund", description, cents }, with the refund as negative cents, so totalCents goes down by the refund. A cancellation with nothing to refund adds no line.
+
+4. roomUsage in src/report.js leaves cancelled bookings out.
+
+Times are UTC ISO strings and now is always passed in; keep money in whole cents. Make sure this is tested.
+
+# Output A
+
+## What it did
+
+1. Bash: git ls-files && cat package.json && cat src/*.js && ls test* 2>/dev/null
+2. Bash: head -30 test/bookings.test.js test/invoice.test.js test/report.test.js; head -8 test/pricing.test.js
+3. Bash: python3 - <<'E'\nimport re\ndef sub(f,a,b):\n    s=open(f).read(); assert a in s,(f,a); open(f,'w').write(s.replace(a,b,1))\nsub('src/pricing.js',"import { addHours, hoursBetween, isWeekend } from './time.js';","import { addHours, hoursBetween, isWeekend } from './time.js';\n\nconst FULL_REFUND_HOUR [cut] (failed: This Bash command contains multiple operations. The following part requires approval: python3 - <<'E')
+4. Write: /tmp/patch_cancel.py (failed: Claude requested permissions to write to /tmp/patch_cancel.py, but you haven't granted it yet.)
+5. Bash: python3 /tmp/patch_cancel.py && npm test 2>&1 | tail -25 (failed: This Bash command contains multiple operations. The following part requires approval: python3 /tmp/patch_cancel.py && npm test 2>&1)
+6. Edit: <project>/src/pricing.js
+7. Edit: <project>/src/pricing.js
+8. Edit: <project>/src/bookings.js
+9. Edit: <project>/src/bookings.js
+10. Edit: <project>/src/bookings.js
+11. Edit: <project>/src/bookings.js
+12. Edit: <project>/src/bookings.js
+13. Edit: <project>/src/invoice.js
+14. Edit: <project>/src/report.js
+15. Edit: <project>/src/notify.js
+16. Edit: <project>/test/pricing.test.js
+17. Edit: <project>/test/bookings.test.js
+18. Edit: <project>/test/invoice.test.js
+19. Edit: <project>/test/report.test.js
+20. Bash: tail -3 test/pricing.test.js test/bookings.test.js test/invoice.test.js test/report.test.js | cat -A | cut -c1-80 | tail -20; wc -l test/*.js
+21. Bash: cat >> test/pricing.test.js <<'E'\n\ntest('refunds depend on how early the booking is cancelled', () => {\n  const b = { start: '2026-03-10T10:00:00Z', price: { cents: 1999, currency: 'EUR' } };\n  const at = (iso) => refundFor(b, iso);\n  assert.deepEqual(at('2026-03-08T10:00:00Z'), { cents: 1999,  [cut] (failed: Contains brace with quote character (expansion obfuscation))
+22. Read: <project>/test/pricing.test.js
+23. Read: <project>/test/bookings.test.js
+24. Read: <project>/test/invoice.test.js
+25. Read: <project>/test/report.test.js
+26. Edit: <project>/test/pricing.test.js
+27. Edit: <project>/test/bookings.test.js
+28. Edit: <project>/test/invoice.test.js
+29. Edit: <project>/test/report.test.js
+30. Bash: npm test 2>&1 | tail -25
+31. Bash: npm test 2>&1 | grep -B3 -A25 '^not ok'
+32. Bash: sed -i "s/2026-03-14T09:00:00Z', '2026-03-14T10:00:00Z/2026-03-13T09:00:00Z', '2026-03-13T10:00:00Z/" test/invoice.test.js && npm test 2>&1 | grep -E '^# (pass|fail)'; git status --short
+
+Refused by permissions: Bash: python3 - <<'E'\nimport re\ndef sub(f,a,b):\n    s=open(f).read(); assert a in s,(f,a); open(f,'w').write(s.replace(a,b,1))\nsub('src/pricing.js',"import { addHours, hoursBetween, isWeekend } from './time.js';","import { addHours, hoursBetween, isWeekend } from './time.js';\n\nconst FULL_REFUND_HOUR [cut]; Write: /tmp/patch_cancel.py; Bash: python3 /tmp/patch_cancel.py && npm test 2>&1 | tail -25; Bash: cat >> test/pricing.test.js <<'E'\n\ntest('refunds depend on how early the booking is cancelled', () => {\n  const b = { start: '2026-03-10T10:00:00Z', price: { cents: 1999, currency: 'EUR' } };\n  const at = (iso) => refundFor(b, iso);\n  assert.deepEqual(at('2026-03-08T10:00:00Z'), { cents: 1999,  [cut]
+
+## What it changed
+
+```diff
+diff --git a/src/bookings.js b/src/bookings.js
+index 0415a75..bdb769f 100644
+--- a/src/bookings.js
++++ b/src/bookings.js
+@@ -2,7 +2,7 @@
+ import { BookingError } from './errors.js';
+ import { getRoom } from './rooms.js';
+ import { addHours, hoursBetween, onTheHour, overlaps, toMs } from './time.js';
+-import { priceFor } from './pricing.js';
++import { priceFor, refundFor } from './pricing.js';
+ 
+ const MAX_HOURS = 12;
+ const byStart = (a, b) => toMs(a.start) - toMs(b.start) || (a.id < b.id ? -1 : 1);
+@@ -12,9 +12,9 @@ export function createStore() {
+   return { bookings: [], nextId: 1 };
+ }
+ 
+-/** The bookings that hold time in a room, earliest first. */
++/** The bookings that hold time in a room, earliest first; cancelled bookings hold none. */
+ export function roomBookings(store, roomId) {
+-  return store.bookings.filter((b) => b.roomId === roomId).sort(byStart);
++  return store.bookings.filter((b) => b.roomId === roomId && b.status !== 'cancelled').sort(byStart);
+ }
+ 
+ function checkTimes(start, end, now) {
+@@ -56,6 +56,7 @@ export function getBooking(store, id) {
+  */
+ export function moveBooking(store, id, newStart, now) {
+   const booking = getBooking(store, id);
++  if (booking.status === 'cancelled') throw new BookingError('ALREADY_CANCELLED', `booking ${id} is cancelled`);
+   if (toMs(now) >= toMs(booking.start)) throw new BookingError('ALREADY_STARTED', `booking ${id} has started`);
+   const newEnd = addHours(newStart, hoursBetween(booking.start, booking.end));
+   checkTimes(newStart, newEnd, now);
+@@ -66,12 +67,26 @@ export function moveBooking(store, id, newStart, now) {
+   return booking;
+ }
+ 
++/**
++ * Cancels a booking that has not started: status "cancelled", cancelledAt now and the refund kept on the booking.
++ * Throws a BookingError NO_BOOKING, ALREADY_CANCELLED or ALREADY_STARTED.
++ */
++export function cancelBooking(store, id, now) {
++  const booking = getBooking(store, id);
++  if (booking.status === 'cancelled') throw new BookingError('ALREADY_CANCELLED', `booking ${id} is already cancelled`);
++  if (toMs(now) >= toMs(booking.start)) throw new BookingError('ALREADY_STARTED', `booking ${id} has started`);
++  booking.refund = refundFor(booking, now);
++  booking.status = 'cancelled';
++  booking.cancelledAt = now;
++  return booking;
++}
++
+ /** A customer's bookings, earliest start first. */
+ export function bookingsOf(store, customerId) {
+   return store.bookings.filter((b) => b.customerId === customerId).sort(byStart);
+ }
+ 
+-/** A customer's bookings that start after now, earliest first. */
++/** A customer's bookings, cancelled ones left out, that start after now, earliest first. */
+ export function upcoming(store, customerId, now) {
+-  return bookingsOf(store, customerId).filter((b) => toMs(b.start) > toMs(now));
++  return bookingsOf(store, customerId).filter((b) => b.status !== 'cancelled' && toMs(b.start) > toMs(now));
+ }
+diff --git a/src/invoice.js b/src/invoice.js
+index 6a9d485..bf6d0f8 100644
+--- a/src/invoice.js
++++ b/src/invoice.js
+@@ -28,6 +28,14 @@ export function invoiceFor(store, customerId) {
+     }
+     currency = b.price.currency;
+     lines.push(bookingLine(b));
++    if (b.status === 'cancelled' && b.refund && b.refund.cents > 0) {
++      lines.push({
++        bookingId: b.id,
++        kind: 'refund',
++        description: `Refund for ${getRoom(b.roomId).name}, ${formatInstant(b.start)}`,
++        cents: -b.refund.cents,
++      });
++    }
+   }
+   return { customerId, currency, lines, totalCents: lines.reduce((sum, l) => sum + l.cents, 0) };
+ }
+diff --git a/src/notify.js b/src/notify.js
+index 904f0ee..58fe97d 100644
+--- a/src/notify.js
++++ b/src/notify.js
+@@ -32,7 +32,7 @@ export function confirmationEmail(directory, booking) {
+ export function dueReminders(store, directory, now) {
+   const from = toMs(now);
+   return store.bookings
+-    .filter((b) => toMs(b.start) > from && toMs(b.start) - from <= REMINDER_HOURS * HOUR_MS)
++    .filter((b) => b.status !== 'cancelled' && toMs(b.start) > from && toMs(b.start) - from <= REMINDER_HOURS * HOUR_MS)
+     .sort((a, b) => toMs(a.start) - toMs(b.start))
+     .map((b) => {
+       const { customer, room, when } = about(directory, b);
+diff --git a/src/pricing.js b/src/pricing.js
+index 133064e..eb1b224 100644
+--- a/src/pricing.js
++++ b/src/pricing.js
+@@ -2,6 +2,9 @@
+ // cents, rounded once per amount, half up.
+ import { addHours, hoursBetween, isWeekend } from './time.js';
+ 
++const FULL_REFUND_HOURS = 48;
++const HALF_REFUND_HOURS = 24;
++
+ const WEEKEND_PERCENT = 125;
+ 
+ /** cents * percent / 100 in whole cents, rounded half up. */
+@@ -21,6 +24,15 @@ export function splitHours(start, end) {
+   return { weekday, weekend };
+ }
+ 
++/** What cancelling at now gives back: all of the price 48 h or more before the start, half 24 h or more before, else nothing. */
++export function refundFor(booking, now) {
++  const { cents, currency } = booking.price;
++  const ahead = hoursBetween(now, booking.start);
++  if (ahead >= FULL_REFUND_HOURS) return { cents, currency };
++  if (ahead >= HALF_REFUND_HOURS) return { cents: percentOf(cents, 50), currency };
++  return { cents: 0, currency };
++}
++
+ /** { cents, currency } for a room from start to end, both on the hour. */
+ export function priceFor(room, start, end) {
+   const { weekday, weekend } = splitHours(start, end);
+diff --git a/src/report.js b/src/report.js
+index 134a5a5..5866a17 100644
+--- a/src/report.js
++++ b/src/report.js
+@@ -17,7 +17,7 @@ function checkPeriod(from, to) {
+ export function roomUsage(store, roomId, from, to) {
+   getRoom(roomId);
+   checkPeriod(from, to);
+-  return store.bookings.filter((b) => b.roomId === roomId).reduce((sum, b) => sum + hoursInside(b, from, to), 0);
++  return store.bookings.filter((b) => b.roomId === roomId && b.status !== 'cancelled').reduce((sum, b) => sum + hoursInside(b, from, to), 0);
+ }
+ 
+ /** The share of the period's hours a room was booked, 0 to 1, rounded to two decimals. */
+diff --git a/test/bookings.test.js b/test/bookings.test.js
+index 579931b..5abb92a 100644
+--- a/test/bookings.test.js
++++ b/test/bookings.test.js
+@@ -1,6 +1,6 @@
+ import { test } from 'node:test';
+ import assert from 'node:assert/strict';
+-import { createStore, book, getBooking, moveBooking, bookingsOf, upcoming } from '../src/bookings.js';
++import { createStore, book, cancelBooking, getBooking, moveBooking, bookingsOf, upcoming } from '../src/bookings.js';
+ import { freeHours, longestFreeRun } from '../src/availability.js';
+ import { freeRooms, bestRoom } from '../src/search.js';
+ import { roomsFor } from '../src/rooms.js';
+@@ -85,3 +85,29 @@ test('room search offers the smallest free room with enough seats', () => {
+   assert.deepEqual(best.price, { cents: 8000, currency: 'EUR' });
+   assert.equal(bestRoom(store, 50, '2026-03-03T10:00:00Z', '2026-03-03T12:00:00Z'), null);
+ });
++
++test('cancelling marks the booking, keeps the refund and frees the time', () => {
++  const store = createStore();
++  const b = book(store, req('pine', '2026-03-04T09:00:00Z', '2026-03-04T10:00:00Z'), NOW);
++  const now = '2026-03-03T03:00:00Z'; // 30 h ahead
++  assert.equal(cancelBooking(store, 'b1', now), b);
++  assert.equal(b.status, 'cancelled');
++  assert.equal(b.cancelledAt, now);
++  assert.deepEqual(b.refund, { cents: 1000, currency: 'EUR' });
++  assert.ok(freeHours(store, 'pine', '2026-03-04', NOW).includes('2026-03-04T09:00:00Z'));
++  assert.ok(freeRooms(store, 1, '2026-03-04T09:00:00Z', '2026-03-04T10:00:00Z').some((r) => r.id === 'pine'));
++  assert.equal(book(store, req('pine', '2026-03-04T09:00:00Z', '2026-03-04T10:00:00Z', 'ben'), NOW).id, 'b2');
++  assert.deepEqual(upcoming(store, 'ana', NOW), []);
++});
++
++test('cancelling errors', () => {
++  const store = createStore();
++  book(store, req('pine', '2026-03-04T09:00:00Z', '2026-03-04T10:00:00Z'), NOW);
++  assert.throws(() => cancelBooking(store, 'b9', NOW), { code: 'NO_BOOKING' });
++  assert.throws(() => cancelBooking(store, 'b1', '2026-03-04T09:00:00Z'), { code: 'ALREADY_STARTED' });
++  assert.throws(() => cancelBooking(store, 'b1', '2026-03-04T10:30:00Z'), { code: 'ALREADY_STARTED' });
++  assert.equal(store.bookings[0].status, undefined);
++  cancelBooking(store, 'b1', NOW);
++  assert.throws(() => cancelBooking(store, 'b1', NOW), { code: 'ALREADY_CANCELLED' });
++  assert.throws(() => moveBooking(store, 'b1', '2026-03-05T09:00:00Z', NOW), { code: 'ALREADY_CANCELLED' });
++});
+diff --git a/test/invoice.test.js b/test/invoice.test.js
+index 6101f6a..c506b11 100644
+--- a/test/invoice.test.js
++++ b/test/invoice.test.js
+@@ -1,6 +1,6 @@
+ import { test } from 'node:test';
+ import assert from 'node:assert/strict';
+-import { createStore, book } from '../src/bookings.js';
++import { createStore, book, cancelBooking } from '../src/bookings.js';
+ import { createDirectory, addCustomer, getCustomer, findCustomers } from '../src/customers.js';
+ import { invoiceFor, invoiceText, formatMoney } from '../src/invoice.js';
+ import { confirmationEmail, dueReminders } from '../src/notify.js';
+@@ -83,3 +83,25 @@ test('a booking exports as a calendar event with CRLF lines', () => {
+   assert.ok(ics.includes('\r\nSUMMARY:Cedar hall\\, 40 seats\r\n'));
+   assert.equal(icsEscape('a;b,c\nd'), 'a\\;b\\,c\\nd');
+ });
++
++test('a cancelled booking keeps its line and gets a refund line after it', () => {
++  const { store, directory } = setUp();
++  book(store, req('pine', '2026-03-10T09:00:00Z', '2026-03-10T10:00:00Z'), NOW);
++  book(store, req('oak', '2026-03-12T09:00:00Z', '2026-03-12T10:00:00Z'), NOW);
++  book(store, req('oak', '2026-03-13T09:00:00Z', '2026-03-13T10:00:00Z'), NOW);
++  cancelBooking(store, 'b1', '2026-03-09T03:00:00Z'); // 30 h: half
++  cancelBooking(store, 'b2', '2026-03-12T07:00:00Z'); // 2 h: nothing
++  const invoice = invoiceFor(store, 'ana');
++  assert.deepEqual(invoice.lines.map((l) => [l.bookingId, l.kind, l.cents]), [
++    ['b1', 'booking', 1999], ['b1', 'refund', -1000], ['b2', 'booking', 2500], ['b3', 'booking', 2500],
++  ]);
++  assert.equal(invoice.totalCents, 1999 - 1000 + 2500 + 2500);
++  assert.ok(invoiceText(invoice, directory).length > 0);
++});
++
++test('no reminder is sent for a cancelled booking', () => {
++  const { store, directory } = setUp();
++  book(store, req('pine', '2026-03-03T09:00:00Z', '2026-03-03T10:00:00Z'), NOW);
++  cancelBooking(store, 'b1', NOW);
++  assert.deepEqual(dueReminders(store, directory, NOW), []);
++});
+diff --git a/test/pricing.test.js b/test/pricing.test.js
+index ab54317..2fc8c1e 100644
+--- a/test/pricing.test.js
++++ b/test/pricing.test.js
+@@ -1,6 +1,6 @@
+ import { test } from 'node:test';
+ import assert from 'node:assert/strict';
+-import { percentOf, splitHours, priceFor } from '../src/pricing.js';
++import { percentOf, splitHours, priceFor, refundFor } from '../src/pricing.js';
+ import { getRoom } from '../src/rooms.js';
+ 
+ test('weekday hours cost the hourly price', () => {
+@@ -21,3 +21,15 @@ test('a share of whole cents rounds half up', () => {
+   assert.equal(percentOf(1998, 50), 999);
+   assert.equal(percentOf(2500, 0), 0);
+ });
++
++test('refunds depend on how early the booking is cancelled', () => {
++  const b = { start: '2026-03-10T10:00:00Z', price: { cents: 1999, currency: 'EUR' } };
++  const at = (iso) => refundFor(b, iso);
++  assert.deepEqual(at('2026-03-08T10:00:00Z'), { cents: 1999, currency: 'EUR' }); // exactly 48 h
++  assert.deepEqual(at('2026-03-08T10:00:01Z'), { cents: 1000, currency: 'EUR' }); // just under 48 h
++  assert.deepEqual(at('2026-03-09T04:00:00Z'), { cents: 1000, currency: 'EUR' }); // 30 h, 9.995 rounds up
++  assert.deepEqual(at('2026-03-09T10:00:00Z'), { cents: 1000, currency: 'EUR' }); // exactly 24 h
++  assert.deepEqual(at('2026-03-09T10:00:01Z'), { cents: 0, currency: 'EUR' });
++  assert.deepEqual(at('2026-03-10T09:00:00Z'), { cents: 0, currency: 'EUR' });
++  assert.deepEqual(refundFor({ ...b, price: { cents: 2000, currency: 'EUR' } }, '2026-03-09T04:00:00Z'), { cents: 1000, currency: 'EUR' });
++});
+diff --git a/test/report.test.js b/test/report.test.js
+index d920794..5d2c4c6 100644
+--- a/test/report.test.js
++++ b/test/report.test.js
+@@ -1,6 +1,6 @@
+ import { test } from 'node:test';
+ import assert from 'node:assert/strict';
+-import { createStore, book } from '../src/bookings.js';
++import { createStore, book, cancelBooking } from '../src/bookings.js';
+ import { roomUsage, occupancy, usageByRoom } from '../src/report.js';
+ 
+ const NOW = '2026-03-02T08:00:00Z';
+@@ -35,3 +35,9 @@ test('usage by room lists the busiest room first and leaves out empty rooms', ()
+ test('a period that does not end after it starts is refused', () => {
+   assert.throws(() => roomUsage(busyDay(), 'oak', DAY[1], DAY[0]), RangeError);
+ });
++
++test('usage leaves cancelled bookings out', () => {
++  const store = busyDay();
++  cancelBooking(store, 'b1', NOW);
++  assert.equal(roomUsage(store, 'oak', ...DAY), 3);
++});
+```
+
+## What it said at the end (not evidence: grade what it did and what it changed, not this)
+
+Cancelling a booking now works across the project, and all 35 tests pass. I haven't committed anything.
+
+- **`cancelBooking`** (`src/bookings.js`): It sets `status: "cancelled"`, `cancelledAt` and `refund: { cents, currency }`, and returns the booking. It throws `NO_BOOKING`, `ALREADY_CANCELLED` or `ALREADY_STARTED` as you described.
+- **Freed time:** `roomBookings` now skips cancelled bookings. That frees the hours for `book`, `freeHours` and the room search in `search.js`.
+- **`refundFor`** (`src/pricing.js`): It refunds the full price at 48 hours or more before the start and half at 24 hours or more. Later than that it refunds nothing. Half uses the existing `percentOf`, so a 19.99 EUR booking cancelled 30 hours ahead refunds 10.00 EUR.
+- **`invoiceFor`:** The cancelled booking keeps its line. A `kind: "refund"` line with negative cents follows it, and `totalCents` drops by the refund. No refund line is added when the refund is zero.
+- **`roomUsage`:** It leaves cancelled bookings out, so `occupancy` and `usageByRoom` do too.
+
+I made two changes you didn't ask for, because a cancelled booking would otherwise cause trouble:
+- `moveBooking` now throws `ALREADY_CANCELLED` on a cancelled booking, so it can't be brought back by moving it.
+- `upcoming` and `dueReminders` skip cancelled bookings, so customers don't get reminders for them.
+
+I added tests for the refund boundaries (exactly 48 and 24 hours, one second under each, and the 19.99 case). They also cover the cancel flow and its errors, the freed slot, the invoice lines and total, the missing reminder, and `roomUsage`.

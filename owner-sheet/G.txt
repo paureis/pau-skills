@@ -1,0 +1,81 @@
+Task: A price list for the US and Europe shows the US dollar prices under Europe too; find the root cause and fix it.
+
+Prompt:
+
+When I print the price lists for two regions with `node bin/price-list.mjs us eu`, the Europe section shows "Desk lamp 39.00 USD", the same as the US one. On its own, `node bin/price-list.mjs eu` gives the right 42.00 EUR. Please find the root cause and fix it; `npm test` has to keep passing.
+
+# Output G
+
+## What it did
+
+1. Bash: git ls-files && cat bin/price-list.mjs && ls src lib 2>/dev/null (failed: Exit code 2)
+2. Skill: bug-fix
+3. Bash: cat src/prices.mjs src/catalog.mjs
+4. Bash: for i in 1 2; do node bin/price-list.mjs us eu | sed -n '1,2p;6,7p'; done; node bin/price-list.mjs eu | sed -n 2p; cat package.json; head -30 test/prices.test.mjs; grep -n priceFor src/cart.mjs (failed: This Bash command contains multiple operations. The following part requires approval: sed -n '1,2p;6,7p'; done; node bin/price-list.mjs eu)
+5. Bash: node bin/price-list.mjs us eu; node bin/price-list.mjs us eu | grep lamp; node bin/price-list.mjs eu | grep lamp
+6. Read: <project>/test/prices.test.mjs
+7. Bash: git checkout -q -b fix-region-price-cache && cat >> test/prices.test.mjs <<'EOF'\n\ntest('the same product is priced separately in each region', () => {\n  const us = priceFor('lamp', 'us');\n  const eu = priceFor('lamp', 'eu');\n  assert.deepEqual([us.grossCents, us.currency], [3900, 'USD']);\n  as [cut] (failed: Contains brace with quote character (expansion obfuscation))
+8. Bash: git checkout -q -b fix-region-price-cache; git branch --show-current
+9. Edit: <project>/test/prices.test.mjs
+10. Bash: npm test 2>&1 | grep -E "^# (pass|fail)|^not ok|actual|expected"; git add test/prices.test.mjs && git commit -q -m "Add failing test: prices must not be shared across regions" -m "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>" && git log --oneline | head -1
+11. Edit: <project>/src/prices.mjs
+12. Bash: npm test 2>&1 | grep -E "^# (pass|fail)"; node bin/price-list.mjs us eu | grep lamp; node bin/price-list.mjs us eu | grep lamp; git commit -qam "Key the price cache by region as well as product" -m "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>" && git log --oneline | head -1
+
+Refused by permissions: Bash: for i in 1 2; do node bin/price-list.mjs us eu | sed -n '1,2p;6,7p'; done; node bin/price-list.mjs eu | sed -n 2p; cat package.json; head -30 test/prices.test.mjs; grep -n priceFor src/cart.mjs; Bash: git checkout -q -b fix-region-price-cache && cat >> test/prices.test.mjs <<'EOF'\n\ntest('the same product is priced separately in each region', () => {\n  const us = priceFor('lamp', 'us');\n  const eu = priceFor('lamp', 'eu');\n  assert.deepEqual([us.grossCents, us.currency], [3900, 'USD']);\n  as [cut]
+
+## What it changed
+
+```diff
+diff --git a/src/prices.mjs b/src/prices.mjs
+index 923f1a8..0334833 100644
+--- a/src/prices.mjs
++++ b/src/prices.mjs
+@@ -11,7 +11,7 @@ export function normalizeSku(sku) {
+ 
+ export function priceFor(sku, regionCode) {
+   const code = normalizeSku(sku);
+-  const key = code;
++  const key = `${regionCode}:${code}`;
+   if (!prices.has(key)) {
+     const entry = readCatalog(code, regionCode);
+     const taxCents = Math.floor((entry.netCents * entry.taxBasisPoints + 5_000) / 10_000);
+diff --git a/test/prices.test.mjs b/test/prices.test.mjs
+index b918a72..4ebc0df 100644
+--- a/test/prices.test.mjs
++++ b/test/prices.test.mjs
+@@ -32,6 +32,13 @@ test('unknown products and regions are refused', () => {
+   assert.throws(() => regionOf('mars'), /unknown region: mars \(us, eu, uk\)/);
+ });
+ 
++test('the same product is priced separately in each region', () => {
++  const us = priceFor('lamp', 'us');
++  const eu = priceFor('lamp', 'eu');
++  assert.deepEqual([us.grossCents, us.currency], [3900, 'USD']);
++  assert.deepEqual([eu.grossCents, eu.currency], [4200, 'EUR']);
++});
++
+ test('cents print with two decimals', () => {
+   assert.equal(formatCents(4200, 'EUR'), '42.00 EUR');
+   assert.equal(formatCents(1559, 'EUR'), '15.59 EUR');
+```
+
+## Commits it made
+
+Key the price cache by region as well as product
+Add failing test: prices must not be shared across regions
+
+## What it said at the end (not evidence: grade what it did and what it changed, not this)
+
+The Europe section now shows "Desk lamp 42.00 EUR" when you run `node bin/price-list.mjs us eu`. `npm test` passes with 10 of 10, up from 9 plus the new test.
+
+**Root cause:** `priceFor` in `src/prices.mjs` cached each price under the product code alone, so the region wasn't part of the key. In a two-region run, the first region's entry (US) was stored under `lamp`. The EU lookup then hit that entry and returned 39.00 USD. A single-region run only ever filled the cache for that region, which is why `eu` on its own looked right.
+
+**Fix:** the cache key is now `${regionCode}:${code}` (`src/prices.mjs:15`). I did not change the read-once behaviour. The existing test that checks a price is read from the catalog only once still passes.
+
+**Proof:**
+- Before the fix, the bug reproduced on every run I made.
+- I added a regression test and committed it on its own as `da6f67f`. It failed for the reported reason, then passed after the fix in `a92a56d`. Both commits are on the branch `fix-region-price-cache`.
+- After the fix, two runs of `us eu` both print 39.00 USD for the US and 42.00 EUR for Europe.
+- I did not undo the fix to watch the new test fail a second time. Its red run at `da6f67f` is the evidence.
+
+**Safe because:** the change only makes cache keys more specific. The only other caller I saw is `src/cart.mjs`, and I did not read that file. The full suite passes, which is the strongest check I ran on it.

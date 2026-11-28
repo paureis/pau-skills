@@ -1,0 +1,137 @@
+Task: Add pageSlice(items, page, perPage) to src/pages.js so the list screens can show one page of results at a time.
+
+Prompt:
+
+The list screens need to show one page of results at a time. Add an exported function pageSlice(items, page, perPage) to src/pages.js, next to pageCount, that returns { items, page, totalPages, hasPrev, hasNext }:
+
+- Pages are numbered from 1. For the list 1 to 10 with 4 a page, page 1 holds [1, 2, 3, 4], page 2 holds [5, 6, 7, 8] and page 3 holds [9, 10].
+- totalPages is what pageCount gives for the list. hasPrev is true from page 2 on; hasNext is true only when a later page has items, so it is false on the last page.
+- A page past the end has no items (and hasNext false); an empty list has 0 pages.
+- page and perPage must be whole numbers of 1 or more; anything else throws a RangeError.
+- The list passed in must not change.
+
+Please make sure this is tested.
+
+# Output C
+
+## What it did
+
+1. Skill: tdd
+2. Bash: ls . test* src; cat package.json src/pages.js; cat test*/* | head -40
+3. Bash: python3 - <<'E'\np='test/pages.test.js'\ns=open(p).read().replace("import { pageCount, pageLabel }","import { pageCount, pageLabel, pageSlice }")\ns+='''\nconst ten = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];\n\ntest('each page holds its own run of items, the last one partly filled', () => {\n  assert.deepEq [cut] (failed: This Bash command contains multiple operations. The following part requires approval: python3 - <<'E')
+4. Edit: <project>/test/pages.test.js
+5. Bash: cat >> test/pages.test.js <<'E'\n\nconst ten = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];\n\ntest('each page holds its own run of items, the last one partly filled', () => {\n  assert.deepEqual(pageSlice(ten, 1, 4).items, [1, 2, 3, 4]);\n  assert.deepEqual(pageSlice(ten, 2, 4).items, [5, 6, 7, 8]);\n  assert. [cut] (failed: Contains brace with quote character (expansion obfuscation))
+6. Read: <project>/test/pages.test.js
+7. Edit: <project>/test/pages.test.js
+8. Bash: npm test 2>&1 | grep -E "^# (pass|fail)|SyntaxError|export"
+9. Edit: <project>/src/pages.js
+10. Bash: npm test 2>&1 | grep -E "^# (pass|fail)"; sed -i 's/hasNext: page < totalPages/hasNext: page <= totalPages/' src/pages.js && npm test 2>&1 | grep -E "^# fail"; git checkout -q -- src/pages.js 2>/dev/null; git status --short
+11. Edit: <project>/src/pages.js
+12. Bash: npm test 2>&1 | grep -E "^# (pass|fail)"; git status --short
+
+Refused by permissions: Bash: python3 - <<'E'\np='test/pages.test.js'\ns=open(p).read().replace("import { pageCount, pageLabel }","import { pageCount, pageLabel, pageSlice }")\ns+='''\nconst ten = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];\n\ntest('each page holds its own run of items, the last one partly filled', () => {\n  assert.deepEq [cut]; Bash: cat >> test/pages.test.js <<'E'\n\nconst ten = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];\n\ntest('each page holds its own run of items, the last one partly filled', () => {\n  assert.deepEqual(pageSlice(ten, 1, 4).items, [1, 2, 3, 4]);\n  assert.deepEqual(pageSlice(ten, 2, 4).items, [5, 6, 7, 8]);\n  assert. [cut]
+
+## What it changed
+
+```diff
+diff --git a/src/pages.js b/src/pages.js
+index 6361150..543ecde 100644
+--- a/src/pages.js
++++ b/src/pages.js
+@@ -13,6 +13,24 @@ export function pageCount(total, perPage) {
+   return Math.ceil(total / perPage);
+ }
+ 
++/**
++ * One page of items (pages numbered from 1) plus what a pager needs to draw
++ * its controls. A page past the end has no items. Does not modify `items`.
++ */
++export function pageSlice(items, page, perPage) {
++  wholeAtLeast('page', page, 1);
++  wholeAtLeast('perPage', perPage, 1);
++  const totalPages = pageCount(items.length, perPage);
++  const start = (page - 1) * perPage;
++  return {
++    items: items.slice(start, start + perPage),
++    page,
++    totalPages,
++    hasPrev: page > 1,
++    hasNext: page < totalPages,
++  };
++}
++
+ /** "Page 2 of 5" for the footer; "No pages" when there are none. */
+ export function pageLabel(page, pages) {
+   wholeAtLeast('pages', pages, 0);
+diff --git a/test/pages.test.js b/test/pages.test.js
+index 82dc446..cdf2ff5 100644
+--- a/test/pages.test.js
++++ b/test/pages.test.js
+@@ -1,6 +1,6 @@
+ import { test } from 'node:test';
+ import assert from 'node:assert/strict';
+-import { pageCount, pageLabel } from '../src/pages.js';
++import { pageCount, pageLabel, pageSlice } from '../src/pages.js';
+ 
+ test('a partly filled last page still counts as a page', () => {
+   assert.equal(pageCount(10, 3), 4);
+@@ -20,3 +20,45 @@ test('the footer label names the page and the page count', () => {
+   assert.equal(pageLabel(2, 5), 'Page 2 of 5');
+   assert.equal(pageLabel(1, 0), 'No pages');
+ });
++
++const ten = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
++
++test('each page holds its own run of items, the last one partly filled', () => {
++  assert.deepEqual(pageSlice(ten, 1, 4).items, [1, 2, 3, 4]);
++  assert.deepEqual(pageSlice(ten, 2, 4).items, [5, 6, 7, 8]);
++  assert.deepEqual(pageSlice(ten, 3, 4).items, [9, 10]);
++});
++
++test('the result reports page, total pages and neighbours', () => {
++  assert.deepEqual(pageSlice(ten, 1, 4), { items: [1, 2, 3, 4], page: 1, totalPages: 3, hasPrev: false, hasNext: true });
++  assert.deepEqual(pageSlice(ten, 2, 4), { items: [5, 6, 7, 8], page: 2, totalPages: 3, hasPrev: true, hasNext: true });
++  assert.deepEqual(pageSlice(ten, 3, 4), { items: [9, 10], page: 3, totalPages: 3, hasPrev: true, hasNext: false });
++});
++
++test('a full last page has no next page', () => {
++  assert.equal(pageSlice([1, 2, 3, 4], 1, 2).hasNext, true);
++  assert.equal(pageSlice([1, 2, 3, 4], 2, 2).hasNext, false);
++});
++
++test('a page past the end is empty', () => {
++  assert.deepEqual(pageSlice(ten, 4, 4), { items: [], page: 4, totalPages: 3, hasPrev: true, hasNext: false });
++  assert.deepEqual(pageSlice(ten, 99, 4).items, []);
++});
++
++test('an empty list has 0 pages and nothing to show', () => {
++  assert.deepEqual(pageSlice([], 1, 5), { items: [], page: 1, totalPages: 0, hasPrev: false, hasNext: false });
++});
++
++test('page and perPage must be whole numbers of 1 or more', () => {
++  for (const bad of [0, -1, 1.5, NaN, Infinity, '2', null, undefined]) {
++    assert.throws(() => pageSlice(ten, bad, 4), RangeError);
++    assert.throws(() => pageSlice(ten, 1, bad), RangeError);
++  }
++});
++
++test('the list passed in is left unchanged and the page is a separate array', () => {
++  const list = [1, 2, 3, 4, 5];
++  const r = pageSlice(list, 1, 5);
++  r.items.push(99);
++  assert.deepEqual(list, [1, 2, 3, 4, 5]);
++});
+```
+
+## What it said at the end (not evidence: grade what it did and what it changed, not this)
+
+I added `pageSlice(items, page, perPage)` to `src/pages.js`, right after `pageCount`, and all 11 tests pass. That's the 4 existing tests plus 7 new ones in `test/pages.test.js`.
+
+- **Behaviour:** It returns `{ items, page, totalPages, hasPrev, hasNext }`. `totalPages` comes from `pageCount`, and `hasPrev` is `page > 1`. `hasNext` is `page < totalPages`, so it's false on the last page and on a page past the end. A page past the end has no items, and an empty list gives 0 pages.
+- **Validation:** `page` and `perPage` must be whole numbers of 1 or more, otherwise it throws a `RangeError`. That covers 0, negatives, decimals, `NaN`, `Infinity`, strings, `null` and `undefined`.
+- **Immutability:** It uses `slice`, so the list you pass in isn't changed. One test pushes onto the returned `items` and checks the original is untouched.
+- **Tests:** The expected values come from your 1–10 example. They cover each page's contents, the full result object for pages 1 to 3, a page past the end, the empty list, the validation, and a full last page having no next page.
+
+As a check on the tests, I changed `hasNext` to `page <= totalPages`, and 2 tests failed.
+
+That check also wiped my implementation for a moment. I undid the change with `git checkout`, which restores the file to the last commit, and that commit doesn't have `pageSlice`. I re-added the function and re-ran the suite. The final state is correct, and both files are uncommitted changes.
