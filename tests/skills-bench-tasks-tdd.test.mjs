@@ -194,6 +194,8 @@ for (const id of taskIds) {
     ]);
     assert.equal(onStart.pass, false);
     assert.equal(onStart.checks[0].pass, false, 'the acceptance tests pass on the start');
+    assert.equal(onStart.checks[2].detail, 'the run added or changed no test files');
+    assert.match(onStart.checks[3].detail, new RegExp(`^0 of ${badNames(id).length} bad versions caught, .*; the new tests do not pass on the reference$`));
     assert.equal(onReference.pass, true, JSON.stringify(onReference));
     assert.deepEqual(onReference.checks.filter((c) => c.kind === 'outcome').map((c) => c.pass), [true, true, true, true], JSON.stringify(onReference));
     assert.equal(onReference.score, 1);
@@ -203,6 +205,17 @@ for (const id of taskIds) {
     assert.ok(onWeak.score < 1);
   });
 }
+
+test('the grader exits 1 with the reason on stderr when it cannot grade', () => {
+  const empty = tempDir('skills-bench-tdd-');
+  const cases = [[], ['--task', empty, '--run', empty], ['--task', join(TASKS, taskIds[0]), '--run', join(empty, 'missing')]];
+  for (const args of cases) {
+    const r = spawnSync(process.execPath, [GRADER, ...args], { encoding: 'utf8', timeout: 60_000 });
+    assert.equal(r.status, 1, args.join(' '));
+    assert.equal(r.stdout, '');
+    assert.match(r.stderr, /^grade\.mjs: could not grade: \S.*\n$/);
+  }
+});
 
 test('the rubric is usable: 3 to 6 numbered criteria and comments, naming no skill or variant', () => {
   const text = read(TASKS, 'rubric.md');
