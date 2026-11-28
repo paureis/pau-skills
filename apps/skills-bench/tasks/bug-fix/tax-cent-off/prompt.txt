@@ -1,0 +1,1 @@
+Our accountant flagged order 1042: `node bin/invoice.mjs data/order-1042.json` shows tax 1.64 USD and a total of 21.63 USD, but the register charged the customer 21.64 USD (8.25% of 19.99 is 1.649...). It is one cent, but invoices have to match what we charged. Please find the root cause and fix it, without breaking `npm test`.
