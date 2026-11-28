@@ -2,7 +2,7 @@
 // and the export in contract 3. One round of the fixture mix (n 1, 14 runs) is shared by the tests, in order.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, realpathSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -54,7 +54,8 @@ describe('judge', () => {
       assert.ok(!c.names.includes('ANTHROPIC_API_KEY'));
       assert.ok(!JSON.stringify(c).includes(UNNAMED));
       assert.ok(c.argv.includes('--tools') && c.argv.includes('fake-judge'));
-      assert.ok(!relative(tmpdir(), c.cwd).startsWith('..'));
+      // On macOS the temp folder is behind a symlink (/var to /private/var), so compare real paths.
+      assert.ok(!relative(realpathSync(tmpdir()), c.cwd).startsWith('..') || !relative(tmpdir(), c.cwd).startsWith('..'));
       assert.ok(!existsSync(c.cwd), 'the empty working folder is removed');
     }
   });
