@@ -49,8 +49,8 @@ existing tests green. It has no `.git`, no links, no `.claude`, `CLAUDE.md` or `
 with a META_WORDS word other than "test".
 
 Never copied into a run: `hidden/`, `reference/` and the overlays (tdd: `bad/<name>/` and `weak/`; bug-fix:
-`symptom-patch/`, `edited-test/` and `long-fix/`). An overlay is a folder of files laid over a copy of `start/` at the
-same relative paths. Only `start/` goes to skill-eval setup, so none of these can reach a run.
+`symptom-patch/`, `edited-test/`, `long-fix/` and `helper-fix/`, an optional second correct fix written another way that
+the self-check grades). An overlay is a folder of files laid over a copy of `start/` at the same relative paths. Only `start/` goes to skill-eval setup, so none of these can reach a run.
 
 `rubric.md` has 3 to 6 numbered criteria lines (`1. ...`) and optional HTML comments, nothing else. It names no
 variant, version, skill or change; each criterion is a property of a good result that any run could have. One rubric
