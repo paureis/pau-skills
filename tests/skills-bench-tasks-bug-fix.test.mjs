@@ -13,6 +13,9 @@ import {
 } from './fixtures/skills-bench/bug-fix/helpers.mjs';
 
 const OVERLAYS = ['reference', 'symptom-patch', 'edited-test', 'long-fix'];
+// Correct fixes written another way (a helper with its own comment), in the tasks where one is likely.
+const HELPER_FIX = ['month-end-renewal', 'checkout-night-charged'];
+const SIZE_DETAIL = /^(\d+) code lines changed \(added plus removed; blank and comment lines not counted\), limit (\d+)$/;
 const HIDDEN = ['symptom.test.mjs', 'sibling.test.mjs', 'existing.test.mjs'];
 const ALLOW_TOOLS = ['Bash(npm test)', 'Bash(npm test *)', 'Bash(node *)', 'Bash(git *)'];
 // Source size by difficulty: modules are non-test source files outside bin/; lines are the non-blank lines of every
@@ -111,6 +114,8 @@ for (const id of TASK_IDS) {
     await t.test('the grader grades start and every overlay, prints one JSON line and changes neither folder', () => {
       graded.start = grade(dir, makeRun(dir));
       for (const o of OVERLAYS) graded[o] = grade(dir, makeRun(dir, o));
+      assert.equal(existsSync(join(dir, 'helper-fix')), HELPER_FIX.includes(id));
+      if (HELPER_FIX.includes(id)) graded['helper-fix'] = grade(dir, makeRun(dir, 'helper-fix'));
     });
 
     await t.test('start does not pass: the symptom and the sibling are still there', () => {
@@ -120,7 +125,7 @@ for (const id of TASK_IDS) {
         'added-failing-test': false, 'test-commit-first': false, 'fix-size': true,
       });
       assert.equal(check(graded.start, 'added-failing-test').detail, 'the run added or changed no test file');
-      assert.equal(check(graded.start, 'fix-size').detail, `0 non-test lines changed (added plus removed), limit ${task.maxFixLines}`);
+      assert.equal(check(graded.start, 'fix-size').detail, `0 code lines changed (added plus removed; blank and comment lines not counted), limit ${task.maxFixLines}`);
     });
 
     await t.test('start plus reference passes every outcome and the added-test and size checks', () => {
@@ -152,12 +157,20 @@ for (const id of TASK_IDS) {
     });
 
     await t.test('the size check passes on reference and fails on long-fix, with the number', () => {
-      const size = (o) => Number(/^(\d+) non-test lines changed \(added plus removed\), limit (\d+)$/.exec(check(graded[o], 'fix-size').detail)?.[1]);
+      const size = (o) => Number(SIZE_DETAIL.exec(check(graded[o], 'fix-size').detail)?.[1]);
       assert.ok(size('reference') > 0 && size('reference') <= task.maxFixLines, check(graded.reference, 'fix-size').detail);
       assert.ok(size('long-fix') > task.maxFixLines, check(graded['long-fix'], 'fix-size').detail);
       assert.equal(check(graded['long-fix'], 'fix-size').pass, false);
       assert.equal(check(graded['long-fix'], 'symptom-fixed').pass, true);
       assert.equal(check(graded['long-fix'], 'sibling-fixed').pass, true);
+    });
+
+    await t.test('every correct fix, the reference and one with a commented helper, fixes all within maxFixLines', () => {
+      for (const o of ['reference', 'helper-fix'].filter((f) => graded[f])) {
+        const p = passes(graded[o]);
+        assert.deepEqual([o, p['symptom-fixed'], p['original-tests-pass'], p['sibling-fixed'], p['fix-size']], [o, true, true, true, true],
+          check(graded[o], 'fix-size').detail);
+      }
     });
   });
 }

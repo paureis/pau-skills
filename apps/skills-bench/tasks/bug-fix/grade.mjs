@@ -11,6 +11,9 @@
 // symptom), sibling.test.mjs (a second symptom of the same root cause) and existing.test.mjs (behaviour that already
 // worked). The run's working tree is read against start/, leaving out .git and .claude; git is read only for the
 // commit-order check.
+// A run gets a copy of start/ only. Never copied into a run: hidden/, reference/, symptom-patch/, edited-test/,
+// long-fix/ and helper-fix/ (a second correct fix, written with a commented helper; the self-check grades it).
+// fix-size counts code lines only: blank and comment lines in .js, .mjs and .cjs files outside test paths are left out.
 //
 // Every child process (node --test and git) runs under one deadline that starts with the grader, each call with its
 // own time-out cut to what is left, so the grader ends within 5 minutes. For tests only, BUG_FIX_GRADE_LIMITS holds JSON
@@ -109,16 +112,31 @@ function runTests(cwd, files, clock) {
   return { ok, failed: fail > 0, pass, fail, detail: `${pass} passing, ${fail} failing, exit ${r.status}` };
 }
 
-const lines = (text) => {
-  const l = text.split(/\r?\n/);
-  if (l[l.length - 1] === '') l.pop();
-  return l;
-};
+/**
+ * The code lines of a JavaScript file: blank lines, // lines and the lines of a block comment left out, so a fix is
+ * not counted bigger for explaining itself. A line with code before a trailing comment counts.
+ */
+function codeLines(text) {
+  const out = [];
+  let inBlock = false;
+  for (const line of text.split(/\r?\n/)) {
+    const t = line.trim();
+    if (inBlock) {
+      if (t.includes('*/')) inBlock = false;
+    } else if (t.startsWith('/*')) {
+      inBlock = !t.includes('*/', 2);
+    } else if (t && !t.startsWith('//')) {
+      out.push(t);
+    }
+  }
+  return out;
+}
+const SOURCE = /\.[cm]?js$/;
 
-/** Lines added plus lines removed between two texts, from a longest common subsequence of lines. */
+/** Code lines added plus code lines removed between two texts, from a longest common subsequence of lines. */
 function changedLines(before, after) {
-  let a = lines(before);
-  let b = lines(after);
+  let a = codeLines(before);
+  let b = codeLines(after);
   let head = 0;
   while (head < a.length && head < b.length && a[head] === b[head]) head++;
   let tail = 0;
@@ -263,12 +281,12 @@ function gradeRun(taskDir, run, clock) {
     if (task.maxFixLines !== undefined) {
       let n = 0;
       for (const f of new Set([...startFiles, ...runFiles])) {
-        if (isTestSide(f)) continue;
+        if (isTestSide(f) || !SOURCE.test(f)) continue;
         const before = startSet.has(f) ? readFileSync(join(start, f), 'utf8') : '';
         const after = runSet.has(f) ? readFileSync(join(run, f), 'utf8') : '';
         n += changedLines(before, after);
       }
-      add('fix-size', 'process', false, n <= task.maxFixLines, `${n} non-test lines changed (added plus removed), limit ${task.maxFixLines}`);
+      add('fix-size', 'process', false, n <= task.maxFixLines, `${n} code lines changed (added plus removed; blank and comment lines not counted), limit ${task.maxFixLines}`);
     }
 
     const passed = checks.filter((c) => c.pass).length;
