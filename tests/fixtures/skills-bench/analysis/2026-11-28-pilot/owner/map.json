@@ -1,0 +1,72 @@
+{
+  "A": {
+    "skill": "tdd",
+    "task": "parse-dates",
+    "difficulty": "simple",
+    "variant": "with",
+    "n": 1
+  },
+  "B": {
+    "skill": "tdd",
+    "task": "parse-dates",
+    "difficulty": "simple",
+    "variant": "without",
+    "n": 1
+  },
+  "C": {
+    "skill": "tdd",
+    "task": "rate-limit",
+    "difficulty": "medium",
+    "variant": "broken",
+    "n": 1
+  },
+  "D": {
+    "skill": "tdd",
+    "task": "lru-cache",
+    "difficulty": "complex",
+    "variant": "with",
+    "n": 1
+  },
+  "E": {
+    "skill": "tdd",
+    "task": "lru-cache",
+    "difficulty": "complex",
+    "variant": "without",
+    "n": 1
+  },
+  "F": {
+    "skill": "bug-fix",
+    "task": "off-by-one",
+    "difficulty": "simple",
+    "variant": "with",
+    "n": 1
+  },
+  "G": {
+    "skill": "bug-fix",
+    "task": "off-by-one",
+    "difficulty": "simple",
+    "variant": "without",
+    "n": 1
+  },
+  "H": {
+    "skill": "bug-fix",
+    "task": "timezone",
+    "difficulty": "medium",
+    "variant": "with",
+    "n": 1
+  },
+  "I": {
+    "skill": "bug-fix",
+    "task": "timezone",
+    "difficulty": "medium",
+    "variant": "without",
+    "n": 1
+  },
+  "J": {
+    "skill": "bug-fix",
+    "task": "race-cache",
+    "difficulty": "complex",
+    "variant": "with",
+    "n": 1
+  }
+}

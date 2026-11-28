@@ -1,0 +1,18 @@
+{
+  "model": "judge-model-id",
+  "costMicros": 40000,
+  "criteria": [
+    {
+      "n": 1,
+      "text": "The cause is found before the fix"
+    },
+    {
+      "n": 2,
+      "text": "A check reproduces the bug"
+    },
+    {
+      "n": 3,
+      "text": "The fix is in the shared code"
+    }
+  ]
+}
