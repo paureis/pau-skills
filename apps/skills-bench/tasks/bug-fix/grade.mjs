@@ -228,7 +228,7 @@ export function gradeRun(taskDir, run) {
         if (onStart.failed) { found = { f, onRun, onStart }; break; }
       }
       add('added-failing-test', 'process', false, !!found, found
-        ? `${found.f} fails on start (${found.onStart.fail ?? 'timed out, no'} failing) and passes on the run (${found.onRun.pass} passing)`
+        ? `${found.f} fails on start (${found.onStart.fail === undefined ? 'timed out' : `${found.onStart.fail} failing`}) and passes on the run (${found.onRun.pass} passing)`
         : `no added or changed test file fails on start and passes on the run: ${candidates.join(', ')}`);
     }
 
