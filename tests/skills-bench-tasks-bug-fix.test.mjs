@@ -2,32 +2,19 @@
 // contract, and grade.mjs tells the start, the reference fix and the three wrong fixes apart. Each task folder holds
 // task.json, prompt.txt, start/ (what a run gets) and folders a run never sees: hidden/ (the grader's tests),
 // reference/ (the fix plus a regression test), symptom-patch/, edited-test/ and long-fix/ (overlays on start/).
+// How grade.mjs reads git, test files and its limits is in tests/skills-bench-tasks-bug-fix-grader.test.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { cpSync, existsSync, lstatSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ROOT, tempDir } from './helpers.mjs';
 import { findMetaWords, validateRubric, withoutComments } from '../skills/verification/skill-eval/skill-eval-core.mjs';
-import { CASES } from '../apps/skills-bench/tasks/bug-fix/grade-cases.mjs';
+import {
+  TASKS, TASK_IDS, SLOW, walk, filesOf, isTest, isSource, makeRun, nodeTest, grade, check, passes,
+} from './fixtures/skills-bench/bug-fix/helpers.mjs';
 
-const TASKS = join(ROOT, 'apps', 'skills-bench', 'tasks', 'bug-fix');
-const GRADER = join(TASKS, 'grade.mjs');
-const TASK_IDS = readdirSync(TASKS, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
-const MONTH = join(TASKS, 'month-end-renewal');
 const OVERLAYS = ['reference', 'symptom-patch', 'edited-test', 'long-fix'];
 const HIDDEN = ['symptom.test.mjs', 'sibling.test.mjs', 'existing.test.mjs'];
 const ALLOW_TOOLS = ['Bash(npm test)', 'Bash(npm test *)', 'Bash(node *)', 'Bash(git *)'];
-// The checks grade.mjs prints, in order: [name, kind, required].
-const CHECKS = [
-  ['symptom-fixed', 'outcome', true],
-  ['original-tests-pass', 'outcome', true],
-  ['sibling-fixed', 'outcome', false],
-  ['added-failing-test', 'process', false],
-  ['test-commit-first', 'process', false],
-  ['fix-size', 'process', false],
-];
 // Source size by difficulty: modules are non-test source files outside bin/; lines are the non-blank lines of every
 // non-test source file, bin/ included.
 const SIZE = {
@@ -35,90 +22,6 @@ const SIZE = {
   medium: { modules: [2, 3], lines: [100, 250] },
   complex: { modules: [5, 99], lines: [400, 800] },
 };
-const SLOW = { timeout: 180_000 };
-
-const cleanEnv = () => {
-  const env = { ...process.env, TZ: 'UTC', LC_ALL: 'C' };
-  delete env.NODE_TEST_CONTEXT;
-  for (const k of Object.keys(env)) if (k.startsWith('GIT_')) delete env[k];
-  return env;
-};
-
-/** Every entry under dir, as { rel, abs, stat } with lstat, folders before their contents. */
-function walk(dir, rel = '') {
-  const out = [];
-  for (const name of readdirSync(join(dir, rel)).sort()) {
-    const r = rel ? `${rel}/${name}` : name;
-    const stat = lstatSync(join(dir, r));
-    out.push({ rel: r, abs: join(dir, r), stat });
-    if (stat.isDirectory()) out.push(...walk(dir, r));
-  }
-  return out;
-}
-const filesOf = (dir) => (existsSync(dir) ? walk(dir).filter((e) => e.stat.isFile()).map((e) => e.rel) : []);
-const isTest = (rel) => rel.split('/').includes('test') || /\.test\.m?js$/.test(rel);
-const isSource = (rel) => /\.(c|m)?js$/.test(rel) && !isTest(rel);
-
-function hashTree(dir) {
-  const h = createHash('sha256');
-  for (const e of walk(dir)) {
-    h.update(`${e.rel}\0${e.stat.isDirectory() ? 'dir' : 'file'}\0`);
-    if (e.stat.isFile()) h.update(readFileSync(e.abs));
-  }
-  return h.digest('hex');
-}
-
-/** A run folder: a copy of start/ with the named overlays laid over it at the same paths. */
-function makeRun(taskDir, ...overlays) {
-  const dir = tempDir('bug-fix-run-');
-  cpSync(join(taskDir, 'start'), dir, { recursive: true });
-  for (const o of overlays) cpSync(join(taskDir, o), dir, { recursive: true });
-  return dir;
-}
-/** A month-end-renewal run with the reference source fix, no reference test, and the named grade-cases.mjs files. */
-function fixedRun(...names) {
-  const dir = makeRun(MONTH);
-  for (const f of filesOf(join(MONTH, 'reference')).filter((f) => !isTest(f))) cpSync(join(MONTH, 'reference', f), join(dir, f));
-  for (const f of names) writeFileSync(join(dir, f), CASES[f]);
-  return dir;
-}
-
-/** node --test on the given files in dir; the TAP counts and the exit status. */
-function nodeTest(dir, files) {
-  assert.ok(files.length > 0, `no test files to run in ${dir}`);
-  const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...files], { cwd: dir, env: cleanEnv(), encoding: 'utf8', timeout: 60_000 });
-  const count = (w) => Number((new RegExp(`^# ${w} (\\d+)$`, 'm').exec(r.stdout) || [])[1] ?? NaN);
-  return { status: r.status, pass: count('pass'), fail: count('fail'), out: r.stdout };
-}
-
-const spawnGrade = (taskDir, runDir, env = {}, grader = GRADER) =>
-  spawnSync(process.execPath, [grader, '--task', taskDir, '--run', runDir], { env: { ...cleanEnv(), ...env }, encoding: 'utf8', timeout: 300_000 });
-
-/** Run the grader on a task and a run folder; asserts one JSON line, exit 0, and both folders unchanged. */
-function grade(taskDir, runDir, env = {}, grader = GRADER) {
-  const before = [hashTree(taskDir), hashTree(runDir)];
-  const r = spawnGrade(taskDir, runDir, env, grader);
-  assert.equal(r.status, 0, `grader exit ${r.status}: ${r.stderr}`);
-  const lines = r.stdout.split('\n').filter(Boolean);
-  assert.equal(lines.length, 1, `the grader printed ${lines.length} lines:\n${r.stdout}`);
-  assert.ok(r.stdout.endsWith('}\n'), 'one JSON line ending in a newline');
-  const result = JSON.parse(lines[0]);
-  assert.deepEqual([hashTree(taskDir), hashTree(runDir)], before, 'the grader changed the task or the run folder');
-  assert.deepEqual(result.checks.map((c) => [c.name, c.kind, c.required]), CHECKS);
-  for (const c of result.checks) assert.ok(typeof c.pass === 'boolean' && typeof c.detail === 'string' && c.detail, `${c.name}: ${JSON.stringify(c)}`);
-  assert.equal(result.pass, result.checks.every((c) => !c.required || c.pass));
-  assert.equal(result.score, result.checks.filter((c) => c.pass).length / result.checks.length);
-  return result;
-}
-const check = (result, name) => result.checks.find((c) => c.name === name);
-const passes = (result) => Object.fromEntries(result.checks.map((c) => [c.name, c.pass]));
-
-function git(dir, ...args) {
-  const r = spawnSync('git', ['-c', 'user.name=Bench Runner', '-c', 'user.email=runner@example.com', '-c', 'commit.gpgsign=false',
-    '-c', 'init.defaultBranch=main', '-c', 'core.hooksPath=/dev/null', ...args], { cwd: dir, env: cleanEnv(), encoding: 'utf8' });
-  assert.equal(r.status, 0, `git ${args.join(' ')}: ${r.stderr}`);
-  return r.stdout;
-}
 
 test('the tasks are 2 simple, 2 medium and 1 complex', () => {
   const count = { simple: 0, medium: 0, complex: 0 };
@@ -258,124 +161,3 @@ for (const id of TASK_IDS) {
     });
   });
 }
-
-test('the commit-order check reads the history from the root commit to HEAD', SLOW, async (t) => {
-  const dir = join(TASKS, TASK_IDS[0]);
-  const ref = filesOf(join(dir, 'reference'));
-  const commitRun = (steps) => {
-    const run = makeRun(dir);
-    git(run, 'init', '-q');
-    git(run, 'add', '-A');
-    git(run, 'commit', '-q', '-m', 'Start');
-    for (const [message, files] of steps) {
-      for (const f of files) cpSync(join(dir, 'reference', f), join(run, f));
-      git(run, 'add', '-A');
-      git(run, 'commit', '-q', '-m', message);
-    }
-    return run;
-  };
-  const order = (run) => check(grade(dir, run), 'test-commit-first');
-
-  await t.test('a test commit before the fix commit passes', () => {
-    const c = order(commitRun([['Add a failing test', ref.filter(isTest)], ['Fix the cause', ref.filter((f) => !isTest(f))]]));
-    assert.equal(c.pass, true, c.detail);
-    assert.match(c.detail, /^commit 1 of 2 changes only tests; the first source change is commit 2$/);
-  });
-
-  await t.test('one commit with the test and the fix fails', () => {
-    const c = order(commitRun([['Fix the cause with a test', ref]]));
-    assert.equal(c.pass, false);
-    assert.match(c.detail, /^no commit with only test changes comes before the first source change \(commit 1 of 1\)$/);
-  });
-
-  await t.test('a fix commit before the test commit fails', () => {
-    const c = order(commitRun([['Fix the cause', ref.filter((f) => !isTest(f))], ['Add a test', ref.filter(isTest)]]));
-    assert.equal(c.pass, false);
-    assert.match(c.detail, /^no commit with only test changes comes before the first source change \(commit 1 of 2\)$/);
-  });
-
-  await t.test('commits left on another branch are not reachable from HEAD and fail', () => {
-    const run = commitRun([]);
-    git(run, 'checkout', '-q', '-b', 'side');
-    for (const f of ref) cpSync(join(dir, 'reference', f), join(run, f));
-    git(run, 'add', '-A');
-    git(run, 'commit', '-q', '-m', 'Fix on a side branch');
-    git(run, 'checkout', '-q', 'main');
-    const c = order(run);
-    assert.equal(c.pass, false);
-    assert.equal(c.detail, 'no commits after the root commit on HEAD');
-  });
-
-  await t.test('every node --test and git call is under one deadline, here an injected 1 ms', () => {
-    const r = grade(dir, commitRun([['Fix', ref]]), { BUG_FIX_GRADE_LIMITS: '{"budgetMs":1}' });
-    const cut = 'the time budget ran out before this check';
-    assert.deepEqual(r.checks.slice(0, 3).map((c) => [c.pass, c.detail]), [[false, `the reported symptom: ${cut}`],
-      [false, `start's tests and the existing behaviour on the run's source: ${cut}`], [false, `a second symptom of the same cause: ${cut}`]]);
-    assert.deepEqual([check(r, 'added-failing-test').pass, check(r, 'added-failing-test').detail],
-      [false, `could not tell whether test/nights.test.mjs passes on the run: ${cut}`]);
-    assert.equal(check(r, 'test-commit-first').detail, 'git could not read the history: the time budget ran out');
-  });
-
-  await t.test('no .git fails the check and the grader still exits 0', () => {
-    const run = commitRun([['Fix', ref]]);
-    rmSync(join(run, '.git'), { recursive: true, force: true });
-    const c = order(run);
-    assert.equal(c.pass, false);
-    assert.equal(c.detail, 'the run folder has no .git');
-  });
-});
-
-test('the grader exits 1 with a reason when it cannot grade', () => {
-  const missing = spawnSync(process.execPath, [GRADER, '--task', join(TASKS, TASK_IDS[0])], { env: cleanEnv(), encoding: 'utf8' });
-  assert.equal(missing.status, 1);
-  assert.equal(missing.stdout, '');
-  assert.match(missing.stderr, /^grade\.mjs: .*--run.*\n$/);
-  const noRun = spawnSync(process.execPath, [GRADER, '--task', join(TASKS, TASK_IDS[0]), '--run', join(tempDir(), 'gone')], { env: cleanEnv(), encoding: 'utf8' });
-  assert.equal(noRun.status, 1);
-  assert.equal(noRun.stdout, '');
-  assert.match(noRun.stderr, /^grade\.mjs: the run folder .* does not exist\n$/);
-  const bad = spawnGrade(MONTH, makeRun(MONTH), { BUG_FIX_GRADE_LIMITS: '{"budget":1}' });
-  assert.deepEqual([bad.status, bad.stdout], [1, '']);
-  assert.equal(bad.stderr, 'grade.mjs: BUG_FIX_GRADE_LIMITS takes budgetMs, spawnMs and maxBuffer, each a whole number above 0\n');
-});
-
-test('grade.mjs reads the test files a run adds as Node does', SLOW, async (t) => {
-  const added = (names, env) => check(grade(MONTH, fixedRun(...names), env), 'added-failing-test');
-  await t.test('a file named test-.mjs is a test file', () => {
-    assert.deepEqual(added(['test-.mjs']), { name: 'added-failing-test', kind: 'process', required: false, pass: true,
-      detail: 'test-.mjs fails on start (1 failing) and passes on the run (1 passing)' });
-  });
-  await t.test('the counts come from the summary at the end, not from what a test prints', () => {
-    assert.equal(added(['test/log.test.mjs']).detail, 'test/log.test.mjs fails on start (1 failing) and passes on the run (1 passing)');
-  });
-  await t.test('a run with a cancelled test does not pass, though nothing failed', () => {
-    assert.deepEqual([added(['test/cancel.test.mjs']).detail], ['no added or changed test file fails on start and passes on the run: test/cancel.test.mjs']);
-  });
-  await t.test('tests run with TZ=UTC and LC_ALL=C whatever the grader was started with', () => {
-    const env = { TZ: 'America/New_York', LC_ALL: 'de_DE.UTF-8', LANG: 'de_DE.UTF-8' };
-    assert.equal(added(['test/zone.test.mjs'], env).detail, 'test/zone.test.mjs fails on start (1 failing) and passes on the run (2 passing)');
-  });
-  await t.test('NODE_TEST_CONTEXT from a test runner above the grader does not reach its node --test', () => {
-    assert.deepEqual(passes(grade(MONTH, makeRun(MONTH, 'reference'), { NODE_TEST_CONTEXT: 'child-v8' })), {
-      'symptom-fixed': true, 'original-tests-pass': true, 'sibling-fixed': true, 'added-failing-test': true, 'test-commit-first': false, 'fix-size': true });
-  });
-  await t.test('a test cut off on start is unknown, not a failure', () => {
-    assert.deepEqual(added(['test/slow.test.mjs'], { BUG_FIX_GRADE_LIMITS: '{"spawnMs":4000}' }), { name: 'added-failing-test', kind: 'process',
-      required: false, pass: false, detail: 'could not tell whether test/slow.test.mjs fails on start: node --test test/slow.test.mjs timed out after 4s' });
-  });
-  await t.test('output over the buffer limit fails the check and the grader still grades', () => {
-    const r = grade(MONTH, makeRun(MONTH), { BUG_FIX_GRADE_LIMITS: '{"maxBuffer":200}' });
-    assert.equal(check(r, 'symptom-fixed').detail, 'the reported symptom: node --test printed more than 200 bytes of output');
-    assert.equal(check(r, 'symptom-fixed').pass, false);
-  });
-  await t.test('the grader grades when started through a symlinked path', () => {
-    const link = join(tempDir(), 'grade.mjs');
-    symlinkSync(GRADER, link);
-    assert.equal(grade(MONTH, makeRun(MONTH, 'reference'), {}, link).pass, true);
-  });
-  await t.test('a node --test killed before its counts means the grader cannot grade', () => {
-    const r = spawnGrade(MONTH, fixedRun('test/kill.test.mjs'));
-    assert.deepEqual([r.status, r.stdout], [1, '']);
-    assert.equal(r.stderr, 'grade.mjs: node --test test/kill.test.mjs printed no pass and fail counts (exit SIGKILL)\n');
-  });
-});

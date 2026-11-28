@@ -1,6 +1,6 @@
-// Test files a run of the month-end-renewal task could add, used by tests/skills-bench-tasks-bug-fix.test.mjs to check
-// how grade.mjs reads them. Each runs next to the reference fix of src/renewal.mjs. Data only: the assertions about
-// the grade stay in the self-check.
+// Test files a run of the month-end-renewal task could add, used by tests/skills-bench-tasks-bug-fix-grader.test.mjs
+// to check how grade.mjs reads them. Each runs next to the reference fix of src/renewal.mjs. Data only: the assertions
+// about the grade stay in that test file.
 const head = (up) => [
   "import { test } from 'node:test';",
   "import assert from 'node:assert/strict';",
