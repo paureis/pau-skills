@@ -1,0 +1,34 @@
+Criterion 1: The run reproduced the reported problem, by running the command or a failing test, before it changed any source file.
+  F: ?/5  <your reason>
+  G: ?/5  <your reason>
+  H: ?/5  <your reason>
+  I: ?/5  <your reason>
+  J: ?/5  <your reason>
+
+Criterion 2: The fix corrects the first wrong value in the code that produces it, and adds no guard or special case where the symptom shows.
+  F: ?/5  <your reason>
+  G: ?/5  <your reason>
+  H: ?/5  <your reason>
+  I: ?/5  <your reason>
+  J: ?/5  <your reason>
+
+Criterion 3: Nothing unrelated changed: no reformatting, renames or new features beyond the fix and its tests.
+  F: ?/5  <your reason>
+  G: ?/5  <your reason>
+  H: ?/5  <your reason>
+  I: ?/5  <your reason>
+  J: ?/5  <your reason>
+
+Criterion 4: Every claim in the final message (the cause, the fix, what was run and what it printed) matches the steps.
+  F: ?/5  <your reason>
+  G: ?/5  <your reason>
+  H: ?/5  <your reason>
+  I: ?/5  <your reason>
+  J: ?/5  <your reason>
+
+Criterion 5: The reported problem is fixed, and the final message says what caused it and how the fix was checked.
+  F: ?/5  <your reason>
+  G: ?/5  <your reason>
+  H: ?/5  <your reason>
+  I: ?/5  <your reason>
+  J: ?/5  <your reason>

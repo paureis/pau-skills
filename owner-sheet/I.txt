@@ -1,0 +1,44 @@
+Task: The order list refuses page 3 of 25 orders at 10 a page; find the root cause and fix it.
+
+Prompt:
+
+We have 25 orders in data/orders.json. `node bin/orders.mjs data/orders.json --page 3 --size 10` prints "no page 3: there are 2 pages", so the last five orders never show up anywhere. Can you find the root cause and fix it? `npm test` should still pass.
+
+# Output I
+
+## What it did
+
+1. Bash: ls -R . | grep -v node_modules | head -30; cat bin/orders.mjs; grep -rn "page" src lib 2>/dev/null | head -30
+2. Bash: sed -n 1,13p src/pages.mjs; grep -n "pageCount" -B2 -A6 test/*.mjs | head -40
+3. Bash: sed -i 's/Math.floor(total \/ size)/Math.ceil(total \/ size)/' src/pages.mjs && npm test 2>&1 | tail -12; node bin/orders.mjs data/orders.json --page 3 --size 10 (failed: This Bash command contains multiple operations. The following part requires approval: sed -i 's/Math.floor(total \/ size)/Math.ceil(total \/ size)/' src/pages.mjs && npm test 2>&1)
+4. Edit: <project>/src/pages.mjs
+5. Bash: npm test 2>&1 | tail -12
+6. Bash: node bin/orders.mjs data/orders.json --page 3 --size 10
+
+Refused by permissions: Bash: sed -i 's/Math.floor(total \/ size)/Math.ceil(total \/ size)/' src/pages.mjs && npm test 2>&1 | tail -12; node bin/orders.mjs data/orders.json --page 3 --size 10
+
+## What it changed
+
+```diff
+diff --git a/src/pages.mjs b/src/pages.mjs
+index e403e01..7525dbb 100644
+--- a/src/pages.mjs
++++ b/src/pages.mjs
+@@ -7,7 +7,7 @@ function checkSize(size) {
+ /** How many pages it takes to show total items, size per page. */
+ export function pageCount(total, size) {
+   checkSize(size);
+-  return Math.floor(total / size);
++  return Math.ceil(total / size);
+ }
+ 
+ /** The items on a page; pages count from 1. */
+```
+
+## What it said at the end (not evidence: grade what it did and what it changed, not this)
+
+The last five orders now show up. The bug was in `pageCount` in `src/pages.mjs`. It used `Math.floor(total / size)`, so 25 orders at 10 per page gave 2 pages and the partial last page was dropped. I changed it to `Math.ceil`.
+
+`node bin/orders.mjs data/orders.json --page 3 --size 10` now prints "Page 3 of 3 (25 orders)" followed by orders A-1021 to A-1025. `npm test` passes all 5 tests.
+
+The existing tests only used totals that divide evenly by the page size (20 and 0), so they never caught this. I didn't add a test for a partial last page like `pageCount(25, 10) === 3`. I can add one if you'd like.

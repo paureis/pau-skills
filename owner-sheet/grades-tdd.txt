@@ -1,0 +1,34 @@
+Criterion 1: Each new test is named after a behaviour the request asks for (what happens, for which input), not after a function or a step.
+  A: ?/5  <your reason>
+  B: ?/5  <your reason>
+  C: ?/5  <your reason>
+  D: ?/5  <your reason>
+  E: ?/5  <your reason>
+
+Criterion 2: The new tests call the project's exported functions as a caller would, and no test mocks, stubs or replaces the project's own modules.
+  A: ?/5  <your reason>
+  B: ?/5  <your reason>
+  C: ?/5  <your reason>
+  D: ?/5  <your reason>
+  E: ?/5  <your reason>
+
+Criterion 3: The actions show the work done one behaviour at a time: a test written, run and seen failing, then the code that makes it pass, before the next test.
+  A: ?/5  <your reason>
+  B: ?/5  <your reason>
+  C: ?/5  <your reason>
+  D: ?/5  <your reason>
+  E: ?/5  <your reason>
+
+Criterion 4: Expected values in the tests come from the request (its worked examples and stated rules) or are worked out by hand, not copied from what the new code printed.
+  A: ?/5  <your reason>
+  B: ?/5  <your reason>
+  C: ?/5  <your reason>
+  D: ?/5  <your reason>
+  E: ?/5  <your reason>
+
+Criterion 5: The requested behaviour is complete and the project's existing tests still pass at the end.
+  A: ?/5  <your reason>
+  B: ?/5  <your reason>
+  C: ?/5  <your reason>
+  D: ?/5  <your reason>
+  E: ?/5  <your reason>
