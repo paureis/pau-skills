@@ -12,6 +12,10 @@
 // worked). The run's working tree is compared with start/, leaving out .git and .claude; git is read only for the
 // commit-order check.
 //
+// Every child process (node --test and git) runs under one deadline that starts with the grader, each call with its
+// own time-out cut to what is left, so the grader ends within 5 minutes. For tests only, BUG_FIX_GRADE_LIMITS holds JSON
+// that replaces some of LIMITS, for example '{"budgetMs":1}'; a grading run never sets it.
+//
 // The tdd tasks carry their own copy of these helpers (no shared library): a fix to the test-file patterns, the
 // node --test call or the line count here belongs in that grader too.
 import { spawnSync } from 'node:child_process';
@@ -23,8 +27,10 @@ import { fileURLToPath } from 'node:url';
 
 const HIDDEN = { symptom: 'symptom.test.mjs', sibling: 'sibling.test.mjs', existing: 'existing.test.mjs' };
 const SKIP_DIRS = new Set(['.git', '.claude']);
-const BUDGET_MS = 240_000; // every node --test shares this, so the grader ends within 5 minutes
-const SPAWN_MS = 90_000;
+// budgetMs: the deadline for all child processes; spawnMs: the most one node --test may take; maxBuffer: output bytes.
+const LIMITS = { budgetMs: 230_000, spawnMs: 90_000, maxBuffer: 64 * 1024 * 1024 };
+const GIT_MS = 30_000;
+const BUDGET_OUT = 'the time budget ran out';
 const MAX_CANDIDATES = 10; // added or changed test files tried by the added-test check
 const MAX_DIFF_CELLS = 4_000_000; // above this a file's changed lines are counted as all its lines
 
@@ -80,10 +86,10 @@ function childEnv() {
 function runTests(cwd, files, clock) {
   if (files.length === 0) return { ok: false, detail: 'no test files to run' };
   const left = clock.end - Date.now();
-  if (left < 1000) return { ok: false, detail: 'the time budget ran out before this check' };
-  const timeout = Math.min(SPAWN_MS, left);
+  if (left < 1000) return { ok: false, detail: `${BUDGET_OUT} before this check` };
+  const timeout = Math.min(clock.limits.spawnMs, left);
   const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...files], {
-    cwd, timeout, env: childEnv(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+    cwd, timeout, env: childEnv(), encoding: 'utf8', maxBuffer: clock.limits.maxBuffer,
   });
   if (r.error?.code === 'ETIMEDOUT') {
     return { ok: false, failed: true, detail: `node --test ${files.join(' ')} timed out after ${Math.round(timeout / 1000)}s` };
@@ -131,26 +137,30 @@ export function changedLines(before, after) {
   return a.length + b.length - 2 * prev[b.length];
 }
 
-function git(run, args) {
+function git(run, args, clock) {
+  const left = clock.end - Date.now();
+  if (left < 1000) return { ok: false, out: '', err: BUDGET_OUT };
+  const timeout = Math.min(GIT_MS, left);
   const env = { ...childEnv(), GIT_OPTIONAL_LOCKS: '0', GIT_CEILING_DIRECTORIES: dirname(run) };
   for (const k of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY']) delete env[k];
-  const r = spawnSync('git', ['-c', 'core.fsmonitor=false', ...args], { cwd: run, env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const r = spawnSync('git', ['-c', 'core.fsmonitor=false', ...args], { cwd: run, env, timeout, encoding: 'utf8', maxBuffer: clock.limits.maxBuffer });
+  if (r.error?.code === 'ETIMEDOUT') return { ok: false, out: '', err: `git timed out after ${Math.round(timeout / 1000)}s` };
   return { ok: !r.error && r.status === 0, out: r.stdout ?? '', err: r.error ? r.error.message : (r.stderr ?? '').trim() };
 }
 
 /** Check 5: a commit that changes only tests comes before the first commit that changes anything else. */
-function commitOrder(run) {
+function commitOrder(run, clock) {
   if (!existsSync(join(run, '.git'))) return { pass: false, detail: 'the run folder has no .git' };
-  const roots = git(run, ['rev-list', '--max-parents=0', 'HEAD']);
+  const roots = git(run, ['rev-list', '--max-parents=0', 'HEAD'], clock);
   if (!roots.ok) return { pass: false, detail: `git could not read the history: ${roots.err}` };
   const root = roots.out.split('\n').filter(Boolean).pop();
-  const list = git(run, ['rev-list', '--reverse', '--first-parent', `${root}..HEAD`]);
+  const list = git(run, ['rev-list', '--reverse', '--first-parent', `${root}..HEAD`], clock);
   if (!list.ok) return { pass: false, detail: `git could not list the commits: ${list.err}` };
   const commits = list.out.split('\n').filter(Boolean);
   if (commits.length === 0) return { pass: false, detail: 'no commits after the root commit on HEAD' };
   let testOnly = -1;
   for (let i = 0; i < commits.length; i++) {
-    const d = git(run, ['diff-tree', '-r', '-z', '--name-only', '--no-commit-id', `${commits[i]}^1`, commits[i]]);
+    const d = git(run, ['diff-tree', '-r', '-z', '--name-only', '--no-commit-id', `${commits[i]}^1`, commits[i]], clock);
     if (!d.ok) return { pass: false, detail: `git could not read commit ${i + 1}: ${d.err}` };
     const files = d.out.split('\0').filter(Boolean);
     if (files.length > 0 && files.every(isTestSide)) {
@@ -179,10 +189,20 @@ function readTask(taskDir) {
   return task;
 }
 
-export function gradeRun(taskDir, run) {
+/** LIMITS, with the test-only values from BUG_FIX_GRADE_LIMITS laid over them. */
+function readLimits(text) {
+  if (text === undefined) return { ...LIMITS };
+  let given = null;
+  try { given = JSON.parse(text); } catch { /* reported below */ }
+  const fine = given && typeof given === 'object' && !Array.isArray(given)
+    && Object.entries(given).every(([k, v]) => Object.hasOwn(LIMITS, k) && Number.isInteger(v) && v > 0);
+  if (!fine) throw new GradeError('BUG_FIX_GRADE_LIMITS takes budgetMs, spawnMs and maxBuffer, each a whole number above 0');
+  return { ...LIMITS, ...given };
+}
+
+export function gradeRun(taskDir, run, clock) {
   const task = readTask(taskDir);
   const start = join(taskDir, 'start');
-  const clock = { end: Date.now() + BUDGET_MS };
   const tmp = mkdtempSync(join(tmpdir(), 'bug-fix-grade-'));
   try {
     const startFiles = listFiles(start);
@@ -234,7 +254,7 @@ export function gradeRun(taskDir, run) {
         : `no added or changed test file fails on start and passes on the run: ${candidates.join(', ')}`);
     }
 
-    const order = commitOrder(run);
+    const order = commitOrder(run, clock);
     add('test-commit-first', 'process', false, order.pass, order.detail);
 
     if (task.maxFixLines !== undefined) {
@@ -256,6 +276,8 @@ export function gradeRun(taskDir, run) {
 }
 
 function main(argv) {
+  const limits = readLimits(process.env.BUG_FIX_GRADE_LIMITS);
+  const clock = { end: Date.now() + limits.budgetMs, limits };
   const args = {};
   for (let i = 0; i < argv.length; i += 2) {
     if (!['--task', '--run'].includes(argv[i]) || argv[i + 1] === undefined) {
@@ -266,7 +288,7 @@ function main(argv) {
   if (!args.task || !args.run) throw new GradeError('usage: node grade.mjs --task <task folder> --run <run folder>');
   if (!existsSync(args.run) || !statSync(args.run).isDirectory()) throw new GradeError(`the run folder ${args.run} does not exist`);
   if (!existsSync(args.task) || !statSync(args.task).isDirectory()) throw new GradeError(`the task folder ${args.task} does not exist`);
-  return gradeRun(args.task, args.run);
+  return gradeRun(args.task, args.run, clock);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

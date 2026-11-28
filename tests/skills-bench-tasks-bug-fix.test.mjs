@@ -306,6 +306,15 @@ test('the commit-order check reads the history from the root commit to HEAD', SL
     assert.equal(c.detail, 'no commits after the root commit on HEAD');
   });
 
+  await t.test('every node --test and git call is under one deadline, here an injected 1 ms', () => {
+    const r = grade(dir, commitRun([['Fix', ref]]), { BUG_FIX_GRADE_LIMITS: '{"budgetMs":1}' });
+    const cut = 'the time budget ran out before this check';
+    assert.deepEqual(r.checks.slice(0, 3).map((c) => [c.pass, c.detail]), [[false, `the reported symptom: ${cut}`],
+      [false, `start's tests and the existing behaviour on the run's source: ${cut}`], [false, `a second symptom of the same cause: ${cut}`]]);
+    assert.equal(check(r, 'added-failing-test').pass, false);
+    assert.equal(check(r, 'test-commit-first').detail, 'git could not read the history: the time budget ran out');
+  });
+
   await t.test('no .git fails the check and the grader still exits 0', () => {
     const run = commitRun([['Fix', ref]]);
     rmSync(join(run, '.git'), { recursive: true, force: true });
@@ -324,6 +333,9 @@ test('the grader exits 1 with a reason when it cannot grade', () => {
   assert.equal(noRun.status, 1);
   assert.equal(noRun.stdout, '');
   assert.match(noRun.stderr, /^grade\.mjs: the run folder .* does not exist\n$/);
+  const bad = spawnGrade(MONTH, makeRun(MONTH), { BUG_FIX_GRADE_LIMITS: '{"budget":1}' });
+  assert.deepEqual([bad.status, bad.stdout], [1, '']);
+  assert.equal(bad.stderr, 'grade.mjs: BUG_FIX_GRADE_LIMITS takes budgetMs, spawnMs and maxBuffer, each a whole number above 0\n');
 });
 
 test('grade.mjs reads the test files a run adds as Node does', SLOW, async (t) => {
