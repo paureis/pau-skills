@@ -85,7 +85,7 @@ function runTests(cwd, files, clock) {
   const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...files], {
     cwd, timeout, env: childEnv(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
   });
-  if (r.error?.code === 'ETIMEDOUT' || (r.signal && r.status === null)) {
+  if (r.error?.code === 'ETIMEDOUT') {
     return { ok: false, failed: true, detail: `node --test ${files.join(' ')} timed out after ${Math.round(timeout / 1000)}s` };
   }
   if (r.error) throw new GradeError(`could not start node --test: ${r.error.message}`);
@@ -97,7 +97,7 @@ function runTests(cwd, files, clock) {
   const pass = count('pass');
   const fail = count('fail');
   if (pass === null || fail === null) {
-    throw new GradeError(`node --test ${files.join(' ')} printed no pass and fail counts (exit ${r.status})`);
+    throw new GradeError(`node --test ${files.join(' ')} printed no pass and fail counts (exit ${r.status ?? r.signal})`);
   }
   const ok = pass > 0 && fail === 0 && r.status === 0;
   return { ok, failed: fail > 0, pass, fail, detail: `${pass} passing, ${fail} failing, exit ${r.status}` };

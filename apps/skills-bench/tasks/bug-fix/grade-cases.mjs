@@ -14,4 +14,14 @@ export const CASES = {
   'test-.mjs': head('.') + regression,
   // Prints lines that look like TAP counts before the real ones at the end.
   'test/log.test.mjs': `${head('..')}console.log('fail 0');\nconsole.log('pass 9');\n${regression}`,
+  // One pass and one cancelled test: no failure counted, but node --test exits 1.
+  'test/cancel.test.mjs': `${head('..')}${regression}test('waits for ever', () => new Promise(() => {}));\n`,
+  // Passes only with the grader's TZ=UTC and LC_ALL=C, whatever the environment it was started from.
+  'test/zone.test.mjs': `${head('..')}${regression}test('UTC and C', () => {
+  assert.equal(new Date(0).getHours(), 0);
+  assert.equal((1234.5).toLocaleString(), '1,234.5');
+});
+`,
+  // Kills the node --test that runs it, so no counts are printed.
+  'test/kill.test.mjs': "process.kill(process.ppid, 'SIGKILL');\n",
 };

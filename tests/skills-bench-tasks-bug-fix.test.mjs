@@ -335,4 +335,20 @@ test('grade.mjs reads the test files a run adds as Node does', SLOW, async (t) =
   await t.test('the counts come from the summary at the end, not from what a test prints', () => {
     assert.equal(added(['test/log.test.mjs']).detail, 'test/log.test.mjs fails on start (1 failing) and passes on the run (1 passing)');
   });
+  await t.test('a run with a cancelled test does not pass, though nothing failed', () => {
+    assert.deepEqual([added(['test/cancel.test.mjs']).detail], ['no added or changed test file fails on start and passes on the run: test/cancel.test.mjs']);
+  });
+  await t.test('tests run with TZ=UTC and LC_ALL=C whatever the grader was started with', () => {
+    const env = { TZ: 'America/New_York', LC_ALL: 'de_DE.UTF-8', LANG: 'de_DE.UTF-8' };
+    assert.equal(added(['test/zone.test.mjs'], env).detail, 'test/zone.test.mjs fails on start (1 failing) and passes on the run (2 passing)');
+  });
+  await t.test('NODE_TEST_CONTEXT from a test runner above the grader does not reach its node --test', () => {
+    assert.deepEqual(passes(grade(MONTH, makeRun(MONTH, 'reference'), { NODE_TEST_CONTEXT: 'child-v8' })), {
+      'symptom-fixed': true, 'original-tests-pass': true, 'sibling-fixed': true, 'added-failing-test': true, 'test-commit-first': false, 'fix-size': true });
+  });
+  await t.test('a node --test killed before its counts means the grader cannot grade', () => {
+    const r = spawnGrade(MONTH, fixedRun('test/kill.test.mjs'));
+    assert.deepEqual([r.status, r.stdout], [1, '']);
+    assert.equal(r.stderr, 'grade.mjs: node --test test/kill.test.mjs printed no pass and fail counts (exit SIGKILL)\n');
+  });
 });
