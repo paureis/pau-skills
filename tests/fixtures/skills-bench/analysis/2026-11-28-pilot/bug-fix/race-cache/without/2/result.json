@@ -1,0 +1,29 @@
+{
+  "format": "skills-bench-run/1",
+  "roundId": "2026-11-28-pilot",
+  "skill": "bug-fix",
+  "task": "race-cache",
+  "difficulty": "complex",
+  "variant": "without",
+  "n": 2,
+  "runId": "bug-fix-race-cache-without-2",
+  "finished": false,
+  "exit": 1,
+  "resultSubtype": "error_max_turns",
+  "seconds": 240,
+  "costMicros": 300000,
+  "turns": 20,
+  "toolCalls": 30,
+  "failedToolCalls": 1,
+  "denials": 0,
+  "skillStarted": false,
+  "process": {
+    "firstTestEditStep": 3,
+    "firstSourceEditStep": 5,
+    "failedCommandBeforeFirstSourceEdit": false
+  },
+  "grade": null,
+  "gradeError": "the run stopped before the grader could read its folder",
+  "judge": null,
+  "judgeLetter": null
+}

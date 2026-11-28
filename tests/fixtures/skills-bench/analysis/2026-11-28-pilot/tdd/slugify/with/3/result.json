@@ -1,0 +1,49 @@
+{
+  "format": "skills-bench-run/1",
+  "roundId": "2026-11-28-pilot",
+  "skill": "tdd",
+  "task": "slugify",
+  "difficulty": "simple",
+  "variant": "with",
+  "n": 3,
+  "runId": "tdd-slugify-with-3",
+  "finished": true,
+  "exit": 0,
+  "resultSubtype": "success",
+  "seconds": 60,
+  "costMicros": 100000,
+  "turns": 20,
+  "toolCalls": 30,
+  "failedToolCalls": 1,
+  "denials": 0,
+  "skillStarted": true,
+  "process": {
+    "firstTestEditStep": 3,
+    "firstSourceEditStep": 5,
+    "failedCommandBeforeFirstSourceEdit": true
+  },
+  "grade": {
+    "pass": false,
+    "score": 0.5,
+    "outcomeScore": 0.25,
+    "checks": [
+      {
+        "name": "the tests pass",
+        "kind": "outcome",
+        "required": true,
+        "pass": false,
+        "detail": "9 of 12"
+      },
+      {
+        "name": "a failing check came first",
+        "kind": "process",
+        "required": false,
+        "pass": true,
+        "detail": ""
+      }
+    ]
+  },
+  "gradeError": null,
+  "judge": null,
+  "judgeLetter": null
+}

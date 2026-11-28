@@ -1,0 +1,53 @@
+{
+  "format": "skills-bench-run/1",
+  "roundId": "2026-11-28-pilot",
+  "skill": "bug-fix",
+  "task": "null-config",
+  "difficulty": "simple",
+  "variant": "with",
+  "n": 2,
+  "runId": "bug-fix-null-config-with-2",
+  "finished": true,
+  "exit": 0,
+  "resultSubtype": "success",
+  "seconds": 60,
+  "costMicros": 100000,
+  "turns": 20,
+  "toolCalls": 30,
+  "failedToolCalls": 1,
+  "denials": 0,
+  "skillStarted": true,
+  "process": {
+    "firstTestEditStep": 3,
+    "firstSourceEditStep": 5,
+    "failedCommandBeforeFirstSourceEdit": true
+  },
+  "grade": {
+    "pass": true,
+    "score": 0.8,
+    "outcomeScore": 0.4,
+    "checks": [
+      {
+        "name": "the tests pass",
+        "kind": "outcome",
+        "required": true,
+        "pass": true,
+        "detail": "12 of 12"
+      },
+      {
+        "name": "a failing check came first",
+        "kind": "process",
+        "required": false,
+        "pass": true,
+        "detail": ""
+      }
+    ]
+  },
+  "gradeError": null,
+  "judge": {
+    "1": 4,
+    "2": 4,
+    "3": 4
+  },
+  "judgeLetter": "B"
+}
