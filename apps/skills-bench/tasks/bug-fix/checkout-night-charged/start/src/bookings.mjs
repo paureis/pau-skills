@@ -37,6 +37,16 @@ export function saveBookings(file, bookings) {
   renameSync(next, file);
 }
 
+/**
+ * The commands that change bookings read one file and write the new list to the file given with --out, which may be
+ * the same one. Returns the other arguments and that file, or null when --out is missing.
+ */
+export function takeOut(argv) {
+  const at = argv.indexOf('--out');
+  if (at < 0 || !argv[at + 1] || argv[at + 1].startsWith('--')) return { args: argv, out: null };
+  return { args: [...argv.slice(0, at), ...argv.slice(at + 2)], out: argv[at + 1] };
+}
+
 export function nextId(bookings) {
   const used = bookings.map((b) => Number(ID.exec(b.id)[1]));
   return `BK-${String(Math.max(0, ...used) + 1).padStart(4, '0')}`;

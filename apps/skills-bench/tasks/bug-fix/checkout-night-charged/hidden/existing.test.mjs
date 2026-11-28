@@ -23,7 +23,7 @@ function inFolder(fn) {
 
 test('a stay that shares a night with a booking is refused and the file is kept', () => {
   inFolder((file, run) => {
-    const r = run('book', file, 'fern', '2025-06-12', '2025-06-14', 'Lena Park');
+    const r = run('book', file, 'fern', '2025-06-12', '2025-06-14', 'Lena Park', '--out', file);
     assert.equal(r.status, 1);
     assert.match(r.stderr, /^not available: fern is booked on the night of 2025-06-12 \(BK-0001\); the first free dates are 2025-06-1\d to 2025-06-1\d\n$/);
     assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')), BOOKED);
@@ -32,8 +32,8 @@ test('a stay that shares a night with a booking is refused and the file is kept'
 
 test('a cancelled booking frees its nights', () => {
   inFolder((file, run) => {
-    assert.equal(run('cancel', file, 'BK-0001').stdout, 'Cancelled BK-0001\n');
-    assert.equal(run('book', file, 'fern', '2025-06-11', '2025-06-13', 'Lena Park').stderr, '');
+    assert.equal(run('cancel', file, 'BK-0001', '--out', file).stdout, 'Cancelled BK-0001\n');
+    assert.equal(run('book', file, 'fern', '2025-06-11', '2025-06-13', 'Lena Park', '--out', file).stderr, '');
   });
 });
 

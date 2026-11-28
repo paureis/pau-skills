@@ -5,11 +5,12 @@
 // How grade.mjs reads git, test files and its limits is in tests/skills-bench-tasks-bug-fix-grader.test.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { findMetaWords, validateRubric, withoutComments } from '../skills/verification/skill-eval/skill-eval-core.mjs';
 import {
-  TASKS, TASK_IDS, SLOW, walk, filesOf, isTest, isSource, makeRun, nodeTest, grade, check, passes,
+  TASKS, TASK_IDS, SLOW, cleanEnv, walk, filesOf, isTest, isSource, makeRun, nodeTest, grade, check, passes,
 } from './fixtures/skills-bench/bug-fix/helpers.mjs';
 
 const OVERLAYS = ['reference', 'symptom-patch', 'edited-test', 'long-fix'];
@@ -94,6 +95,20 @@ for (const id of TASK_IDS) {
       assert.equal(pkg.scripts.test, 'node --test');
       assert.equal(pkg.dependencies, undefined);
       assert.equal(pkg.devDependencies, undefined);
+    });
+
+    await t.test('every command a bin/ file documents leaves the files of start/ as they were', () => {
+      const run = makeRun(dir);
+      const before = new Map(startFiles.map((f) => [f, readFileSync(join(run, f), 'utf8')]));
+      for (const bin of startFiles.filter((f) => f.startsWith('bin/'))) {
+        const examples = readFileSync(join(start, bin), 'utf8').split('\n').filter((l) => l.startsWith(`//   node ${bin} `));
+        assert.ok(examples.length > 0, `${bin} documents no example`);
+        for (const line of examples) {
+          const args = [...line.slice(`//   node ${bin} `.length).matchAll(/"([^"]*)"|(\S+)/g)].map((m) => m[1] ?? m[2]);
+          spawnSync(process.execPath, [bin, ...args], { cwd: run, env: cleanEnv(), encoding: 'utf8', timeout: 30_000 });
+        }
+      }
+      for (const [f, text] of before) assert.equal(readFileSync(join(run, f), 'utf8'), text, `${f} changed`);
     });
 
     await t.test("the start's tests pass and the reference regression test fails on start", () => {

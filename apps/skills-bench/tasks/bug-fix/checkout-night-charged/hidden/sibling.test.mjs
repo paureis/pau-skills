@@ -14,7 +14,7 @@ function book(checkIn, checkOut) {
   const dir = mkdtempSync(join(tmpdir(), 'cabins-'));
   try {
     writeFileSync(join(dir, 'bookings.json'), JSON.stringify(BOOKED));
-    return spawnSync(process.execPath, [BIN, join(dir, 'bookings.json'), 'fern', checkIn, checkOut, 'Lena Park'], { encoding: 'utf8' });
+    return spawnSync(process.execPath, [BIN, join(dir, 'bookings.json'), 'fern', checkIn, checkOut, 'Lena Park', '--out', join(dir, 'bookings.json')], { encoding: 'utf8' });
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
