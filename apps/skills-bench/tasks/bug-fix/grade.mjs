@@ -43,8 +43,9 @@ export function listFiles(root, rel = '') {
 }
 
 // Node's default --test patterns: *.test.*, *-test.*, *_test.*, test-*, test.* and any file under a test/ folder,
-// for .js, .mjs and .cjs, outside node_modules and dot folders.
-const TEST_NAME = /^(?:.+[.\-_]test|test-.+|test)\.[cm]?js$/;
+// for .js, .mjs and .cjs, outside node_modules and dot folders. A * may match nothing (node --test runs test-.mjs and
+// _test.mjs), but never a leading dot (it skips .test.mjs).
+const TEST_NAME = /^(?:.*[-_]test|[^.].*\.test|test(?:-.*)?)\.[cm]?js$/;
 /** A file node --test would run. */
 export function isTestFile(rel) {
   const parts = rel.split('/');

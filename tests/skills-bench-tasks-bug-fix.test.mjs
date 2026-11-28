@@ -6,14 +6,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, lstatSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT, tempDir } from './helpers.mjs';
 import { findMetaWords, validateRubric, withoutComments } from '../skills/verification/skill-eval/skill-eval-core.mjs';
+import { CASES } from '../apps/skills-bench/tasks/bug-fix/grade-cases.mjs';
 
 const TASKS = join(ROOT, 'apps', 'skills-bench', 'tasks', 'bug-fix');
 const GRADER = join(TASKS, 'grade.mjs');
 const TASK_IDS = readdirSync(TASKS, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
+const MONTH = join(TASKS, 'month-end-renewal');
 const OVERLAYS = ['reference', 'symptom-patch', 'edited-test', 'long-fix'];
 const HIDDEN = ['symptom.test.mjs', 'sibling.test.mjs', 'existing.test.mjs'];
 const ALLOW_TOOLS = ['Bash(npm test)', 'Bash(npm test *)', 'Bash(node *)', 'Bash(git *)'];
@@ -73,6 +75,13 @@ function makeRun(taskDir, ...overlays) {
   for (const o of overlays) cpSync(join(taskDir, o), dir, { recursive: true });
   return dir;
 }
+/** A month-end-renewal run with the reference source fix, no reference test, and the named grade-cases.mjs files. */
+function fixedRun(...names) {
+  const dir = makeRun(MONTH);
+  for (const f of filesOf(join(MONTH, 'reference')).filter((f) => !isTest(f))) cpSync(join(MONTH, 'reference', f), join(dir, f));
+  for (const f of names) writeFileSync(join(dir, f), CASES[f]);
+  return dir;
+}
 
 /** node --test on the given files in dir; the TAP counts and the exit status. */
 function nodeTest(dir, files) {
@@ -82,10 +91,13 @@ function nodeTest(dir, files) {
   return { status: r.status, pass: count('pass'), fail: count('fail'), out: r.stdout };
 }
 
+const spawnGrade = (taskDir, runDir, env = {}, grader = GRADER) =>
+  spawnSync(process.execPath, [grader, '--task', taskDir, '--run', runDir], { env: { ...cleanEnv(), ...env }, encoding: 'utf8', timeout: 300_000 });
+
 /** Run the grader on a task and a run folder; asserts one JSON line, exit 0, and both folders unchanged. */
-function grade(taskDir, runDir) {
+function grade(taskDir, runDir, env = {}, grader = GRADER) {
   const before = [hashTree(taskDir), hashTree(runDir)];
-  const r = spawnSync(process.execPath, [GRADER, '--task', taskDir, '--run', runDir], { env: cleanEnv(), encoding: 'utf8', timeout: 300_000 });
+  const r = spawnGrade(taskDir, runDir, env, grader);
   assert.equal(r.status, 0, `grader exit ${r.status}: ${r.stderr}`);
   const lines = r.stdout.split('\n').filter(Boolean);
   assert.equal(lines.length, 1, `the grader printed ${lines.length} lines:\n${r.stdout}`);
@@ -312,4 +324,12 @@ test('the grader exits 1 with a reason when it cannot grade', () => {
   assert.equal(noRun.status, 1);
   assert.equal(noRun.stdout, '');
   assert.match(noRun.stderr, /^grade\.mjs: the run folder .* does not exist\n$/);
+});
+
+test('grade.mjs reads the test files a run adds as Node does', SLOW, async (t) => {
+  const added = (names, env) => check(grade(MONTH, fixedRun(...names), env), 'added-failing-test');
+  await t.test('a file named test-.mjs is a test file', () => {
+    assert.deepEqual(added(['test-.mjs']), { name: 'added-failing-test', kind: 'process', required: false, pass: true,
+      detail: 'test-.mjs fails on start (1 failing) and passes on the run (1 passing)' });
+  });
 });
