@@ -2,7 +2,7 @@
 // 3 tdd tasks (one simple control task with 4 variants) and 3 bug-fix tasks; its totals are worked out by hand below.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { repo } from './helpers.mjs';
 import { bench, writeConfig, copyTasks, patchTask, readLog, runRound, scratch, PASS } from './skills-bench-runner.helpers.mjs';
@@ -114,10 +114,15 @@ describe('run refuses before any setup', () => {
 
   test('a round folder inside the repository, or one that holds files this bench did not write', () => {
     const inside = repo('apps', 'skills-bench', 'round-in-repo');
-    const r = runRound({ round: inside });
-    assert.equal(r.code, 1);
-    assert.match(r.stderr, /^refused: the round folder .*round-in-repo is inside the repository; keep a round outside it/m);
-    assert.ok(!existsSync(inside));
+    try {
+      // One small task, so a broken guard makes a small round, which the finally removes.
+      const r = runRound({ round: inside, extra: ['--only', 'fix-simple-a', '--n', '1'] });
+      assert.equal(r.code, 1);
+      assert.match(r.stderr, /^refused: the round folder .*round-in-repo is inside the repository; keep a round outside it/m);
+      assert.ok(!existsSync(inside));
+    } finally {
+      rmSync(inside, { recursive: true, force: true });
+    }
     const other = join(scratch(), 'busy');
     mkdirSync(other);
     writeFileSync(join(other, 'notes.txt'), 'mine\n');

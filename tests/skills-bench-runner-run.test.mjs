@@ -49,6 +49,13 @@ describe('the start rule and the hard stop', () => {
     }
   });
 
+  test('starts a task whose need equals the cap exactly', () => {
+    // fix-simple-a, n 1: 0 + 2 x $0.20 + 1 x $0.05 = $0.45, the cap.
+    const r = runRound({ maxUsd: '0.45', extra: ['--only', 'fix-simple-a', '--n', '1'] });
+    assert.equal(r.code, 0, r.stderr);
+    assert.equal(readState(r.round).tasks['fix-simple-a'].status, 'done');
+  });
+
   test('charges a run with no result line its hard stop, and records the dropout', () => {
     const r = runRound({ extra: ['--only', 'fix-simple-a', '--n', '1'], fake: { runs: { 'word-count/with': { fail: true } } } });
     assert.equal(r.code, 0, r.stderr);
