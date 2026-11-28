@@ -1,0 +1,12 @@
+{
+  "id": "page-slice",
+  "skill": "tdd",
+  "difficulty": "simple",
+  "slug": "list-pager",
+  "summary": "Add pageSlice(items, page, perPage) to src/pages.js so the list screens can show one page of results at a time.",
+  "allowTools": ["Bash(npm test)", "Bash(node *)", "Bash(git *)"],
+  "allowWords": ["test"],
+  "timeoutMin": 15,
+  "control": false,
+  "interface": ["src/pages.js"]
+}

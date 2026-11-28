@@ -1,0 +1,10 @@
+The timer app prints durations with formatDuration in src/duration.js, and now people need to type them in too. Add an exported function parseDuration(text) to src/duration.js that turns typed text into a whole number of seconds:
+
+- The text is one or more parts, each a number followed by a unit: h (hours), m (minutes) or s (seconds), in upper or lower case. "1h30m" is 5400, "2H" is 7200 and "45s" is 45.
+- Parts may have spaces between them, and spaces around the text are fine: " 1h 30m " is 5400.
+- A number may have a decimal point: "1.5h" is 5400.
+- A bare number with no unit means seconds: "90" is 90.
+- The total is rounded to the nearest whole second, halves going up: "2.6s" is 3 and "0.5s" is 1.
+- Anything else throws a RangeError: an empty or blank string, an unknown unit such as "5d" or "1h 5d", or text such as "abc" or "1h30".
+
+Build it test first.

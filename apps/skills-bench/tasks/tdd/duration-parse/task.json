@@ -1,0 +1,12 @@
+{
+  "id": "duration-parse",
+  "skill": "tdd",
+  "difficulty": "simple",
+  "slug": "duration-kit",
+  "summary": "Add parseDuration(text) to src/duration.js so that typed text such as 1h30m becomes a whole number of seconds.",
+  "allowTools": ["Bash(npm test)", "Bash(node *)", "Bash(git *)"],
+  "allowWords": ["test"],
+  "timeoutMin": 15,
+  "control": true,
+  "interface": ["src/duration.js"]
+}
